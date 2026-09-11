@@ -3,20 +3,21 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Syncfusion.Windows.Controls.Input;
+using Syncfusion.Windows.Shared;
 using Syncfusion.Windows.Tools.Controls;
 
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Syncfusion SfTextBoxExt, SfMaskedEdit, and editable ComboBoxAdv host an inner <see cref="TextBox"/>
-/// that ignores NumPad keys on Windows. This helper injects digits into the caret host.
-/// Register once at app startup via <see cref="RegisterApplicationWide"/>.
+/// Patches NumPad input only for Syncfusion <see cref="DoubleTextBox"/> / <see cref="IntegerTextBox"/>,
+/// which often mark NumPad keys Handled without inserting.
+/// Plain <see cref="TextBox"/> / <see cref="SfTextBoxExt"/> accept NumPad natively — do not intercept them
+/// (intercepting causes double-insert or fights the caret).
 /// </summary>
 public static class NumpadInputHelper
 {
     private static bool _registered;
 
-    /// <summary>Attach a tunneling PreviewKeyDown handler to all <see cref="Window"/> instances.</summary>
     public static void RegisterApplicationWide()
     {
         if (_registered)
@@ -26,19 +27,19 @@ public static class NumpadInputHelper
 
         _registered = true;
         EventManager.RegisterClassHandler(
-            typeof(Window),
+            typeof(DoubleTextBox),
             UIElement.PreviewKeyDownEvent,
-            new KeyEventHandler(OnWindowPreviewKeyDown),
+            new KeyEventHandler(OnNumericEditorPreviewKeyDown),
+            handledEventsToo: true);
+        EventManager.RegisterClassHandler(
+            typeof(IntegerTextBox),
+            UIElement.PreviewKeyDownEvent,
+            new KeyEventHandler(OnNumericEditorPreviewKeyDown),
             handledEventsToo: true);
     }
 
-    private static void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
+    private static void OnNumericEditorPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Handled)
-        {
-            return;
-        }
-
         HandlePreviewKeyDown(e);
     }
 
@@ -49,33 +50,18 @@ public static class NumpadInputHelper
             return;
         }
 
-        if (TryInsertIntoFocusedTextBox(insert))
+        // Only patch Syncfusion numeric editors. Leave SfTextBoxExt / TextBox alone.
+        if (TryGetHost<DoubleTextBox>(out var doubleBox))
         {
+            InsertIntoDoubleTextBox(doubleBox, insert);
             e.Handled = true;
             return;
         }
 
-        if (TryGetHost<SfTextBoxExt>(out var textExt))
+        if (TryGetHost<IntegerTextBox>(out var intBox))
         {
-            InsertIntoSfTextBoxExt(textExt, insert);
+            InsertIntoIntegerTextBox(intBox, insert);
             e.Handled = true;
-            return;
-        }
-
-        if (TryGetHost<SfMaskedEdit>(out var maskedEdit))
-        {
-            InsertIntoMaskedEdit(maskedEdit, insert);
-            e.Handled = true;
-            return;
-        }
-
-        if (TryGetHost<ComboBoxAdv>(out var combo) && combo.IsEditable)
-        {
-            if (combo.Template?.FindName("PART_EditableTextBox", combo) is TextBox comboEditor)
-            {
-                InsertIntoTextBox(comboEditor, insert);
-                e.Handled = true;
-            }
         }
     }
 
@@ -88,7 +74,7 @@ public static class NumpadInputHelper
             return true;
         }
 
-        if (key is Key.Decimal or Key.OemPeriod)
+        if (key is Key.Decimal or Key.OemPeriod or Key.OemComma)
         {
             insert = ".";
             return true;
@@ -97,25 +83,178 @@ public static class NumpadInputHelper
         return false;
     }
 
-    private static bool TryInsertIntoFocusedTextBox(string insert)
+    private static void InsertIntoDoubleTextBox(DoubleTextBox box, string insert)
     {
-        if (Keyboard.FocusedElement is TextBox focusedTextBox)
+        var current = box.Text;
+        if (string.IsNullOrWhiteSpace(current) && box.Value.HasValue)
         {
-            InsertIntoTextBox(focusedTextBox, insert);
-            return true;
+            current = box.Value.Value.ToString(System.Globalization.CultureInfo.CurrentCulture);
         }
 
-        if (Keyboard.FocusedElement is DependencyObject focused)
-        {
-            var inner = FindDescendant<TextBox>(focused);
-            if (inner is not null)
+        current ??= string.Empty;
+        var (start, length) = GetSelection(box);
+        InsertIntoNumericEditorText(
+            () => current,
+            t =>
             {
-                InsertIntoTextBox(inner, insert);
-                return true;
+                box.Text = t;
+                var inner = FindDescendant<TextBox>(box);
+                if (inner is not null)
+                {
+                    inner.Text = t;
+                }
+            },
+            (s, len) => SetSelection(box, s, len),
+            start,
+            length,
+            insert,
+            allowDecimal: true,
+            setValue: parsed =>
+            {
+                var min = box.MinValue;
+                var max = box.MaxValue;
+                if (parsed < min)
+                {
+                    parsed = min;
+                }
+
+                if (parsed > max)
+                {
+                    parsed = max;
+                }
+
+                box.Value = parsed;
+            });
+    }
+
+    private static void InsertIntoIntegerTextBox(IntegerTextBox box, string insert)
+    {
+        if (insert == ".")
+        {
+            return;
+        }
+
+        var current = box.Text;
+        if (string.IsNullOrWhiteSpace(current) && box.Value.HasValue)
+        {
+            current = box.Value.Value.ToString(System.Globalization.CultureInfo.CurrentCulture);
+        }
+
+        current ??= string.Empty;
+        var (start, length) = GetSelection(box);
+        InsertIntoNumericEditorText(
+            () => current,
+            t =>
+            {
+                box.Text = t;
+                var inner = FindDescendant<TextBox>(box);
+                if (inner is not null)
+                {
+                    inner.Text = t;
+                }
+            },
+            (s, len) => SetSelection(box, s, len),
+            start,
+            length,
+            insert,
+            allowDecimal: false,
+            setValue: parsed =>
+            {
+                var asInt = (int)Math.Round(parsed, MidpointRounding.AwayFromZero);
+                var min = (int)box.MinValue;
+                var max = (int)box.MaxValue;
+                if (asInt < min)
+                {
+                    asInt = min;
+                }
+
+                if (asInt > max)
+                {
+                    asInt = max;
+                }
+
+                box.Value = asInt;
+            });
+    }
+
+    private static (int Start, int Length) GetSelection(DependencyObject box)
+    {
+        if (Keyboard.FocusedElement is TextBox tb)
+        {
+            return (tb.SelectionStart, tb.SelectionLength);
+        }
+
+        if (box is DoubleTextBox d)
+        {
+            return (d.SelectionStart, d.SelectionLength);
+        }
+
+        if (box is IntegerTextBox i)
+        {
+            return (i.SelectionStart, i.SelectionLength);
+        }
+
+        return (0, 0);
+    }
+
+    private static void SetSelection(DependencyObject box, int start, int length)
+    {
+        try
+        {
+            if (box is DoubleTextBox d)
+            {
+                d.SelectionStart = start;
+                d.SelectionLength = length;
+            }
+            else if (box is IntegerTextBox i)
+            {
+                i.SelectionStart = start;
+                i.SelectionLength = length;
             }
         }
+        catch
+        {
+            /* template may not be ready */
+        }
 
-        return false;
+        var inner = FindDescendant<TextBox>(box);
+        if (inner is not null)
+        {
+            inner.SelectionStart = Math.Min(start, inner.Text?.Length ?? 0);
+            inner.SelectionLength = length;
+        }
+    }
+
+    private static void InsertIntoNumericEditorText(
+        Func<string> getText,
+        Action<string> setText,
+        Action<int, int> setSelection,
+        int selectionStart,
+        int selectionLength,
+        string insert,
+        bool allowDecimal,
+        Action<double> setValue)
+    {
+        if (insert == "." && !allowDecimal)
+        {
+            return;
+        }
+
+        var text = getText();
+        if (insert == "." && text.Contains('.'))
+        {
+            return;
+        }
+
+        var next = Splice(text, selectionStart, selectionLength, insert);
+        setText(next);
+        if (double.TryParse(next, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out var parsed)
+            || double.TryParse(next, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out parsed))
+        {
+            setValue(parsed);
+        }
+
+        setSelection(Math.Min(next.Length, selectionStart + insert.Length), 0);
     }
 
     private static bool TryGetHost<T>(out T host) where T : DependencyObject
@@ -179,48 +318,6 @@ public static class NumpadInputHelper
         }
 
         return null;
-    }
-
-    private static void InsertIntoSfTextBoxExt(SfTextBoxExt textExt, string insert)
-    {
-        if (textExt.Template?.FindName("PART_TextBox", textExt) is TextBox inner)
-        {
-            InsertIntoTextBox(inner, insert);
-            return;
-        }
-
-        var start = textExt.SelectionStart;
-        var len = textExt.SelectionLength;
-        var current = textExt.Text ?? string.Empty;
-        textExt.Text = Splice(current, start, len, insert);
-        textExt.SelectionStart = Math.Min(textExt.Text?.Length ?? 0, start + insert.Length);
-        textExt.SelectionLength = 0;
-    }
-
-    private static void InsertIntoTextBox(TextBox textBox, string insert)
-    {
-        var start = textBox.SelectionStart;
-        var len = textBox.SelectionLength;
-        var current = textBox.Text ?? string.Empty;
-        textBox.Text = Splice(current, start, len, insert);
-        textBox.SelectionStart = Math.Min(textBox.Text?.Length ?? 0, start + insert.Length);
-        textBox.SelectionLength = 0;
-    }
-
-    private static void InsertIntoMaskedEdit(SfMaskedEdit maskedEdit, string insert)
-    {
-        if (maskedEdit.Template?.FindName("PART_TextBox", maskedEdit) is TextBox inner)
-        {
-            InsertIntoTextBox(inner, insert);
-            return;
-        }
-
-        var current = maskedEdit.Value?.ToString() ?? string.Empty;
-        var start = maskedEdit.SelectionStart;
-        var len = maskedEdit.SelectionLength;
-        maskedEdit.Value = Splice(current, start, len, insert);
-        maskedEdit.SelectionStart = Math.Min(maskedEdit.Value?.ToString()?.Length ?? 0, start + insert.Length);
-        maskedEdit.SelectionLength = 0;
     }
 
     private static string Splice(string current, int start, int len, string insert)

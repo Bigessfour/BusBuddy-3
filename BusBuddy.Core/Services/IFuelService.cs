@@ -17,4 +17,7 @@ public interface IFuelService
     Task<decimal> GetTotalFuelCostAsync(int vehicleId, DateTime? startDate = null, DateTime? endDate = null);
     Task<decimal> GetTotalGallonsAsync(int vehicleId, DateTime? startDate = null, DateTime? endDate = null);
     Task<decimal> GetAverageMPGAsync(int vehicleId, DateTime? startDate = null, DateTime? endDate = null);
+
+    /// <summary>Distinct non-empty fuel locations already stored on records (for dropdown catalog merge).</summary>
+    Task<IReadOnlyList<string>> GetDistinctFuelLocationsAsync();
 }

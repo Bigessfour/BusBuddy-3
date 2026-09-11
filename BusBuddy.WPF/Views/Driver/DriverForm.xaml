@@ -349,6 +349,17 @@
                     </StackPanel>
                     <StackPanel Grid.Row="1"
                                 Grid.Column="0">
+                        <TextBlock Text="License Type:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:ComboBoxAdv Height="40"
+                                                ItemsSource="{Binding LicenseTypeOptions}"
+                                                SelectedItem="{Binding Driver.DriversLicenceType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Margin="0,0,0,10"
+                                                AutomationProperties.Name="License Type"
+                                                AutomationProperties.HelpText="CDL, Regular, or Permit" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="2">
                         <TextBlock Text="License Expiry Date:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfDatePicker Value="{Binding Driver.LicenseExpiryDate, Mode=TwoWay}"
@@ -358,8 +369,9 @@
                                                  AutomationProperties.Name="License Expiry Date"
                                                  AutomationProperties.HelpText="Select license expiration date" />
                     </StackPanel>
-                    <StackPanel Grid.Row="1"
-                                Grid.Column="2">
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3">
                         <TextBlock Text="Endorsements:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfTextBoxExt Text="{Binding Driver.Endorsements, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"

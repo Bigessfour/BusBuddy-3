@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -56,27 +57,55 @@ public class MaintenanceService : IMaintenanceService
 
     public async Task<Maintenance> CreateMaintenanceRecordAsync(Maintenance maintenance)
     {
+        MaintenanceRecordValidator.ValidateForPersist(maintenance);
+        DetachVehicleGraph(maintenance);
         maintenance.CreatedDate = DateTime.UtcNow;
+
         Logger.Information(
             "Creating maintenance record VehicleId={VehicleId} Date={Date:yyyy-MM-dd} Work={Work} Status={Status}",
             maintenance.VehicleId, maintenance.Date, maintenance.MaintenanceCompleted, maintenance.Status);
+
         using var context = _contextFactory.CreateWriteDbContext();
         context.MaintenanceRecords.Add(maintenance);
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Logger.Error(ex, "EF failed creating maintenance record VehicleId={VehicleId}", maintenance.VehicleId);
+            throw new InvalidOperationException(FormatDbError(ex), ex);
+        }
+
         Logger.Information("Created maintenance record {MaintenanceId}", maintenance.MaintenanceId);
+        await context.Entry(maintenance).Reference(m => m.Vehicle).LoadAsync();
         return maintenance;
     }
 
     public async Task<Maintenance> UpdateMaintenanceRecordAsync(Maintenance maintenance)
     {
+        MaintenanceRecordValidator.ValidateForPersist(maintenance);
+        DetachVehicleGraph(maintenance);
         maintenance.UpdatedDate = DateTime.UtcNow;
+
         Logger.Information(
             "Updating maintenance record {MaintenanceId} VehicleId={VehicleId} Status={Status} Cost={Cost}",
             maintenance.MaintenanceId, maintenance.VehicleId, maintenance.Status, maintenance.RepairCost);
+
         using var context = _contextFactory.CreateWriteDbContext();
         context.MaintenanceRecords.Update(maintenance);
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Logger.Error(ex, "EF failed updating maintenance record {MaintenanceId}", maintenance.MaintenanceId);
+            throw new InvalidOperationException(FormatDbError(ex), ex);
+        }
+
         Logger.Information("Updated maintenance record {MaintenanceId}", maintenance.MaintenanceId);
+        await context.Entry(maintenance).Reference(m => m.Vehicle).LoadAsync();
         return maintenance;
     }
 
@@ -158,5 +187,23 @@ public class MaintenanceService : IMaintenanceService
         var total = await query.SumAsync(m => m.RepairCost);
         Logger.Information("Maintenance cost total for vehicle {VehicleId} is {Total}", vehicleId, total);
         return total;
+    }
+
+    /// <summary>
+    /// Avoids EF re-attaching a Bus graph loaded from a different DbContext on Update/Add.
+    /// </summary>
+    private static void DetachVehicleGraph(Maintenance maintenance) =>
+        maintenance.Vehicle = null!;
+
+    private static string FormatDbError(DbUpdateException ex)
+    {
+        var inner = ex.InnerException?.Message ?? ex.Message;
+        if (inner.Contains("FK_Maintenance_Vehicle", StringComparison.OrdinalIgnoreCase)
+            || inner.Contains("foreign key", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Could not save maintenance record — the selected bus is missing or invalid.";
+        }
+
+        return DatabaseUserMessage.ForOperation(ex, "save maintenance record");
     }
 }

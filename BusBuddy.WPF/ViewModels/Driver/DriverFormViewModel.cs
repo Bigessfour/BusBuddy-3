@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using DriverModel = BusBuddy.Core.Models.Driver;
@@ -102,7 +103,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         public ObservableCollection<DriverModel> Drivers { get; } = new();
 
         public IReadOnlyList<string> StatusOptions { get; } =
-            ["Active", "Inactive", "On Leave", "Training", "Terminated"];
+            ["Active", "Inactive", "On Leave", "Suspended", "Terminated"];
 
         public IReadOnlyList<string> DutyCategoryOptions { get; } =
             [DriverDutyCategories.Route, DriverDutyCategories.Activity];
@@ -125,6 +126,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
         /// <summary>Stored values must fit Drivers.LicenseClass (max 10).</summary>
         public IReadOnlyList<string> LicenseClassOptions { get; } =
             ["Class A", "Class B", "Class C", "Regular"];
+
+        public IReadOnlyList<string> LicenseTypeOptions { get; } =
+            ["CDL", "Regular", "Permit"];
 
         public bool CanSaveDriver =>
             HasUsableDriverName() &&
@@ -165,6 +169,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Driver = new DriverModel
                 {
                     Status = "Active",
+                    DriversLicenceType = "CDL",
                     TrainingComplete = false,
                     CreatedDate = DateTime.UtcNow
                 };
@@ -191,22 +196,44 @@ namespace BusBuddy.WPF.ViewModels.Driver
             try
             {
                 TryUpdateDriverName();
+                EnsureLicenseType();
+                NormalizeStatusForSave();
+
                 var missing = GetMissingRequiredFields();
                 if (missing.Count > 0)
                 {
-                    ShowError($"Fill required fields before saving: {string.Join(", ", missing)}");
-                    Logger.Information("Save blocked — missing required fields: {Missing}", string.Join(", ", missing));
+                    var detail = string.Join(", ", missing);
+                    ShowError(
+                        $"Cannot save yet — missing required fields: {detail}.",
+                        "Save blocked");
+                    Logger.Information("Save blocked — missing required fields: {Missing}", detail);
                     return;
                 }
 
                 IsLoading = true;
-                Logger.Information("Saving driver: {DriverName}", Driver.DriverName);
-                Logger.Debug("Driver pre-save snapshot -> Id={Id} Name={Name} Phone={Phone} License={Lic} Class={Class}", Driver.DriverId, Driver.DriverName, Driver.DriverPhone, Driver.LicenseNumber, Driver.LicenseClass);
+                Logger.Information(
+                    "Saving driver: {DriverName} EditMode={Edit} Id={Id} LicenseType={LicenseType} Class={Class}",
+                    Driver.DriverName,
+                    IsEditMode,
+                    Driver.DriverId,
+                    Driver.DriversLicenceType,
+                    Driver.LicenseClass);
+                Logger.Debug(
+                    "Driver pre-save snapshot -> Id={Id} Name={Name} Phone={Phone} License={Lic} Class={Class} Type={Type} Status={Status}",
+                    Driver.DriverId,
+                    Driver.DriverName,
+                    Driver.DriverPhone,
+                    Driver.LicenseNumber,
+                    Driver.LicenseClass,
+                    Driver.DriversLicenceType,
+                    Driver.Status);
 
                 var validationErrors = await _driverService.ValidateDriverAsync(Driver);
                 if (validationErrors.Count > 0)
                 {
-                    ShowError($"Validation failed: {string.Join(", ", validationErrors)}");
+                    ShowError(
+                        $"Cannot save — validation failed:\n• {string.Join("\n• ", validationErrors)}",
+                        "Validation failed");
                     return;
                 }
 
@@ -216,34 +243,31 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     var success = await _driverService.UpdateDriverAsync(Driver);
                     if (!success)
                     {
-                        ShowError("Failed to update driver");
+                        ShowError("Failed to update driver in the database.", "Save failed");
                         Logger.Debug("Update operation returned false for Id={Id}", Driver.DriverId);
                         return;
                     }
                     savedDriver = Driver;
-                    ShowSuccess("Driver updated successfully");
+                    ShowSuccess($"Saved changes for '{savedDriver.DriverName}'.", "Driver updated");
                 }
                 else
                 {
                     TryUpdateDriverName();
                     savedDriver = await _driverService.AddDriverAsync(Driver);
                     Logger.Debug("Add operation returned Id={Id}", savedDriver.DriverId);
-                    ShowSuccess("Driver added successfully");
+                    ShowSuccess($"Added '{savedDriver.DriverName}' to the roster.", "Driver added");
                 }
 
-                await LoadDriversAsync();
-                SelectedDriver = Drivers.FirstOrDefault(d => d.DriverId == savedDriver.DriverId);
                 Logger.Information("Driver saved successfully: {DriverName} (ID: {DriverId})",
                     savedDriver.DriverName, savedDriver.DriverId);
-                Logger.Debug("Driver post-save snapshot -> Id={Id} UpdatedDate={Updated} CreatedDate={Created}", savedDriver.DriverId, savedDriver.UpdatedDate, savedDriver.CreatedDate);
 
-                // Signal dialog close with success
+                // Close before reloading selection — setting SelectedDriver re-enters LoadDriverForEdit.
                 RequestClose?.Invoke(this, true);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error saving driver: {DriverName}", Driver.DriverName);
-                ShowError($"Error saving driver: {ex.Message}");
+                ShowError($"Error saving driver: {ex.Message}", "Save failed");
             }
             finally
             {
@@ -323,19 +347,20 @@ namespace BusBuddy.WPF.ViewModels.Driver
         }
 
         // Helpers
-        private void ShowError(string message)
+        private void ShowError(string message, string title = "Error")
         {
             StatusMessage = message;
             OnPropertyChanged(nameof(HasStatusMessage));
             Logger.Warning("User error: {Message}", message);
-            System.Windows.MessageBox.Show(message, "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            UserToast.Error(message, title);
         }
 
-        private void ShowSuccess(string message)
+        private void ShowSuccess(string message, string title = "Success")
         {
             StatusMessage = message;
             OnPropertyChanged(nameof(HasStatusMessage));
             Logger.Information("User success: {Message}", message);
+            UserToast.Success(message, title);
         }
 
         private async Task LoadDriversAsync()
@@ -372,6 +397,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Logger.Information("Loading driver for edit: {DriverName} (ID: {DriverId})",
                     driver.DriverName, driver.DriverId);
 
+                // Copy every persisted field — omitting DriversLicenceType made every Save fail validation.
                 Driver = new DriverModel
                 {
                     DriverId = driver.DriverId,
@@ -381,10 +407,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     DriverPhone = driver.DriverPhone,
                     DriverEmail = driver.DriverEmail,
                     LicenseNumber = driver.LicenseNumber,
-                    LicenseClass = driver.LicenseClass,
+                    LicenseClass = NormalizeLicenseClass(driver.LicenseClass),
+                    DriversLicenceType = string.IsNullOrWhiteSpace(driver.DriversLicenceType)
+                        ? "CDL"
+                        : driver.DriversLicenceType,
                     LicenseExpiryDate = driver.LicenseExpiryDate,
                     Endorsements = driver.Endorsements,
-                    Status = driver.Status,
+                    Status = NormalizeStatus(driver.Status),
                     TrainingComplete = driver.TrainingComplete,
                     BackgroundCheckDate = driver.BackgroundCheckDate,
                     DrugTestDate = driver.DrugTestDate,
@@ -401,13 +430,16 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     VehicleCategory = driver.VehicleCategory,
                     CdlRestrictions = driver.CdlRestrictions,
                     MedicalFormType = driver.MedicalFormType,
+                    Notes = driver.Notes,
                     CreatedDate = driver.CreatedDate,
                     UpdatedDate = driver.UpdatedDate
                 };
 
                 IsEditMode = true;
                 FormTitle = $"Edit Driver - {driver.DriverName}";
+                StatusMessage = string.Empty;
                 TryUpdateDriverName();
+                EnsureLicenseType();
                 RefreshSaveCanExecute();
                 if (DeleteDriverCommand is IRelayCommand del)
                 {
@@ -419,6 +451,56 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Logger.Error(ex, "Error loading driver for edit");
                 ShowError($"Error loading driver: {ex.Message}");
             }
+        }
+
+        private void EnsureLicenseType()
+        {
+            if (string.IsNullOrWhiteSpace(Driver.DriversLicenceType))
+            {
+                Driver.DriversLicenceType = "CDL";
+            }
+        }
+
+        private void NormalizeStatusForSave()
+        {
+            Driver.Status = NormalizeStatus(Driver.Status);
+        }
+
+        private static string NormalizeStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                return "Active";
+            }
+
+            // Legacy UI offered "Training"; validator only accepts employment statuses.
+            if (status.Equals("Training", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Active";
+            }
+
+            return status;
+        }
+
+        /// <summary>Map short DB values (A/B/C) onto ComboBoxAdv items (Class A/B/C).</summary>
+        private static string? NormalizeLicenseClass(string? licenseClass)
+        {
+            if (string.IsNullOrWhiteSpace(licenseClass))
+            {
+                return licenseClass;
+            }
+
+            var trimmed = licenseClass.Trim();
+            return trimmed.ToUpperInvariant() switch
+            {
+                "A" => "Class A",
+                "B" => "Class B",
+                "C" => "Class C",
+                "CLASS A" => "Class A",
+                "CLASS B" => "Class B",
+                "CLASS C" => "Class C",
+                _ => trimmed
+            };
         }
 
         private void OnDriverModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

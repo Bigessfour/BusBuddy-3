@@ -160,13 +160,20 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task UpdateDriverStatusAsync_WithActiveAssignments_Throws()
+        public async Task UpdateDriverStatusAsync_WithActiveAssignments_SoftRetiresAndClearsRouteFks()
         {
             // Assign driver 1 to AM Route 1
             await _driverService.AssignDriverToRouteAsync(1, 1, true);
 
-            Func<Task> act = async () => await _driverService.UpdateDriverStatusAsync(1, "Inactive");
-            await act.Should().ThrowAsync<InvalidOperationException>();
+            var ok = await _driverService.UpdateDriverStatusAsync(1, "Inactive");
+            ok.Should().BeTrue();
+
+            // Read via a fresh context — test factory contexts from DriverService are not disposed.
+            await using var verify = new BusBuddyDbContext(_dbOptions);
+            var stored = await verify.Drivers.AsNoTracking().SingleAsync(d => d.DriverId == 1);
+            stored.Status.Should().Be("Inactive");
+            var route = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == 1);
+            route.AMDriverId.Should().BeNull();
         }
 
         [Test]

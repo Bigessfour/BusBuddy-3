@@ -33,6 +33,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(routes));
         routeService.Setup(s => s.GetAvailableBusesAsync())
             .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
 
         var contextFactory = new Mock<IBusBuddyDbContextFactory>();
         var vm = new RouteManagementViewModel(contextFactory.Object, routeService.Object, null, null);
@@ -41,6 +43,7 @@ public class RouteManagementViewModelTests
 
         routeService.Verify(s => s.GetAllRoutesAsync(), Times.Once);
         routeService.Verify(s => s.GetAvailableBusesAsync(), Times.Once);
+        routeService.Verify(s => s.GetAvailableDriversAsync(), Times.Once);
         vm.Routes.Should().HaveCount(2);
         vm.StatusMessage.Should().Contain("Loaded 2 routes");
     }
@@ -79,12 +82,15 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(routes));
         routeService.Setup(s => s.GetAvailableBusesAsync())
             .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
 
         var vm = new RouteManagementViewModel(new Mock<IBusBuddyDbContextFactory>().Object, routeService.Object, null, null);
         await vm.InitializeAsync();
 
         vm.EditRouteCommand.CanExecute(null).Should().BeFalse();
         vm.AssignVehicleCommand.CanExecute(null).Should().BeFalse();
+        vm.AssignDriverCommand.CanExecute(null).Should().BeFalse();
 
         vm.SelectedRoute = vm.Routes[0];
 
@@ -108,6 +114,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { route }));
         routeService.Setup(s => s.GetAvailableBusesAsync())
             .ReturnsAsync(Result.SuccessResult(new List<Bus> { bus }));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
         routeService.Setup(s => s.AssignVehicleToRouteAsync(1, 7, It.IsAny<RouteTimeSlot>()))
             .ReturnsAsync(Result.SuccessResult(true));
         routeService.Setup(s => s.GetRouteByIdAsync(1))
@@ -130,6 +138,47 @@ public class RouteManagementViewModelTests
     }
 
     [Test]
+    public async Task AssignDriverCommand_UsesSelectedDriverId()
+    {
+        var route = new Route { RouteId = 1, RouteName = "Alpha", IsActive = true };
+        var driver = new Driver { DriverId = 9, DriverName = "Pat Driver" };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { route }));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver> { driver }));
+        routeService.Setup(s => s.AssignDriverToRouteAsync(1, 9, It.IsAny<RouteTimeSlot>()))
+            .ReturnsAsync(Result.SuccessResult(true));
+        routeService.Setup(s => s.GetRouteByIdAsync(1))
+            .ReturnsAsync(Result.SuccessResult(new Route
+            {
+                RouteId = 1,
+                RouteName = "Alpha",
+                IsActive = true,
+                AMDriverId = 9
+            }));
+
+        var vm = new RouteManagementViewModel(new Mock<IBusBuddyDbContextFactory>().Object, routeService.Object, null, null);
+        await vm.InitializeAsync();
+        vm.SelectedRoute = vm.Routes[0];
+        vm.SelectedDriverId = 9;
+        vm.SelectedTimeSlot = RouteTimeSlot.AM;
+
+        vm.AssignDriverCommand.CanExecute(null).Should().BeTrue();
+        if (vm.AssignDriverCommand is CommunityToolkit.Mvvm.Input.IAsyncRelayCommand assign)
+        {
+            await assign.ExecuteAsync(null);
+        }
+
+        routeService.Verify(s => s.AssignDriverToRouteAsync(1, 9, RouteTimeSlot.AM), Times.Once);
+        vm.StatusMessage.Should().Contain("Assigned Pat Driver");
+        vm.SelectedDriverId.Should().Be(9);
+    }
+
+    [Test]
     public async Task SelectingRouteWithoutBus_ClearsSelectedBusId()
     {
         var assigned = new Route { RouteId = 1, RouteName = "Alpha", IsActive = true, AMVehicleId = 7, BusNumber = "BUS-5" };
@@ -141,6 +190,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { assigned, unassigned }));
         routeService.Setup(s => s.GetAvailableBusesAsync())
             .ReturnsAsync(Result.SuccessResult(new List<Bus> { bus }));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
 
         var vm = new RouteManagementViewModel(new Mock<IBusBuddyDbContextFactory>().Object, routeService.Object, null, null);
         await vm.InitializeAsync();
@@ -150,6 +201,50 @@ public class RouteManagementViewModelTests
         vm.SelectedRoute = vm.Routes.First(r => r.RouteId == 2);
         vm.SelectedBusId.Should().BeNull();
         vm.AssignVehicleCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task SelectingTimeSlot_SyncsPanelToAmOrPmAssignments()
+    {
+        var route = new Route
+        {
+            RouteId = 1,
+            RouteName = "Alpha",
+            IsActive = true,
+            AMVehicleId = 7,
+            PMVehicleId = 8,
+            AMDriverId = 9,
+            PMDriverId = 10,
+            BusNumber = "BUS-AM"
+        };
+        var amBus = new Bus { BusId = 7, BusNumber = "BUS-AM" };
+        var pmBus = new Bus { BusId = 8, BusNumber = "BUS-PM" };
+        var amDriver = new Driver { DriverId = 9, DriverName = "AM Driver" };
+        var pmDriver = new Driver { DriverId = 10, DriverName = "PM Driver" };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { route }));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus> { amBus, pmBus }));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver> { amDriver, pmDriver }));
+
+        var vm = new RouteManagementViewModel(new Mock<IBusBuddyDbContextFactory>().Object, routeService.Object, null, null);
+        await vm.InitializeAsync();
+        vm.SelectedRoute = vm.Routes[0];
+
+        vm.SelectedTimeSlot = RouteTimeSlot.AM;
+        vm.SelectedBusId.Should().Be(7);
+        vm.SelectedDriverId.Should().Be(9);
+
+        vm.SelectedTimeSlot = RouteTimeSlot.PM;
+        vm.SelectedBusId.Should().Be(8);
+        vm.SelectedDriverId.Should().Be(10);
+
+        vm.SelectedTimeSlot = RouteTimeSlot.Both;
+        vm.SelectedBusId.Should().Be(7);
+        vm.SelectedDriverId.Should().Be(9);
     }
 
     [Test]
@@ -167,6 +262,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route>()));
         routeService.Setup(s => s.GetAvailableBusesAsync())
             .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
 
         var vm = new RouteManagementViewModel(
             new Mock<IBusBuddyDbContextFactory>().Object,

@@ -566,9 +566,9 @@ public class BusBuddyDbContext : DbContext
             entity.HasKey(e => e.FuelId);
 
             // Properties
-            entity.Property(e => e.FuelLocation).HasMaxLength(100);
-            entity.Property(e => e.FuelType).HasMaxLength(20).HasDefaultValue("Gasoline");
-            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.FuelLocation).HasMaxLength(FuelConstraints.MaxLocationLength);
+            entity.Property(e => e.FuelType).HasMaxLength(FuelConstraints.MaxFuelTypeLength).HasDefaultValue("Gasoline");
+            entity.Property(e => e.Notes).HasMaxLength(FuelConstraints.MaxNotesLength);
 
             // Decimal properties with precision
             entity.Property(e => e.Gallons).HasColumnType("decimal(8,3)");
@@ -1166,7 +1166,8 @@ public class BusBuddyDbContext : DbContext
                 .HasDefaultValue("Unknown Driver");
 
             entity.Property(e => e.Status)
-                .HasDefaultValue("Active");
+                .HasDefaultValue("Active")
+                .ValueGeneratedNever();
 
             entity.Property(e => e.DriversLicenceType)
                 .HasDefaultValue("Standard");

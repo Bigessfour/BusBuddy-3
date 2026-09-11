@@ -102,6 +102,34 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
 
+### 2026-09-11 — RouteManagementView audit remediations
+
+- Stopped `CurrentCellEndEdit` auto-save; toolbar **Save Route**; Date `Pattern=ShortDate`
+- Grid bus → `AMVehicleId` BusId combo; Assign Driver panel → `AssignDriverToRouteAsync`
+- Slot-aware assign panel: PM shows PMVehicleId/PMDriverId; Both displays AM
+- `RouteManagementExportHelper` + Assignment partial (core VM <1k); UTC Add/Copy dates
+- Trimmed code-behind to chrome; XAML/VM contract tests updated
+- Soft-retire driver Status persists (`ValueGeneratedNever` + IsModified); clears route FKs
+- FuelDate Kind fix (SetField ignored Kind); FuelDialog XAML contract aligned
+- Deferred: School=`Destination.Name` string; BaseViewModel inheritance
+- Evidence: Release build green; UTM RouteManagement + CI-blocker filters 19 passed; canvas `route-management-vertical-audit`
+
+### 2026-09-11 — MaintenanceView audit remediations
+
+- UTC `Date` on draft + `MaintenanceRecordValidator.ValidateForPersist`
+- Bus `GridComboBoxColumn` (`Vehicles` / `BusId`); closed Status/Priority lists
+- Service: validate, detach Vehicle graph, FK/`DatabaseUserMessage` errors
+- VM: `AsyncRelayCommand` + selection `NotifyCanExecuteChanged`
+- Deleted unused `MaintenanceRecord.cs`; Description max aligned to 500
+- Evidence: Release build green; canvas `maintenance-view-vertical-audit`
+
+### 2026-09-11 — DriverScheduleView audit remediations
+
+- `ScheduleTimestampNormalizer` on Add/Update; hop5 RouteManagement uses UTC day
+- Skip rows with missing Departure/Arrival (no invented 07:00)
+- `AppointmentEditFlag="None"`; `AsyncRelayCommand` + `DatabaseUserMessage` on load
+- Evidence: canvas `driver-schedule-vertical-audit`
+
 ### 2026-09-09 — Hop 1 Add School (Core + Docker Postgres)
 
 - **Acceptance:** `DestinationService.AddSchoolAsync` persists `Destinations` with `DestinationType=School`, `StartTime` / `DismissalTime`, and validated GPS (same path as Students → Add School).

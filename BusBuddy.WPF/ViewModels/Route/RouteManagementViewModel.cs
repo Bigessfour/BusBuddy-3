@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using BusBuddy.Core;
@@ -28,7 +27,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     /// Phase 2 Route Management ViewModel
     /// Enhanced route planning and management functionality
     /// </summary>
-    public class RouteManagementViewModel : INotifyPropertyChanged, IDisposable
+    public partial class RouteManagementViewModel : INotifyPropertyChanged, IDisposable
     {
         private static readonly ILogger Logger = Log.ForContext<RouteManagementViewModel>();
         /// <summary>
@@ -61,6 +60,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private IAsyncRelayCommand _generateRoutesRelay = null!;
         private IAsyncRelayCommand _generateTransferRoutesRelay = null!;
         private IAsyncRelayCommand _assignVehicleRelay = null!;
+        private IAsyncRelayCommand _assignDriverRelay = null!;
         private IAsyncRelayCommand _exportCsvRelay = null!;
         private IAsyncRelayCommand _exportReportRelay = null!;
         private IAsyncRelayCommand _printScheduleRelay = null!;
@@ -114,6 +114,9 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// </summary>
         public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses { get; } = new();
 
+        /// <summary>Drivers available for hop-4 assignment.</summary>
+        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers { get; } = new();
+
         private int? _selectedBusId;
         /// <summary>BusId selected in the assignment combo (SelectedValuePath binding).</summary>
         public int? SelectedBusId
@@ -165,12 +168,69 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         private RouteTimeSlot _selectedTimeSlot = RouteTimeSlot.AM;
         /// <summary>
-        /// Selected time slot (AM/PM/Both) for vehicle assignment.
+        /// Selected time slot (AM/PM/Both) for vehicle / driver assignment.
         /// </summary>
         public RouteTimeSlot SelectedTimeSlot
         {
             get => _selectedTimeSlot;
-            set { _selectedTimeSlot = value; OnPropertyChanged(); }
+            set
+            {
+                if (_selectedTimeSlot == value)
+                {
+                    return;
+                }
+
+                _selectedTimeSlot = value;
+                OnPropertyChanged();
+                SyncAssignmentFromSelectedRoute();
+                RefreshSelectionDependentCommands();
+            }
+        }
+
+        private int? _selectedDriverId;
+        /// <summary>DriverId selected in the assignment combo.</summary>
+        public int? SelectedDriverId
+        {
+            get => _selectedDriverId;
+            set
+            {
+                if (_selectedDriverId == value)
+                {
+                    return;
+                }
+
+                _selectedDriverId = value;
+                _selectedDriver = value is int id
+                    ? AvailableDrivers.FirstOrDefault(d => d.DriverId == id)
+                    : null;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedDriver));
+                RefreshSelectionDependentCommands();
+            }
+        }
+
+        private BusBuddy.Core.Models.Driver? _selectedDriver;
+        public BusBuddy.Core.Models.Driver? SelectedDriver
+        {
+            get => _selectedDriver;
+            set
+            {
+                if (ReferenceEquals(_selectedDriver, value))
+                {
+                    return;
+                }
+
+                _selectedDriver = value;
+                var newId = value?.DriverId;
+                if (_selectedDriverId != newId)
+                {
+                    _selectedDriverId = newId;
+                    OnPropertyChanged(nameof(SelectedDriverId));
+                }
+
+                OnPropertyChanged();
+                RefreshSelectionDependentCommands();
+            }
         }
 
         private BusBuddy.Core.Models.Route? _selectedRoute;
@@ -247,6 +307,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// <summary>Alias for <see cref="OpenRouteAssignmentCommand"/> (legacy binding name).</summary>
         public ICommand AssignStudentsCommand { get; private set; } = null!;
         public ICommand AssignVehicleCommand { get; private set; } = null!;
+        public ICommand AssignDriverCommand { get; private set; } = null!;
         public ICommand ExportCsvCommand { get; private set; } = null!;
         public ICommand ExportReportCommand { get; private set; } = null!;
         public ICommand PrintScheduleCommand { get; private set; } = null!;
@@ -345,6 +406,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 AssignVehicleAsync,
                 () => IsRouteSelected && SelectedBusId.HasValue && !IsBusy);
             AssignVehicleCommand = _assignVehicleRelay;
+            _assignDriverRelay = new AsyncRelayCommand(
+                AssignDriverAsync,
+                () => IsRouteSelected && SelectedDriverId.HasValue && !IsBusy);
+            AssignDriverCommand = _assignDriverRelay;
             _exportCsvRelay = new AsyncRelayCommand(ExportCsvAsync, () => !IsBusy);
             ExportCsvCommand = _exportCsvRelay;
             _exportReportRelay = new AsyncRelayCommand(ExportReportAsync, () => !IsBusy);
@@ -364,7 +429,12 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// <summary>Loads routes and assignment buses — call once from view <c>Loaded</c>.</summary>
         public async Task InitializeAsync()
         {
-            await Task.WhenAll(EnsureBusesLoadedAsync(), LoadSchoolsAsync(), LoadRoutesAsync()).ConfigureAwait(true);
+            await Task.WhenAll(
+                    EnsureBusesLoadedAsync(),
+                    EnsureDriversLoadedAsync(),
+                    LoadSchoolsAsync(),
+                    LoadRoutesAsync())
+                .ConfigureAwait(true);
         }
 
         private async Task LoadSchoolsAsync()
@@ -396,15 +466,28 @@ namespace BusBuddy.WPF.ViewModels.Route
             if (SelectedRoute is null)
             {
                 SelectedBusId = null;
+                SelectedDriverId = null;
                 return;
             }
 
-            var match = AvailableBuses.FirstOrDefault(b =>
-                SelectedRoute.AMVehicleId.HasValue && b.BusId == SelectedRoute.AMVehicleId.Value)
-                ?? AvailableBuses.FirstOrDefault(b =>
-                    !string.IsNullOrWhiteSpace(SelectedRoute.BusNumber)
-                    && string.Equals(b.BusNumber, SelectedRoute.BusNumber, StringComparison.OrdinalIgnoreCase));
+            // Both displays AM defaults (same as RouteAssignmentViewModel.NormalizeTimeSlot).
+            var usePm = SelectedTimeSlot == RouteTimeSlot.PM;
+            var vehicleId = usePm ? SelectedRoute.PMVehicleId : SelectedRoute.AMVehicleId;
+            var driverId = usePm ? SelectedRoute.PMDriverId : SelectedRoute.AMDriverId;
+
+            var match = vehicleId is int vid
+                ? AvailableBuses.FirstOrDefault(b => b.BusId == vid)
+                : null;
+            if (match is null && !usePm && !string.IsNullOrWhiteSpace(SelectedRoute.BusNumber))
+            {
+                match = AvailableBuses.FirstOrDefault(b =>
+                    string.Equals(b.BusNumber, SelectedRoute.BusNumber, StringComparison.OrdinalIgnoreCase));
+            }
+
             SelectedBusId = match?.BusId;
+            SelectedDriverId = driverId is int did
+                ? AvailableDrivers.FirstOrDefault(d => d.DriverId == did)?.DriverId
+                : null;
         }
 
         private async Task LoadRoutesAsync()
@@ -488,12 +571,12 @@ namespace BusBuddy.WPF.ViewModels.Route
                 using (LogContext.PushProperty("Operation", "AddRoute"))
                 {
                     IsBusy = true;
-                    var baseName = $"Route {DateTime.Now:HHmmss}";
+                    var baseName = $"Route {DateTime.UtcNow:HHmmss}";
                     var newRoute = new BusBuddy.Core.Models.Route
                     {
                         RouteName = baseName,
                         School = SelectedRoute?.School ?? string.Empty,
-                        Date = DateTime.Today,
+                        Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
                         IsActive = true,
                         Session = RouteSession.AM
                     };
@@ -579,7 +662,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Information("Copying route {RouteId}:{RouteName}", SelectedRoute.RouteId, sourceName);
                 var result = await _routeService.CloneRouteAsync(
                     SelectedRoute.RouteId,
-                    DateTime.Today.AddDays(1),
+                    DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc),
                     $"Copy of {sourceName}");
                 if (!result.IsSuccess)
                 {
@@ -611,7 +694,16 @@ namespace BusBuddy.WPF.ViewModels.Route
                     SelectedRoute.RouteName = string.IsNullOrWhiteSpace(SelectedRoute.RouteName)
                         ? $"Route-{SelectedRoute.RouteId}"
                         : SelectedRoute.RouteName.Trim();
-                    RouteVehicleLinker.TrySyncFromBusNumber(SelectedRoute, AvailableBuses);
+
+                    // Keep BusNumber display aligned with AMVehicleId grid combo.
+                    if (SelectedRoute.AMVehicleId is int amBusId)
+                    {
+                        var bus = AvailableBuses.FirstOrDefault(b => b.BusId == amBusId);
+                        if (bus is not null)
+                        {
+                            SelectedRoute.BusNumber = bus.BusNumber;
+                        }
+                    }
 
                     var result = await _routeService.UpdateRouteAsync(SelectedRoute).ConfigureAwait(true);
                     if (!result.IsSuccess)
@@ -709,8 +801,12 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsBusy = true;
                 StatusMessage = $"Generating schedule for '{SelectedRoute.RouteName}'...";
-                var persisted = await TryPersistScheduleAsync(SelectedRoute).ConfigureAwait(true);
-                var path = await WriteSchedulePdfAsync(SelectedRoute, printAfter: false).ConfigureAwait(true);
+                var persisted = await RouteManagementExportHelper
+                    .TryPersistScheduleAsync(SelectedRoute, _scheduleService)
+                    .ConfigureAwait(true);
+                var path = await RouteManagementExportHelper
+                    .WriteSchedulePdfAsync(SelectedRoute, printAfter: false, _reportService, _contextFactory)
+                    .ConfigureAwait(true);
                 StatusMessage = persisted
                     ? $"Schedule saved and opened: {Path.GetFileName(path)}"
                     : $"Schedule PDF opened (assign a bus and driver to persist a calendar row): {Path.GetFileName(path)}";
@@ -825,378 +921,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        private async Task AssignVehicleAsync()
-        {
-            if (SelectedRoute is null)
-            {
-                StatusMessage = "Select a route first";
-                return;
-            }
-            if (SelectedBus is null && SelectedBusId is int busId)
-            {
-                SelectedBus = AvailableBuses.FirstOrDefault(b => b.BusId == busId);
-            }
-            if (SelectedBus is null)
-            {
-                StatusMessage = "Select a bus to assign";
-                return;
-            }
-            if (IsBusy) return;
-            try
-            {
-                using (LogContext.PushProperty("Operation", "AssignVehicle"))
-                using (LogContext.PushProperty("RouteId", SelectedRoute.RouteId))
-                {
-                    IsBusy = true;
-                    StatusMessage = $"Assigning bus {SelectedBus.BusNumber} to route '{SelectedRoute.RouteName}'...";
-                    var result = await _routeService.AssignVehicleToRouteAsync(
-                        SelectedRoute.RouteId, SelectedBus.BusId, SelectedTimeSlot).ConfigureAwait(true);
-                    if (!result.IsSuccess)
-                    {
-                        StatusMessage = string.IsNullOrWhiteSpace(result.Error) ? "Assignment failed" : result.Error;
-                        Logger.Warning("Vehicle assignment failed: {Message}", result.Error);
-                        return;
-                    }
-
-                    Logger.Information(
-                        "Assigned vehicle {VehicleId} to route {RouteId} for {Slot} ViaService={ViaService}",
-                        SelectedBus.BusId, SelectedRoute.RouteId, SelectedTimeSlot, true);
-                    await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
-                    StatusMessage = $"Assigned bus {SelectedBus.BusNumber} ({SelectedTimeSlot})";
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error assigning vehicle to route");
-                StatusMessage = $"Error assigning vehicle: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        /// <summary>
-        /// Loads Active / In Service buses for assignment. Reloads so a bus added
-        /// in Vehicle Management appears without restarting Route Management.
-        /// </summary>
-        public async Task EnsureBusesLoadedAsync()
-        {
-            try
-            {
-                var result = await _routeService.GetAvailableBusesAsync().ConfigureAwait(true);
-                if (!result.IsSuccess)
-                {
-                    Logger.Warning("GetAvailableBusesAsync failed: {Error}", result.Error);
-                    return;
-                }
-
-                AvailableBuses.Clear();
-                foreach (var b in result.Value ?? [])
-                {
-                    AvailableBuses.Add(b);
-                }
-                Logger.Debug("Loaded {Count} assignable buses ViaService={ViaService}", AvailableBuses.Count, true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed loading active buses");
-            }
-        }
-
-        private async Task LoadSingleRouteAsync(int routeId)
-        {
-            try
-            {
-                var result = await _routeService.GetRouteByIdAsync(routeId).ConfigureAwait(true);
-                if (!result.IsSuccess || result.Value is null)
-                {
-                    return;
-                }
-
-                var updated = result.Value;
-                var existing = Routes.FirstOrDefault(r => r.RouteId == routeId);
-                if (existing is null)
-                {
-                    return;
-                }
-
-                existing.AMVehicleId = updated.AMVehicleId;
-                existing.PMVehicleId = updated.PMVehicleId;
-                existing.PMBusId = updated.PMBusId;
-                existing.BusNumber = updated.BusNumber;
-                OnPropertyChanged(nameof(SelectedRoute));
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed refreshing route after assignment");
-            }
-        }
-        private async Task EnrichRouteCountsAsync(IList<BusBuddy.Core.Models.Route> routes)
-        {
-            if (_studentService is null || routes.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                var students = await _studentService.GetAllStudentsAsync().ConfigureAwait(true) ?? [];
-                foreach (var route in routes)
-                {
-                    route.StudentCount = students.Count(s =>
-                        string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase));
-                    try
-                    {
-                        var stops = await _routeService.GetRouteStopsAsync(route.RouteId).ConfigureAwait(true);
-                        if (stops.IsSuccess)
-                        {
-                            route.StopCount = stops.Value?.Count() ?? 0;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Debug(ex, "Stop count skipped for route {RouteId}", route.RouteId);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed enriching route student/stop counts");
-            }
-        }
-
-        private async Task ExportCsvAsync()
-        {
-            try
-            {
-                using (LogContext.PushProperty("Operation", "ExportRoutesCsv"))
-                {
-                    var fileName = $"BusBuddy_Routes_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                    var path = ExportFilePrompt.TryGetPath(fileName, "CSV files (*.csv)|*.csv|All files (*.*)|*.*");
-                    if (path is null)
-                    {
-                        StatusMessage = "Export cancelled";
-                        return;
-                    }
-
-                    if (_exportService is not null)
-                    {
-                        var generated = await _exportService.ExportRoutesToCsvAsync().ConfigureAwait(true);
-                        if (!string.Equals(generated, path, StringComparison.OrdinalIgnoreCase))
-                        {
-                            File.Copy(generated, path, overwrite: true);
-                        }
-
-                        RevealOrOpen(path);
-                        StatusMessage = $"Exported CSV: {Path.GetFileName(path)}";
-                        return;
-                    }
-
-                    WriteFallbackCsv(path);
-                    RevealOrOpen(path);
-                    StatusMessage = $"Exported {Routes.Count} routes";
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed exporting routes CSV");
-                StatusMessage = $"Error exporting routes: {ex.Message}";
-            }
-        }
-
-        private async Task ExportReportAsync()
-        {
-            try
-            {
-                using (LogContext.PushProperty("Operation", "ExportRouteSummary"))
-                {
-                    var fileName = $"BusBuddy_Report_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
-                    var path = ExportFilePrompt.TryGetPath(fileName, "Text files (*.txt)|*.txt|All files (*.*)|*.*");
-                    if (path is null)
-                    {
-                        StatusMessage = "Export cancelled";
-                        return;
-                    }
-
-                    if (_exportService is not null)
-                    {
-                        var generated = await _exportService.GenerateRouteReportAsync().ConfigureAwait(true);
-                        if (!string.Equals(generated, path, StringComparison.OrdinalIgnoreCase))
-                        {
-                            File.Copy(generated, path, overwrite: true);
-                        }
-
-                        RevealOrOpen(path);
-                        StatusMessage = $"Exported report: {Path.GetFileName(path)}";
-                        return;
-                    }
-
-                    WriteFallbackReport(path);
-                    RevealOrOpen(path);
-                    StatusMessage = "Exported route summary";
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed exporting route summary");
-                StatusMessage = $"Error exporting report: {ex.Message}";
-            }
-        }
-
-        private async Task PrintScheduleAsync()
-        {
-            if (SelectedRoute is null)
-            {
-                StatusMessage = "Select a route first";
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                StatusMessage = $"Printing schedule for '{SelectedRoute.RouteName}'...";
-                var path = await WriteSchedulePdfAsync(SelectedRoute, printAfter: true).ConfigureAwait(true);
-                StatusMessage = $"Schedule sent to printer / opened: {Path.GetFileName(path)}";
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed printing schedule");
-                StatusMessage = $"Error printing schedule: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task<string> WriteSchedulePdfAsync(BusBuddy.Core.Models.Route route, bool printAfter)
-        {
-            var exportDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "BusBuddy",
-                "Printouts");
-            Directory.CreateDirectory(exportDir);
-
-            string path;
-            if (_reportService is not null)
-            {
-                var generated = await _reportService.GenerateAsync(new OperationalReportRequest
-                {
-                    Kind = printAfter ? OperationalReportKind.PrintSchedules : OperationalReportKind.DailySchedule,
-                    RouteId = route.RouteId,
-                    OutputDirectory = exportDir
-                }).ConfigureAwait(true);
-                path = generated.FilePath;
-            }
-            else
-            {
-                path = RoutePdfPrinter.GenerateRoutePdf(
-                    _contextFactory,
-                    route.RouteId,
-                    exportDir,
-                    RouteTimeSlot.Both);
-            }
-
-            if (printAfter)
-            {
-                RevealOrOpen(path, print: true);
-            }
-            else
-            {
-                RevealOrOpen(path, print: false);
-            }
-
-            return path;
-        }
-
-        private async Task<bool> TryPersistScheduleAsync(BusBuddy.Core.Models.Route route)
-        {
-            if (_scheduleService is null)
-            {
-                return false;
-            }
-
-            var busId = route.AMVehicleId ?? route.PMVehicleId;
-            var driverId = route.AMDriverId ?? route.PMDriverId;
-            if (!busId.HasValue || !driverId.HasValue)
-            {
-                return false;
-            }
-
-            var day = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
-            var departure = day.Add(route.AMBeginTime ?? TimeSpan.FromHours(7));
-            var arrival = departure.AddMinutes(route.EstimatedDuration ?? 45);
-            if (arrival <= departure)
-            {
-                arrival = departure.AddMinutes(45);
-            }
-
-            await _scheduleService.AddScheduleAsync(new Schedule
-            {
-                RouteId = route.RouteId,
-                BusId = busId.Value,
-                DriverId = driverId.Value,
-                ScheduleDate = day,
-                DepartureTime = departure,
-                ArrivalTime = arrival,
-                Location = route.School,
-                Notes = $"Generated from Route Management for {route.RouteName}",
-                Status = "Scheduled",
-                CreatedDate = DateTime.UtcNow
-            }).ConfigureAwait(true);
-            return true;
-        }
-
-        private void WriteFallbackCsv(string fullPath)
-        {
-            using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
-            sw.WriteLine("RouteId,RouteName,Date,Active,StudentCount,StopCount,School,BusNumber");
-            foreach (var r in Routes)
-            {
-                string Csv(string? v)
-                {
-                    if (string.IsNullOrEmpty(v)) return string.Empty;
-                    var esc = v.Replace("\"", "\"\"", StringComparison.Ordinal);
-                    return "\"" + esc + "\"";
-                }
-
-                sw.WriteLine(string.Join(',', r.RouteId, Csv(r.RouteName), r.Date.ToString("yyyy-MM-dd"), r.IsActive, r.StudentCount ?? 0, r.StopCount ?? 0, Csv(r.School), Csv(r.BusNumber)));
-            }
-        }
-
-        private void WriteFallbackReport(string fullPath)
-        {
-            using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
-            sw.WriteLine($"Route Summary Export {DateTime.UtcNow:O}");
-            sw.WriteLine("====================================");
-            foreach (var r in Routes)
-            {
-                sw.WriteLine($"[{r.RouteId}] {r.RouteName} | School:{r.School} | Bus:{r.BusNumber} | Date:{r.Date:yyyy-MM-dd} | Active:{r.IsActive} | Students:{r.StudentCount ?? 0} | Stops:{r.StopCount ?? 0}");
-            }
-        }
-
-        private static void RevealOrOpen(string path, bool print = false)
-        {
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-            {
-                return;
-            }
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = path,
-                UseShellExecute = true
-            };
-            if (print)
-            {
-                psi.Verb = "print";
-            }
-
-            Process.Start(psi);
-        }
-
         public void Dispose()
         {
             // No-op: context is now always local and disposed via using
@@ -1224,6 +948,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             _generateRoutesRelay?.NotifyCanExecuteChanged();
             _generateTransferRoutesRelay?.NotifyCanExecuteChanged();
             _assignVehicleRelay?.NotifyCanExecuteChanged();
+            _assignDriverRelay?.NotifyCanExecuteChanged();
             _exportCsvRelay?.NotifyCanExecuteChanged();
             _exportReportRelay?.NotifyCanExecuteChanged();
             _printScheduleRelay?.NotifyCanExecuteChanged();

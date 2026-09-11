@@ -81,14 +81,14 @@
                             AutomationProperties.Name="Edit Driver"
                             AutomationProperties.HelpText="Opens form to edit the currently selected driver"
                             ToolTip="Edit selected driver"/>
-                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Label="Deactivate Driver"
+                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Label="Delete Driver"
                             Command="{Binding DeleteDriverCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
                             Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
-                            AutomationProperties.Name="Deactivate Driver"
-                            AutomationProperties.HelpText="Soft-retires the selected driver (Status = Inactive). History is kept. Hard delete only when no route assignments."
-                            ToolTip="Deactivate selected driver (soft-retire — specs/drivers.md)"/>
+                            AutomationProperties.Name="Delete Driver"
+                            AutomationProperties.HelpText="Permanently delete the selected driver when unassigned; otherwise soft-retire as Inactive and remove from this list."
+                            ToolTip="Delete selected driver (soft-retire if routes still reference them)"/>
                     <Separator Margin="8,4,16,4"/>
 
                     <syncfusion:ButtonAdv Name="ViewLicenseButton" Label="View License"

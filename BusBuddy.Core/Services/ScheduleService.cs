@@ -120,6 +120,7 @@ namespace BusBuddy.Core.Services
                 // Apply trip derivation logic before saving
                 Logger.Debug("Applying trip derivation logic before saving");
                 DeriveTripDetails(schedule);
+                ScheduleTimestampNormalizer.NormalizeForPersist(schedule);
 
                 var context = _contextFactory.CreateWriteDbContext();
                 try
@@ -177,6 +178,7 @@ namespace BusBuddy.Core.Services
                 // Apply trip derivation logic before saving
                 Logger.Debug("Applying trip derivation logic before updating");
                 DeriveTripDetails(schedule);
+                ScheduleTimestampNormalizer.NormalizeForPersist(schedule);
 
                 var context = _contextFactory.CreateWriteDbContext();
                 try

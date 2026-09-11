@@ -497,6 +497,7 @@ namespace BusBuddy.WPF
 
                 services.AddSingleton<IUserSettingsService, UserSettingsService>();
                 services.AddScoped<IFuelService, FuelService>();
+                services.AddScoped<IFuelLocationCatalog, FuelLocationCatalog>();
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
                 services.AddScoped<IScheduleService, ScheduleService>();
                 services.AddScoped<IActivityScheduleService, ActivityScheduleService>();

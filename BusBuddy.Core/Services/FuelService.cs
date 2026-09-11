@@ -37,35 +37,58 @@ public class FuelService : IFuelService
 
     public async Task<Fuel> CreateFuelRecordAsync(Fuel fuel)
     {
-        if (fuel == null)
-        {
-
-            throw new ArgumentException("Fuel record cannot be null.", nameof(fuel));
-        }
-
-
-        if (fuel.Gallons.HasValue && fuel.Gallons.Value < 0)
-        {
-
-            throw new ArgumentException("Gallons cannot be negative.", nameof(fuel));
-        }
-
+        FuelRecordValidator.ValidateForPersist(fuel);
 
         using var context = _contextFactory.CreateWriteDbContext();
         context.FuelRecords.Add(fuel);
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Logger.Error(ex, "EF failed creating fuel record VehicleId={VehicleId}", fuel.VehicleFueledId);
+            throw new InvalidOperationException(FormatDbError(ex), ex);
+        }
+
         Logger.Information(
             "Created fuel record {FuelId} VehicleId={VehicleId} Gallons={Gallons}",
             fuel.FuelId, fuel.VehicleFueledId, fuel.Gallons);
+
+        await context.Entry(fuel).Reference(f => f.Vehicle).LoadAsync();
         return fuel;
     }
 
     public async Task<Fuel> UpdateFuelRecordAsync(Fuel fuel)
     {
+        FuelRecordValidator.ValidateForPersist(fuel);
+
         using var context = _contextFactory.CreateWriteDbContext();
         context.FuelRecords.Update(fuel);
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            Logger.Error(ex, "EF failed updating fuel record {FuelId}", fuel.FuelId);
+            throw new InvalidOperationException(FormatDbError(ex), ex);
+        }
+
+        await context.Entry(fuel).Reference(f => f.Vehicle).LoadAsync();
         return fuel;
+    }
+
+    private static string FormatDbError(DbUpdateException ex)
+    {
+        var inner = ex.InnerException?.Message ?? ex.Message;
+        if (inner.Contains("FK_Fuel_Vehicle", StringComparison.OrdinalIgnoreCase)
+            || inner.Contains("foreign key", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Could not save fuel record — the selected bus is missing or invalid.";
+        }
+
+        return $"Could not save fuel record: {inner}";
     }
 
     public async Task<bool> DeleteFuelRecordAsync(int id)
@@ -96,10 +119,14 @@ public class FuelService : IFuelService
 
     public async Task<IEnumerable<Fuel>> GetFuelRecordsByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
+        // Inclusive calendar-day range: [start.Date, end.Date]
+        var start = startDate.Date;
+        var endExclusive = endDate.Date.AddDays(1);
+
         using var context = _contextFactory.CreateDbContext();
         return await context.FuelRecords
             .Include(f => f.Vehicle)
-            .Where(f => f.FuelDate >= startDate && f.FuelDate <= endDate)
+            .Where(f => f.FuelDate >= start && f.FuelDate < endExclusive)
             .OrderByDescending(f => f.FuelDate)
             .ToListAsync();
     }
@@ -156,5 +183,16 @@ public class FuelService : IFuelService
 
         // Default estimate if no MPG data available
         return 7.5m; // Average bus MPG
+    }
+
+    public async Task<IReadOnlyList<string>> GetDistinctFuelLocationsAsync()
+    {
+        using var context = _contextFactory.CreateDbContext();
+        return await context.FuelRecords
+            .Where(f => f.FuelLocation != null && f.FuelLocation != string.Empty)
+            .Select(f => f.FuelLocation)
+            .Distinct()
+            .OrderBy(name => name)
+            .ToListAsync();
     }
 }

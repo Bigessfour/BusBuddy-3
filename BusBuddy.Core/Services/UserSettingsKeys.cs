@@ -19,4 +19,13 @@ public static class UserSettingsKeys
     public const string DistrictBoundingBoxMinLon = "DistrictBoundingBoxMinLon";
     public const string DistrictBoundingBoxMaxLat = "DistrictBoundingBoxMaxLat";
     public const string DistrictBoundingBoxMaxLon = "DistrictBoundingBoxMaxLon";
+
+    /// <summary>Clerk-maintained fuel vendor/location names (yearly bid list).</summary>
+    public const string FuelLocations = "Fuel.Locations";
+
+    /// <summary>UTC timestamp of last successful fuel reconciliation export / save.</summary>
+    public const string FuelLastReconciliationUtc = "Fuel.LastReconciliationUtc";
+
+    /// <summary>Last clerk-entered bulk station gallons for reconciliation.</summary>
+    public const string FuelLastBulkStationGallons = "Fuel.LastBulkStationGallons";
 }
