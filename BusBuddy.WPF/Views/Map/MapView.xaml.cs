@@ -303,6 +303,10 @@ namespace BusBuddy.WPF.Views.Map
                         MapControl.ZoomLevel = vm.MapZoomLevel;
                     }
 
+                    // MarkerTemplate visuals bind Data.MarkerSize / LabelFontSize / ShowCaption.
+                    // Syncfusion CustomDataSymbol does not remeasure when those nested props change —
+                    // re-assign Markers so captions shrink/hide with zoom (UTM clerk report 2026-09-11).
+                    RefreshMarkersOnImageryLayer();
                     ScheduleAttributionRefresh();
                 });
                 return;

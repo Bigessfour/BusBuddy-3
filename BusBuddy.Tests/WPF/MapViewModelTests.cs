@@ -500,9 +500,13 @@ public class MapViewModelTests
         Assert.That(
             MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Home, MapDefaults.DistrictZoomLevel),
             Is.LessThan(MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Pickup, MapDefaults.DistrictZoomLevel)));
-        Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.School, 8), Is.True);
+        Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.School, 8), Is.False);
+        Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.School, MapDefaults.DetailLabelZoomLevel), Is.True);
         Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.Home, 8), Is.False);
         Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.Home, MapDefaults.DetailLabelZoomLevel), Is.True);
+        Assert.That(
+            MapMarkerLabels.ZoomScale(MapDefaults.DistrictZoomLevel),
+            Is.LessThan(MapMarkerLabels.ZoomScale(MapDefaults.DetailLabelZoomLevel)));
 
         Assert.That(MapMarkerLabels.CanMerge(MapMarkerLabels.Kind.Pickup, MapMarkerLabels.Kind.Student), Is.False);
         Assert.That(MapMarkerLabels.CanMerge(MapMarkerLabels.Kind.Home, MapMarkerLabels.Kind.Pickup), Is.False);

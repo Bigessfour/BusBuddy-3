@@ -130,6 +130,18 @@ public class MapViewTests
     }
 
     [Test]
+    public void MapView_RefreshesMarkerTemplatesOnZoomLevelChange()
+    {
+        // Nested Data.MarkerSize / ShowCaption changes do not remeasure CustomDataSymbol templates.
+        var codeBehind = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
+        Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapZoomLevel)"));
+        Assert.That(codeBehind, Does.Contain("RefreshMarkersOnImageryLayer()"));
+        var labels = XamlViewFile.Read("Utilities/MapMarkerLabels.cs");
+        Assert.That(labels, Does.Contain("MapDefaults.ShowsDetailLabels(zoomLevel)"));
+        Assert.That(labels, Does.Not.Contain("kind is Kind.School or Kind.Depot ||"));
+    }
+
+    [Test]
     public void RetiredLeafletWebViewAndMapWinGis_AreGone()
     {
         Assert.That(XamlViewFile.Exists("Views/Map/MapView.xaml"), Is.True);

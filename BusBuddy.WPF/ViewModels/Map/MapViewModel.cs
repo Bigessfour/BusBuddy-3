@@ -287,8 +287,8 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         /// <summary>
-        /// Home / pickup / waypoint captions render only from <see cref="MapDefaults.DetailLabelZoomLevel"/> up;
-        /// schools / depots keep captions. Templates prefer marker <c>ShowCaption</c> (avoids RelativeSource breaks).
+        /// Captions (all kinds) render from <see cref="MapDefaults.DetailLabelZoomLevel"/> up.
+        /// Templates bind marker <c>ShowCaption</c> (avoids RelativeSource breaks).
         /// </summary>
         public bool ShowDetailLabels => MapDefaults.ShowsDetailLabels(MapZoomLevel);
 
