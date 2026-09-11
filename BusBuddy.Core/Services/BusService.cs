@@ -337,7 +337,17 @@ namespace BusBuddy.Core.Services
                     bus.BusId, bus.BusNumber);
 
                 using var context = _contextFactory.CreateWriteDbContext();
-                context.Buses.Update(bus);
+                // Never Attach/Update the full graph — loaded Bus often carries Route/Schedule
+                // navigations that collide with already-tracked Route rows (UTM log 2026-09-11).
+                var existing = await context.Buses.FindAsync(bus.BusId);
+                if (existing is null)
+                {
+                    Logger.Warning("Bus with ID: {BusId} not found for update", bus.BusId);
+                    return false;
+                }
+
+                context.Entry(existing).CurrentValues.SetValues(bus);
+                // Preserve key / identity; SetValues may overwrite BusId with same value (OK).
 
                 using (LogContext.PushProperty("OperationName", "UpdateBus"))
                 using (LogContext.PushProperty("DatabaseOperation", true))
@@ -389,68 +399,84 @@ namespace BusBuddy.Core.Services
             using (LogContext.PushProperty("OperationType", "DeleteBusEntity"))
             using (LogContext.PushProperty("BusId", busId))
             {
-                Logger.Information("Deleting bus entity with ID: {BusId}", busId);
+                Logger.Information("Soft-retiring bus entity with ID: {BusId} (no hard delete while FKs exist)", busId);
 
                 using var context = _contextFactory.CreateWriteDbContext();
                 var bus = await context.Buses.FindAsync(busId);
-                if (bus != null)
-                {
-                    using (LogContext.PushProperty("BusNumber", bus.BusNumber))
-                    {
-                        Logger.Information("Found bus to delete: {BusNumber} (ID: {BusId})",
-                            bus.BusNumber, busId);
-
-                        context.Buses.Remove(bus);
-
-                        using (LogContext.PushProperty("OperationName", "DeleteBus"))
-                        using (LogContext.PushProperty("DatabaseOperation", true))
-                        using (LogContext.PushProperty("BusId", busId))
-                        {
-                            var stopwatch = Stopwatch.StartNew();
-                            Logger.Debug("Starting database operation: DeleteBus");
-
-                            try
-                            {
-                                var result = await context.SaveChangesAsync();
-                                stopwatch.Stop();
-
-                                using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
-                                using (LogContext.PushProperty("ChangedEntities", result))
-                                {
-                                    Logger.Information("Database operation DeleteBus completed in {Duration}ms. Changed {ChangedEntities} entities.",
-                                        stopwatch.ElapsedMilliseconds, result);
-                                }
-
-                                _cacheService.InvalidateBusCache(busId);
-                                _cacheService.InvalidateAllBusCache();
-
-                                if (result > 0)
-                                {
-                                    Logger.Information("Successfully deleted bus with ID: {BusId}", busId);
-                                    return true;
-                                }
-                                else
-                                {
-                                    Logger.Warning("No changes detected when deleting bus with ID: {BusId}", busId);
-                                    return false;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                stopwatch.Stop();
-                                using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
-                                {
-                                    DatabaseUserMessage.LogFailure(Logger, ex, "Database operation DeleteBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
-                                }
-                                throw;
-                            }
-                        }
-                    }
-                }
-                else
+                if (bus is null)
                 {
                     Logger.Warning("Bus with ID: {BusId} not found for deletion", busId);
                     return false;
+                }
+
+                using (LogContext.PushProperty("BusNumber", bus.BusNumber))
+                {
+                    // Clear route vehicle FKs (same soft-retire pattern as drivers).
+                    var assignedRoutes = await context.Routes
+                        .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
+                        .ToListAsync();
+                    foreach (var route in assignedRoutes)
+                    {
+                        if (route.AMVehicleId == busId)
+                        {
+                            route.AMVehicleId = null;
+                            context.Entry(route).Property(r => r.AMVehicleId).IsModified = true;
+                            if (string.Equals(route.BusNumber, bus.BusNumber, StringComparison.OrdinalIgnoreCase))
+                            {
+                                route.BusNumber = string.Empty;
+                                context.Entry(route).Property(r => r.BusNumber).IsModified = true;
+                            }
+                        }
+
+                        if (route.PMVehicleId == busId)
+                        {
+                            route.PMVehicleId = null;
+                            context.Entry(route).Property(r => r.PMVehicleId).IsModified = true;
+                        }
+                    }
+
+                    if (assignedRoutes.Count > 0)
+                    {
+                        Logger.Warning(
+                            "Soft-retiring bus {BusId} while assigned to {RouteCount} route(s) — clearing vehicle FKs",
+                            busId,
+                            assignedRoutes.Count);
+                    }
+
+                    bus.Status = "Retired";
+                    bus.UpdatedDate = DateTime.UtcNow;
+                    context.Entry(bus).Property(b => b.Status).IsModified = true;
+                    context.Entry(bus).Property(b => b.UpdatedDate).IsModified = true;
+
+                    using (LogContext.PushProperty("OperationName", "SoftRetireBus"))
+                    using (LogContext.PushProperty("DatabaseOperation", true))
+                    {
+                        var stopwatch = Stopwatch.StartNew();
+                        try
+                        {
+                            var result = await context.SaveChangesAsync();
+                            stopwatch.Stop();
+                            Logger.Information(
+                                "Soft-retired bus {BusId} in {Duration}ms (changed {Changed})",
+                                busId,
+                                stopwatch.ElapsedMilliseconds,
+                                result);
+
+                            _cacheService.InvalidateBusCache(busId);
+                            _cacheService.InvalidateAllBusCache();
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            stopwatch.Stop();
+                            DatabaseUserMessage.LogFailure(
+                                Logger,
+                                ex,
+                                "Database operation SoftRetireBus failed after {Duration}ms",
+                                stopwatch.ElapsedMilliseconds);
+                            throw;
+                        }
+                    }
                 }
             }
         }

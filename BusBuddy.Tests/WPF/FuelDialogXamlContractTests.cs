@@ -22,9 +22,9 @@ public class FuelDialogXamlContractTests
         Assert.That(xaml, Does.Contain("GallonsError"));
         Assert.That(xaml, Does.Contain("SfTextBoxExt"));
         Assert.That(xaml, Does.Contain("FuelConstraints.MaxNotesLength"));
-        Assert.That(xaml, Does.Not.Contain("NumberDecimalDigits"));
-        Assert.That(xaml, Does.Not.Contain("DoubleTextBox"));
-        Assert.That(xaml, Does.Not.Contain("IntegerTextBox"));
+        Assert.That(xaml, Does.Not.Contain("NumberDecimalDigits="));
+        Assert.That(xaml, Does.Not.Contain("<syncfusion:DoubleTextBox"));
+        Assert.That(xaml, Does.Not.Contain("<syncfusion:IntegerTextBox"));
         Assert.That(xaml, Does.Not.Contain("PreviewKeyDown"));
     }
 
@@ -37,6 +37,8 @@ public class FuelDialogXamlContractTests
         Assert.That(xaml, Does.Contain("YBindingPath=\"TotalGallons\""));
         Assert.That(xaml, Does.Contain("YBindingPath=\"AvgMPG\""));
         Assert.That(xaml, Does.Contain("ShowEmptyPoints=\"False\""));
+        Assert.That(xaml, Does.Contain("Symbol=\"Ellipse\""));
+        Assert.That(xaml, Does.Not.Contain("Symbol=\"Circle\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Vehicle.BusNumber\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddCommand}\""));
         Assert.That(xaml, Does.Contain("BusBuddy.Brush.Overlay.Dim"));

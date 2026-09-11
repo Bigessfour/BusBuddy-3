@@ -283,68 +283,9 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> DeleteDriverAsync(int driverId)
         {
-            try
-            {
-                Logger.Information("Deleting driver with ID: {DriverId}", driverId);
-
-                // First check if the driver is assigned to any routes
-                var (checkContext, disposeCheck) = GetReadContext();
-                bool hasActiveRoutes;
-                try
-                {
-                    hasActiveRoutes = await checkContext.Routes
-                        .CountAsync(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today) > 0;
-                }
-                finally
-                {
-                    if (disposeCheck)
-                    {
-                        await checkContext.DisposeAsync();
-                    }
-                }
-
-                if (hasActiveRoutes)
-                {
-                    Logger.Warning("Cannot delete driver {DriverId} as they are assigned to active routes", driverId);
-                    throw new InvalidOperationException("Cannot delete driver as they are assigned to active routes. Remove from routes first or mark as inactive.");
-                }
-
-                var (context, dispose) = GetWriteContext();
-                var driver = await context.Drivers.FindAsync(driverId);
-                if (driver == null)
-                {
-                    Logger.Warning("Driver with ID {DriverId} not found for deletion", driverId);
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                    return false;
-                }
-
-                context.Drivers.Remove(driver);
-                await context.SaveChangesAsync();
-
-                if (dispose)
-                {
-                    await context.DisposeAsync();
-                }
-
-                // Invalidate cache after deleting driver
-                _cachingService.InvalidateCache("AllDrivers");
-
-                Logger.Information("Successfully deleted driver: {DriverName}", driver.DriverName);
-                return true;
-            }
-            catch (InvalidOperationException)
-            {
-                // Rethrow business rule exceptions
-                throw;
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting driver with ID: {DriverId}", driverId);
-                throw;
-            }
+            // Soft-retire — never hard-delete while Routes / history may reference the driver.
+            Logger.Information("Soft-retiring driver {DriverId} via status Inactive", driverId);
+            return await UpdateDriverStatusAsync(driverId, "Inactive");
         }
 
         #endregion
