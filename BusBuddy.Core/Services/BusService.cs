@@ -411,9 +411,13 @@ namespace BusBuddy.Core.Services
 
                 using (LogContext.PushProperty("BusNumber", bus.BusNumber))
                 {
-                    // Clear route vehicle FKs (same soft-retire pattern as drivers).
+                    // Clear vehicle FKs only on today/future route days; keep historical assignments.
+                    // Always clear denormalized BusNumber when it names this bus (AM or PM).
+                    var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
                     var assignedRoutes = await context.Routes
-                        .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
+                        .Where(r =>
+                            r.Date >= cutoffDate
+                            && (r.AMVehicleId == busId || r.PMVehicleId == busId))
                         .ToListAsync();
                     foreach (var route in assignedRoutes)
                     {
@@ -421,11 +425,6 @@ namespace BusBuddy.Core.Services
                         {
                             route.AMVehicleId = null;
                             context.Entry(route).Property(r => r.AMVehicleId).IsModified = true;
-                            if (string.Equals(route.BusNumber, bus.BusNumber, StringComparison.OrdinalIgnoreCase))
-                            {
-                                route.BusNumber = string.Empty;
-                                context.Entry(route).Property(r => r.BusNumber).IsModified = true;
-                            }
                         }
 
                         if (route.PMVehicleId == busId)
@@ -433,12 +432,18 @@ namespace BusBuddy.Core.Services
                             route.PMVehicleId = null;
                             context.Entry(route).Property(r => r.PMVehicleId).IsModified = true;
                         }
+
+                        if (string.Equals(route.BusNumber, bus.BusNumber, StringComparison.OrdinalIgnoreCase))
+                        {
+                            route.BusNumber = string.Empty;
+                            context.Entry(route).Property(r => r.BusNumber).IsModified = true;
+                        }
                     }
 
                     if (assignedRoutes.Count > 0)
                     {
                         Logger.Warning(
-                            "Soft-retiring bus {BusId} while assigned to {RouteCount} route(s) — clearing vehicle FKs",
+                            "Soft-retiring bus {BusId} while assigned to {RouteCount} future route(s) — clearing vehicle FKs",
                             busId,
                             assignedRoutes.Count);
                     }

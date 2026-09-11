@@ -859,18 +859,21 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Soft-retire (Inactive/Terminated) is allowed even with route assignments — history must remain.
-                // Hard delete still blocks elsewhere. Warn and clear future route FKs when retiring.
+                // Clear driver FKs only on today/future route days (do not rewrite historical assignment display).
                 if (!string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
                     && string.Equals(driver.Status, "Active", StringComparison.OrdinalIgnoreCase))
                 {
+                    var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
                     var assignedRoutes = await context.Routes
-                        .Where(r => r.AMDriverId == driverId || r.PMDriverId == driverId)
+                        .Where(r =>
+                            r.Date >= cutoffDate
+                            && (r.AMDriverId == driverId || r.PMDriverId == driverId))
                         .ToListAsync();
 
                     if (assignedRoutes.Count > 0)
                     {
                         Logger.Warning(
-                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} route(s) — clearing driver FKs",
+                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} future route(s) — clearing driver FKs",
                             driverId,
                             assignedRoutes.Count);
 

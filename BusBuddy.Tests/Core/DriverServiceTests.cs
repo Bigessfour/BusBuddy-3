@@ -49,8 +49,8 @@ namespace BusBuddy.Tests.Core
         {
             _dbContext.Routes.AddRange(new[]
             {
-                new Route { RouteId = 1, RouteName = "Route A", Date = DateTime.Today, IsActive = true, School = "T" },
-                new Route { RouteId = 2, RouteName = "Route B", Date = DateTime.Today, IsActive = true, School = "T" }
+                new Route { RouteId = 1, RouteName = "Route A", Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc), IsActive = true, School = "T" },
+                new Route { RouteId = 2, RouteName = "Route B", Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc), IsActive = true, School = "T" }
             });
 
             _dbContext.Drivers.AddRange(new[]
@@ -162,7 +162,7 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task UpdateDriverStatusAsync_WithActiveAssignments_SoftRetiresAndClearsRouteFks()
         {
-            // Assign driver 1 to AM Route 1
+            // Assign driver 1 to AM Route 1 (seeded as today — treated as future/current cutoff)
             await _driverService.AssignDriverToRouteAsync(1, 1, true);
 
             var ok = await _driverService.UpdateDriverStatusAsync(1, "Inactive");
@@ -174,6 +174,31 @@ namespace BusBuddy.Tests.Core
             stored.Status.Should().Be("Inactive");
             var route = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == 1);
             route.AMDriverId.Should().BeNull();
+        }
+
+        [Test]
+        public async Task UpdateDriverStatusAsync_PreservesHistoricalRouteDriverAssignments()
+        {
+            await using (var seed = new BusBuddyDbContext(_dbOptions))
+            {
+                seed.Routes.Add(new Route
+                {
+                    RouteId = 99,
+                    RouteName = "Past Route",
+                    Date = DateTime.UtcNow.Date.AddDays(-3),
+                    IsActive = true,
+                    School = "T",
+                    AMDriverId = 1
+                });
+                await seed.SaveChangesAsync();
+            }
+
+            var ok = await _driverService.UpdateDriverStatusAsync(1, "Inactive");
+            ok.Should().BeTrue();
+
+            await using var verify = new BusBuddyDbContext(_dbOptions);
+            var past = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == 99);
+            past.AMDriverId.Should().Be(1);
         }
 
         [Test]

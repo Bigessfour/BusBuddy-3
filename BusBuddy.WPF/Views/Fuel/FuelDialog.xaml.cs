@@ -62,11 +62,9 @@ namespace BusBuddy.WPF.Views.Fuel
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             // ComboBoxAdv Text binding may not flush until LostFocus — sync before validate/save.
+            // Always invoke Save: ViewModel toasts when invalid (CanExecute alone would swallow the click).
             _viewModel.SyncLocationFromComboText(FuelLocationCombo.Text);
-            if (_viewModel.SaveCommand.CanExecute(null))
-            {
-                _viewModel.SaveCommand.Execute(null);
-            }
+            _viewModel.SaveCommand.Execute(null);
         }
 
         protected override void OnClosed(EventArgs e)
