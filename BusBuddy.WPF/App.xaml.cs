@@ -150,6 +150,8 @@ namespace BusBuddy.WPF
             _bootstrapLogger?.Information("🔐 Loading API keys from macOS Passwords (Keychain) into process environment...");
 
             // Keys loaded from macOS Passwords (Name = env var) into process environment.
+            // Maps API key only — do not load GCP_BILLING_PROJECT / GOOGLE_CLOUD_PROJECT here.
+            // Those set X-Goog-User-Project and cause HTTP 403 serviceUsageConsumer for API-key clients.
             var keysToLoad = new[]
             {
                 "XAI_API_KEY",
@@ -157,8 +159,6 @@ namespace BusBuddy.WPF
                 "SYNCFUSION_LICENSE_KEY",
                 "SYNCFUSION_API_KEY",
                 "Syncfusion_API_Key",
-                "GCP_BILLING_PROJECT",
-                "GOOGLE_CLOUD_PROJECT",
                 "GOOGLE_MAPS_API_KEY"
             };
 

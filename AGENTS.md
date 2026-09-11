@@ -54,14 +54,14 @@ Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 | `XAI_API_KEY` / `GROK_API_KEY`                 | Optional legacy xAI cloud key (`XAI:Provider=Xai` only). Default AI path is local Ollama — no key required |
 | `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                             |
 | `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                   |
-| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Places + Routes) — optional; fail-open without key              |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `busbuddy-507301`                                                                                          |
+| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Places + Routes + Map Tiles) — optional; fail-open without key  |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Leave unset for API keys (see [GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md))    |
 
 **Setup:** Store Passwords entries (Name = env var). Maps API key is optional (app degrades gracefully). There is no Earth Engine setup script.
 
 ### Windows production
 
-Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired — no Keychain.
+Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired — no Keychain. Do not set `GCP_BILLING_PROJECT` for API-key auth.
 
 ## GCP project map (agents must not hallucinate IDs)
 
@@ -119,7 +119,7 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM), `./S
 | Concern               | File                                                                                                     |
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
 | Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                               |
-| Geo (DB + map)        | `MapView` / `MapViewModel`; Google Map Tiles when keyed (OSM fail-open); camera via `DistrictMapAnchor`  |
+| Geo (DB + map)        | `MapView` / `MapViewModel`; Google Map Tiles only (no OSM); camera via `DistrictMapAnchor`               |
 | Geo (district config) | Settings → bus barn + bbox (`IDistrictSettingsAccessor`); not a baked-in town                            |
 | Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Places + Routes; not Earth Engine |
 | Geo (GCP inspect)     | `gcloud` + `.github/scripts/gcloud-maps-status.sh`; Cursor MCP `gcloud` in `.cursor/mcp.json`            |

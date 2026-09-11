@@ -12,14 +12,17 @@ public class GoogleMapsOptionsQuotaProjectTests
 {
     private string? _previousBilling;
     private string? _previousCloud;
+    private string? _previousMapsKey;
 
     [SetUp]
     public void SetUp()
     {
         _previousBilling = Environment.GetEnvironmentVariable("GCP_BILLING_PROJECT");
         _previousCloud = Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT");
+        _previousMapsKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY");
         Environment.SetEnvironmentVariable("GCP_BILLING_PROJECT", null);
         Environment.SetEnvironmentVariable("GOOGLE_CLOUD_PROJECT", null);
+        Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", null);
     }
 
     [TearDown]
@@ -27,6 +30,25 @@ public class GoogleMapsOptionsQuotaProjectTests
     {
         Environment.SetEnvironmentVariable("GCP_BILLING_PROJECT", _previousBilling);
         Environment.SetEnvironmentVariable("GOOGLE_CLOUD_PROJECT", _previousCloud);
+        Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", _previousMapsKey);
+    }
+
+    [Test]
+    public void DescribeQuotaAndApiKeySource_ReportWhichInputWon()
+    {
+        Assert.That(GoogleMapsOptions.DescribeQuotaSource(null), Is.EqualTo("none"));
+        Assert.That(GoogleMapsOptions.DescribeQuotaSource("from-json"), Is.EqualTo("config:GoogleMaps:QuotaProject"));
+
+        Environment.SetEnvironmentVariable("GCP_BILLING_PROJECT", "busbuddy-507301");
+        Assert.That(GoogleMapsOptions.DescribeQuotaSource("from-json"), Is.EqualTo("env:GCP_BILLING_PROJECT"));
+
+        Environment.SetEnvironmentVariable("GCP_BILLING_PROJECT", null);
+        Environment.SetEnvironmentVariable("GOOGLE_CLOUD_PROJECT", "busbuddy-507301");
+        Assert.That(GoogleMapsOptions.DescribeQuotaSource("from-json"), Is.EqualTo("env:GOOGLE_CLOUD_PROJECT"));
+
+        Assert.That(GoogleMapsOptions.DescribeApiKeySource(null), Is.EqualTo("none"));
+        Assert.That(GoogleMapsOptions.DescribeApiKeySource("key"), Is.EqualTo("config:GoogleMaps:ApiKey"));
+        Assert.That(GoogleMapsOptions.DescribeApiKeySource("${SECRET}"), Is.EqualTo("none"));
     }
 
     [Test]
@@ -51,11 +73,12 @@ public class GoogleMapsOptionsQuotaProjectTests
     }
 
     [Test]
-    public void ResolveQuotaProject_UsesBoundConfigThenDefault()
+    public void ResolveQuotaProject_UsesBoundConfigOrEmptyWhenUnset()
     {
         Assert.That(GoogleMapsOptions.ResolveQuotaProject("from-json"), Is.EqualTo("from-json"));
-        Assert.That(GoogleMapsOptions.ResolveQuotaProject("  "), Is.EqualTo(GoogleMapsOptions.DefaultQuotaProject));
-        Assert.That(GoogleMapsOptions.ResolveQuotaProject(null), Is.EqualTo("busbuddy-507301"));
+        Assert.That(GoogleMapsOptions.ResolveQuotaProject("  "), Is.EqualTo(string.Empty));
+        Assert.That(GoogleMapsOptions.ResolveQuotaProject(null), Is.EqualTo(string.Empty));
+        Assert.That(GoogleMapsOptions.CanonicalProjectId, Is.EqualTo("busbuddy-507301"));
     }
 
     [Test]
@@ -80,12 +103,12 @@ public class GoogleMapsOptionsQuotaProjectTests
     }
 
     [Test]
-    public void AddGoogleMapsOptions_KeepsBoundQuotaWhenEnvUnset()
+    public void AddGoogleMapsOptions_OmitsQuotaHeaderWhenEnvAndBoundEmpty()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [$"{GoogleMapsOptions.SectionName}:QuotaProject"] = "busbuddy-507301",
+                [$"{GoogleMapsOptions.SectionName}:QuotaProject"] = "",
             })
             .Build();
 
@@ -95,6 +118,6 @@ public class GoogleMapsOptionsQuotaProjectTests
 
         Assert.That(
             sp.GetRequiredService<IOptions<GoogleMapsOptions>>().Value.QuotaProject,
-            Is.EqualTo("busbuddy-507301"));
+            Is.EqualTo(string.Empty));
     }
 }

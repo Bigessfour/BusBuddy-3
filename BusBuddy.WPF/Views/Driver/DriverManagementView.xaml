@@ -68,13 +68,13 @@
                                       AutomationProperties.HelpText="Edit the selected driver"
                                       ToolTip="Edit selected driver"/>
 
-                <syncfusion:ButtonAdv Label="Delete Driver"
+                <syncfusion:ButtonAdv Label="Deactivate Driver"
                                       Style="{StaticResource DriverMgmtButton}"
                                       Command="{Binding DeleteDriverCommand}"
                                       IsEnabled="{Binding HasSelectedDriver}"
-                                      AutomationProperties.Name="Delete Driver"
-                                      AutomationProperties.HelpText="Delete the selected driver"
-                                      ToolTip="Delete selected driver"/>
+                                      AutomationProperties.Name="Deactivate Driver"
+                                      AutomationProperties.HelpText="Soft-retire the selected driver"
+                                      ToolTip="Deactivate selected driver (soft-retire)"/>
             </StackPanel>
         </Border>
 
@@ -82,8 +82,14 @@
                 Background="{DynamicResource BusBuddy.Brush.Panel.Content}"
                 Margin="10"
                 CornerRadius="5">
-            <syncfusion:SfDataGrid ItemsSource="{Binding Drivers}"
-                                   SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+            <syncfusion:SfDataGrid Grid.Row="0"
+                                   ItemsSource="{Binding FilteredDrivers}"
+                                   SelectedItem="{Binding SelectedDriver, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                    AutoGenerateColumns="False"
                                    AllowEditing="False"
                                    AllowSorting="True"
@@ -123,18 +129,19 @@
                                                    MinimumWidth="100"
                                                    Pattern="ShortDate"/>
                 </syncfusion:SfDataGrid.Columns>
-
-                <syncfusion:SfDataGrid.TableSummaryRows>
-                    <syncfusion:GridTableSummaryRow Title="Total Drivers: {TotalSummary}"
-                                                    ShowSummaryInRow="True">
-                        <syncfusion:GridTableSummaryRow.SummaryColumns>
-                            <syncfusion:GridSummaryColumn Name="TotalSummary"
-                                                          MappingName="DriverName"
-                                                          SummaryType="CountAggregate"/>
-                        </syncfusion:GridTableSummaryRow.SummaryColumns>
-                    </syncfusion:GridTableSummaryRow>
-                </syncfusion:SfDataGrid.TableSummaryRows>
             </syncfusion:SfDataGrid>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="10,0,10,10">
+                    <TextBlock Text="Total: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding TotalDrivers, Mode=OneWay}" FontWeight="Bold" Margin="0,0,12,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"/>
+                    <TextBlock Text="Active: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding ActiveDrivers, Mode=OneWay}" FontWeight="Bold" Margin="0,0,12,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}"/>
+                    <TextBlock Text="Training Pending: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding TrainingPendingDrivers, Mode=OneWay}" FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

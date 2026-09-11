@@ -9,7 +9,8 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 ## Invariants
 
 - MUST use Syncfusion `SfMap` as the only map surface in the WPF client.
-- MUST use official Google Map Tiles (`tile.googleapis.com` via `GoogleMapTilesImageryLayer` / `MapTileBootstrap`) as the preferred basemap, with OSM as fail-open if Google tiles cannot load.
+- MUST use official Google Map Tiles (`tile.googleapis.com` via `GoogleMapTilesImageryLayer` / `MapTileBootstrap`) as the **only** basemap. No OpenStreetMap, Mapbox, or unofficial `mt1.google.com` tiles.
+- MUST fail closed on the basemap when `GOOGLE_MAPS_API_KEY` / Map Tiles session is unavailable (markers/polylines may still plot on an empty imagery layer; show Google attribution only when Google tiles are active).
 - MUST geocode and validate with Google Address Validation + Geocoding. MUST build drive paths with Google Routes.
 - MUST plot only validated coordinates. No pin at 0,0, no US centroid, no guessed “close enough” point.
 - MUST default the clerk map center to Lamar/Wiley CO (~38.0872, -102.6208) when nothing is selected. Do not use `MapDefaults` US-centroid fallback as the district home view.
@@ -22,16 +23,16 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 
 ## What the map shows
 
-| Layer                        | When                                       | Source                                     |
-| ---------------------------- | ------------------------------------------ | ------------------------------------------ |
-| Basemap tiles                | Always                                     | Google tiles; OSM fail-open                |
-| Schools                      | Always (active)                            | `IDestinationService`                      |
-| Catalog pickup stops         | Always (active)                            | `IPickupStopService`                       |
-| Student homes                | Selected route / search / eligibility work | Student + geocoder                         |
-| Depot / fuel / shop          | Operational toggle                         | `DistrictDepot` / location types           |
-| Route polyline               | Selected route                             | Waypoints → Routes API → `RouteLinePoints` |
-| Trip origin/destination/path | Selected trip                              | Trip locations → Routes API                |
-| Bus number label             | Selected route                             | Default or session bus — **not** live XY   |
+| Layer                        | When                                       | Source                                               |
+| ---------------------------- | ------------------------------------------ | ---------------------------------------------------- |
+| Basemap tiles                | Always                                     | Google Map Tiles only (empty if session unavailable) |
+| Schools                      | Always (active)                            | `IDestinationService`                                |
+| Catalog pickup stops         | Always (active)                            | `IPickupStopService`                                 |
+| Student homes                | Selected route / search / eligibility work | Student + geocoder                                   |
+| Depot / fuel / shop          | Operational toggle                         | `DistrictDepot` / location types                     |
+| Route polyline               | Selected route                             | Waypoints → Routes API → `RouteLinePoints`           |
+| Trip origin/destination/path | Selected trip                              | Trip locations → Routes API                          |
+| Bus number label             | Selected route                             | Default or session bus — **not** live XY             |
 
 Parent notification of “where the student is picked up” uses the published stop and time from `specs/routes.md`, optionally illustrated by this map. It does not use a moving vehicle.
 
@@ -56,7 +57,7 @@ The map does not need its own table of pins. Persist facts on Location and Route
 
 ## Behaviors / UI
 
-- First open: center ~38.0872, -102.6208, district-appropriate zoom, Google tiles if the key works, else OSM.
+- First open: center ~38.0872, -102.6208, district-appropriate zoom, Google Map Tiles when the key/session works; otherwise empty basemap with a clear status (not OSM).
 - Load markers for schools and catalog stops that have coordinates. Skip incomplete addresses and list them as “needs validation.”
 - Selecting a route: fit (or center) on that path, draw polyline, show that run’s stops and eligible student homes.
 - Refresh path after stop order changes. Stale polylines are a bug.
@@ -95,7 +96,7 @@ Distance and duration from Google Routes on the current published waypoint list 
 - Clerk opens District Map before any selection: Wiley/Lamar area, schools and catalog stops visible, no bus moving.
 - Select special-needs AM Route 5: pins on validated homes + school, polyline from Routes API in stop order, label “#5”.
 - New student address fails validation: form stays incomplete, no pin, route cannot add that stop yet.
-- Google tiles fail: OSM tiles still render markers and polyline. Geocoding/Routes still use Google APIs when the key is present.
+- Google tiles fail: basemap stays empty; markers and polyline still plot when coordinates exist. Geocoding/Routes still use Google APIs when the key is present.
 
 ## Agent instructions
 

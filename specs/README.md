@@ -34,7 +34,7 @@ Students (who rides)
 - **PickupMode** is `Home` or `CatalogStop`. Special needs ⇒ home pickup on a special-needs route.
 - Same-day **“not riding”** is a **rider exception**, not a route rewrite.
 - **`MappingService.cs`** is AutoMapper (object mapping), not geospatial maps.
-- **Maps:** Syncfusion `SfMap` + official Google Map Tiles (OSM fail-open). Geocode/validate with Google Address Validation; paths with Google Routes.
+- **Maps:** Syncfusion `SfMap` + official Google Map Tiles only (no OSM). Geocode/validate with Google Address Validation; paths with Google Routes.
 - **Default clerk map center:** Lamar/Wiley CO (~38.0872, -102.6208). Not `MapDefaults` US centroid as the home view.
 - **Live fleet GPS is deferred.** Do not enable `IsLiveTrackingEnabled` to “finish” the map.
 - Plot only **validated** lat/lng. No 0,0 pins, no US centroid guesses.

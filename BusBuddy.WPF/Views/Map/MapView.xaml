@@ -31,22 +31,41 @@
                 <Setter Property="SmallIcon" Value="{x:Null}"/>
                 <Setter Property="Padding" Value="10,8"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="Margin" Value="0,4"/>
+                <!-- Do not set Background/Foreground here — FluentDark paints chrome via SfSkinManager.
+                     Local Background overrides break pressed/hover and can hide Label on the map. -->
             </Style>
-            <Style x:Key="MapOverlayWpfButtonStyle" TargetType="Button">
+            <!-- Overlay buttons sit on imagery — explicit brushes + pressed/hover so chrome stays visible. -->
+            <Style x:Key="MapOverlayButtonStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
                 <Setter Property="Height" Value="40"/>
                 <Setter Property="MinWidth" Value="88"/>
                 <Setter Property="Padding" Value="12,8"/>
                 <Setter Property="Margin" Value="4,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
                 <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Cursor" Value="Hand"/>
-            </Style>
-            <Style x:Key="MapOverlayButtonStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="Padding" Value="12,8"/>
-                <Setter Property="MinWidth" Value="88"/>
-                <Setter Property="Margin" Value="4,0"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#1177BB"/>
+                        <Setter Property="BorderBrush" Value="#1177BB"/>
+                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#0A4F7A"/>
+                        <Setter Property="BorderBrush" Value="#0A4F7A"/>
+                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.55"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
@@ -112,7 +131,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Base map provider shown via MapAttribution (Google Maps or OSM) -->
+                    <!-- Base map provider shown via MapAttribution (Google Map Tiles only) -->
                 </StackPanel>
             </Grid>
         </Border>
@@ -149,12 +168,7 @@
                 <syncfusion:ButtonAdv Label="Center on Stops"
                               AutomationProperties.Name="Center on plotted stops"
                               ToolTip="Center on plotted schools, stops, and route markers (live fleet GPS is deferred)"
-                              Command="{Binding CenterOnFleetCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
+                              Command="{Binding CenterOnFleetCommand}"/>
 
                 <TextBlock Text="Live fleet GPS tracking is deferred — not enabled in this build"
                            FontSize="12"
@@ -180,66 +194,34 @@
 
                 <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
-                              ToolTip="Show the first route that has stored waypoints"
-                              Command="{Binding ShowRoutesCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
+                              ToolTip="Show the first route with waypoints; refreshes the drive path via Google Routes when a key is configured"
+                              Command="{Binding ShowRoutesCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Export Route"
                               AutomationProperties.Name="Export Route"
                               ToolTip="Save the selected route waypoints as GeoJSON. Enable in Settings."
-                              Command="{Binding ExportRouteDataCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
+                              Command="{Binding ExportRouteDataCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Show Schools"
                               AutomationProperties.Name="Show Schools"
-                              ToolTip="Show school destinations"
-                              Command="{Binding ShowSchoolsCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
+                              ToolTip="Show school destinations with validated coordinates"
+                              Command="{Binding ShowSchoolsCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Plot Pickup Stops"
                               AutomationProperties.Name="Plot Pickup Stops"
                               ToolTip="Show catalog pickup stops (corners and shared boarding points)"
-                              Command="{Binding PlotPickupStopsCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
+                              Command="{Binding PlotPickupStopsCommand}"/>
 
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                    <!-- Plot students already in the system (auto geocode missing coordinates) -->
                     <syncfusion:ButtonAdv Label="Plot Students"
-                                          ToolTip="Plot catalog pickup stops when assigned, otherwise home; geocode missing homes"
+                                          ToolTip="Plot catalog pickup stops when assigned, otherwise home; geocode missing homes via Google Address Validation"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
-                                          AutomationProperties.Name="Plot Students"
-                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                          Padding="10,8"
-                                          Margin="0,4,0,0"
-                                          HorizontalAlignment="Stretch"/>
+                                          AutomationProperties.Name="Plot Students"/>
 
-                <!-- Generate Eligibility Route PDF (auto-build pseudo route) -->
                 <syncfusion:ButtonAdv Label="Generate Eligibility PDF"
                               AutomationProperties.Name="Generate Eligibility PDF"
                               ToolTip="Generate eligibility route PDF"
-                              Command="{Binding GenerateEligibilityRoutePdfCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4,0,0"
-                              HorizontalAlignment="Stretch"/>
+                              Command="{Binding GenerateEligibilityRoutePdfCommand}"/>
                             </StackPanel>
                         </Border>
 
@@ -302,54 +284,84 @@
                         <Grid>
                             <Grid.Resources>
                                 <!--
-                                    Syncfusion MarkerTemplateSelector: school vs home vs stop (docs MapLayer.MarkerTemplateSelector).
-                                    Template DataContext is the MapMarker. Home/stop captions collapse below
-                                    MapDefaults.DetailLabelZoomLevel via MapViewModel.ShowDetailLabels so a
-                                    county-wide plot reads as dots; school captions always show.
+                                    Syncfusion MarkerTemplate DataContext is CustomDataSymbol (not MapMarker).
+                                    Bound marker is CustomDataSymbol.Data — use Data.Caption / Data.MarkerSize / …
+                                    Docs: help.syncfusion.com MarkerTemplateSelector note on CustomDataSymbol.
                                 -->
                                 <DataTemplate x:Key="SchoolMarkerTemplate">
-                                    <StackPanel Orientation="Vertical" Margin="-10,-28,0,0">
-                                        <Ellipse Width="16" Height="16"
+                                    <StackPanel Orientation="Vertical"
+                                                HorizontalAlignment="Center"
+                                                Margin="0,-18,0,0"
+                                                ToolTip="{Binding Data.Caption}">
+                                        <Ellipse Width="{Binding Data.MarkerSize}"
+                                                 Height="{Binding Data.MarkerSize}"
+                                                 HorizontalAlignment="Center"
                                                  Fill="{DynamicResource BusBuddy.Brush.Primary}"
                                                  Stroke="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                                                 StrokeThickness="2"/>
-                                        <TextBlock Text="{Binding Label}"
-                                                   FontSize="11"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                                                   Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
-                                                   Padding="4,1"
-                                                   Margin="-16,2,0,0"/>
+                                                 StrokeThickness="1.5"/>
+                                        <Border HorizontalAlignment="Center"
+                                                Margin="0,2,0,0"
+                                                CornerRadius="2"
+                                                Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                                Padding="3,0"
+                                                Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="{Binding Data.Caption}"
+                                                       FontSize="{Binding Data.LabelFontSize}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="120"/>
+                                        </Border>
                                     </StackPanel>
                                 </DataTemplate>
                                 <DataTemplate x:Key="StopMarkerTemplate">
-                                    <StackPanel Orientation="Vertical" Margin="-8,-24,0,0" ToolTip="{Binding Label}">
-                                        <Ellipse Width="12" Height="12"
-                                                 Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                                    <StackPanel Orientation="Vertical"
+                                                HorizontalAlignment="Center"
+                                                Margin="0,-14,0,0"
+                                                ToolTip="{Binding Data.Caption}">
+                                        <Ellipse Width="{Binding Data.MarkerSize}"
+                                                 Height="{Binding Data.MarkerSize}"
+                                                 HorizontalAlignment="Center"
+                                                 Fill="#E85D4C"
                                                  Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                                  StrokeThickness="1"/>
-                                        <TextBlock Text="{Binding Label}"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                                                   Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
-                                                   Padding="4,1"
-                                                   Margin="-12,2,0,0"
-                                                   Visibility="{Binding DataContext.ShowDetailLabels, RelativeSource={RelativeSource AncestorType={x:Type local:MapView}}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        <Border HorizontalAlignment="Center"
+                                                Margin="0,1,0,0"
+                                                CornerRadius="2"
+                                                Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                                Padding="3,0"
+                                                Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="{Binding Data.Caption}"
+                                                       FontSize="{Binding Data.LabelFontSize}"
+                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="110"/>
+                                        </Border>
                                     </StackPanel>
                                 </DataTemplate>
                                 <DataTemplate x:Key="HomeMarkerTemplate">
-                                    <StackPanel Orientation="Vertical" Margin="-6,-18,0,0" ToolTip="{Binding Label}">
-                                        <Ellipse Width="8" Height="8"
-                                                 Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                                    <StackPanel Orientation="Vertical"
+                                                HorizontalAlignment="Center"
+                                                Margin="0,-10,0,0"
+                                                ToolTip="{Binding Data.Caption}">
+                                        <Ellipse Width="{Binding Data.MarkerSize}"
+                                                 Height="{Binding Data.MarkerSize}"
+                                                 HorizontalAlignment="Center"
+                                                 Fill="#5B8DEF"
                                                  Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                                  StrokeThickness="1"/>
-                                        <TextBlock Text="{Binding Label}"
-                                                   FontSize="9"
-                                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                                                   Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
-                                                   Padding="3,1"
-                                                   Margin="-10,2,0,0"
-                                                   Visibility="{Binding DataContext.ShowDetailLabels, RelativeSource={RelativeSource AncestorType={x:Type local:MapView}}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        <Border HorizontalAlignment="Center"
+                                                Margin="0,1,0,0"
+                                                CornerRadius="2"
+                                                Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                                Padding="2,0"
+                                                Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <TextBlock Text="{Binding Data.Caption}"
+                                                       FontSize="{Binding Data.LabelFontSize}"
+                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       MaxWidth="100"/>
+                                        </Border>
                                     </StackPanel>
                                 </DataTemplate>
                                 <utils:MapMarkerTemplateSelector x:Key="DistrictMarkerTemplateSelector"
@@ -358,7 +370,8 @@
                                                                  StopTemplate="{StaticResource StopMarkerTemplate}"/>
                             </Grid.Resources>
                             <!--
-                                SfMap — Map Tiles API (Google) when session ready; OSM fail-open via GetUri.
+                                SfMap — Google Map Tiles via ImageryLayer.UrlTemplate only (no OSM).
+                                LayerType=Bing with empty key is a no-op until UrlTemplate is set (avoids Syncfusion HTTP OSM).
                                 Camera is Center + ZoomLevel only. Do not bind ImageryLayer.Radius: it doubles the
                                 bounds before solving zoom and re-fits on every SizeChanged, overriding user zoom.
                             -->
@@ -375,7 +388,7 @@
                                         SizeChanged="GeoMap_SizeChanged">
                                 <maps:SfMap.Layers>
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
-                                                       LayerType="OSM"
+                                                       LayerType="Bing"
                                                        Center="{Binding MapCenter, Mode=TwoWay}"
                                                        Markers="{Binding MapMarkers}"
                                                        MarkerTemplateSelector="{StaticResource DistrictMarkerTemplateSelector}">
@@ -418,43 +431,37 @@
                         </Grid>
                     </Border>
 
-                    <!-- Map Overlay Controls — ButtonAdv Label captions (Content is ignored by Syncfusion) -->
+                    <!-- Map Overlay Controls — Syncfusion ButtonAdv (Label, not Content); pressed/hover stay visible on tiles -->
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="32,32,32,0">
-                        <Button Content="Zoom In"
-                                Style="{StaticResource MapOverlayWpfButtonStyle}"
-                                ToolTip="Zoom in"
-                                AutomationProperties.Name="Zoom In"
-                                Command="{Binding ZoomInCommand}"/>
-                        <Button Content="Zoom Out"
-                                Style="{StaticResource MapOverlayWpfButtonStyle}"
-                                ToolTip="Zoom out"
-                                AutomationProperties.Name="Zoom Out"
-                                Command="{Binding ZoomOutCommand}"/>
+                        <syncfusion:ButtonAdv Label="Zoom In"
+                                              Style="{StaticResource MapOverlayButtonStyle}"
+                                              ToolTip="Zoom in"
+                                              AutomationProperties.Name="Zoom In"
+                                              Command="{Binding ZoomInCommand}"/>
+                        <syncfusion:ButtonAdv Label="Zoom Out"
+                                              Style="{StaticResource MapOverlayButtonStyle}"
+                                              ToolTip="Zoom out"
+                                              AutomationProperties.Name="Zoom Out"
+                                              Command="{Binding ZoomOutCommand}"/>
                         <syncfusion:ButtonAdv Label="Home"
                                               Style="{StaticResource MapOverlayButtonStyle}"
                                               ToolTip="Reset map view"
                                               AutomationProperties.Name="Reset Map View"
-                                              Command="{Binding ResetViewCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                                              Command="{Binding ResetViewCommand}"/>
                         <syncfusion:ButtonAdv Label="Refresh"
                                               Style="{StaticResource MapOverlayButtonStyle}"
-                                              ToolTip="Refresh Map"
+                                              ToolTip="Refresh map; recompute selected route drive path via Google Routes"
                                               AutomationProperties.Name="Refresh Map"
                                               Command="{Binding RefreshMapCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
                                               Margin="8,0,0,0"/>
                         <syncfusion:ButtonAdv Label="Print"
                                               Style="{StaticResource MapOverlayButtonStyle}"
                                               ToolTip="Print Route Map"
                                               AutomationProperties.Name="Print Route Map"
                                               Command="{Binding PrintRouteMapsCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
                                               Margin="8,0,0,0"/>
                     </StackPanel>
 
@@ -478,7 +485,7 @@
                                    SnapsToDevicePixels="True"
                                    AutomationProperties.Name="Google Maps"/>
                             <TextBlock x:Name="MapAttributionText"
-                                       Text="© OpenStreetMap contributors"
+                                       Text="Map tiles unavailable"
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>

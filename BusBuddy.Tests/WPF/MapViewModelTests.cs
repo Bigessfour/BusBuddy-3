@@ -99,6 +99,9 @@ public class MapViewModelTests
         vm.SetMapView(38.1535, -102.7195, MapDefaults.DetailLabelZoomLevel - 1);
         var center = vm.MapCenter;
         Assert.That(vm.ShowDetailLabels, Is.False);
+        vm.PlotStop(38.15, -102.72, null, MapMarkerLabels.ForHome("Ada"), MapMarkerLabels.Kind.Home);
+        Assert.That(vm.MapMarkers[0].ShowCaption, Is.False);
+        var sizeAtOverview = vm.MapMarkers[0].MarkerSize;
 
         var raised = new List<string>();
         vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? string.Empty);
@@ -110,10 +113,14 @@ public class MapViewModelTests
         Assert.That(raised, Does.Contain(nameof(MapViewModel.MapZoomLevel)));
         Assert.That(raised, Does.Contain(nameof(MapViewModel.ShowDetailLabels)));
         Assert.That(raised, Does.Not.Contain(nameof(MapViewModel.MapCenter)));
+        Assert.That(vm.MapMarkers[0].ShowCaption, Is.True);
+        Assert.That(vm.MapMarkers[0].Caption, Is.EqualTo("Ada"));
+        Assert.That(vm.MapMarkers[0].MarkerSize, Is.GreaterThan(sizeAtOverview));
 
         vm.ZoomOutCommand.Execute(null);
         Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DetailLabelZoomLevel - 1));
         Assert.That(vm.ShowDetailLabels, Is.False);
+        Assert.That(vm.MapMarkers[0].ShowCaption, Is.False);
 
         vm.SetMapView(38.1535, -102.7195, MapDefaults.MaxZoomLevel);
         vm.ZoomInCommand.Execute(null);
@@ -129,7 +136,7 @@ public class MapViewModelTests
         var changed = 0;
         marker.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MapViewModel.MapMarker.Label))
+            if (e.PropertyName == nameof(MapMarker.Label))
             {
                 changed++;
             }
@@ -305,10 +312,13 @@ public class MapViewModelTests
         var vm = await CreateSettledViewModelAsync(routing: routing.Object);
 
         vm.SelectedRoute = route;
-        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+        await WaitUntilAsync(() =>
+            vm.RouteLinePoints.Count >= 2
+            && vm.MapMarkers.Count(m => m.Kind == MapMarkerLabels.Kind.Waypoint) >= 2);
 
         Assert.That(vm.RouteLinePoints, Has.Count.EqualTo(2));
-        Assert.That(vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true), Is.EqualTo(2));
+        Assert.That(vm.MapMarkers.Count(m => m.Kind == MapMarkerLabels.Kind.Waypoint), Is.EqualTo(2));
+        Assert.That(vm.MapMarkers.Count(m => m.Caption is "Start" or "End"), Is.EqualTo(2));
         routing.VerifyNoOtherCalls();
     }
 
@@ -326,14 +336,17 @@ public class MapViewModelTests
         };
         var vm = await CreateSettledViewModelAsync();
         vm.SelectedRoute = route;
-        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+        await WaitUntilAsync(() =>
+            vm.RouteLinePoints.Count >= 2
+            && vm.MapMarkers.Count(m => m.Kind == MapMarkerLabels.Kind.Waypoint) >= 2);
 
         var decoded = EncodedPolylineCodec.Decode(encoded);
         Assert.That(vm.RouteLinePoints.Count, Is.EqualTo(decoded.Count));
         Assert.That(decoded.Count, Is.GreaterThan(2));
         Assert.That(
-            vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true),
+            vm.MapMarkers.Count(m => m.Kind == MapMarkerLabels.Kind.Waypoint),
             Is.EqualTo(2));
+        Assert.That(vm.MapMarkers.Count(m => m.Caption is "Start" or "End"), Is.EqualTo(2));
     }
 
     [Test]
@@ -480,6 +493,17 @@ public class MapViewModelTests
         Assert.That(MapMarkerLabels.IsSchoolVisual(MapMarkerLabels.Kind.School), Is.True);
         Assert.That(MapMarkerLabels.IsSchoolVisual(MapMarkerLabels.Kind.Pickup), Is.False);
 
+        Assert.That(MapMarkerLabels.CaptionFrom(MapMarkerLabels.ForSchool("Wiley")), Is.EqualTo("Wiley"));
+        Assert.That(MapMarkerLabels.CaptionFrom(MapMarkerLabels.ForHome("Ada")), Is.EqualTo("Ada"));
+        Assert.That(MapMarkerLabels.CaptionFrom(MapMarkerLabels.ForPickup("Oak")), Is.EqualTo("Oak"));
+        Assert.That(MapMarkerLabels.ZoomScale(MapDefaults.DetailLabelZoomLevel), Is.EqualTo(1.0).Within(0.01));
+        Assert.That(
+            MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Home, MapDefaults.DistrictZoomLevel),
+            Is.LessThan(MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Pickup, MapDefaults.DistrictZoomLevel)));
+        Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.School, 8), Is.True);
+        Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.Home, 8), Is.False);
+        Assert.That(MapMarkerLabels.ShowsCaption(MapMarkerLabels.Kind.Home, MapDefaults.DetailLabelZoomLevel), Is.True);
+
         Assert.That(MapMarkerLabels.CanMerge(MapMarkerLabels.Kind.Pickup, MapMarkerLabels.Kind.Student), Is.False);
         Assert.That(MapMarkerLabels.CanMerge(MapMarkerLabels.Kind.Home, MapMarkerLabels.Kind.Pickup), Is.False);
         Assert.That(MapMarkerLabels.CanMerge(MapMarkerLabels.Kind.School, MapMarkerLabels.Kind.Pickup), Is.False);
@@ -580,8 +604,10 @@ public class MapViewModelTests
         var adaHome = vm.MapMarkers.Single(m => m.Label == MapMarkerLabels.ForHome("Ada"));
         Assert.That(adaHome.Kind, Is.EqualTo(MapMarkerLabels.Kind.Home));
         Assert.That(adaHome.LatitudeDegrees, Is.EqualTo(38.0).Within(0.0001));
-        Assert.That(adaHome.MarkerSize, Is.EqualTo(MapMarkerLabels.HomeMarkerSize));
+        Assert.That(adaHome.MarkerSize, Is.EqualTo(MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Home, vm.MapZoomLevel)));
         Assert.That(adaHome.MarkerSize, Is.LessThan(pickupMarker.MarkerSize));
+        Assert.That(adaHome.Caption, Is.EqualTo("Ada"));
+        Assert.That(pickupMarker.Caption, Is.EqualTo("Oak & 4th"));
         geocode.VerifyNoOtherCalls();
     }
 
@@ -768,7 +794,7 @@ public class MapViewModelTests
         Assert.That(vm.MapMarkers[0].Kind, Is.EqualTo(MapMarkerLabels.Kind.Home));
         Assert.That(vm.MapMarkers[0].Label, Is.EqualTo(MapMarkerLabels.ForHome("Fay")));
         Assert.That(vm.MapMarkers[0].LatitudeDegrees, Is.EqualTo(38.12).Within(0.0001));
-        Assert.That(vm.MapMarkers[0].MarkerSize, Is.EqualTo(MapMarkerLabels.HomeMarkerSize));
+        Assert.That(vm.MapMarkers[0].MarkerSize, Is.EqualTo(MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Home, vm.MapZoomLevel)));
         students.Verify(s => s.UpdateStudentAsync(It.Is<Student>(x => x.StudentId == 8)), Times.Once);
     }
 
@@ -847,7 +873,7 @@ public class MapViewModelTests
             Is.LessThan(vm.MapMarkers.Single(m => m.Kind == MapMarkerLabels.Kind.Pickup).MarkerSize));
         Assert.That(
             vm.MapMarkers.Single(m => m.Kind == MapMarkerLabels.Kind.Home).MarkerSize,
-            Is.EqualTo(MapMarkerLabels.HomeMarkerSize));
+            Is.EqualTo(MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Home, vm.MapZoomLevel)));
     }
 
     [Test]

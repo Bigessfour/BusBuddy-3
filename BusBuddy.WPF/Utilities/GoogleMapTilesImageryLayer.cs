@@ -1,82 +1,93 @@
 using System;
-using BusBuddy.Core.Mapping;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
 using Serilog;
 using Syncfusion.UI.Xaml.Maps;
 
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Syncfusion imagery layer for the District Map.
-/// <para>
-/// Google: resolves each tile through <see cref="GetUri"/> (the documented
-/// <c>ImageryLayer</c> extension point) from the Map Tiles API session template.
-/// OSM fail-open: <see cref="GetUri"/> returns empty and the built-in <see cref="LayerType.OSM"/> provider is used.
-/// </para>
-/// <para>
-/// <see cref="ImageryLayer.UrlTemplate"/> is intentionally never set. That path downloads tiles with a bare
-/// <c>HttpClient.GetByteArrayAsync</c> inside an <c>async void</c> generator; one 403/429 (expired session,
-/// API not enabled, quota) throws past the layer and leaves its internal tile-generation flag stuck, after
-/// which wheel zoom and every camera change are ignored. <see cref="GetUri"/> tiles go through the
-/// guarded <c>BitmapImage</c> loader instead.
-/// </para>
+/// Syncfusion imagery layer for Google Map Tiles API only (no OpenStreetMap).
 /// </summary>
+/// <remarks>
+/// Syncfusion has no <c>LayerType.Google</c>. Custom XYZ tiles use <see cref="ImageryLayer.UrlTemplate"/>
+/// (<c>{z}/{x}/{y}</c>) per map-providers. Until a session URL is applied, <see cref="LayerType.Bing"/>
+/// with an empty Bing key loads nothing (avoids Syncfusion's built-in HTTP OSM fetch).
+/// Docs: https://help.syncfusion.com/wpf/maps/map-providers
+/// </remarks>
 public sealed class GoogleMapTilesImageryLayer : ImageryLayer
 {
     private static readonly ILogger Logger = Log.ForContext<GoogleMapTilesImageryLayer>();
+
+    private static readonly FieldInfo? TileGenerationInProgressField =
+        typeof(ImageryLayer).GetField(
+            "isTileGenerationInProgress",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
+    private static readonly FieldInfo? ImageryPanelField =
+        typeof(ImageryLayer).GetField(
+            "imageryPanel",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+
     private string? _googleUrlTemplate;
 
     public bool IsGoogleTilesActive => _googleUrlTemplate is not null;
 
     /// <summary>
-    /// Applies an official Map Tiles API URL template with <c>{z}/{x}/{y}</c> placeholders and reloads tiles.
+    /// Applies an official Map Tiles API URL template with <c>{z}/{x}/{y}</c> placeholders.
     /// </summary>
     public void UseGoogleTiles(string urlTemplate)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(urlTemplate);
-        if (string.Equals(_googleUrlTemplate, urlTemplate, StringComparison.Ordinal))
+        if (string.Equals(_googleUrlTemplate, urlTemplate, StringComparison.Ordinal)
+            && string.Equals(UrlTemplate, urlTemplate, StringComparison.Ordinal))
         {
             return;
         }
 
         _googleUrlTemplate = urlTemplate;
-        // Map Tiles API content is session-scoped; do not persist it in the LocalAppData tile cache.
-        CanCacheTiles = false;
-        ReloadTiles();
-    }
-
-    /// <summary>Drops the Google template and reloads with the built-in OpenStreetMap provider.</summary>
-    public void UseOpenStreetMap()
-    {
-        var wasGoogle = _googleUrlTemplate is not null;
-        _googleUrlTemplate = null;
         CanCacheTiles = true;
-        if (LayerType != LayerType.OSM)
-        {
-            LayerType = LayerType.OSM;
-            return;
-        }
-
-        if (wasGoogle)
-        {
-            ReloadTiles();
-        }
+        ResetTileGenerationGate();
+        UrlTemplate = urlTemplate;
+        Logger.Information("Google Map Tiles UrlTemplate applied (Syncfusion custom imagery path)");
     }
 
     /// <summary>
-    /// Syncfusion calls this per tile before consulting <c>UrlTemplate</c> / <c>LayerType</c>.
-    /// Empty string = fall through to the built-in provider.
+    /// Clears any basemap URL. Uses <see cref="LayerType.Bing"/> without a key so Syncfusion
+    /// does not call built-in OpenStreetMap HTTP tile hosts.
+    /// </summary>
+    public void ClearBasemap()
+    {
+        _googleUrlTemplate = null;
+        CanCacheTiles = true;
+        ResetTileGenerationGate();
+        if (!string.IsNullOrEmpty(UrlTemplate))
+        {
+            UrlTemplate = string.Empty;
+        }
+
+        if (LayerType != LayerType.Bing)
+        {
+            LayerType = LayerType.Bing;
+        }
+
+        Logger.Debug("District imagery basemap cleared (Google-only; no OSM fail-open)");
+    }
+
+    /// <summary>
+    /// Returns empty so Syncfusion uses <c>UrlTemplate</c>. Still raises <see cref="TileRequested"/>.
     /// </summary>
     protected override string GetUri(int X, int Y, int Scale)
     {
-        // Parameter casing matches the Syncfusion base signature (CA1725).
-        var template = _googleUrlTemplate;
-        TileRequested?.Invoke(this, new TileRequestedEventArgs(Scale, X, Y, template is not null));
-        return template is null ? string.Empty : MapBasemap.ResolveTileUrl(template, Scale, X, Y);
+        TileRequested?.Invoke(
+            this,
+            new TileRequestedEventArgs(Scale, X, Y, isGoogle: _googleUrlTemplate is not null));
+        return string.Empty;
     }
 
     /// <summary>
-    /// Raised per tile the layer asks for (Google or OSM fall-through). Carries indices only — never the
-    /// resolved URL, which embeds the session token and API key. Consumed by <see cref="MapInteractionDiagnostics"/>.
+    /// Raised when Syncfusion asks for a tile URI. Indices only — never the resolved URL.
     /// </summary>
     public event EventHandler<TileRequestedEventArgs>? TileRequested;
 
@@ -99,21 +110,70 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
         public bool IsGoogle { get; }
     }
 
-    /// <summary>
-    /// Toggling <see cref="ImageryLayer.LayerType"/> is the only public call that clears the tile panel and
-    /// tile list before regenerating. Bing with an empty key is a no-op load, so the round trip costs nothing.
-    /// No-op until the layer is templated (the first load already goes through <see cref="GetUri"/>).
-    /// </summary>
-    private void ReloadTiles()
+    /// <summary>Serilog snapshot of Syncfusion tile panel health (no URLs / secrets).</summary>
+    public void LogTileHealth(string reason)
     {
         try
         {
-            LayerType = LayerType.Bing;
-            LayerType = LayerType.OSM;
+            var panel = ImageryPanelField?.GetValue(this) as Panel;
+            var children = panel?.Children.Count ?? -1;
+            var withSource = 0;
+            if (panel is not null)
+            {
+                foreach (UIElement child in panel.Children)
+                {
+                    if (child is Tile { TileImageSource: not null })
+                    {
+                        withSource++;
+                    }
+                }
+            }
+
+            var gate = TileGenerationInProgressField?.GetValue(this);
+            var urlSet = !string.IsNullOrEmpty(UrlTemplate);
+            if (IsGoogleTilesActive && urlSet && withSource == 0 && children > 0)
+            {
+                Logger.Warning(
+                    "Imagery tile health Reason={Reason} Children={Children} WithSource={WithSource} Gate={Gate} Google={Google} UrlTemplateSet={UrlSet} — Google UrlTemplate set but no painted tiles",
+                    reason,
+                    children,
+                    withSource,
+                    gate,
+                    IsGoogleTilesActive,
+                    urlSet);
+            }
+            else
+            {
+                Logger.Information(
+                    "Imagery tile health Reason={Reason} Children={Children} WithSource={WithSource} Gate={Gate} Google={Google} UrlTemplateSet={UrlSet}",
+                    reason,
+                    children,
+                    withSource,
+                    gate,
+                    IsGoogleTilesActive,
+                    urlSet);
+            }
         }
         catch (Exception ex)
         {
-            Logger.Warning(ex, "Imagery tile reload failed — tiles refresh on next pan/zoom");
+            Logger.Debug(ex, "Imagery tile health inspect failed");
+        }
+    }
+
+    private void ResetTileGenerationGate()
+    {
+        if (TileGenerationInProgressField is null)
+        {
+            return;
+        }
+
+        try
+        {
+            TileGenerationInProgressField.SetValue(this, false);
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Could not reset isTileGenerationInProgress");
         }
     }
 }

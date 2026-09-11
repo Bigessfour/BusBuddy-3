@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -65,23 +66,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 {
                     Logger.Debug("SelectedDriver changed -> Id={DriverId} Name={DriverName}", value?.DriverId, value?.DriverName);
                     OnPropertyChanged(nameof(HasSelectedDriver));
-                    // Update command availability using MVVM Toolkit interfaces to support both RelayCommand and AsyncRelayCommand
-                    if (EditDriverCommand is CommunityToolkit.Mvvm.Input.IRelayCommand edit)
-                    {
-                        edit.NotifyCanExecuteChanged();
-                    }
-                    if (DeleteDriverCommand is CommunityToolkit.Mvvm.Input.IRelayCommand del)
-                    {
-                        del.NotifyCanExecuteChanged();
-                    }
-                    if (AssignRouteCommand is CommunityToolkit.Mvvm.Input.IRelayCommand assign)
-                    {
-                        assign.NotifyCanExecuteChanged();
-                    }
-                    if (EditDetailsCommand is CommunityToolkit.Mvvm.Input.IRelayCommand editDetails)
-                    {
-                        editDetails.NotifyCanExecuteChanged();
-                    }
+                    NotifySelectionDependentCommands();
                     LogState("SelectionChanged");
                 }
             }
@@ -104,7 +89,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 {
                     Logger.Debug("SearchText updated -> '{SearchText}'", _searchText);
                     ApplyFilters();
-                    if (ClearSearchCommand is CommunityToolkit.Mvvm.Input.IRelayCommand clear)
+                    if (ClearSearchCommand is IRelayCommand clear)
                     {
                         clear.NotifyCanExecuteChanged();
                     }
@@ -114,17 +99,17 @@ namespace BusBuddy.WPF.ViewModels.Driver
         }
 
         /// <summary>
-        /// Total number of drivers
+        /// Total drivers in the loaded roster (full collection, not the search filter).
         /// </summary>
         public int TotalDrivers => Drivers.Count;
 
         /// <summary>
-        /// Number of active drivers
+        /// Drivers with Status == Active (source: Drivers collection / DB Status column).
         /// </summary>
-        public int ActiveDrivers => Drivers.Count(d => d.Status == "Active");
+        public int ActiveDrivers => Drivers.Count(d => d.IsActive);
 
         /// <summary>
-        /// Number of drivers with training pending (not complete)
+        /// Drivers where TrainingComplete is false (source: Drivers.TrainingComplete).
         /// </summary>
         public int TrainingPendingDrivers => Drivers.Count(d => !d.TrainingComplete);
 
@@ -210,12 +195,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
             LoadDriversCommand = new AsyncRelayCommand(LoadDriversAsync);
             AddDriverCommand = new RelayCommand(ExecuteAddDriver);
             EditDriverCommand = new RelayCommand(ExecuteEditDriver, () => HasSelectedDriver);
+            // Soft-retire first (specs/drivers.md); hard delete only when service allows and user confirms.
             DeleteDriverCommand = new AsyncRelayCommand(ExecuteDeleteDriverAsync, () => HasSelectedDriver);
             RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
             ClearSearchCommand = new RelayCommand(ExecuteClearSearch, () => !string.IsNullOrEmpty(SearchText));
             GenerateReportsCommand = new AsyncRelayCommand(ExecuteGenerateReportsAsync);
             LicenseCheckCommand = new AsyncRelayCommand(ExecuteLicenseCheckAsync);
-            TrainingRecordsCommand = new AsyncRelayCommand(ExecuteTrainingRecordsAsync);
+            TrainingRecordsCommand = new AsyncRelayCommand(ExecuteTrainingRecordsAsync, () => HasSelectedDriver);
             AssignRouteCommand = new AsyncRelayCommand(ExecuteAssignRouteAsync, () => HasSelectedDriver);
             EditDetailsCommand = new RelayCommand(ExecuteEditDetails, () => HasSelectedDriver);
             ViewLicenseCommand = new RelayCommand(ExecuteViewLicense, () => HasSelectedDriver);
@@ -224,12 +210,50 @@ namespace BusBuddy.WPF.ViewModels.Driver
             _ = LoadDriversAsync();
         }
 
+        private void NotifySelectionDependentCommands()
+        {
+            if (EditDriverCommand is IRelayCommand edit)
+            {
+                edit.NotifyCanExecuteChanged();
+            }
+
+            if (DeleteDriverCommand is IRelayCommand del)
+            {
+                del.NotifyCanExecuteChanged();
+            }
+
+            if (AssignRouteCommand is IRelayCommand assign)
+            {
+                assign.NotifyCanExecuteChanged();
+            }
+
+            if (EditDetailsCommand is IRelayCommand editDetails)
+            {
+                editDetails.NotifyCanExecuteChanged();
+            }
+
+            if (ViewLicenseCommand is IRelayCommand viewLicense)
+            {
+                viewLicense.NotifyCanExecuteChanged();
+            }
+
+            if (TrainingRecordsCommand is IRelayCommand training)
+            {
+                training.NotifyCanExecuteChanged();
+            }
+
+            if (TrainingHistoryCommand is IRelayCommand history)
+            {
+                history.NotifyCanExecuteChanged();
+            }
+        }
+
         #endregion
 
         #region Data Loading
 
         /// <summary>
-        /// Load all drivers from the database
+        /// Load all drivers from the database (prefer IDriverService; fall back to DbContext).
         /// </summary>
         public async Task LoadDriversAsync()
         {
@@ -238,29 +262,36 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 IsLoading = true;
                 Logger.Information("Loading drivers from database");
 
-                using var context = _contextFactory.CreateDbContext();
-                var drivers = await context.Drivers
-                    .OrderBy(d => d.DriverName)
-                    .ToListAsync();
+                List<Core.Models.Driver> drivers;
+                if (_driverService is not null)
+                {
+                    drivers = await _driverService.GetAllDriversAsync().ConfigureAwait(true);
+                }
+                else
+                {
+                    using var context = _contextFactory.CreateDbContext();
+                    drivers = await context.Drivers
+                        .OrderBy(d => d.DriverName)
+                        .ToListAsync()
+                        .ConfigureAwait(true);
+                }
 
                 Drivers.Clear();
-                foreach (var driver in drivers)
+                foreach (var driver in drivers.OrderBy(d => d.DriverName))
                 {
                     Drivers.Add(driver);
                 }
 
-                Logger.Information("Loaded {DriverCount} drivers", Drivers.Count);
+                Logger.Information(
+                    "Loaded {DriverCount} drivers (Total={Total} Active={Active} TrainingPending={Pending})",
+                    Drivers.Count,
+                    TotalDrivers,
+                    ActiveDrivers,
+                    TrainingPendingDrivers);
                 base.StatusMessage = $"Loaded {Drivers.Count} drivers";
 
                 LastUpdated = DateTime.Now;
-
-                // Update property notifications
-                OnPropertyChanged(nameof(TotalDrivers));
-                OnPropertyChanged(nameof(ActiveDrivers));
-                OnPropertyChanged(nameof(TrainingPendingDrivers));
-                OnPropertyChanged(nameof(ExpiringLicensesCount));
-                UpdateDriverStatusData();
-
+                RefreshRosterStats();
                 ApplyFilters();
                 LogState("LoadDriversAsync:AfterLoad");
             }
@@ -287,6 +318,10 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
                 var driverForm = new BusBuddy.WPF.Views.Driver.DriverForm();
                 driverForm.Owner = System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive);
+                if (driverForm.DataContext is BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel vm)
+                {
+                    vm.PrepareNewDriver();
+                }
                 var result = driverForm.ShowDialog();
 
                 if (result == true)
@@ -340,24 +375,34 @@ namespace BusBuddy.WPF.ViewModels.Driver
         {
             try
             {
-                if (SelectedDriver != null)
+                if (SelectedDriver is null)
                 {
-                    var result = System.Windows.MessageBox.Show(
-                        $"Are you sure you want to delete driver '{SelectedDriver.DriverName}'?",
-                        "Confirm Delete",
-                        System.Windows.MessageBoxButton.YesNo,
-                        System.Windows.MessageBoxImage.Warning);
-
-                    if (result == System.Windows.MessageBoxResult.Yes)
-                    {
-                        await DeleteDriverAsync(SelectedDriver);
-                    }
+                    base.StatusMessage = "Select a driver before deactivating";
+                    return;
                 }
+
+                var driver = SelectedDriver;
+                // specs/drivers.md: soft-retire (Inactive). Hard delete only when no route refs.
+                var result = System.Windows.MessageBox.Show(
+                    $"Deactivate driver '{driver.DriverName}'?\n\n" +
+                    "This soft-retires the driver (Status = Inactive). History and route versions are kept.\n" +
+                    "Hard delete is only attempted if they have no active route assignments.",
+                    "Confirm Deactivate Driver",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Warning);
+
+                if (result != System.Windows.MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                await DeactivateOrDeleteDriverAsync(driver).ConfigureAwait(true);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing delete driver command");
-                base.StatusMessage = $"Error deleting driver: {ex.Message}";
+                Logger.Error(ex, "Error executing delete/deactivate driver command");
+                base.StatusMessage = $"Error deactivating driver: {ex.Message}";
+                System.Windows.MessageBox.Show(ex.Message, "Deactivate Driver", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             }
         }
 
@@ -392,20 +437,15 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
         private async Task ExecuteTrainingRecordsAsync()
         {
-            if (SelectedDriver is not null)
+            if (SelectedDriver is null)
             {
-                OpenTrainingChecklist(SelectedDriver);
+                base.StatusMessage = "Select a driver to view training";
                 return;
             }
 
-            SelectedStatusFilter = "Training";
-            var incomplete = Drivers.Count(d => !d.TrainingComplete);
-            Logger.Information("Training records: {Incomplete} incomplete of {Total}", incomplete, Drivers.Count);
-            base.StatusMessage = incomplete == 0
-                ? "All drivers have training marked complete — generating status report"
-                : $"{incomplete} driver(s) with incomplete training — generating report";
-
-            await GenerateDriverReportAsync(OperationalReportKind.TrainingStatus, "Training status");
+            Logger.Information("View Training for DriverId={DriverId}", SelectedDriver.DriverId);
+            OpenTrainingChecklist(SelectedDriver);
+            await Task.CompletedTask;
         }
 
         private async Task ExecuteAssignRouteAsync()
@@ -637,46 +677,106 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 ? $"Found {FilteredDrivers.Count} drivers matching '{SearchText}'"
                 : $"Showing {FilteredDrivers.Count} drivers";
 
-            // Update computed stats if needed
+            RefreshRosterStats();
+            LogState("ApplyFilters:After");
+        }
+
+        /// <summary>
+        /// Soft-retire (Inactive) via IDriverService; fall back to hard delete only when soft-retire fails.
+        /// Always refreshes FilteredDrivers / footer stats so the grid stays in sync.
+        /// </summary>
+        private async Task DeactivateOrDeleteDriverAsync(Core.Models.Driver driver)
+        {
+            Logger.Information("Deactivating/deleting driver {DriverId} - {DriverName}", driver.DriverId, driver.DriverName);
+
+            if (_driverService is not null)
+            {
+                try
+                {
+                    var deactivated = await _driverService.UpdateDriverStatusAsync(driver.DriverId, "Inactive")
+                        .ConfigureAwait(true);
+                    if (deactivated)
+                    {
+                        driver.Status = "Inactive";
+                        base.StatusMessage = $"Driver '{driver.DriverName}' deactivated (soft-retire)";
+                        Logger.Information("Soft-retired driver {DriverId}", driver.DriverId);
+                        SelectedDriver = null;
+                        RefreshRosterStats();
+                        ApplyFilters();
+                        return;
+                    }
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Logger.Warning(ex, "Cannot deactivate driver {DriverId}", driver.DriverId);
+                    base.StatusMessage = ex.Message;
+                    System.Windows.MessageBox.Show(
+                        ex.Message + "\n\nRemove them from active routes first, or contact a supervisor.",
+                        "Deactivate Driver",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Soft-retire returned false without throwing — try hard delete via service
+                try
+                {
+                    var deleted = await _driverService.DeleteDriverAsync(driver.DriverId).ConfigureAwait(true);
+                    if (!deleted)
+                    {
+                        base.StatusMessage = "Driver was not removed (not found or blocked by route assignments)";
+                        return;
+                    }
+
+                    Drivers.Remove(driver);
+                    FilteredDrivers.Remove(driver);
+                    SelectedDriver = null;
+                    base.StatusMessage = $"Driver '{driver.DriverName}' deleted";
+                    RefreshRosterStats();
+                    ApplyFilters();
+                    Logger.Information("Hard-deleted driver {DriverId}", driver.DriverId);
+                    return;
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Logger.Warning(ex, "Hard delete blocked for driver {DriverId}", driver.DriverId);
+                    base.StatusMessage = ex.Message;
+                    System.Windows.MessageBox.Show(ex.Message, "Delete Driver", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            // No service — soft-retire via DbContext with FindAsync (never Remove a detached instance)
+            using var context = _contextFactory.CreateDbContext();
+            var tracked = await context.Drivers.FindAsync(driver.DriverId).ConfigureAwait(true);
+            if (tracked is null)
+            {
+                base.StatusMessage = "Driver not found in database";
+                return;
+            }
+
+            tracked.Status = "Inactive";
+            await context.SaveChangesAsync().ConfigureAwait(true);
+            driver.Status = "Inactive";
+            SelectedDriver = null;
+            base.StatusMessage = $"Driver '{driver.DriverName}' deactivated (soft-retire)";
+            RefreshRosterStats();
+            ApplyFilters();
+            Logger.Information("Soft-retired driver {DriverId} via DbContext", driver.DriverId);
+        }
+
+        private void RefreshRosterStats()
+        {
             OnPropertyChanged(nameof(TotalDrivers));
             OnPropertyChanged(nameof(ActiveDrivers));
             OnPropertyChanged(nameof(TrainingPendingDrivers));
             OnPropertyChanged(nameof(ExpiringLicensesCount));
             UpdateDriverStatusData();
-            LogState("ApplyFilters:After");
-        }
-
-        /// <summary>
-        /// Delete a driver from the database
-        /// </summary>
-        private async Task DeleteDriverAsync(Core.Models.Driver driver)
-        {
-            try
-            {
-                Logger.Information("Deleting driver {DriverId} - {DriverName}", driver.DriverId, driver.DriverName);
-
-                using var context = _contextFactory.CreateDbContext();
-                context.Drivers.Remove(driver);
-                await context.SaveChangesAsync();
-
-                Drivers.Remove(driver);
-                SelectedDriver = null;
-
-                Logger.Information("Successfully deleted driver {DriverId}", driver.DriverId);
-                base.StatusMessage = "Driver deleted successfully";
-
-                // Update property notifications
-                OnPropertyChanged(nameof(TotalDrivers));
-                OnPropertyChanged(nameof(ActiveDrivers));
-                OnPropertyChanged(nameof(TrainingPendingDrivers));
-                OnPropertyChanged(nameof(ExpiringLicensesCount));
-                UpdateDriverStatusData();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error deleting driver {DriverId}", driver.DriverId);
-                base.StatusMessage = $"Error deleting driver: {ex.Message}";
-            }
+            Logger.Debug(
+                "Roster stats — Total={Total} Active={Active} TrainingPending={Pending}",
+                TotalDrivers,
+                ActiveDrivers,
+                TrainingPendingDrivers);
         }
 
         private void UpdateDriverStatusData()

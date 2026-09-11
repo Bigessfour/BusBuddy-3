@@ -2,20 +2,18 @@ namespace BusBuddy.Core.Mapping;
 
 /// <summary>
 /// District map basemap labels and Google Map Tiles API URL helpers.
-/// Syncfusion WPF <c>ImageryLayer</c> has no <c>LayerType.Google</c> — the WPF layer resolves each
-/// tile through its <c>GetUri</c> override from this <c>{z}/{x}/{y}</c> template.
-/// Do not use undocumented <c>mt1.google.com/vt</c> scraper URLs.
+/// Syncfusion WPF custom tiles use <c>ImageryLayer.UrlTemplate</c> with this <c>{z}/{x}/{y}</c> session URL.
+/// Do not use OpenStreetMap or undocumented <c>mt1.google.com/vt</c> scraper URLs.
 /// </summary>
 public static class MapBasemap
 {
-    public const string OpenStreetMap = "OpenStreetMap";
     public const string GoogleRoad = "Google Road";
     public const string GoogleSatellite = "Google Satellite";
 
     public const string MapTypeRoadmap = "roadmap";
     public const string MapTypeSatellite = "satellite";
 
-    public static IReadOnlyList<string> All { get; } = [OpenStreetMap, GoogleRoad, GoogleSatellite];
+    public static IReadOnlyList<string> All { get; } = [GoogleRoad, GoogleSatellite];
 
     public static bool IsGoogle(string? layer) =>
         string.Equals(layer, GoogleRoad, StringComparison.OrdinalIgnoreCase)

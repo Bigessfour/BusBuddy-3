@@ -208,6 +208,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Logger.Debug("SelectedStudent changed to {@Student}", _selectedStudent == null ? null : new { _selectedStudent.StudentId, _selectedStudent.StudentName });
                     OnPropertyChanged(nameof(HasSelectedStudent));
                     OnPropertyChanged(nameof(HasSelectedStudents));
+                    OnPropertyChanged(nameof(ArchiveStudentButtonLabel));
                     // Ensure selection-dependent commands update their CanExecute state
                     NotifySelectionDependentCommands();
                     Logger.Debug("Selection-dependent commands invalidated (CanExecute re-evaluated)");
@@ -219,6 +220,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// Whether a student is currently selected
         /// </summary>
         public bool HasSelectedStudent => SelectedStudent != null;
+
+        /// <summary>
+        /// Toolbar label for soft end-of-service. specs/students.md forbids hard delete.
+        /// </summary>
+        public string ArchiveStudentButtonLabel =>
+            SelectedStudent is { Active: false } ? "Restore Student" : "Archive Student";
 
         /// <summary>
         /// Total number of students
@@ -511,6 +518,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             StatusMessage = archiving ? "Student archived" : "Student restored";
             OnPropertyChanged(nameof(TotalStudents));
             OnPropertyChanged(nameof(ActiveStudents));
+            OnPropertyChanged(nameof(ArchiveStudentButtonLabel));
         }
 
         /// <summary>

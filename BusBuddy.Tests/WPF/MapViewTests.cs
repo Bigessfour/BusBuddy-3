@@ -16,10 +16,18 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("x:Class=\"BusBuddy.WPF.Views.Map.MapView\""));
         Assert.That(xaml, Does.Contain("maps:SfMap"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ShowRoutesCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PlotPickupStopsCommand}\""));
-        Assert.That(xaml, Does.Contain("Label=\"Plot Pickup Stops\""));
-        Assert.That(xaml, Does.Contain("Command=\"{Binding ExportRouteDataCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding CenterOnFleetCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshMapCommand}\""));
+        // Sidebar ButtonAdv: Label + Command only — no local Background (stomps Fluent pressed chrome).
+        Assert.That(xaml, Does.Not.Contain("Command=\"{Binding ShowSchoolsCommand}\"\n                              Background="));
+        var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(mapVm, Does.Contain("LoadAllRoutesOnMapAsync"));
+        Assert.That(mapVm, Does.Contain("UpdateMapForRouteAsync(withWaypoints, refreshDrivePath: true)"));
+        Assert.That(mapVm, Does.Contain("IRoutingService"));
         Assert.That(xaml, Does.Contain("Label=\"Export Route\""));
         Assert.That(xaml, Does.Contain("utils:GoogleMapTilesImageryLayer"));
         Assert.That(xaml, Does.Contain("x:Name=\"MapAttribution\""));
@@ -31,15 +39,22 @@ public class MapViewTests
         Assert.That(bootstrap, Does.Contain("googleLogo.Visibility"));
         Assert.That(bootstrap, Does.Contain("useGoogleMaps ? Visibility.Visible : Visibility.Collapsed"));
         var tileLayer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
-        // Tiles resolve through the GetUri extension point; UrlTemplate's HttpClient path can wedge the layer.
+        // Syncfusion map-providers: custom XYZ tiles via UrlTemplate; Google-only (no OSM fail-open).
+        Assert.That(tileLayer, Does.Contain("UrlTemplate = urlTemplate"));
+        Assert.That(tileLayer, Does.Contain("ClearBasemap"));
+        Assert.That(tileLayer, Does.Contain("LayerType.Bing"));
+        Assert.That(tileLayer, Does.Not.Contain("OpenStreetMapHttpsTemplate"));
+        Assert.That(tileLayer, Does.Not.Contain("UseOpenStreetMap"));
         Assert.That(tileLayer, Does.Contain("protected override string GetUri"));
-        Assert.That(tileLayer, Does.Contain("MapBasemap.ResolveTileUrl"));
-        // The ImageryLayer.UrlTemplate property must stay unset (its HttpClient path wedges the layer on 403/429).
-        Assert.That(tileLayer, Does.Not.Match(@"(?<![\w.])UrlTemplate\s*="));
-        Assert.That(tileLayer, Does.Not.Contain("this.UrlTemplate"));
-        Assert.That(tileLayer, Does.Not.Contain("base.UrlTemplate"));
-        Assert.That(tileLayer, Does.Contain("LayerType.OSM"));
-        Assert.That(tileLayer, Does.Contain("CanCacheTiles = false"));
+        Assert.That(tileLayer, Does.Contain("return string.Empty"));
+        Assert.That(tileLayer, Does.Contain("LogTileHealth"));
+        Assert.That(tileLayer, Does.Contain("isTileGenerationInProgress"));
+        Assert.That(bootstrap, Does.Contain("ApplyUnavailable"));
+        Assert.That(bootstrap, Does.Not.Contain("ApplyOsm"));
+        Assert.That(bootstrap, Does.Not.Contain("ForceReloadTiles"));
+        Assert.That(xaml, Does.Contain("LayerType=\"Bing\""));
+        Assert.That(xaml, Does.Not.Contain("LayerType=\"OSM\""));
+        Assert.That(xaml, Does.Not.Contain("OpenStreetMap"));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox"));
         Assert.That(xaml, Does.Not.Contain("SelectedMapLayer"));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));
@@ -48,8 +63,13 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("Demo Stop"));
         Assert.That(xaml, Does.Not.Contain("MVP"));
         Assert.That(xaml, Does.Not.Contain("MappingName=\"CurrentLocation\""));
-        Assert.That(xaml, Does.Contain("Content=\"Zoom In\""));
-        Assert.That(xaml, Does.Contain("Content=\"Zoom Out\""));
+        Assert.That(xaml, Does.Contain("Label=\"Zoom In\""));
+        Assert.That(xaml, Does.Contain("Label=\"Zoom Out\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ZoomInCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ZoomOutCommand}\""));
+        Assert.That(xaml, Does.Contain("Style=\"{StaticResource MapOverlayButtonStyle}\""));
+        Assert.That(xaml, Does.Not.Contain("MapOverlayWpfButtonStyle"));
+        Assert.That(xaml, Does.Not.Contain("Content=\"Zoom In\""));
         Assert.That(xaml, Does.Contain("EnableZoom=\"True\""));
         Assert.That(xaml, Does.Contain("EnablePan=\"True\""));
         Assert.That(xaml, Does.Contain("IsHitTestVisible=\"True\""));
@@ -70,8 +90,18 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("MapFitRadiusKm"));
         Assert.That(xaml, Does.Contain("MaxZoom=\"19\""));
         Assert.That(xaml, Does.Contain("SizeChanged=\"GeoMap_SizeChanged\""));
-        Assert.That(xaml, Does.Contain("DataContext.ShowDetailLabels"));
-        Assert.That(xaml, Does.Contain("AncestorType={x:Type local:MapView}"));
+        Assert.That(xaml, Does.Contain("ShowCaption"));
+        Assert.That(xaml, Does.Contain("Text=\"{Binding Data.Caption}\""));
+        Assert.That(xaml, Does.Contain("Width=\"{Binding Data.MarkerSize}\""));
+        Assert.That(xaml, Does.Contain("FontSize=\"{Binding Data.LabelFontSize}\""));
+        Assert.That(xaml, Does.Contain("Data.ShowCaption"));
+        Assert.That(xaml, Does.Not.Contain("DataContext.ShowDetailLabels"));
+        Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("ScaledMarkerSize"));
+        Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("CaptionFrom"));
+        Assert.That(XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs"), Does.Contain("Binding Data.Caption"));
+        Assert.That(bootstrap, Does.Contain("Host={Host} Outcome="));
+        Assert.That(bootstrap, Does.Contain("Outcome=no-key"));
+        Assert.That(bootstrap, Does.Contain("Outcome=ok"));
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrail\""));
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrailLayer\""));
         Assert.That(xaml, Does.Contain("SubShapeFileLayers"));
@@ -94,8 +124,9 @@ public class MapViewTests
     {
         // Syncfusion passes CustomDataSymbol (Data = bound marker) to SelectTemplate, never the marker itself.
         var source = XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs");
-        Assert.That(source, Does.Contain("CustomDataSymbol symbol => symbol.Data as MapViewModel.MapMarker"));
+        Assert.That(source, Does.Contain("CustomDataSymbol symbol => symbol.Data as MapMarker"));
         Assert.That(source, Does.Contain("Unwrap(item)"));
+        Assert.That(source, Does.Contain("Binding Data.Caption"));
     }
 
     [Test]
@@ -175,6 +206,31 @@ public class MapViewTests
         Assert.That(form, Does.Contain("StudentPlotLocation.PinsFromStored"));
         Assert.That(form, Does.Contain("MapStudentPlot.Draw"));
         Assert.That(form, Does.Contain("ResolvePickupCatalogForPlotAsync"));
+    }
+
+    [Test]
+    public void PickMapForms_UseGoogleTilesLayerNotOsm()
+    {
+        var school = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml");
+        Assert.That(school, Does.Contain("utils:GoogleMapTilesImageryLayer"));
+        Assert.That(school, Does.Contain("LayerType=\"Bing\""));
+        Assert.That(school, Does.Not.Contain("LayerType=\"OSM\""));
+
+        var stop = XamlViewFile.Read("Views/Student/PickupStopForm.xaml");
+        Assert.That(stop, Does.Contain("utils:GoogleMapTilesImageryLayer"));
+        Assert.That(stop, Does.Contain("LayerType=\"Bing\""));
+        Assert.That(stop, Does.Not.Contain("LayerType=\"OSM\""));
+
+        var schoolCs = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml.cs");
+        var stopCs = XamlViewFile.Read("Views/Student/PickupStopForm.xaml.cs");
+        Assert.That(schoolCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
+        Assert.That(stopCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
+        Assert.That(school, Does.Contain("SchoolPickAttribution"));
+        Assert.That(school, Does.Contain("SchoolPickGoogleLogo"));
+        Assert.That(stop, Does.Contain("StopPickAttribution"));
+        Assert.That(stop, Does.Contain("StopPickGoogleLogo"));
+        Assert.That(schoolCs, Does.Contain("RefreshGoogleAttributionAsync"));
+        Assert.That(stopCs, Does.Contain("RefreshGoogleAttributionAsync"));
     }
 
     [Test]

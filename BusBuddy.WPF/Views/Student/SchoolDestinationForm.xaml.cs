@@ -71,7 +71,29 @@ public partial class SchoolDestinationForm : ChromelessWindow
             }
         };
 
-        Loaded += (_, _) => SaveSchoolButton.IsEnabled = true;
+        Loaded += async (_, _) =>
+        {
+            SaveSchoolButton.IsEnabled = true;
+            if (SchoolPickLayer is not null)
+            {
+                var ok = await MapTileBootstrap.TryApplyGoogleTilesAsync(
+                    SchoolPickLayer,
+                    SchoolPickAttribution,
+                    SchoolPickAttributionText,
+                    SchoolPickMap,
+                    App.ServiceProvider,
+                    SchoolPickGoogleLogo,
+                    host: "SchoolPick").ConfigureAwait(true);
+                if (ok)
+                {
+                    _ = await MapTileBootstrap.RefreshGoogleAttributionAsync(
+                        SchoolPickLayer,
+                        SchoolPickAttributionText,
+                        SchoolPickMap,
+                        App.ServiceProvider).ConfigureAwait(true);
+                }
+            }
+        };
     }
 
     /// <summary>

@@ -34,7 +34,7 @@ public static class MapDefaults
     public const int MinZoomLevel = 1;
 
     /// <summary>
-    /// Syncfusion <c>ImageryLayer</c> clamps wheel zoom at 19 (OpenStreetMap's deepest level).
+    /// Syncfusion <c>ImageryLayer</c> clamps wheel zoom at 19 (deepest useful district zoom).
     /// Keep the view model on the same ceiling so a wheel zoom never round-trips to a different value.
     /// </summary>
     public const int MaxZoomLevel = 19;

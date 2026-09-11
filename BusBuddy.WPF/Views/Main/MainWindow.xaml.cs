@@ -14,6 +14,7 @@ using BusBuddy.WPF.ViewModels.Student;
 using BusBuddy.WPF.ViewModels.Vehicle;
 using BusBuddy.WPF.Views.Student;
 using BusBuddy.WPF.Views.Driver;
+using BusBuddy.WPF.ViewModels.Driver;
 using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Activity;
 using BusBuddy.WPF.Views.Route;
@@ -1035,6 +1036,10 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Debug("Creating new DriverForm dialog");
                 var driverForm = new DriverForm();
+                if (driverForm.DataContext is DriverFormViewModel vm)
+                {
+                    vm.PrepareNewDriver();
+                }
                 Logger.Debug("Showing DriverForm modal dialog");
                 var result = driverForm.ShowDialog();
                 Logger.Debug("DriverForm dialog result: {DialogResult}", result);

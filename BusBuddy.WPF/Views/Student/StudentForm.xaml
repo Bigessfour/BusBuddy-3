@@ -356,11 +356,11 @@
                             <!-- Archiving (clearing Active) is how service ends; the record is kept. -->
                             <CheckBox Name="ActiveCheckBox"
                                       Style="{StaticResource StudentFormCheckBoxStyle}"
-                                      Content="Active Student"
+                                      Content="Active Student (uncheck = archive; no hard delete)"
                                       IsChecked="{Binding Student.Active, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       Margin="0,0,0,4"
                                       AutomationProperties.Name="Active Student"
-                                      ToolTip="Uncheck to archive — the record and its history are kept"/>
+                                      ToolTip="Uncheck to archive this student. Hard delete is not allowed — the record and its history are kept (specs/students.md)."/>
                             <TextBlock Text="{Binding Student.IntakeStatus, StringFormat='Intake: {0}'}"
                                        Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                        FontSize="12"

@@ -11,8 +11,8 @@ namespace BusBuddy.WPF.Utilities;
 /// https://help.syncfusion.com/cr/wpf/Syncfusion.UI.Xaml.Maps.MapLayer.html#Syncfusion_UI_Xaml_Maps_MapLayer_MarkerTemplateSelector
 /// <para>
 /// Syncfusion hands the selector its <see cref="CustomDataSymbol"/> wrapper, not the bound marker;
-/// the marker is <see cref="CustomDataSymbol.Data"/>. The chosen template's DataContext is the marker itself,
-/// so template bindings (<c>{Binding Label}</c>) stay on <see cref="MapViewModel.MapMarker"/>.
+/// the marker is <see cref="CustomDataSymbol.Data"/>. Template DataContext stays the wrapper —
+/// bind as <c>{Binding Data.Caption}</c> / <c>Data.MarkerSize</c> (not bare <c>Caption</c>).
 /// </para>
 /// </summary>
 public sealed class MapMarkerTemplateSelector : DataTemplateSelector
@@ -43,10 +43,10 @@ public sealed class MapMarkerTemplateSelector : DataTemplateSelector
     }
 
     /// <summary>Accepts either the raw marker or Syncfusion's <see cref="CustomDataSymbol"/> wrapper.</summary>
-    internal static MapViewModel.MapMarker? Unwrap(object? item) => item switch
+    internal static MapMarker? Unwrap(object? item) => item switch
     {
-        MapViewModel.MapMarker marker => marker,
-        CustomDataSymbol symbol => symbol.Data as MapViewModel.MapMarker,
+        MapMarker marker => marker,
+        CustomDataSymbol symbol => symbol.Data as MapMarker,
         _ => null,
     };
 }

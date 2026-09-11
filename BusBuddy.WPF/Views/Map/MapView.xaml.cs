@@ -92,16 +92,6 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 ApplyDistrictImagery(DataContext as MapViewModel);
-                if (DistrictTilesLayer is not null)
-                {
-                    // OSM is the XAML default; this only sets the attribution text (no tile reload).
-                    MapTileBootstrap.ApplyOsm(
-                        DistrictTilesLayer,
-                        FindName("MapAttribution") as Border,
-                        FindName("MapAttributionText") as TextBlock,
-                        MapControl,
-                        FindName("GoogleMapsLogo") as System.Windows.Controls.Image);
-                }
 
                 if (MapControl is not null)
                 {
@@ -119,17 +109,31 @@ namespace BusBuddy.WPF.Views.Map
                 ReplayRouteLineFromViewModel(DataContext as MapViewModel);
                 if (DistrictTilesLayer is not null)
                 {
+                    // Google-only: await session UrlTemplate before any tile generation.
                     var googleTiles = await MapTileBootstrap.TryApplyGoogleTilesAsync(
                         DistrictTilesLayer,
                         FindName("MapAttribution") as Border,
                         FindName("MapAttributionText") as TextBlock,
                         MapControl,
                         App.ServiceProvider,
-                        FindName("GoogleMapsLogo") as System.Windows.Controls.Image).ConfigureAwait(true);
+                        FindName("GoogleMapsLogo") as System.Windows.Controls.Image,
+                        host: "DistrictMap").ConfigureAwait(true);
                     if (googleTiles)
                     {
                         ScheduleAttributionRefresh();
                     }
+
+                    // Tile HttpClient downloads are async; inspect after a short settle.
+                    var healthTimer = new DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromSeconds(2),
+                    };
+                    healthTimer.Tick += (_, _) =>
+                    {
+                        healthTimer.Stop();
+                        DistrictTilesLayer?.LogTileHealth("after-bootstrap+2s");
+                    };
+                    healthTimer.Start();
                 }
 
                 _mapLayerInitialized = true;
@@ -219,11 +223,6 @@ namespace BusBuddy.WPF.Views.Map
                 {
                     Logger.Warning("DistrictImageryLayer not found in view");
                     return;
-                }
-
-                if (!imagery.IsGoogleTilesActive)
-                {
-                    imagery.UseOpenStreetMap();
                 }
 
                 ConfigureImageryLayer(imagery, vm);

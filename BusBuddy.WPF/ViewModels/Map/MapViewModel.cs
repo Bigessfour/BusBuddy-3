@@ -28,7 +28,7 @@ using BusBuddy.WPF;
 namespace BusBuddy.WPF.ViewModels.Map
 {
     /// <summary>
-    /// ViewModel for the Syncfusion SfMap surface (Google Map Tiles when keyed, else OSM + Maps Platform geo).
+    /// ViewModel for the Syncfusion SfMap surface (Google Map Tiles + Maps Platform geo).
     /// Plots student addresses, school destinations, and route trails/waypoints.
     /// Fleet GPS / AVL is not wired — the map shows a status line instead of live-tracking chrome.
     /// </summary>
@@ -259,7 +259,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         public ObservableCollection<MapMarker> MapMarkers { get; private set; } = new();
 
         /// <summary>
-        /// Center point for the OSM imagery layer (latitude = X, longitude = Y per Syncfusion).
+        /// Center point for the imagery layer (latitude = X, longitude = Y per Syncfusion).
         /// Public setter required for TwoWay ZoomLevel/Center bindings.
         /// </summary>
         public Point MapCenter
@@ -281,15 +281,24 @@ namespace BusBuddy.WPF.ViewModels.Map
                 if (SetProperty(ref _mapZoomLevel, MapDefaults.ClampZoom(value)))
                 {
                     OnPropertyChanged(nameof(ShowDetailLabels));
+                    RefreshMarkerZoomVisuals();
                 }
             }
         }
 
         /// <summary>
         /// Home / pickup / waypoint captions render only from <see cref="MapDefaults.DetailLabelZoomLevel"/> up;
-        /// school and depot captions always render. Bound by the marker templates.
+        /// schools / depots keep captions. Templates prefer marker <c>ShowCaption</c> (avoids RelativeSource breaks).
         /// </summary>
         public bool ShowDetailLabels => MapDefaults.ShowsDetailLabels(MapZoomLevel);
+
+        private void RefreshMarkerZoomVisuals()
+        {
+            foreach (var marker in MapMarkers)
+            {
+                marker.ApplyZoomVisuals(MapZoomLevel);
+            }
+        }
 
         /// <summary>
         /// SfMap pixel size reported by the view (SizeChanged) so span fits use the real viewport.
@@ -598,7 +607,8 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
 
                 BindSelectedRoute(withWaypoints);
-                await UpdateMapForRouteAsync(withWaypoints);
+                // Refresh drive path via Google Routes when keyed (fail-open to stored geometry).
+                await UpdateMapForRouteAsync(withWaypoints, refreshDrivePath: true);
             }
             catch (Exception ex)
             {
@@ -1017,7 +1027,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                     latitude,
                     longitude,
                     label ?? "<none>");
-                return MapMarker.FromDegrees(DistrictDefaultLatitude, DistrictDefaultLongitude, label, kind);
+                return MapMarker.FromDegrees(DistrictDefaultLatitude, DistrictDefaultLongitude, label, kind, MapZoomLevel);
             }
 
             var incomingKind = kind ?? MapMarkerLabels.GetKind(label);
@@ -1027,7 +1037,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 && MapMarkerLabels.CanMerge(m.Kind, incomingKind));
             if (existing is null)
             {
-                existing = MapMarker.FromDegrees(latitude, longitude, label, incomingKind);
+                existing = MapMarker.FromDegrees(latitude, longitude, label, incomingKind, MapZoomLevel);
                 ApplyMarkerStyle(existing, incomingKind);
                 MapMarkers.Add(existing);
                 Logger.Information(
@@ -1113,11 +1123,14 @@ namespace BusBuddy.WPF.ViewModels.Map
             return 1;
         }
 
-        private static void ApplyMarkerStyle(MapMarker marker, MapMarkerLabels.Kind kind)
+        private static void ApplyMarkerStyle(MapMarker marker, MapMarkerLabels.Kind kind, int zoomLevel)
         {
-            marker.MarkerSize = MapMarkerLabels.MarkerSize(kind);
-            marker.LabelFontSize = MapMarkerLabels.LabelFontSize(kind);
+            marker.Kind = kind;
+            marker.ApplyZoomVisuals(zoomLevel);
         }
+
+        private void ApplyMarkerStyle(MapMarker marker, MapMarkerLabels.Kind kind) =>
+            ApplyMarkerStyle(marker, kind, MapZoomLevel);
 
         private static void AddStudents(MapMarker marker, IEnumerable<string>? names)
         {
@@ -1631,99 +1644,6 @@ namespace BusBuddy.WPF.ViewModels.Map
         #region INotifyPropertyChanged Implementation
 
         #endregion
-
-        /// <summary>
-        /// Lightweight marker model compatible with Syncfusion markers binding.
-        /// <see cref="Kind"/> drives merge policy and <c>MarkerTemplateSelector</c> (school vs stop).
-        /// </summary>
-        public sealed class MapMarker : INotifyPropertyChanged
-        {
-            private string? _label;
-
-            public event PropertyChangedEventHandler? PropertyChanged;
-
-            /// <summary>Caption bound by the marker templates; raises change so aggregation rewrites show live.</summary>
-            public string? Label
-            {
-                get => _label;
-                set
-                {
-                    if (!string.Equals(_label, value, StringComparison.Ordinal))
-                    {
-                        _label = value;
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
-                    }
-                }
-            }
-
-            public double MarkerSize { get; set; } = MapMarkerLabels.PrimaryMarkerSize;
-            public double LabelFontSize { get; set; } = MapMarkerLabels.PrimaryLabelFontSize;
-            public MapMarkerLabels.Kind Kind { get; set; } = MapMarkerLabels.Kind.Student;
-            /// <summary>Syncfusion ImageryLayer marker latitude (official N/S string).</summary>
-            public string Latitude { get; set; } = "0.0000N";
-            /// <summary>Syncfusion ImageryLayer marker longitude (official E/W string).</summary>
-            public string Longitude { get; set; } = "0.0000E";
-            public double LatitudeDegrees { get; set; }
-            public double LongitudeDegrees { get; set; }
-
-            public static MapMarker FromDegrees(
-                double latitude,
-                double longitude,
-                string? label = null,
-                MapMarkerLabels.Kind? kind = null)
-            {
-                var resolved = kind ?? MapMarkerLabels.GetKind(label);
-                return new()
-                {
-                    Label = label,
-                    Kind = resolved,
-                    MarkerSize = MapMarkerLabels.MarkerSize(resolved),
-                    LabelFontSize = MapMarkerLabels.LabelFontSize(resolved),
-                    LatitudeDegrees = latitude,
-                    LongitudeDegrees = longitude,
-                    Latitude = MapCoordinateFormatter.FormatLatitude(latitude),
-                    Longitude = MapCoordinateFormatter.FormatLongitude(longitude)
-                };
-            }
-
-            // Aggregated list of student names for a stop (optional)
-            public System.Collections.Generic.List<string> StudentNames { get; } = new();
-
-            /// <summary>
-            /// Adds a student name to this marker. Only unlabeled <see cref="MapMarkerLabels.Kind.Student"/>
-            /// markers rewrite <see cref="Label"/> for aggregation; typed kinds keep their prefix label.
-            /// </summary>
-            public void AddStudent(string name)
-            {
-                if (string.IsNullOrWhiteSpace(name)) return;
-                if (!StudentNames.Contains(name, StringComparer.OrdinalIgnoreCase))
-                {
-                    StudentNames.Add(name);
-                }
-
-                if (Kind != MapMarkerLabels.Kind.Student)
-                {
-                    return;
-                }
-
-                if (StudentNames.Count == 1)
-                {
-                    Label = StudentNames[0];
-                }
-                else
-                {
-                    var preview = string.Join(", ", StudentNames.Take(3));
-                    if (StudentNames.Count > 3)
-                    {
-                        Label = $"{StudentNames.Count} students: {preview} +{StudentNames.Count - 3} more";
-                    }
-                    else
-                    {
-                        Label = $"{StudentNames.Count} students: {preview}";
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// Event args carrying route polyline points.

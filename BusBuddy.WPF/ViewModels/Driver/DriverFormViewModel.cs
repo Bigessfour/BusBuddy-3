@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -146,13 +147,16 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private void InitializeCommands()
         {
             AddDriverCommand = new RelayCommand(ExecuteAddDriver);
-            SaveDriverCommand = new AsyncRelayCommand(ExecuteSaveDriverAsync, () => CanSaveDriver);
+            SaveDriverCommand = new AsyncRelayCommand(ExecuteSaveDriverAsync);
             DeleteDriverCommand = new AsyncRelayCommand(ExecuteDeleteDriverAsync, () => CanDeleteDriver);
             CancelCommand = new RelayCommand(ExecuteCancel);
             RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
         }
 
         // Command Handlers
+        /// <summary>Reset the form for a new driver entry (call when opening Add Driver).</summary>
+        public void PrepareNewDriver() => ExecuteAddDriver();
+
         private void ExecuteAddDriver()
         {
             try
@@ -161,17 +165,15 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Driver = new DriverModel
                 {
                     Status = "Active",
+                    TrainingComplete = false,
                     CreatedDate = DateTime.UtcNow
                 };
                 TryUpdateDriverName();
                 IsEditMode = false;
                 FormTitle = "Add New Driver";
                 SelectedDriver = null;
+                StatusMessage = string.Empty;
 
-                if (SaveDriverCommand is IRelayCommand save)
-                {
-                    save.NotifyCanExecuteChanged();
-                }
                 if (DeleteDriverCommand is IRelayCommand del)
                 {
                     del.NotifyCanExecuteChanged();
@@ -188,6 +190,15 @@ namespace BusBuddy.WPF.ViewModels.Driver
         {
             try
             {
+                TryUpdateDriverName();
+                var missing = GetMissingRequiredFields();
+                if (missing.Count > 0)
+                {
+                    ShowError($"Fill required fields before saving: {string.Join(", ", missing)}");
+                    Logger.Information("Save blocked — missing required fields: {Missing}", string.Join(", ", missing));
+                    return;
+                }
+
                 IsLoading = true;
                 Logger.Information("Saving driver: {DriverName}", Driver.DriverName);
                 Logger.Debug("Driver pre-save snapshot -> Id={Id} Name={Name} Phone={Phone} License={Lic} Class={Class}", Driver.DriverId, Driver.DriverName, Driver.DriverPhone, Driver.LicenseNumber, Driver.LicenseClass);
@@ -431,10 +442,32 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private void RefreshSaveCanExecute()
         {
             OnPropertyChanged(nameof(CanSaveDriver));
-            if (SaveDriverCommand is IRelayCommand save)
+        }
+
+        private List<string> GetMissingRequiredFields()
+        {
+            var missing = new List<string>();
+            if (!HasUsableDriverName())
             {
-                save.NotifyCanExecuteChanged();
+                missing.Add("First/Last name");
             }
+
+            if (!HasRealInput(Driver.DriverPhone))
+            {
+                missing.Add("Phone");
+            }
+
+            if (!HasRealInput(Driver.LicenseNumber))
+            {
+                missing.Add("License number");
+            }
+
+            if (!HasRealInput(Driver.LicenseClass))
+            {
+                missing.Add("License class");
+            }
+
+            return missing;
         }
 
         private bool HasUsableDriverName()

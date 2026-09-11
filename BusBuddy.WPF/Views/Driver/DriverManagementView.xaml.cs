@@ -20,6 +20,10 @@ namespace BusBuddy.WPF.Views.Driver
         {
             InitializeComponent();
 
+            // Same VM as DriversView — without this, Add/Edit/Delete Command bindings are null.
+            DataContext = App.ServiceProvider?.GetService<ViewModels.Driver.DriversViewModel>()
+                ?? new ViewModels.Driver.DriversViewModel();
+
             // Get SkinManagerService from DI container
             _skinManagerService = App.ServiceProvider?.GetService<ISkinManagerService>();
 

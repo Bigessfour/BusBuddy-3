@@ -1,5 +1,10 @@
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.GoogleMaps;
+using Microsoft.Extensions.Options;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core;
@@ -25,7 +30,8 @@ public class GoogleMapTileSessionTests
     {
         Assert.That(MapBasemap.IsGoogle(MapBasemap.GoogleRoad), Is.True);
         Assert.That(MapBasemap.IsGoogle(MapBasemap.GoogleSatellite), Is.True);
-        Assert.That(MapBasemap.IsGoogle(MapBasemap.OpenStreetMap), Is.False);
+        Assert.That(MapBasemap.IsGoogle("OpenStreetMap"), Is.False);
+        Assert.That(MapBasemap.All, Does.Not.Contain("OpenStreetMap"));
         Assert.That(MapBasemap.MapTypeFor(MapBasemap.GoogleSatellite), Is.EqualTo("satellite"));
         Assert.That(MapBasemap.MapTypeFor(MapBasemap.GoogleRoad), Is.EqualTo("roadmap"));
     }
@@ -109,5 +115,68 @@ public class GoogleMapTileSessionTests
         var fallback = MapDefaults.BoundsForViewport(38, -102, 12, double.NaN, 0);
         var expected = MapDefaults.BoundsForViewport(38, -102, 12, MapDefaults.DefaultViewportWidth, MapDefaults.DefaultViewportHeight);
         Assert.That(fallback, Is.EqualTo(expected));
+    }
+
+    [Test]
+    public async Task GetSessionAsync_RetriesWithoutQuotaProjectOnServiceUsageConsumerDenial()
+    {
+        var denied = """
+            {
+              "error": {
+                "code": 403,
+                "message": "Caller does not have required permission to use project busbuddy-507301. Grant the caller the roles/serviceusage.serviceUsageConsumer role.",
+                "status": "PERMISSION_DENIED"
+              }
+            }
+            """;
+        var ok = """{"session":"sess-retry","expiry":"2030-01-01T00:00:00Z"}""";
+        using var http = new HttpClient(new QuotaThenOkHandler(denied, ok));
+        var svc = new GoogleMapTileSessionService(
+            http,
+            Options.Create(new GoogleMapsOptions
+            {
+                ApiKey = "test-key",
+                QuotaProject = "busbuddy-507301"
+            }));
+
+        var session = await svc.GetSessionAsync("roadmap");
+
+        Assert.That(session, Is.Not.Null);
+        Assert.That(session!.SessionToken, Is.EqualTo("sess-retry"));
+        Assert.That(session.UrlTemplate, Does.Contain("session=sess-retry"));
+    }
+
+    private sealed class QuotaThenOkHandler : HttpMessageHandler
+    {
+        private readonly string _denied;
+        private readonly string _ok;
+        private int _calls;
+
+        public QuotaThenOkHandler(string denied, string ok)
+        {
+            _denied = denied;
+            _ok = ok;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            _calls++;
+            if (_calls == 1)
+            {
+                Assert.That(request.Headers.Contains("X-Goog-User-Project"), Is.True);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden)
+                {
+                    Content = new StringContent(_denied, Encoding.UTF8, "application/json")
+                });
+            }
+
+            Assert.That(request.Headers.Contains("X-Goog-User-Project"), Is.False);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(_ok, Encoding.UTF8, "application/json")
+            });
+        }
     }
 }

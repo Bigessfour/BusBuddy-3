@@ -199,27 +199,44 @@ public sealed class GoogleMapTileSessionService : IGoogleMapTileSessionService, 
 
         try
         {
-            var uri = new Uri(CreateSessionUri, "?key=" + Uri.EscapeDataString(key));
-            using var request = new HttpRequestMessage(HttpMethod.Post, uri);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
-            {
-                request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
-            }
-
-            var body = new
+            var bodyJson = JsonSerializer.Serialize(new
             {
                 mapType,
                 language = "en-US",
                 region = string.IsNullOrWhiteSpace(_options.RegionCode) ? "US" : _options.RegionCode
-            };
-            request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            });
 
-            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
+            var (status, json) = await PostCreateSessionAsync(
+                    key,
+                    bodyJson,
+                    includeQuotaProject: true,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!IsSuccessStatusCode(status)
+                && !string.IsNullOrWhiteSpace(_options.QuotaProject)
+                && GoogleAddressValidationClient.ClassifyMapsForbidden(json).Kind
+                    == GoogleAddressValidationClient.MapsForbiddenKind.QuotaProjectDenied)
             {
-                Logger.Warning("Map Tiles createSession HTTP {Status}", (int)response.StatusCode);
+                Logger.Warning(
+                    "Map Tiles createSession quota project denied ({QuotaProject}) — retrying without X-Goog-User-Project",
+                    _options.QuotaProject);
+                (status, json) = await PostCreateSessionAsync(
+                        key,
+                        bodyJson,
+                        includeQuotaProject: false,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (!IsSuccessStatusCode(status))
+            {
+                var forbidden = GoogleAddressValidationClient.ClassifyMapsForbidden(json);
+                Logger.Warning(
+                    "Map Tiles createSession HTTP {Status} Kind={Kind} Message={Message}",
+                    (int)status,
+                    forbidden.Kind,
+                    TruncateForLog(forbidden.Message ?? json));
                 return null;
             }
 
@@ -263,6 +280,40 @@ public sealed class GoogleMapTileSessionService : IGoogleMapTileSessionService, 
             Logger.Warning(ex, "Map Tiles createSession failed");
             return null;
         }
+    }
+
+    private async Task<(System.Net.HttpStatusCode Status, string Json)> PostCreateSessionAsync(
+        string key,
+        string bodyJson,
+        bool includeQuotaProject,
+        CancellationToken cancellationToken)
+    {
+        var uri = new Uri(CreateSessionUri, "?key=" + Uri.EscapeDataString(key));
+        using var request = new HttpRequestMessage(HttpMethod.Post, uri);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (includeQuotaProject && !string.IsNullOrWhiteSpace(_options.QuotaProject))
+        {
+            request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
+        }
+
+        request.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
+        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        return (response.StatusCode, json);
+    }
+
+    private static bool IsSuccessStatusCode(System.Net.HttpStatusCode status) =>
+        (int)status is >= 200 and <= 299;
+
+    private static string TruncateForLog(string? text, int max = 240)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = text.Trim().Replace('\r', ' ').Replace('\n', ' ');
+        return trimmed.Length <= max ? trimmed : trimmed[..max] + "…";
     }
 
     public void Dispose()

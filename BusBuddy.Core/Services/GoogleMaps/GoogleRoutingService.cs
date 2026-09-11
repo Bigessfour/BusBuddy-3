@@ -54,14 +54,6 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
         var sw = Stopwatch.StartNew();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, ComputeRoutesUri);
-            request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
-            request.Headers.TryAddWithoutValidation("X-Goog-FieldMask", FieldMask);
-            if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
-            {
-                request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
-            }
-
             var intermediates = (waypoints ?? Array.Empty<(double, double)>())
                 .Select(w => new
                 {
@@ -72,27 +64,51 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
                 })
                 .ToArray();
 
-            var body = new
+            var bodyJson = JsonSerializer.Serialize(new
             {
                 origin = new { location = new { latLng = new { latitude = origin.Latitude, longitude = origin.Longitude } } },
                 destination = new { location = new { latLng = new { latitude = destination.Latitude, longitude = destination.Longitude } } },
                 intermediates,
                 travelMode = "DRIVE",
                 routingPreference = "TRAFFIC_UNAWARE"
-            };
-            request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            });
 
-            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            var (status, json) = await PostRoutesAsync(
+                    ComputeRoutesUri,
+                    key,
+                    FieldMask,
+                    bodyJson,
+                    includeQuotaProject: true,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!IsSuccess(status)
+                && !string.IsNullOrWhiteSpace(_options.QuotaProject)
+                && GoogleAddressValidationClient.ClassifyMapsForbidden(json).Kind
+                    == GoogleAddressValidationClient.MapsForbiddenKind.QuotaProjectDenied)
+            {
+                Logger.Warning(
+                    "Routes API quota project denied ({QuotaProject}) — retrying without X-Goog-User-Project",
+                    _options.QuotaProject);
+                (status, json) = await PostRoutesAsync(
+                        ComputeRoutesUri,
+                        key,
+                        FieldMask,
+                        bodyJson,
+                        includeQuotaProject: false,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             sw.Stop();
 
-            if (response.StatusCode == HttpStatusCode.Forbidden || !response.IsSuccessStatusCode)
+            if (status == HttpStatusCode.Forbidden || !IsSuccess(status))
             {
                 Logger.Warning(
                     "Routes API HTTP {Status} ElapsedMs={ElapsedMs}",
-                    (int)response.StatusCode,
+                    (int)status,
                     sw.ElapsedMilliseconds);
-                return new DrivePathResult { Error = $"Routes API failed (HTTP {(int)response.StatusCode})." };
+                return new DrivePathResult { Error = $"Routes API failed (HTTP {(int)status})." };
             }
 
             using var doc = JsonDocument.Parse(json);
@@ -171,15 +187,7 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
         var sw = Stopwatch.StartNew();
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, ComputeRouteMatrixUri);
-            request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
-            request.Headers.TryAddWithoutValidation("X-Goog-FieldMask", MatrixFieldMask);
-            if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
-            {
-                request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
-            }
-
-            var body = new
+            var bodyJson = JsonSerializer.Serialize(new
             {
                 origins = new[]
                 {
@@ -191,18 +199,42 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
                 }).ToArray(),
                 travelMode = "DRIVE",
                 routingPreference = "TRAFFIC_UNAWARE"
-            };
-            request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            });
 
-            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            var (status, json) = await PostRoutesAsync(
+                    ComputeRouteMatrixUri,
+                    key,
+                    MatrixFieldMask,
+                    bodyJson,
+                    includeQuotaProject: true,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!IsSuccess(status)
+                && !string.IsNullOrWhiteSpace(_options.QuotaProject)
+                && GoogleAddressValidationClient.ClassifyMapsForbidden(json).Kind
+                    == GoogleAddressValidationClient.MapsForbiddenKind.QuotaProjectDenied)
+            {
+                Logger.Warning(
+                    "Route matrix quota project denied ({QuotaProject}) — retrying without X-Goog-User-Project",
+                    _options.QuotaProject);
+                (status, json) = await PostRoutesAsync(
+                        ComputeRouteMatrixUri,
+                        key,
+                        MatrixFieldMask,
+                        bodyJson,
+                        includeQuotaProject: false,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             sw.Stop();
 
-            if (!response.IsSuccessStatusCode)
+            if (!IsSuccess(status))
             {
                 Logger.Warning(
                     "Route matrix HTTP {Status} ElapsedMs={ElapsedMs}",
-                    (int)response.StatusCode,
+                    (int)status,
                     sw.ElapsedMilliseconds);
                 return Array.Empty<RouteMatrixElement>();
             }
@@ -261,6 +293,30 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
             return Array.Empty<RouteMatrixElement>();
         }
     }
+
+    private async Task<(HttpStatusCode Status, string Json)> PostRoutesAsync(
+        Uri uri,
+        string key,
+        string fieldMask,
+        string bodyJson,
+        bool includeQuotaProject,
+        CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, uri);
+        request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
+        request.Headers.TryAddWithoutValidation("X-Goog-FieldMask", fieldMask);
+        if (includeQuotaProject && !string.IsNullOrWhiteSpace(_options.QuotaProject))
+        {
+            request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
+        }
+
+        request.Content = new StringContent(bodyJson, Encoding.UTF8, "application/json");
+        using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        return (response.StatusCode, json);
+    }
+
+    private static bool IsSuccess(HttpStatusCode status) => (int)status is >= 200 and <= 299;
 
     public void Dispose()
     {

@@ -444,7 +444,16 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
         {
             kind = MapsForbiddenKind.ApiNotEnabled;
         }
-        else if (ContainsAny(haystack, "USER_PROJECT_DENIED", "CONSUMER_INVALID", "quota project", "user project", "X-Goog-User-Project"))
+        else if (ContainsAny(
+                     haystack,
+                     "USER_PROJECT_DENIED",
+                     "CONSUMER_INVALID",
+                     "quota project",
+                     "user project",
+                     "X-Goog-User-Project",
+                     "serviceUsageConsumer",
+                     "serviceusage.services.use",
+                     "required permission to use project"))
         {
             kind = MapsForbiddenKind.QuotaProjectDenied;
         }
@@ -477,14 +486,15 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
                 "Address Validation API is not enabled for this API key's Google Cloud project. " +
                 "Enable it on busbuddy-507301 — https://developers.google.com/maps/documentation/address-validation",
             MapsForbiddenKind.QuotaProjectDenied =>
-                "Maps quota project was rejected (X-Goog-User-Project). Set GCP_BILLING_PROJECT to the project " +
-                "that owns GOOGLE_MAPS_API_KEY (busbuddy-507301); do not header Maps traffic to the legacy Coursera project.",
+                "Maps quota project was rejected (X-Goog-User-Project). For API keys, leave GCP_BILLING_PROJECT unset — " +
+                "billing follows the project that owns GOOGLE_MAPS_API_KEY (busbuddy-507301). Do not header Maps traffic " +
+                "to the legacy Coursera project.",
             MapsForbiddenKind.KeyBlocked =>
                 "Address Validation is blocked by this API key's restrictions. Enable Address Validation " +
                 "(or Geocoding) for the key — https://developers.google.com/maps/get-started",
             _ =>
-                "Address Validation returned HTTP 403 (permission denied). Check API enablement, key restrictions, " +
-                "and GCP_BILLING_PROJECT=busbuddy-507301 — https://developers.google.com/maps/get-started"
+                "Address Validation returned HTTP 403 (permission denied). Check API enablement and key restrictions " +
+                "on busbuddy-507301 — https://developers.google.com/maps/get-started"
         };
     }
 
