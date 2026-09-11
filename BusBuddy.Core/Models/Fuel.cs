@@ -32,7 +32,17 @@ public class Fuel : INotifyPropertyChanged
     public DateTime FuelDate
     {
         get => _fuelDate;
-        set => SetField(ref _fuelDate, value);
+        set
+        {
+            // DateTime.Equals ignores Kind — always apply when Kind changes (UTC midnight persist).
+            if (_fuelDate.Ticks == value.Ticks && _fuelDate.Kind == value.Kind)
+            {
+                return;
+            }
+
+            _fuelDate = value;
+            OnPropertyChanged();
+        }
     }
 
     [Required]

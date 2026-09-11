@@ -106,7 +106,7 @@ public static class FuelRecordValidator
 
         if (trimmed.Length > FuelConstraints.MaxLocationLength)
         {
-            return $"Max {FuelConstraints.MaxLocationLength} characters.";
+            return $"Location cannot exceed {FuelConstraints.MaxLocationLength} characters.";
         }
 
         return null;

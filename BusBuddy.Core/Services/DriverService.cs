@@ -29,21 +29,20 @@ namespace BusBuddy.Core.Services
             _cachingService = cachingService;
         }
 
-        // Context helpers: only dispose when using the concrete runtime factory
-        // This prevents disposing shared in-memory contexts used by tests.
-        private (BusBuddyDbContext Ctx, bool Dispose) GetReadContext()
+        // Context helpers: factories create short-lived contexts — always dispose.
+        private static (BusBuddyDbContext Ctx, bool Dispose) GetReadContext(IBusBuddyDbContextFactory factory)
         {
-            var ctx = _contextFactory.CreateDbContext();
-            var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
-            return (ctx, shouldDispose);
+            return (factory.CreateDbContext(), true);
         }
 
-        private (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext()
+        private static (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext(IBusBuddyDbContextFactory factory)
         {
-            var ctx = _contextFactory.CreateWriteDbContext();
-            var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
-            return (ctx, shouldDispose);
+            return (factory.CreateWriteDbContext(), true);
         }
+
+        private (BusBuddyDbContext Ctx, bool Dispose) GetReadContext() => GetReadContext(_contextFactory);
+
+        private (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext() => GetWriteContext(_contextFactory);
 
         #region Basic CRUD Operations
 
@@ -924,13 +923,13 @@ namespace BusBuddy.Core.Services
                     && string.Equals(driver.Status, "Active", StringComparison.OrdinalIgnoreCase))
                 {
                     var assignedRoutes = await context.Routes
-                        .Where(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today)
+                        .Where(r => r.AMDriverId == driverId || r.PMDriverId == driverId)
                         .ToListAsync();
 
                     if (assignedRoutes.Count > 0)
                     {
                         Logger.Warning(
-                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} future route(s) — clearing driver FKs",
+                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} route(s) — clearing driver FKs",
                             driverId,
                             assignedRoutes.Count);
 
@@ -939,11 +938,13 @@ namespace BusBuddy.Core.Services
                             if (route.AMDriverId == driverId)
                             {
                                 route.AMDriverId = null;
+                                context.Entry(route).Property(r => r.AMDriverId).IsModified = true;
                             }
 
                             if (route.PMDriverId == driverId)
                             {
                                 route.PMDriverId = null;
+                                context.Entry(route).Property(r => r.PMDriverId).IsModified = true;
                             }
                         }
                     }
@@ -951,8 +952,12 @@ namespace BusBuddy.Core.Services
 
                 driver.Status = status;
                 driver.UpdatedDate = DateTime.UtcNow;
+                // HasDefaultValue("Active") marks Status as store-generated on add; force update on soft-retire.
+                context.Entry(driver).Property(d => d.Status).IsModified = true;
+                context.Entry(driver).Property(d => d.UpdatedDate).IsModified = true;
 
                 await context.SaveChangesAsync();
+                _cachingService.InvalidateCache("AllDrivers");
                 Logger.Information("Successfully updated status for driver {DriverId} to {Status}", driverId, status);
                 return true;
             }

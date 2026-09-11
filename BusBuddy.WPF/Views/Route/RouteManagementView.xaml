@@ -70,15 +70,15 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Add Route"
                 AutomationProperties.HelpText="Create a new bus route"/>
-            <syncfusion:ButtonAdv Name="EditRouteButton" Label="Edit Route"
+            <syncfusion:ButtonAdv Name="SaveRouteButton" Label="Save Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding EditRouteCommand}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource AccentBackgroundBrush}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                AutomationProperties.Name="Edit Route"
-                AutomationProperties.HelpText="Save name, school, special-needs flag, and bus number for the selected route"/>
+                AutomationProperties.Name="Save Route"
+                AutomationProperties.HelpText="Persist name, session, school, special-needs, and AM bus for the selected route"/>
             <syncfusion:ButtonAdv Name="CopyRouteButton" Label="Copy Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding CopyRouteCommand}"
@@ -210,7 +210,6 @@
                               Margin="0,0,0,10"
                               Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                               MouseDoubleClick="RoutesDataGrid_MouseDoubleClick"
-                              CurrentCellEndEdit="RoutesDataGrid_CurrentCellEndEdit"
                               AutomationProperties.Name="Routes Data Grid"
                               AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
             <syncfusion:SfDataGrid.Columns>
@@ -230,32 +229,35 @@
                                              ItemsSource="{Binding AvailableSchools}"
                                              AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200" AllowEditing="False"/>
-                <syncfusion:GridComboBoxColumn MappingName="BusNumber"
-                                             HeaderText="Bus Number"
+                <syncfusion:GridComboBoxColumn MappingName="AMVehicleId"
+                                             HeaderText="AM Bus"
                                              Width="120"
                                              DisplayMemberPath="BusNumber"
-                                             SelectedValuePath="BusNumber"
+                                             SelectedValuePath="BusId"
                                              ItemsSource="{Binding AvailableBuses}"
                                              AllowEditing="True"/>
-        <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" AllowEditing="False" DisplayBinding="{Binding Date, StringFormat=MM/dd/yyyy}"/>
+        <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" AllowEditing="False" Pattern="ShortDate"/>
         <syncfusion:GridTextColumn MappingName="StudentCount" HeaderText="Students" Width="90" AllowEditing="False"/>
         <syncfusion:GridTextColumn MappingName="StopCount" HeaderText="Stops" Width="80" AllowEditing="False"/>
         <syncfusion:GridCheckBoxColumn MappingName="IsActive" HeaderText="Active" Width="80"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
 
-            <!-- Vehicle assignment panel -->
+            <!-- Vehicle / driver assignment panel (hop 4 defaults) -->
             <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="10,8">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Assign bus:" VerticalAlignment="Center" Margin="0,0,8,0"
+                    <TextBlock Grid.Column="0" Text="Bus:" VerticalAlignment="Center" Margin="0,0,8,0"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     <syncfusion:ComboBoxAdv Grid.Column="1"
                                             Name="AssignBusCombo"
@@ -267,28 +269,50 @@
                                             MaxDropDownHeight="240"
                                             AutomationProperties.Name="Assign Bus Selector"
                                             AutomationProperties.HelpText="Select an active bus to assign to the selected route"/>
-                    <TextBlock Grid.Column="2" Text="Time slot:" VerticalAlignment="Center" Margin="16,0,8,0"
+                    <TextBlock Grid.Column="2" Text="Driver:" VerticalAlignment="Center" Margin="12,0,8,0"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     <syncfusion:ComboBoxAdv Grid.Column="3"
+                                            Name="AssignDriverCombo"
+                                            ItemsSource="{Binding AvailableDrivers}"
+                                            DisplayMemberPath="DriverName"
+                                            SelectedValuePath="DriverId"
+                                            SelectedValue="{Binding SelectedDriverId, Mode=TwoWay}"
+                                            IsEditable="False"
+                                            MaxDropDownHeight="240"
+                                            AutomationProperties.Name="Assign Driver Selector"
+                                            AutomationProperties.HelpText="Select a driver to assign to the selected route"/>
+                    <TextBlock Grid.Column="4" Text="Slot:" VerticalAlignment="Center" Margin="12,0,8,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <syncfusion:ComboBoxAdv Grid.Column="5"
                                             Name="AssignTimeSlotCombo"
                                             SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
                                             ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
                                             AutomationProperties.Name="Assign Time Slot"
-                                            AutomationProperties.HelpText="AM or PM default bus for this session row (two rows for AM and PM)"/>
-                    <syncfusion:ButtonAdv Grid.Column="4"
+                                            AutomationProperties.HelpText="AM or PM default for this session row"/>
+                    <syncfusion:ButtonAdv Grid.Column="6"
                                           Name="ApplyVehicleAssignmentButton"
-                                          Label="Apply Assignment"
+                                          Label="Assign Bus"
                                           Style="{StaticResource RouteToolbarButton}"
                                           Command="{Binding AssignVehicleCommand}"
                                           Margin="12,0,0,0"
                                           Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
                                           Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                           AutomationProperties.Name="Apply Vehicle Assignment"
-                                          AutomationProperties.HelpText="Assign the selected bus to the selected route for the chosen time slot"/>
-                    <TextBlock Grid.Column="5" VerticalAlignment="Center" Margin="16,0,0,0"
+                                          AutomationProperties.HelpText="Assign the selected bus for the chosen time slot"/>
+                    <syncfusion:ButtonAdv Grid.Column="7"
+                                          Name="ApplyDriverAssignmentButton"
+                                          Label="Assign Driver"
+                                          Style="{StaticResource RouteToolbarButton}"
+                                          Command="{Binding AssignDriverCommand}"
+                                          Margin="8,0,0,0"
+                                          Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                          AutomationProperties.Name="Apply Driver Assignment"
+                                          AutomationProperties.HelpText="Assign the selected driver for the chosen time slot"/>
+                    <TextBlock Grid.Column="8" VerticalAlignment="Center" Margin="12,0,0,0"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                TextWrapping="Wrap"
-                               Text="Select a route in the grid, pick a bus and time slot, then click Apply Assignment or use the toolbar button."/>
+                               Text="Edit the grid, then Save Route. Use Assign Bus/Driver for AM/PM defaults (hop 4)."/>
                 </Grid>
             </Border>
         </Grid>

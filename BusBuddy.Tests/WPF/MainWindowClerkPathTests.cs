@@ -122,8 +122,12 @@ public class MainWindowClerkPathTests
         Assert.That(fuel, Does.Contain("SfTextBoxExt"));
         Assert.That(fuel, Does.Contain("GallonsText"));
         Assert.That(fuel, Does.Contain("FuelLocationText"));
-        Assert.That(fuel, Does.Contain("SaveCommand"));
-        Assert.That(fuel, Does.Not.Contain("NumberDecimalDigits"));
+        Assert.That(fuel, Does.Contain("SaveButton_Click"));
+        Assert.That(fuel, Does.Not.Contain("<syncfusion:DoubleTextBox"));
+        Assert.That(fuel, Does.Not.Contain("NumberDecimalDigits=\""));
+
+        var fuelVm = XamlViewFile.Read("ViewModels/Fuel/FuelDialogViewModel.cs");
+        Assert.That(fuelVm, Does.Contain("SaveCommand"));
     }
 
     [Test]

@@ -1166,7 +1166,8 @@ public class BusBuddyDbContext : DbContext
                 .HasDefaultValue("Unknown Driver");
 
             entity.Property(e => e.Status)
-                .HasDefaultValue("Active");
+                .HasDefaultValue("Active")
+                .ValueGeneratedNever();
 
             entity.Property(e => e.DriversLicenceType)
                 .HasDefaultValue("Standard");
