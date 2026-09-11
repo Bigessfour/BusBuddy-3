@@ -240,20 +240,19 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     var result = await context.SaveChangesAsync();
-                    var success = result > 0;
-
-                    if (success)
+                    // EF may return 0 when values are unchanged; still treat as success after Modified attach.
+                    if (result > 0)
                     {
-                        // Invalidate cache after updating driver
                         _cachingService.InvalidateCache("AllDrivers");
                         Logger.Information("Successfully updated driver: {DriverName}", driver.DriverName);
                     }
                     else
                     {
-                        Logger.Warning("No changes were made when updating driver: {DriverId}", driver.DriverId);
+                        _cachingService.InvalidateCache("AllDrivers");
+                        Logger.Information("Update completed with no column changes for driver: {DriverId}", driver.DriverId);
                     }
 
-                    return success;
+                    return true;
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
@@ -919,17 +918,34 @@ namespace BusBuddy.Core.Services
                     return false;
                 }
 
-                // If setting to inactive status, check for active route assignments
-                if (status != "Active" && driver.Status == "Active")
+                // Soft-retire (Inactive/Terminated) is allowed even with route assignments — history must remain.
+                // Hard delete still blocks elsewhere. Warn and clear future route FKs when retiring.
+                if (!string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(driver.Status, "Active", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Ensure query sees latest assignments even if set via another context
-                    var hasActiveRoutes = await context.Routes.AsNoTracking()
-                        .AnyAsync(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today);
+                    var assignedRoutes = await context.Routes
+                        .Where(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today)
+                        .ToListAsync();
 
-                    if (hasActiveRoutes)
+                    if (assignedRoutes.Count > 0)
                     {
-                        Logger.Warning("Cannot mark driver {DriverId} as {Status} as they have active route assignments", driverId, status);
-                        throw new InvalidOperationException("Cannot change driver status as they have active route assignments. Please reassign routes first.");
+                        Logger.Warning(
+                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} future route(s) — clearing driver FKs",
+                            driverId,
+                            assignedRoutes.Count);
+
+                        foreach (var route in assignedRoutes)
+                        {
+                            if (route.AMDriverId == driverId)
+                            {
+                                route.AMDriverId = null;
+                            }
+
+                            if (route.PMDriverId == driverId)
+                            {
+                                route.PMDriverId = null;
+                            }
+                        }
                     }
                 }
 
@@ -973,9 +989,12 @@ namespace BusBuddy.Core.Services
                     errors.Add("Driver name is required");
                 }
 
+                // License type is required on the model but older rows / edit copies may omit it.
                 if (string.IsNullOrWhiteSpace(driver.DriversLicenceType))
                 {
-                    errors.Add("Driver's license type is required");
+                    driver.DriversLicenceType = string.IsNullOrWhiteSpace(driver.LicenseClass)
+                        ? "CDL"
+                        : (driver.LicenseClass.Contains("Regular", StringComparison.OrdinalIgnoreCase) ? "Regular" : "CDL");
                 }
 
                 // Phone number validation

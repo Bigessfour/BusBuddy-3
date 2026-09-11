@@ -68,13 +68,13 @@
                                       AutomationProperties.HelpText="Edit the selected driver"
                                       ToolTip="Edit selected driver"/>
 
-                <syncfusion:ButtonAdv Label="Deactivate Driver"
+                <syncfusion:ButtonAdv Label="Delete Driver"
                                       Style="{StaticResource DriverMgmtButton}"
                                       Command="{Binding DeleteDriverCommand}"
                                       IsEnabled="{Binding HasSelectedDriver}"
-                                      AutomationProperties.Name="Deactivate Driver"
-                                      AutomationProperties.HelpText="Soft-retire the selected driver"
-                                      ToolTip="Deactivate selected driver (soft-retire)"/>
+                                      AutomationProperties.Name="Delete Driver"
+                                      AutomationProperties.HelpText="Delete or soft-retire the selected driver"
+                                      ToolTip="Delete selected driver"/>
             </StackPanel>
         </Border>
 
