@@ -83,8 +83,10 @@ public static class MapMarkerLabels
     public static double ZoomScale(int zoomLevel)
     {
         var z = MapDefaults.ClampZoom(zoomLevel);
-        // 1.0 at DetailLabelZoomLevel (12); shrink when zoomed out; grow slightly when zoomed in.
-        return Math.Clamp(0.55 + ((z - 6) * 0.075), 0.55, 1.35);
+        // Screen-pixel markers do not shrink with the basemap. Steeper curve so county overview
+        // stays compact (zoom ~8–11) and street zoom stays readable (zoom ≥12).
+        // 0.40 at z=6 → 1.0 at DetailLabelZoomLevel (12) → 1.45 at z=16+.
+        return Math.Clamp(0.40 + ((z - 6) * 0.10), 0.40, 1.45);
     }
 
     public static double ScaledMarkerSize(Kind kind, int zoomLevel) =>
@@ -93,9 +95,12 @@ public static class MapMarkerLabels
     public static double ScaledLabelFontSize(Kind kind, int zoomLevel) =>
         Math.Round(LabelFontSize(kind) * ZoomScale(zoomLevel), 1);
 
-    /// <summary>Schools/depots always caption; home/pickup/waypoint/student only at detail zoom.</summary>
+    /// <summary>
+    /// Captions only from <see cref="MapDefaults.DetailLabelZoomLevel"/> up for all kinds.
+    /// Schools/depots still use larger pins; names at county overview dominate the screen.
+    /// </summary>
     public static bool ShowsCaption(Kind kind, int zoomLevel) =>
-        kind is Kind.School or Kind.Depot || MapDefaults.ShowsDetailLabels(zoomLevel);
+        MapDefaults.ShowsDetailLabels(zoomLevel);
 
     public static Kind GetKind(string? label)
     {
