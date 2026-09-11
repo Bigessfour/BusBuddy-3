@@ -7,6 +7,7 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Views.Fuel;
+using BusBuddy.WPF.Utilities;
 using Serilog;
 using Serilog.Context;
 using BusBuddy.WPF.Commands;
@@ -42,9 +43,13 @@ namespace BusBuddy.WPF.ViewModels.Fuel
             get => _selectedFuelRecord;
             set
             {
-                SetProperty(ref _selectedFuelRecord, value);
-                OnPropertyChanged(nameof(CanEdit));
-                OnPropertyChanged(nameof(CanDelete));
+                if (SetProperty(ref _selectedFuelRecord, value))
+                {
+                    OnPropertyChanged(nameof(CanEdit));
+                    OnPropertyChanged(nameof(CanDelete));
+                    EditCommand.RaiseCanExecuteChanged();
+                    DeleteCommand.RaiseCanExecuteChanged();
+                }
             }
         }
 
@@ -104,6 +109,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     CalculateTrends();
 
                     Logger.Information("Loaded {RecordCount} fuel records", FuelRecords.Count);
+                    StatusMessage = $"Loaded {FuelRecords.Count} fuel records";
                 }
             });
         }
@@ -126,7 +132,8 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     if (firstBus == null)
                     {
                         Logger.Warning("No buses available for fuel record creation");
-                        MessageBox.Show("No buses available. Please add buses first.", "No Buses", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        StatusMessage = "No buses available — add a bus first";
+                        UserToast.Warning("No buses available. Please add buses before creating a fuel record.", "No buses");
                         return;
                     }
 
@@ -150,12 +157,18 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     {
                         var created = await _fuelService.CreateFuelRecordAsync(newFuel);
                         FuelRecords.Add(created);
+                        SelectedFuelRecord = created;
                         CalculateTrends();
-
+                        StatusMessage = $"Saved fuel record #{created.FuelId}";
+                        UserToast.Success(
+                            $"Fuel record saved — {created.Gallons:N3} gal on {created.FuelDate:d}.",
+                            "Save successful");
                         Logger.Information("Added new fuel record with ID {FuelId}", created.FuelId);
                     }
                     else
                     {
+                        StatusMessage = "Add cancelled";
+                        UserToast.Info("Fuel record was not saved.", "Cancelled");
                         Logger.Information("Fuel record creation cancelled by user");
                     }
                 }
@@ -166,6 +179,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
         {
             if (SelectedFuelRecord == null)
             {
+                UserToast.Warning("Select a fuel record in the grid first.", "No selection");
                 return;
             }
 
@@ -212,10 +226,16 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         }
 
                         CalculateTrends();
+                        StatusMessage = $"Updated fuel record #{updated.FuelId}";
+                        UserToast.Success(
+                            $"Fuel record #{updated.FuelId} saved successfully.",
+                            "Save successful");
                         Logger.Information("Updated fuel record with ID {FuelId}", updated.FuelId);
                     }
                     else
                     {
+                        StatusMessage = "Edit cancelled";
+                        UserToast.Info("Changes were not saved.", "Cancelled");
                         Logger.Information("Fuel record edit cancelled by user");
                     }
                 }
@@ -226,6 +246,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
         {
             if (SelectedFuelRecord == null)
             {
+                UserToast.Warning("Select a fuel record in the grid first.", "No selection");
                 return;
             }
 
@@ -249,23 +270,27 @@ namespace BusBuddy.WPF.ViewModels.Fuel
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        var deleted = await _fuelService.DeleteFuelRecordAsync(SelectedFuelRecord.FuelId);
+                        var fuelId = SelectedFuelRecord.FuelId;
+                        var deleted = await _fuelService.DeleteFuelRecordAsync(fuelId);
                         if (deleted)
                         {
-                            var fuelId = SelectedFuelRecord.FuelId;
                             FuelRecords.Remove(SelectedFuelRecord);
                             SelectedFuelRecord = null;
                             CalculateTrends();
-
+                            StatusMessage = $"Deleted fuel record #{fuelId}";
+                            UserToast.Success($"Fuel record #{fuelId} deleted.", "Deleted");
                             Logger.Information("Deleted fuel record with ID {FuelId}", fuelId);
                         }
                         else
                         {
-                            Logger.Warning("Failed to delete fuel record with ID {FuelId}", SelectedFuelRecord.FuelId);
+                            StatusMessage = $"Failed to delete fuel record #{fuelId}";
+                            UserToast.Error($"Could not delete fuel record #{fuelId}.", "Delete failed");
+                            Logger.Warning("Failed to delete fuel record with ID {FuelId}", fuelId);
                         }
                     }
                     else
                     {
+                        UserToast.Info("Delete cancelled — no changes made.", "Cancelled");
                         Logger.Information("Fuel record deletion cancelled by user");
                     }
                 }
@@ -333,6 +358,8 @@ namespace BusBuddy.WPF.ViewModels.Fuel
 
                         MessageBox.Show($"Successfully exported {FuelRecords.Count} fuel records to {dialog.FileName}",
                             "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                        StatusMessage = $"Exported {FuelRecords.Count} fuel records";
+                        UserToast.Success($"Exported {FuelRecords.Count} fuel records to CSV.", "Export successful");
                         Logger.Information("Exported {RecordCount} fuel records to CSV", FuelRecords.Count);
                     }
                     else
@@ -433,8 +460,9 @@ namespace BusBuddy.WPF.ViewModels.Fuel
             }
             catch (Exception ex)
             {
-                // Handle error
-                System.Diagnostics.Debug.WriteLine($"Command execution failed: {ex.Message}");
+                Logger.Error(ex, "Fuel command failed");
+                StatusMessage = $"Error: {ex.Message}";
+                UserToast.Error(ex.Message, "Fuel error");
             }
             finally
             {
@@ -451,7 +479,9 @@ namespace BusBuddy.WPF.ViewModels.Fuel
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading data: {ex.Message}");
+                Logger.Error(ex, "Error loading fuel data");
+                StatusMessage = $"Error loading fuel records: {ex.Message}";
+                UserToast.Error($"Could not load fuel records: {ex.Message}", "Load failed");
             }
             finally
             {

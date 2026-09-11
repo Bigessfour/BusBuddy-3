@@ -6,7 +6,8 @@
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000"
-             Background="{DynamicResource ContentBackgroundBrush}">
+             Background="{DynamicResource ContentBackgroundBrush}"
+             PreviewKeyDown="FuelManagementView_PreviewKeyDown">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -15,6 +16,21 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <Style x:Key="FuelToolbarButton" TargetType="syncfusion:ButtonAdv">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="Margin" Value="0,4,16,4"/>
+                <Setter Property="MinHeight" Value="36"/>
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+            </Style>
+            <Style x:Key="FuelPrimaryButton" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource FuelToolbarButton}">
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -26,28 +42,47 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
-            <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"
-                       Foreground="{DynamicResource PrimaryTextBrush}"/>
-            <TextBlock Text="Fuel Management" FontSize="24" FontWeight="Bold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
-        </StackPanel>
+        <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
+                CornerRadius="6" Padding="16" Margin="0,0,0,16">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Fuel Management" FontSize="22" FontWeight="Bold"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}" Margin="0,0,8,0"
-                                  AutomationProperties.Name="Add fuel record"/>
-            <syncfusion:ButtonAdv Label="Edit" Command="{Binding EditCommand}" IsEnabled="{Binding CanEdit}" Margin="0,0,8,0"
-                                  AutomationProperties.Name="Edit fuel record"/>
-            <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Margin="0,0,8,0"
-                                  AutomationProperties.Name="Delete fuel record"/>
-            <Separator Margin="8,0"/>
-            <syncfusion:ButtonAdv Label="Export CSV" Command="{Binding ExportCommand}" Margin="0,0,8,0"
-                                  AutomationProperties.Name="Export fuel CSV"/>
-            <syncfusion:ButtonAdv Label="Fuel Report" Command="{Binding ReportCommand}" Margin="0,0,8,0"
-                                  AutomationProperties.Name="Fuel report"/>
-            <syncfusion:ButtonAdv Label="Reconciliation" Command="{Binding ReconciliationCommand}"
-                                  AutomationProperties.Name="Fuel reconciliation"/>
-        </StackPanel>
+        <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
+                CornerRadius="4" Padding="12" Margin="0,0,0,12">
+            <WrapPanel Orientation="Horizontal">
+                <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}"
+                                      Style="{StaticResource FuelPrimaryButton}"
+                                      AutomationProperties.Name="Add fuel record"
+                                      ToolTip="Add a new fuel fill-up"/>
+                <syncfusion:ButtonAdv Label="Edit" Command="{Binding EditCommand}"
+                                      IsEnabled="{Binding CanEdit}"
+                                      Style="{StaticResource FuelToolbarButton}"
+                                      AutomationProperties.Name="Edit fuel record"
+                                      ToolTip="Edit the selected fuel record"/>
+                <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}"
+                                      IsEnabled="{Binding CanDelete}"
+                                      Style="{StaticResource FuelToolbarButton}"
+                                      AutomationProperties.Name="Delete fuel record"
+                                      ToolTip="Delete the selected fuel record"/>
+                <Separator Margin="8,4,16,4"/>
+                <syncfusion:ButtonAdv Label="Export CSV" Command="{Binding ExportCommand}"
+                                      Style="{StaticResource FuelToolbarButton}"
+                                      AutomationProperties.Name="Export fuel CSV"/>
+                <syncfusion:ButtonAdv Label="Fuel Report" Command="{Binding ReportCommand}"
+                                      Style="{StaticResource FuelToolbarButton}"
+                                      AutomationProperties.Name="Fuel report"/>
+                <syncfusion:ButtonAdv Label="Reconciliation" Command="{Binding ReconciliationCommand}"
+                                      Style="{StaticResource FuelToolbarButton}"
+                                      AutomationProperties.Name="Fuel reconciliation"/>
+            </WrapPanel>
+        </Border>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -55,36 +90,47 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <syncfusion:SfDataGrid Grid.Column="0" Margin="0,0,10,0"
+            <syncfusion:SfDataGrid x:Name="FuelDataGrid"
+                                   Grid.Column="0" Margin="0,0,12,0"
                                    ItemsSource="{Binding FuelRecords}"
-                                   SelectedItem="{Binding SelectedFuelRecord, Mode=TwoWay}"
+                                   SelectedItem="{Binding SelectedFuelRecord, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                   SelectionChanged="FuelDataGrid_SelectionChanged"
                                    AutoGenerateColumns="False"
                                    AllowSorting="True"
                                    AllowFiltering="True"
+                                   AllowEditing="False"
                                    SelectionMode="Single"
-                                   SelectionUnit="Row">
+                                   SelectionUnit="Row"
+                                   ShowRowHeader="True"
+                                   GridLinesVisibility="Both"
+                                   HeaderLinesVisibility="Both"
+                                   ColumnSizer="Star"
+                                   Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
+                                   AutomationProperties.Name="Fuel records grid">
                 <syncfusion:SfDataGrid.Columns>
-                    <syncfusion:GridDateTimeColumn MappingName="FuelDate" HeaderText="Date" Width="110"/>
-                    <syncfusion:GridTextColumn MappingName="FuelLocation" HeaderText="Location" Width="120"/>
-                    <syncfusion:GridNumericColumn MappingName="VehicleFueledId" HeaderText="Bus ID" Width="80"/>
-                    <syncfusion:GridNumericColumn MappingName="VehicleOdometerReading" HeaderText="Odometer" Width="90"/>
-                    <syncfusion:GridTextColumn MappingName="FuelType" HeaderText="Type" Width="80"/>
-                    <syncfusion:GridNumericColumn MappingName="Gallons" HeaderText="Gallons" Width="80"/>
-                    <syncfusion:GridNumericColumn MappingName="PricePerGallon" HeaderText="$/Gal" Width="80"/>
-                    <syncfusion:GridNumericColumn MappingName="TotalCost" HeaderText="Total" Width="90"/>
-                    <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="200"/>
+                    <syncfusion:GridDateTimeColumn MappingName="FuelDate" HeaderText="Date" Width="120" Pattern="ShortDate"/>
+                    <syncfusion:GridTextColumn MappingName="FuelLocation" HeaderText="Location" Width="140"/>
+                    <syncfusion:GridNumericColumn MappingName="VehicleFueledId" HeaderText="Bus ID" Width="90"/>
+                    <syncfusion:GridNumericColumn MappingName="VehicleOdometerReading" HeaderText="Odometer" Width="110"/>
+                    <syncfusion:GridTextColumn MappingName="FuelType" HeaderText="Type" Width="100"/>
+                    <syncfusion:GridNumericColumn MappingName="Gallons" HeaderText="Gallons" Width="100" NumberDecimalDigits="3"/>
+                    <syncfusion:GridNumericColumn MappingName="PricePerGallon" HeaderText="$/Gal" Width="90" NumberDecimalDigits="3"/>
+                    <syncfusion:GridNumericColumn MappingName="TotalCost" HeaderText="Total" Width="100" NumberDecimalDigits="2"/>
+                    <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" MinimumWidth="160"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
 
-            <Border Grid.Column="1" Padding="12"
+            <Border Grid.Column="1" Padding="16"
                     Background="{DynamicResource PrimaryBackgroundBrush}"
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Monthly MPG Trend" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Monthly MPG trend" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <syncfusion:SfChart Grid.Row="1">
                         <syncfusion:SfChart.PrimaryAxis>
                             <syncfusion:DateTimeAxis IntervalType="Months"/>
@@ -96,12 +142,17 @@
                                                XBindingPath="Period" YBindingPath="AvgMPG"
                                                EnableAnimation="True"/>
                     </syncfusion:SfChart>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                        <TextBlock Text="Records: " Foreground="{DynamicResource SecondaryTextBrush}"/>
+                        <TextBlock Text="{Binding FuelRecords.Count}" FontWeight="Bold"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Primary}"/>
+                    </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
         <TextBlock Grid.Row="3" Margin="0,12,0,0" Text="{Binding StatusMessage}"
-                   Foreground="{DynamicResource SecondaryTextBrush}"/>
+                   FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}"/>
 
         <Border Grid.RowSpan="4" Background="#80000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">

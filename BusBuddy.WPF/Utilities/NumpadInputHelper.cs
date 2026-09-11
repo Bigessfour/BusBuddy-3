@@ -3,20 +3,22 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Syncfusion.Windows.Controls.Input;
+using Syncfusion.Windows.Shared;
 using Syncfusion.Windows.Tools.Controls;
 
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Syncfusion SfTextBoxExt, SfMaskedEdit, and editable ComboBoxAdv host an inner <see cref="TextBox"/>
-/// that ignores NumPad keys on Windows. This helper injects digits into the caret host.
+/// Syncfusion editors (SfTextBoxExt, SfMaskedEdit, DoubleTextBox, IntegerTextBox, editable ComboBoxAdv)
+/// host an inner <see cref="TextBox"/> that often ignores NumPad keys on Windows.
+/// This helper injects digits/decimal into the focused control.
 /// Register once at app startup via <see cref="RegisterApplicationWide"/>.
 /// </summary>
 public static class NumpadInputHelper
 {
     private static bool _registered;
 
-    /// <summary>Attach a tunneling PreviewKeyDown handler to all <see cref="Window"/> instances.</summary>
+    /// <summary>Attach a tunneling PreviewKeyDown handler to all <see cref="Window"/> and <see cref="UserControl"/> instances.</summary>
     public static void RegisterApplicationWide()
     {
         if (_registered)
@@ -28,11 +30,16 @@ public static class NumpadInputHelper
         EventManager.RegisterClassHandler(
             typeof(Window),
             UIElement.PreviewKeyDownEvent,
-            new KeyEventHandler(OnWindowPreviewKeyDown),
+            new KeyEventHandler(OnPreviewKeyDown),
+            handledEventsToo: true);
+        EventManager.RegisterClassHandler(
+            typeof(UserControl),
+            UIElement.PreviewKeyDownEvent,
+            new KeyEventHandler(OnPreviewKeyDown),
             handledEventsToo: true);
     }
 
-    private static void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
+    private static void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Handled)
         {
@@ -46,6 +53,21 @@ public static class NumpadInputHelper
     {
         if (!TryGetInsertText(e.Key, out var insert))
         {
+            return;
+        }
+
+        // Syncfusion numeric editors first — setting an inner TextBox alone does not update Value.
+        if (TryGetHost<DoubleTextBox>(out var doubleBox))
+        {
+            InsertIntoDoubleTextBox(doubleBox, insert);
+            e.Handled = true;
+            return;
+        }
+
+        if (TryGetHost<IntegerTextBox>(out var intBox))
+        {
+            InsertIntoIntegerTextBox(intBox, insert);
+            e.Handled = true;
             return;
         }
 
@@ -97,16 +119,92 @@ public static class NumpadInputHelper
         return false;
     }
 
+    private static void InsertIntoDoubleTextBox(DoubleTextBox box, string insert)
+    {
+        InsertIntoNumericEditorText(
+            () => box.Text ?? box.Value?.ToString() ?? string.Empty,
+            t => box.Text = t,
+            (start, len) => { box.SelectionStart = start; box.SelectionLength = len; },
+            box.SelectionStart,
+            box.SelectionLength,
+            insert,
+            allowDecimal: box.NumberDecimalDigits != 0,
+            setValue: parsed => box.Value = parsed);
+    }
+
+    private static void InsertIntoIntegerTextBox(IntegerTextBox box, string insert)
+    {
+        if (insert == ".")
+        {
+            return;
+        }
+
+        InsertIntoNumericEditorText(
+            () => box.Text ?? box.Value?.ToString() ?? string.Empty,
+            t => box.Text = t,
+            (start, len) => { box.SelectionStart = start; box.SelectionLength = len; },
+            box.SelectionStart,
+            box.SelectionLength,
+            insert,
+            allowDecimal: false,
+            setValue: parsed => box.Value = (int)parsed);
+    }
+
+    private static void InsertIntoNumericEditorText(
+        Func<string> getText,
+        Action<string> setText,
+        Action<int, int> setSelection,
+        int selectionStart,
+        int selectionLength,
+        string insert,
+        bool allowDecimal,
+        Action<double> setValue)
+    {
+        if (insert == "." && !allowDecimal)
+        {
+            return;
+        }
+
+        var text = getText();
+        if (insert == "." && text.Contains('.'))
+        {
+            return;
+        }
+
+        var next = Splice(text, selectionStart, selectionLength, insert);
+        setText(next);
+        if (double.TryParse(next, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out var parsed)
+            || double.TryParse(next, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out parsed))
+        {
+            setValue(parsed);
+        }
+
+        setSelection(Math.Min(next.Length, selectionStart + insert.Length), 0);
+    }
+
     private static bool TryInsertIntoFocusedTextBox(string insert)
     {
         if (Keyboard.FocusedElement is TextBox focusedTextBox)
         {
+            // Skip if this TextBox is hosted by a Syncfusion numeric editor (handled above).
+            if (FindAncestor<DoubleTextBox>(focusedTextBox) is not null
+                || FindAncestor<IntegerTextBox>(focusedTextBox) is not null)
+            {
+                return false;
+            }
+
             InsertIntoTextBox(focusedTextBox, insert);
             return true;
         }
 
         if (Keyboard.FocusedElement is DependencyObject focused)
         {
+            if (FindAncestor<DoubleTextBox>(focused) is not null
+                || FindAncestor<IntegerTextBox>(focused) is not null)
+            {
+                return false;
+            }
+
             var inner = FindDescendant<TextBox>(focused);
             if (inner is not null)
             {
