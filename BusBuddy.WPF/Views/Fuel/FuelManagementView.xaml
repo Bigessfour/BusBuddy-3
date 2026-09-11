@@ -189,7 +189,7 @@
                                 </syncfusion:LineSeries.YAxis>
                                 <syncfusion:LineSeries.AdornmentsInfo>
                                     <syncfusion:ChartAdornmentInfo ShowMarker="True"
-                                                                   Symbol="Circle"
+                                                                   Symbol="Ellipse"
                                                                    SymbolHeight="7"
                                                                    SymbolWidth="7"/>
                                 </syncfusion:LineSeries.AdornmentsInfo>

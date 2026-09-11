@@ -24,10 +24,10 @@ public class MaintenanceViewTests
         var xaml = XamlViewFile.Read("Views/Maintenance/MaintenanceView.xaml");
         Assert.That(xaml, Does.Contain("GridComboBoxColumn"));
         Assert.That(xaml, Does.Contain("MappingName=\"VehicleId\""));
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Vehicles}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.Vehicles, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Contain("SelectedValuePath=\"BusId\""));
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding StatusOptions}\""));
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding PriorityOptions}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.PriorityOptions, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Not.Contain("GridNumericColumn MappingName=\"VehicleId\""));
     }
 }

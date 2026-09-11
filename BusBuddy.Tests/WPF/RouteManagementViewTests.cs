@@ -11,6 +11,8 @@ public class RouteManagementViewTests
     public void RouteManagementViewXaml_WiresVehicleAssignmentPanel()
     {
         var xaml = XamlViewFile.Read("Views/Route/RouteManagementView.xaml");
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.AvailableSchools, Source={x:Reference RoutesDataGrid}}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.AvailableBuses, Source={x:Reference RoutesDataGrid}}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AvailableBuses}\""));
         Assert.That(xaml, Does.Contain("SelectedValuePath=\"BusId\""));
         Assert.That(xaml, Does.Contain("SelectedValue=\"{Binding SelectedBusId, Mode=TwoWay}\""));
@@ -25,8 +27,6 @@ public class RouteManagementViewTests
         Assert.That(xaml, Does.Contain("Label=\"Save Route\""));
         Assert.That(xaml, Does.Contain("Pattern=\"ShortDate\""));
         Assert.That(xaml, Does.Contain("MappingName=\"School\""));
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AvailableSchools}\""));
-        Assert.That(xaml, Does.Contain("SelectedValuePath=\"Name\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding OpenRouteAssignmentCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshDrivePathCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateScheduleCommand}\""));

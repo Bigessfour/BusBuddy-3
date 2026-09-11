@@ -52,6 +52,16 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         };
 
         // Operational status options for vehicle form
+        public List<string> OperationalStatusOptions { get; } = new()
+        {
+            "Active",
+            "InService",
+            "Maintenance",
+            "OutOfService",
+            "Retired"
+        };
+
+        // Operational status options for vehicle form
         public List<string> FleetTypeOptions { get; } = new()
         {
             "Regular",
@@ -392,25 +402,24 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                         return;
                     }
 
-                    var deleted = await _busService.DeleteBusAsync(busId);
-                    if (!deleted)
+                    var retired = await _busService.DeleteBusAsync(busId);
+                    if (!retired)
                     {
                         Logger.Warning("DeleteBusAsync returned false for BusId={BusId}", busId);
-                        StatusMessage = "Vehicle could not be deleted";
+                        StatusMessage = "Vehicle could not be retired";
                         return;
                     }
 
-                    Vehicles.Remove(vehicle);
-                    SelectedVehicle = null;
+                    vehicle.Status = "Retired";
                     ApplyFilters();
 
-                    Logger.Information("Successfully deleted vehicle BusId={BusId}", busId);
-                    StatusMessage = "Vehicle deleted successfully";
+                    Logger.Information("Successfully soft-retired vehicle BusId={BusId}", busId);
+                    StatusMessage = "Vehicle retired (cleared from route assignments)";
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Error deleting vehicle BusId={BusId}", busId);
-                    StatusMessage = $"Error deleting vehicle: {ex.Message}";
+                    StatusMessage = $"Error retiring vehicle: {ex.Message}";
                 }
                 finally
                 {

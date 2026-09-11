@@ -226,7 +226,7 @@
                                              Width="160"
                                              DisplayMemberPath="Name"
                                              SelectedValuePath="Name"
-                                             ItemsSource="{Binding AvailableSchools}"
+                                             ItemsSource="{Binding DataContext.AvailableSchools, Source={x:Reference RoutesDataGrid}}"
                                              AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200" AllowEditing="False"/>
                 <syncfusion:GridComboBoxColumn MappingName="AMVehicleId"
@@ -234,7 +234,7 @@
                                              Width="120"
                                              DisplayMemberPath="BusNumber"
                                              SelectedValuePath="BusId"
-                                             ItemsSource="{Binding AvailableBuses}"
+                                             ItemsSource="{Binding DataContext.AvailableBuses, Source={x:Reference RoutesDataGrid}}"
                                              AllowEditing="True"/>
         <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" AllowEditing="False" Pattern="ShortDate"/>
         <syncfusion:GridTextColumn MappingName="StudentCount" HeaderText="Students" Width="90" AllowEditing="False"/>

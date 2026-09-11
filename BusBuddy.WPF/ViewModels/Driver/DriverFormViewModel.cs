@@ -303,7 +303,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 var success = await _driverService.DeleteDriverAsync(SelectedDriver.DriverId);
                 if (success)
                 {
-                    ShowSuccess("Driver deleted successfully");
+                    ShowSuccess("Driver soft-retired (Inactive)");
                     await LoadDriversAsync();
                     ExecuteAddDriver();
                 }
