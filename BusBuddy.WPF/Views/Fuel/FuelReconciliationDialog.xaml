@@ -5,19 +5,22 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
         xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
+        xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
         mc:Ignorable="d"
         Title="Fuel Reconciliation"
         Height="700"
-        Width="900"
-        WindowStartupLocation="CenterOwner">
+        Width="920"
+        WindowStartupLocation="CenterOwner"
+        PreviewKeyDown="FuelReconciliationDialog_PreviewKeyDown">
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:BooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" IsInverted="True"/>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
     <Grid Margin="20">
@@ -29,7 +32,6 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
         <Border Grid.Row="0"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="5"
@@ -48,18 +50,18 @@
 
         <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="150"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0"
-                       Text="Date Range:"
-                       VerticalAlignment="Center"
-                       Margin="0,0,10,0"/>
+            <TextBlock Grid.Column="0" Text="Date range:" VerticalAlignment="Center" Margin="0,0,10,0"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
 
             <syncfusion:SfDatePicker Grid.Column="1"
                         Value="{Binding StartDate, Mode=TwoWay}"
@@ -67,10 +69,7 @@
                         Margin="0,0,5,0"
                         AutomationProperties.Name="Reconciliation start date"/>
 
-            <TextBlock Grid.Column="2"
-                       Text="to"
-                       VerticalAlignment="Center"
-                       Margin="0,0,5,0"/>
+            <TextBlock Grid.Column="2" Text="to" VerticalAlignment="Center" Margin="0,0,5,0"/>
 
             <syncfusion:SfDatePicker Grid.Column="3"
                         Value="{Binding EndDate, Mode=TwoWay}"
@@ -78,11 +77,13 @@
                         Margin="0,0,10,0"
                         AutomationProperties.Name="Reconciliation end date"/>
 
-            <syncfusion:ComboBoxAdv Grid.Column="5"
+            <TextBlock Grid.Column="5" Text="Location:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+
+            <syncfusion:ComboBoxAdv Grid.Column="7"
                       ItemsSource="{Binding FuelLocations}"
                       SelectedItem="{Binding SelectedLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                       Height="40"
-                      Width="150"
+                      Width="180"
                       AutomationProperties.Name="Fuel location"/>
         </Grid>
 
@@ -110,12 +111,17 @@
                                 Margin="0,0,5,0"
                                 Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Bulk Station Meter" FontWeight="Bold"
+                                <TextBlock Text="Bulk station meter" FontWeight="Bold"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
-                                <TextBlock Text="{Binding BulkStationGallons, StringFormat='{}{0:N2} gallons'}"
-                                           FontSize="18"
-                                           Margin="0,5,0,0"
-                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                <TextBlock Text="Clerk-entered for this period" FontSize="11" Margin="0,2,0,6"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                                <syncfusion:SfTextBoxExt Text="{Binding BulkStationGallonsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Height="40" FontSize="18"
+                                                         AutomationProperties.Name="Bulk station gallons"/>
+                                <syncfusion:ButtonAdv Label="Save reading" Command="{Binding RememberBulkCommand}"
+                                                      Margin="0,8,0,0" SizeMode="Normal"
+                                                      IconWidth="0" IconHeight="0"
+                                                      AutomationProperties.Name="Save bulk meter reading"/>
                             </StackPanel>
                         </Border>
 
@@ -127,63 +133,79 @@
                                 Margin="5,0"
                                 Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Vehicle Usage" FontWeight="Bold"
+                                <TextBlock Text="Vehicle usage" FontWeight="Bold"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                                 <TextBlock Text="{Binding VehicleUsageGallons, StringFormat='{}{0:N2} gallons'}"
                                            FontSize="18"
                                            Margin="0,5,0,0"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                <TextBlock Text="From fuel fill-up records" FontSize="11" Margin="0,4,0,0"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                             </StackPanel>
                         </Border>
 
                         <Border Grid.Column="2"
                                 Background="{Binding DiscrepancyBackground}"
                                 BorderBrush="{Binding DiscrepancyBorder}"
-                                BorderThickness="1"
+                                BorderThickness="3,1,1,1"
                                 CornerRadius="5"
                                 Margin="5,0,0,0"
                                 Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Discrepancy" FontWeight="Bold"/>
+                                <TextBlock Text="Discrepancy" FontWeight="Bold"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                                 <TextBlock Text="{Binding DiscrepancyGallons, StringFormat='{}{0:N2} gallons'}"
                                            FontSize="18"
-                                           Margin="0,5,0,0"/>
+                                           Margin="0,5,0,0"
+                                           Foreground="{Binding DiscrepancyForeground}"
+                                           Visibility="{Binding HasBulkReading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 <TextBlock Text="{Binding DiscrepancyPercentage, StringFormat='{}{0:P2}'}"
                                            FontSize="14"
-                                           Foreground="{Binding DiscrepancyForeground}"/>
+                                           Foreground="{Binding DiscrepancyForeground}"
+                                           Visibility="{Binding HasBulkReading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                <TextBlock Text="Enter bulk gallons to compare"
+                                           FontSize="13" Margin="0,8,0,0" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                                           Visibility="{Binding HasBulkReading, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <syncfusion:SfChart Grid.Row="1">
-                        <syncfusion:SfChart.PrimaryAxis>
-                            <syncfusion:DateTimeAxis IntervalType="Days" LabelFormat="d"/>
-                        </syncfusion:SfChart.PrimaryAxis>
-                        <syncfusion:SfChart.SecondaryAxis>
-                            <syncfusion:NumericalAxis Header="Gallons"/>
-                        </syncfusion:SfChart.SecondaryAxis>
+                    <Grid Grid.Row="1">
+                        <syncfusion:SfChart AreaBorderThickness="0"
+                                            Visibility="{Binding HasDailyChartData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <syncfusion:SfChart.Legend>
+                                <syncfusion:ChartLegend DockPosition="Top" Orientation="Horizontal"/>
+                            </syncfusion:SfChart.Legend>
+                            <syncfusion:SfChart.PrimaryAxis>
+                                <syncfusion:DateTimeAxis IntervalType="Days" LabelFormat="d" Header="Day"/>
+                            </syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:SfChart.SecondaryAxis>
+                                <syncfusion:NumericalAxis Header="Gallons" LabelFormat="0.#"/>
+                            </syncfusion:SfChart.SecondaryAxis>
 
-                        <syncfusion:ColumnSeries ItemsSource="{Binding DailyReconciliation}"
-                                               XBindingPath="Date"
-                                               YBindingPath="BulkStationGallons"
-                                               Label="Bulk Station"
-                                               Palette="BlueChrome"/>
-
-                        <syncfusion:ColumnSeries ItemsSource="{Binding DailyReconciliation}"
-                                               XBindingPath="Date"
-                                               YBindingPath="VehicleUsageGallons"
-                                               Label="Vehicle Usage"
-                                               Palette="Metro"/>
-                    </syncfusion:SfChart>
+                            <syncfusion:ColumnSeries ItemsSource="{Binding DailyReconciliation}"
+                                                   XBindingPath="Date"
+                                                   YBindingPath="VehicleUsageGallons"
+                                                   Label="Vehicle usage"
+                                                   EnableAnimation="True"
+                                                   ShowTooltip="True"/>
+                        </syncfusion:SfChart>
+                        <TextBlock Text="No fill-ups in this date range."
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                                   Visibility="{Binding HasDailyChartData, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                    </Grid>
 
                     <TextBlock Grid.Row="2"
                                Text="{Binding ReconciliationSummary}"
                                TextWrapping="Wrap"
-                               Margin="0,10,0,0"/>
+                               Margin="0,10,0,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 </Grid>
             </syncfusiontools:TabItemExt>
 
-            <syncfusiontools:TabItemExt Header="Discrepancy Details">
+            <syncfusiontools:TabItemExt Header="Fill-ups to verify">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -191,22 +213,27 @@
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0"
-                               Text="Potential sources of discrepancy:"
-                               FontWeight="Bold"
-                               Margin="0,0,0,10"/>
+                               Text="Shown when clerk-entered bulk gallons differ from vehicle logs by more than 3%."
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
 
                     <syncfusion:SfDataGrid Grid.Row="1"
                                            ItemsSource="{Binding DiscrepancyDetails}"
-                                           AutoGenerateColumns="False">
+                                           AutoGenerateColumns="False"
+                                           AllowEditing="False"
+                                           AllowFiltering="True"
+                                           AllowSorting="True"
+                                           AutomationProperties.Name="Fill-ups to verify">
                         <syncfusion:SfDataGrid.Columns>
-                            <syncfusion:GridTextColumn MappingName="Date" HeaderText="Date" DisplayBinding="{Binding Date, StringFormat=d}"/>
-                            <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number"/>
-                            <syncfusion:GridTextColumn MappingName="Driver" HeaderText="Driver"/>
-                            <syncfusion:GridTextColumn MappingName="GallonsReported" HeaderText="Gallons Reported" DisplayBinding="{Binding GallonsReported, StringFormat=N2}"/>
-                            <syncfusion:GridTextColumn MappingName="OdometerReading" HeaderText="Odometer"/>
-                            <syncfusion:GridTextColumn MappingName="DiscrepancyType" HeaderText="Discrepancy Type"/>
-                            <syncfusion:GridTextColumn MappingName="PotentialIssue" HeaderText="Potential Issue" Width="200"/>
-                            <syncfusion:GridTextColumn MappingName="RecommendedAction" HeaderText="Recommended Action" Width="200"/>
+                            <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="110" Pattern="ShortDate"/>
+                            <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus" Width="90"/>
+                            <syncfusion:GridNumericColumn MappingName="GallonsReported" HeaderText="Gallons" Width="100" NumberDecimalDigits="2"/>
+                            <syncfusion:GridNumericColumn MappingName="OdometerReading" HeaderText="Odometer" Width="100"/>
+                            <syncfusion:GridTextColumn MappingName="DiscrepancyType" HeaderText="Type" Width="120"/>
+                            <syncfusion:GridTextColumn MappingName="PotentialIssue" HeaderText="Potential issue" MinimumWidth="180"/>
+                            <syncfusion:GridTextColumn MappingName="RecommendedAction" HeaderText="Recommended action" MinimumWidth="180"/>
                         </syncfusion:SfDataGrid.Columns>
                     </syncfusion:SfDataGrid>
                 </Grid>
@@ -217,19 +244,16 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,15,0,0">
-            <syncfusion:ButtonAdv Label="Export Report"
+            <syncfusion:ButtonAdv Label="Export report"
                     Command="{Binding ExportCommand}"
                     MinWidth="120"
                     Margin="0,0,10,0"
+                    SizeMode="Normal" IconWidth="0" IconHeight="0"
                     AutomationProperties.Name="Export fuel report"/>
-            <syncfusion:ButtonAdv Label="Print"
-                    Command="{Binding PrintCommand}"
-                    MinWidth="80"
-                    Margin="0,0,10,0"
-                    AutomationProperties.Name="Print fuel report"/>
             <syncfusion:ButtonAdv Label="Close"
+                    Command="{Binding CloseCommand}"
                     MinWidth="80"
-                    Click="CloseButton_Click"
+                    SizeMode="Normal" IconWidth="0" IconHeight="0"
                     AutomationProperties.Name="Close reconciliation"/>
         </StackPanel>
 
@@ -237,9 +261,9 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Left"
                     Margin="0,15,0,0">
-            <TextBlock>
-                <Run Text="Last reconciliation: "/>
-                <Run Text="{Binding LastReconciliationDate, StringFormat=d}"/>
+            <TextBlock Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}">
+                <Run Text="Last saved reconciliation: "/>
+                <Run Text="{Binding LastReconciliationDate, StringFormat=d, TargetNullValue=Never}"/>
             </TextBlock>
         </StackPanel>
     </Grid>

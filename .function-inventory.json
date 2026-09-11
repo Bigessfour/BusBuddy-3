@@ -32,7 +32,12 @@
     "BusBuddy.WPF/Views/Map/MapView.xaml.cs",
     "BusBuddy.Core/Services/UserSettingsService.cs",
     "BusBuddy.WPF/Views/Settings/SettingsView.xaml.cs",
-    "BusBuddy.WPF/ViewModels/Settings/SettingsViewModel.cs"
+    "BusBuddy.WPF/ViewModels/Settings/SettingsViewModel.cs",
+    "BusBuddy.Core/Services/FuelService.cs",
+    "BusBuddy.WPF/Views/Fuel/FuelManagementView.xaml.cs",
+    "BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs",
+    "BusBuddy.WPF/Views/Fuel/FuelReconciliationDialog.xaml.cs",
+    "BusBuddy.WPF/ViewModels/Fuel/FuelReconciliationViewModel.cs"
   ],
   "scan_roots": ["BusBuddy.Core", "BusBuddy.WPF", "BusBuddy.Tests"],
   "exclude_dirs": [

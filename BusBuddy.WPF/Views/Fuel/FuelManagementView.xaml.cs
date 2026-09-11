@@ -7,7 +7,6 @@ using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Fuel;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using FuelModel = BusBuddy.Core.Models.Fuel;
 
 namespace BusBuddy.WPF.Views.Fuel
 {
@@ -29,7 +28,9 @@ namespace BusBuddy.WPF.Views.Fuel
 
                 var fuelService = App.ServiceProvider.GetRequiredService<IFuelService>();
                 var busService = App.ServiceProvider.GetRequiredService<IBusService>();
-                DataContext = new FuelManagementViewModel(fuelService, busService);
+                var locationCatalog = App.ServiceProvider.GetService<IFuelLocationCatalog>();
+                var userSettings = App.ServiceProvider.GetService<IUserSettingsService>();
+                DataContext = new FuelManagementViewModel(fuelService, busService, locationCatalog, userSettings);
                 Logger.Information("FuelManagementView DataContext set");
             }
             catch (Exception ex)
@@ -41,27 +42,6 @@ namespace BusBuddy.WPF.Views.Fuel
         private void FuelManagementView_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             NumpadInputHelper.HandlePreviewKeyDown(e);
-        }
-
-        private void FuelDataGrid_SelectionChanged(object sender, Syncfusion.UI.Xaml.Grid.GridSelectionChangedEventArgs e)
-        {
-            try
-            {
-                if (DataContext is not FuelManagementViewModel vm)
-                {
-                    return;
-                }
-
-                var selected = FuelDataGrid.SelectedItem as FuelModel;
-                if (!ReferenceEquals(vm.SelectedFuelRecord, selected))
-                {
-                    vm.SelectedFuelRecord = selected;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "FuelManagementView selection sync failed");
-            }
         }
     }
 }

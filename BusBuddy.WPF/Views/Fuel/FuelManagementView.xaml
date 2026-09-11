@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000"
              Background="{DynamicResource ContentBackgroundBrush}"
@@ -16,6 +17,7 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:BooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" IsInverted="True"/>
             <Style x:Key="FuelToolbarButton" TargetType="syncfusion:ButtonAdv">
                 <Setter Property="SizeMode" Value="Normal"/>
                 <Setter Property="IconWidth" Value="0"/>
@@ -59,27 +61,32 @@
             <WrapPanel Orientation="Horizontal">
                 <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}"
                                       Style="{StaticResource FuelPrimaryButton}"
+                                      SizeMode="Normal" IconWidth="0" IconHeight="0"
                                       AutomationProperties.Name="Add fuel record"
                                       ToolTip="Add a new fuel fill-up"/>
                 <syncfusion:ButtonAdv Label="Edit" Command="{Binding EditCommand}"
-                                      IsEnabled="{Binding CanEdit}"
                                       Style="{StaticResource FuelToolbarButton}"
+                                      SizeMode="Normal" IconWidth="0" IconHeight="0"
                                       AutomationProperties.Name="Edit fuel record"
                                       ToolTip="Edit the selected fuel record"/>
                 <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}"
-                                      IsEnabled="{Binding CanDelete}"
                                       Style="{StaticResource FuelToolbarButton}"
+                                      SizeMode="Normal" IconWidth="0" IconHeight="0"
                                       AutomationProperties.Name="Delete fuel record"
                                       ToolTip="Delete the selected fuel record"/>
                 <Separator Margin="8,4,16,4"/>
                 <syncfusion:ButtonAdv Label="Export CSV" Command="{Binding ExportCommand}"
                                       Style="{StaticResource FuelToolbarButton}"
+                                      SizeMode="Normal" IconWidth="0" IconHeight="0"
                                       AutomationProperties.Name="Export fuel CSV"/>
-                <syncfusion:ButtonAdv Label="Fuel Report" Command="{Binding ReportCommand}"
+                <syncfusion:ButtonAdv Label="Reports" Command="{Binding ReportCommand}"
                                       Style="{StaticResource FuelToolbarButton}"
-                                      AutomationProperties.Name="Fuel report"/>
+                                      SizeMode="Normal" IconWidth="0" IconHeight="0"
+                                      AutomationProperties.Name="Open reports"
+                                      ToolTip="Open the reports workspace"/>
                 <syncfusion:ButtonAdv Label="Reconciliation" Command="{Binding ReconciliationCommand}"
                                       Style="{StaticResource FuelToolbarButton}"
+                                      SizeMode="Normal" IconWidth="0" IconHeight="0"
                                       AutomationProperties.Name="Fuel reconciliation"/>
             </WrapPanel>
         </Border>
@@ -94,7 +101,6 @@
                                    Grid.Column="0" Margin="0,0,12,0"
                                    ItemsSource="{Binding FuelRecords}"
                                    SelectedItem="{Binding SelectedFuelRecord, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                   SelectionChanged="FuelDataGrid_SelectionChanged"
                                    AutoGenerateColumns="False"
                                    AllowSorting="True"
                                    AllowFiltering="True"
@@ -105,12 +111,15 @@
                                    GridLinesVisibility="Both"
                                    HeaderLinesVisibility="Both"
                                    ColumnSizer="Star"
+                                   FontSize="15"
+                                   RowHeight="40"
+                                   HeaderRowHeight="44"
                                    Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                    AutomationProperties.Name="Fuel records grid">
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridDateTimeColumn MappingName="FuelDate" HeaderText="Date" Width="120" Pattern="ShortDate"/>
                     <syncfusion:GridTextColumn MappingName="FuelLocation" HeaderText="Location" Width="140"/>
-                    <syncfusion:GridNumericColumn MappingName="VehicleFueledId" HeaderText="Bus ID" Width="90"/>
+                    <syncfusion:GridTextColumn MappingName="Vehicle.BusNumber" HeaderText="Bus" Width="90"/>
                     <syncfusion:GridNumericColumn MappingName="VehicleOdometerReading" HeaderText="Odometer" Width="110"/>
                     <syncfusion:GridTextColumn MappingName="FuelType" HeaderText="Type" Width="100"/>
                     <syncfusion:GridNumericColumn MappingName="Gallons" HeaderText="Gallons" Width="100" NumberDecimalDigits="3"/>
@@ -129,23 +138,81 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Monthly MPG trend" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"
+                    <TextBlock Text="Monthly fuel trend" FontWeight="SemiBold" FontSize="16" Margin="0,0,0,12"
                                Foreground="{DynamicResource PrimaryTextBrush}"/>
-                    <syncfusion:SfChart Grid.Row="1">
-                        <syncfusion:SfChart.PrimaryAxis>
-                            <syncfusion:DateTimeAxis IntervalType="Months"/>
-                        </syncfusion:SfChart.PrimaryAxis>
-                        <syncfusion:SfChart.SecondaryAxis>
-                            <syncfusion:NumericalAxis/>
-                        </syncfusion:SfChart.SecondaryAxis>
-                        <syncfusion:LineSeries ItemsSource="{Binding FuelTrends}"
-                                               XBindingPath="Period" YBindingPath="AvgMPG"
-                                               EnableAnimation="True"/>
-                    </syncfusion:SfChart>
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
-                        <TextBlock Text="Records: " Foreground="{DynamicResource SecondaryTextBrush}"/>
-                        <TextBlock Text="{Binding FuelRecords.Count}" FontWeight="Bold"
-                                   Foreground="{DynamicResource BusBuddy.Brush.Primary}"/>
+                    <Grid Grid.Row="1">
+                        <syncfusion:SfChart AreaBorderThickness="0"
+                                            Visibility="{Binding HasFuelTrendData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <syncfusion:SfChart.Legend>
+                                <syncfusion:ChartLegend DockPosition="Top" Orientation="Horizontal"
+                                                        ToggleSeriesVisibility="True"/>
+                            </syncfusion:SfChart.Legend>
+                            <syncfusion:SfChart.PrimaryAxis>
+                                <syncfusion:DateTimeAxis Header="Month"
+                                                         LabelFormat="MMM yy"
+                                                         IntervalType="Months"
+                                                         Interval="1"
+                                                         EdgeLabelsDrawingMode="Fit"/>
+                            </syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:SfChart.SecondaryAxis>
+                                <syncfusion:NumericalAxis Header="Gallons"
+                                                          LabelFormat="0.#"
+                                                          RangePadding="Round"/>
+                            </syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:ColumnSeries ItemsSource="{Binding FuelTrends}"
+                                                     XBindingPath="Period"
+                                                     YBindingPath="TotalGallons"
+                                                     Label="Gallons"
+                                                     EnableAnimation="True"
+                                                     ShowTooltip="True"
+                                                     ListenPropertyChange="True"
+                                                     Spacing="0.2">
+                                <syncfusion:ColumnSeries.AdornmentsInfo>
+                                    <syncfusion:ChartAdornmentInfo ShowMarker="False"
+                                                                   ShowLabel="False"/>
+                                </syncfusion:ColumnSeries.AdornmentsInfo>
+                            </syncfusion:ColumnSeries>
+                            <syncfusion:LineSeries ItemsSource="{Binding FuelTrends}"
+                                                   XBindingPath="Period"
+                                                   YBindingPath="AvgMPG"
+                                                   Label="Avg trip MPG"
+                                                   EnableAnimation="True"
+                                                   ShowTooltip="True"
+                                                   ListenPropertyChange="True"
+                                                   ShowEmptyPoints="False"
+                                                   StrokeThickness="2.5">
+                                <syncfusion:LineSeries.YAxis>
+                                    <syncfusion:NumericalAxis Header="Avg MPG"
+                                                              OpposedPosition="True"
+                                                              LabelFormat="0.0"
+                                                              RangePadding="Round"/>
+                                </syncfusion:LineSeries.YAxis>
+                                <syncfusion:LineSeries.AdornmentsInfo>
+                                    <syncfusion:ChartAdornmentInfo ShowMarker="True"
+                                                                   Symbol="Circle"
+                                                                   SymbolHeight="7"
+                                                                   SymbolWidth="7"/>
+                                </syncfusion:LineSeries.AdornmentsInfo>
+                            </syncfusion:LineSeries>
+                        </syncfusion:SfChart>
+                        <TextBlock Text="{Binding FuelTrendStatus}"
+                                   TextWrapping="Wrap"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Margin="12"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   Visibility="{Binding HasFuelTrendData, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                    </Grid>
+                    <StackPanel Grid.Row="2" Orientation="Vertical" Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Records: " Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            <TextBlock Text="{Binding FuelRecords.Count}" FontWeight="Bold"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Primary}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding FuelTrendStatus}" Margin="0,4,0,0" FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                   Visibility="{Binding HasFuelTrendData, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -154,7 +221,8 @@
         <TextBlock Grid.Row="3" Margin="0,12,0,0" Text="{Binding StatusMessage}"
                    FontSize="13" Foreground="{DynamicResource SecondaryTextBrush}"/>
 
-        <Border Grid.RowSpan="4" Background="#80000000"
+        <Border Grid.RowSpan="4"
+                Background="{DynamicResource BusBuddy.Brush.Overlay.Dim}"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <syncfusion:SfBusyIndicator IsBusy="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>

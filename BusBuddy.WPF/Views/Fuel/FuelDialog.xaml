@@ -7,41 +7,67 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
         Title="{Binding DialogTitle}"
-        Height="640"
-        Width="720"
-        MinHeight="560"
-        MinWidth="640"
+        Height="760"
+        Width="800"
+        MinHeight="680"
+        MinWidth="720"
         WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
         PreviewKeyDown="FuelDialog_PreviewKeyDown">
+    <!--
+      Clerk numeric entry: SfTextBoxExt (no DoubleTextBox NumberDecimalDigits mask).
+      Syncfusion docs: fixed NumberDecimalDigits rounds mid-keystroke and blocks last-digit edits.
+      Best practice: free text while typing; round/format on LostFocus / Save.
+      Numpad works via the standard TextBox hosted inside SfTextBoxExt.
+    -->
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <Style x:Key="FuelFieldLabel" TargetType="TextBlock">
                 <Setter Property="Margin" Value="0,0,16,0"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="16"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
             </Style>
-            <Style x:Key="FuelNumericField" TargetType="syncfusion:DoubleTextBox">
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Margin" Value="0,0,0,12"/>
-                <Setter Property="MinValue" Value="0"/>
+            <Style x:Key="FuelHintText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Margin" Value="0,-2,0,12"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
             </Style>
-            <Style x:Key="FuelIntegerField" TargetType="syncfusion:IntegerTextBox">
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Margin" Value="0,0,0,12"/>
-                <Setter Property="MinValue" Value="0"/>
+            <Style x:Key="FuelFieldError" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Margin" Value="0,-10,0,10"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}"/>
+            </Style>
+            <Style x:Key="FuelTextField" TargetType="syncfusion:SfTextBoxExt">
+                <Setter Property="Height" Value="52"/>
+                <Setter Property="FontSize" Value="18"/>
+                <Setter Property="Margin" Value="0,0,0,14"/>
+                <Setter Property="Padding" Value="10,8"/>
+                <Setter Property="AutoCompleteMode" Value="None"/>
             </Style>
             <Style x:Key="FuelComboField" TargetType="syncfusion:ComboBoxAdv">
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="FontSize" Value="14"/>
-                <Setter Property="Margin" Value="0,0,0,12"/>
+                <Setter Property="Height" Value="52"/>
+                <Setter Property="FontSize" Value="18"/>
+                <Setter Property="Margin" Value="0,0,0,14"/>
+                <Setter Property="IsEditable" Value="False"/>
+            </Style>
+            <Style x:Key="FuelDialogButton" TargetType="syncfusion:ButtonAdv">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
+                <Setter Property="MinWidth" Value="140"/>
+                <Setter Property="Height" Value="48"/>
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="Padding" Value="20,10"/>
             </Style>
         </ResourceDictionary>
     </Window.Resources>
@@ -56,10 +82,10 @@
         <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="6" Padding="16" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="22"
+                <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="24"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                            VerticalAlignment="Center" Margin="0,0,12,0"/>
-                <TextBlock Text="{Binding DialogTitle}" FontSize="20" FontWeight="Bold"
+                <TextBlock Text="{Binding DialogTitle}" FontSize="22" FontWeight="Bold"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                            VerticalAlignment="Center"/>
             </StackPanel>
@@ -67,10 +93,11 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="Trip &amp; vehicle" Padding="16" Margin="0,0,0,16">
+                <GroupBox Header="Trip &amp; vehicle" Padding="18" Margin="0,0,0,16"
+                          FontSize="16" FontWeight="SemiBold">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="180"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -78,38 +105,66 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Fuel date" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:SfDatePicker Grid.Row="0" Grid.Column="1" Height="40" FontSize="14" Margin="0,0,0,12"
+                        <syncfusion:SfDatePicker Grid.Row="0" Grid.Column="1" Height="52" FontSize="18" Margin="0,0,0,14"
                                                  Value="{Binding Fuel.FuelDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 AllowNull="False"
                                                  AutomationProperties.Name="Fuel date"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Location" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:ComboBoxAdv Grid.Row="1" Grid.Column="1" Style="{StaticResource FuelComboField}"
+                        <TextBlock Grid.Row="1" Grid.Column="0" x:Name="LocationLabel" Text="Location" Style="{StaticResource FuelFieldLabel}"/>
+                        <syncfusion:ComboBoxAdv x:Name="FuelLocationCombo"
+                                                Grid.Row="1" Grid.Column="1"
+                                                Height="52" FontSize="18" Margin="0,0,0,4"
                                                 ItemsSource="{Binding FuelLocations}"
-                                                SelectedItem="{Binding Fuel.FuelLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                AutomationProperties.Name="Fuel location"/>
+                                                Text="{Binding FuelLocationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                IsEditable="True"
+                                                MaxDropDownHeight="280"
+                                                AutomationProperties.Name="Fuel location"
+                                                AutomationProperties.LabeledBy="{Binding ElementName=LocationLabel}"
+                                                ToolTip="Type or pick the yearly fuel vendor. New names are remembered for later fuelings."/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource FuelHintText}"
+                                   Text="{Binding LocationHint}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Style="{StaticResource FuelFieldError}" Margin="0,16,0,0"
+                                   Text="{Binding LocationError}"
+                                   Visibility="{Binding HasLocationError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Bus" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:ComboBoxAdv Grid.Row="2" Grid.Column="1" Style="{StaticResource FuelComboField}"
+                        <TextBlock Grid.Row="3" Grid.Column="0" x:Name="BusLabel" Text="Bus" Style="{StaticResource FuelFieldLabel}"/>
+                        <syncfusion:ComboBoxAdv Grid.Row="3" Grid.Column="1" Style="{StaticResource FuelComboField}"
                                                 ItemsSource="{Binding AvailableBuses}"
                                                 SelectedItem="{Binding SelectedBus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 DisplayMemberPath="BusNumber"
-                                                AutomationProperties.Name="Bus"/>
+                                                IsEditable="False"
+                                                AutomationProperties.Name="Bus"
+                                                AutomationProperties.LabeledBy="{Binding ElementName=BusLabel}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,0"
+                                   Style="{StaticResource FuelFieldError}"
+                                   Text="{Binding BusError}"
+                                   Visibility="{Binding HasBusError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Odometer" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:IntegerTextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource FuelIntegerField}"
-                                                   Value="{Binding Fuel.VehicleOdometerReading, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                   ValueChanged="NumericField_ValueChanged"
-                                                   AutomationProperties.Name="Odometer reading"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" x:Name="OdometerLabel" Text="Odometer" Style="{StaticResource FuelFieldLabel}"/>
+                        <syncfusion:SfTextBoxExt Grid.Row="4" Grid.Column="1" Style="{StaticResource FuelTextField}"
+                                                 Text="{Binding OdometerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 LostFocus="NumericField_LostFocus"
+                                                 Watermark="e.g. 45210"
+                                                 AutomationProperties.Name="Odometer reading"
+                                                 AutomationProperties.LabeledBy="{Binding ElementName=OdometerLabel}"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource FuelHintText}"
+                                   Text="{Binding OdometerHint}"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Style="{StaticResource FuelFieldError}" Margin="0,16,0,0"
+                                   Text="{Binding OdometerError}"
+                                   Visibility="{Binding HasOdometerError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Fuel amounts" Padding="16" Margin="0,0,0,16">
+                <GroupBox Header="Fuel amounts" Padding="18" Margin="0,0,0,16"
+                          FontSize="16" FontWeight="SemiBold">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="180"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -124,43 +179,69 @@
                         <syncfusion:ComboBoxAdv Grid.Row="0" Grid.Column="1" Style="{StaticResource FuelComboField}"
                                                 ItemsSource="{Binding FuelTypes}"
                                                 SelectedItem="{Binding Fuel.FuelType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                IsEditable="False"
                                                 AutomationProperties.Name="Fuel type"/>
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Gallons" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:DoubleTextBox Grid.Row="1" Grid.Column="1" Style="{StaticResource FuelNumericField}"
-                                                  Value="{Binding Fuel.Gallons, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  NumberDecimalDigits="3"
-                                                  ValueChanged="Gallons_ValueChanged"
-                                                  AutomationProperties.Name="Gallons"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" x:Name="GallonsLabel" Text="Gallons" Style="{StaticResource FuelFieldLabel}"/>
+                        <syncfusion:SfTextBoxExt x:Name="GallonsBox"
+                                                 Grid.Row="1" Grid.Column="1" Style="{StaticResource FuelTextField}"
+                                                 Text="{Binding GallonsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 LostFocus="NumericField_LostFocus"
+                                                 Watermark="e.g. 102"
+                                                 AutomationProperties.Name="Gallons"
+                                                 AutomationProperties.LabeledBy="{Binding ElementName=GallonsLabel}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,-2"
+                                   Style="{StaticResource FuelFieldError}"
+                                   Text="{Binding GallonsError}"
+                                   Visibility="{Binding HasGallonsError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Price / gallon ($)" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:DoubleTextBox Grid.Row="2" Grid.Column="1" Style="{StaticResource FuelNumericField}"
-                                                  Value="{Binding Fuel.PricePerGallon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  NumberDecimalDigits="3"
-                                                  ValueChanged="PricePerGallon_ValueChanged"
-                                                  AutomationProperties.Name="Price per gallon"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" x:Name="PriceLabel" Text="Price / gallon ($)" Style="{StaticResource FuelFieldLabel}"/>
+                        <syncfusion:SfTextBoxExt x:Name="PricePerGallonBox"
+                                                 Grid.Row="2" Grid.Column="1" Style="{StaticResource FuelTextField}"
+                                                 Text="{Binding PricePerGallonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 LostFocus="NumericField_LostFocus"
+                                                 Watermark="e.g. 6.99"
+                                                 AutomationProperties.Name="Price per gallon"
+                                                 AutomationProperties.LabeledBy="{Binding ElementName=PriceLabel}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,-2"
+                                   Style="{StaticResource FuelFieldError}"
+                                   Text="{Binding PriceError}"
+                                   Visibility="{Binding HasPriceError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Total cost ($)" Style="{StaticResource FuelFieldLabel}"/>
-                        <syncfusion:DoubleTextBox Grid.Row="3" Grid.Column="1" Style="{StaticResource FuelNumericField}"
-                                                  Value="{Binding Fuel.TotalCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  NumberDecimalDigits="2"
-                                                  ValueChanged="TotalCost_ValueChanged"
-                                                  AutomationProperties.Name="Total cost"/>
+                        <syncfusion:SfTextBoxExt x:Name="TotalCostBox"
+                                                 Grid.Row="3" Grid.Column="1" Style="{StaticResource FuelTextField}"
+                                                 Text="{Binding TotalCostText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 LostFocus="NumericField_LostFocus"
+                                                 Watermark="auto from gallons × price"
+                                                 AutomationProperties.Name="Total cost"/>
 
-                        <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBlock Text="Estimated MPG:" FontWeight="SemiBold" FontSize="14"
-                                       Foreground="{DynamicResource SecondaryTextBrush}"/>
-                            <TextBlock Text="{Binding MPG, StringFormat=N2}" Margin="8,0,0,0" FontSize="14" FontWeight="Bold"
-                                       Foreground="{DynamicResource BusBuddy.Brush.Primary}"/>
-                        </StackPanel>
+                        <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" Padding="14"
+                                Background="{DynamicResource BusBuddy.Brush.Panel.Header}" CornerRadius="4">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Est. trip MPG:" FontWeight="SemiBold" FontSize="16"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding MpgDisplay}" Margin="10,0,0,0" FontSize="22" FontWeight="Bold"
+                                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding MpgHint}" Margin="0,6,0,0" FontSize="13"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Notes" Padding="16">
+                <GroupBox Header="Notes" Padding="18" FontSize="16" FontWeight="SemiBold">
                     <syncfusion:SfTextBoxExt Text="{Binding Fuel.Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="96" FontSize="14"
+                                             Height="110" FontSize="16"
                                              TextWrapping="Wrap" AcceptsReturn="True"
                                              VerticalScrollBarVisibility="Auto"
+                                             MaxLength="500"
+                                             AutoCompleteMode="None"
                                              Watermark="Optional notes for this fill-up"
                                              AutomationProperties.Name="Fuel notes"/>
                 </GroupBox>
@@ -168,12 +249,11 @@
         </ScrollViewer>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <syncfusion:ButtonAdv Label="Cancel" MinWidth="120" Height="40" Margin="0,0,12,0"
-                                  Click="CancelButton_Click"
+            <syncfusion:ButtonAdv Label="Cancel" Style="{StaticResource FuelDialogButton}" Margin="0,0,12,0"
+                                  Command="{Binding CancelCommand}"
                                   AutomationProperties.Name="Cancel fuel record"/>
-            <syncfusion:ButtonAdv Label="Save" MinWidth="120" Height="40"
-                                  Click="SaveButton_Click"
-                                  IsEnabled="{Binding IsValid}"
+            <syncfusion:ButtonAdv Label="Save" Style="{StaticResource FuelDialogButton}"
+                                  Command="{Binding SaveCommand}"
                                   Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
                                   Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                   AutomationProperties.Name="Save fuel record"

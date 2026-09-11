@@ -120,6 +120,10 @@ public class MainWindowClerkPathTests
         var fuel = XamlViewFile.Read("Views/Fuel/FuelDialog.xaml");
         Assert.That(fuel, Does.Contain("Mode=TwoWay, UpdateSourceTrigger=PropertyChanged"));
         Assert.That(fuel, Does.Contain("SfTextBoxExt"));
+        Assert.That(fuel, Does.Contain("GallonsText"));
+        Assert.That(fuel, Does.Contain("FuelLocationText"));
+        Assert.That(fuel, Does.Contain("SaveCommand"));
+        Assert.That(fuel, Does.Not.Contain("NumberDecimalDigits"));
     }
 
     [Test]
