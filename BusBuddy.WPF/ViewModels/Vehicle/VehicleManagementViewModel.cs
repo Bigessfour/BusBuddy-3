@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -367,7 +368,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         }
 
         /// <summary>
-        /// Delete selected vehicle
+        /// Delete selected vehicle — hard-delete when Restrict FKs are clear; otherwise soft-retire.
         /// </summary>
         private async Task DeleteVehicleAsync()
         {
@@ -386,7 +387,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                 try
                 {
                     IsBusy = true;
-                    StatusMessage = $"Deleting vehicle {busNumber}...";
+                    StatusMessage = $"Removing vehicle {busNumber}...";
                     Logger.Information(
                         "Deleting vehicle BusId={BusId} BusNumber={BusNumber}",
                         busId,
@@ -402,24 +403,47 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                         return;
                     }
 
-                    var retired = await _busService.DeleteBusAsync(busId);
-                    if (!retired)
+                    var ok = await _busService.DeleteBusAsync(busId);
+                    if (!ok)
                     {
                         Logger.Warning("DeleteBusAsync returned false for BusId={BusId}", busId);
-                        StatusMessage = "Vehicle could not be retired";
+                        StatusMessage = "Vehicle could not be removed";
+                        UserToast.Error(
+                            $"Could not remove bus {busNumber} (not found or blocked).",
+                            "Vehicle remove failed");
                         return;
                     }
 
-                    vehicle.Status = "Retired";
-                    ApplyFilters();
+                    // Hard delete removes the row; soft-retire leaves Status=Retired when FKs remain.
+                    var stillPresent = await _busService.GetBusByIdAsync(busId);
+                    if (stillPresent is null)
+                    {
+                        Vehicles.Remove(vehicle);
+                        SelectedVehicle = null;
+                        ApplyFilters();
+                        StatusMessage = $"Vehicle {busNumber} deleted";
+                        UserToast.Success($"Deleted bus {busNumber}.", "Vehicle deleted");
+                        Logger.Information("Hard-deleted vehicle BusId={BusId}", busId);
+                        return;
+                    }
 
-                    Logger.Information("Successfully soft-retired vehicle BusId={BusId}", busId);
-                    StatusMessage = "Vehicle retired (cleared from route assignments)";
+                    vehicle.Status = stillPresent.Status;
+                    ApplyFilters();
+                    StatusMessage =
+                        $"Vehicle {busNumber} retired — still referenced by routes or fuel/maintenance history";
+                    UserToast.Warning(
+                        $"Bus {busNumber} is assigned to a route or has fuel/maintenance history.\n" +
+                        "It was retired (not hard-deleted). Unassign on Route Management if you need a hard delete later.",
+                        "Vehicle retired");
+                    Logger.Information("Soft-retired vehicle BusId={BusId} Status={Status}", busId, stillPresent.Status);
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Error deleting vehicle BusId={BusId}", busId);
-                    StatusMessage = $"Error retiring vehicle: {ex.Message}";
+                    StatusMessage = "Error removing vehicle — see toast for details";
+                    UserToast.Error(
+                        $"Could not remove bus {busNumber}.\nUse Route Management to unassign first if it is still on a route.",
+                        "Vehicle remove failed");
                 }
                 finally
                 {

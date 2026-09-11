@@ -85,9 +85,9 @@ namespace BusBuddy.Core.Services
                                         SpecialEquipment = v.SpecialEquipment,
                                         GPSTracking = v.GPSTracking,
                                         GPSDeviceId = v.GPSDeviceId,
-                                        Notes = v.Notes,
-                                        AMRoutes = v.AMRoutes,
-                                        PMRoutes = v.PMRoutes
+                                        Notes = v.Notes
+                                        // Fleet grid does not edit routes — omit AMRoutes/PMRoutes
+                                        // so Save never walks a Route graph (UTM EF identity conflict).
                                     })
                                     .ToListAsync();
                             }
@@ -239,12 +239,9 @@ namespace BusBuddy.Core.Services
                         try
                         {
                             return await context.Buses
-                                .AsNoTracking() // Use AsNoTracking for better performance in read operations
-                                .Include(v => v.AMRoutes)
-                                .Include(v => v.PMRoutes)
-                                .Include(v => v.Activities)
-                                .Include(v => v.FuelRecords)
-                                .Include(v => v.MaintenanceRecords)
+                                .AsNoTracking()
+                                // Fleet edit needs scalars only — Hop 4 owns route vehicle FKs.
+                                // Including AMRoutes/PMRoutes caused EF identity conflicts on Update.
                                 .FirstOrDefaultAsync(v => v.BusId == id);
                         }
                         finally
@@ -399,7 +396,7 @@ namespace BusBuddy.Core.Services
             using (LogContext.PushProperty("OperationType", "DeleteBusEntity"))
             using (LogContext.PushProperty("BusId", busId))
             {
-                Logger.Information("Soft-retiring bus entity with ID: {BusId} (no hard delete while FKs exist)", busId);
+                Logger.Information("Deleting or soft-retiring bus entity with ID: {BusId}", busId);
 
                 using var context = _contextFactory.CreateWriteDbContext();
                 var bus = await context.Buses.FindAsync(busId);
@@ -411,15 +408,57 @@ namespace BusBuddy.Core.Services
 
                 using (LogContext.PushProperty("BusNumber", bus.BusNumber))
                 {
-                    // Clear vehicle FKs only on today/future route days; keep historical assignments.
-                    // Always clear denormalized BusNumber when it names this bus (AM or PM).
-                    var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+                    // Restrict FKs: Routes AM/PM, Fuel, Maintenance, Activities — never cascade-delete routes.
                     var assignedRoutes = await context.Routes
+                        .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
+                        .Select(r => new { r.RouteId, r.RouteName, r.Date, r.AMVehicleId, r.PMVehicleId, r.BusNumber })
+                        .ToListAsync();
+                    var hasFuel = await context.FuelRecords.AnyAsync(f => f.VehicleFueledId == busId);
+                    var hasMaintenance = await context.MaintenanceRecords.AnyAsync(m => m.VehicleId == busId);
+                    var hasActivities = await context.Activities.AnyAsync(a => a.AssignedVehicleId == busId);
+
+                    var hasBlockingFks = assignedRoutes.Count > 0 || hasFuel || hasMaintenance || hasActivities;
+                    if (!hasBlockingFks)
+                    {
+                        context.Buses.Remove(bus);
+                        using (LogContext.PushProperty("OperationName", "HardDeleteBus"))
+                        using (LogContext.PushProperty("DatabaseOperation", true))
+                        {
+                            var stopwatch = Stopwatch.StartNew();
+                            try
+                            {
+                                await context.SaveChangesAsync();
+                                stopwatch.Stop();
+                                Logger.Information(
+                                    "Hard-deleted bus {BusId} in {Duration}ms (no Restrict FKs)",
+                                    busId,
+                                    stopwatch.ElapsedMilliseconds);
+                                _cacheService.InvalidateBusCache(busId);
+                                _cacheService.InvalidateAllBusCache();
+                                return true;
+                            }
+                            catch (Exception ex)
+                            {
+                                stopwatch.Stop();
+                                DatabaseUserMessage.LogFailure(
+                                    Logger,
+                                    ex,
+                                    "Database operation HardDeleteBus failed after {Duration}ms",
+                                    stopwatch.ElapsedMilliseconds);
+                                throw;
+                            }
+                        }
+                    }
+
+                    // Soft-retire — clear vehicle FKs on today/future route days only (keep history).
+                    var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+                    var futureRoutes = await context.Routes
                         .Where(r =>
                             r.Date >= cutoffDate
                             && (r.AMVehicleId == busId || r.PMVehicleId == busId))
                         .ToListAsync();
-                    foreach (var route in assignedRoutes)
+
+                    foreach (var route in futureRoutes)
                     {
                         if (route.AMVehicleId == busId)
                         {
@@ -440,13 +479,23 @@ namespace BusBuddy.Core.Services
                         }
                     }
 
-                    if (assignedRoutes.Count > 0)
-                    {
-                        Logger.Warning(
-                            "Soft-retiring bus {BusId} while assigned to {RouteCount} future route(s) — clearing vehicle FKs",
-                            busId,
-                            assignedRoutes.Count);
-                    }
+                    var routeLabels = assignedRoutes
+                        .Select(r => string.IsNullOrWhiteSpace(r.RouteName) ? $"Route {r.RouteId}" : r.RouteName!)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Take(5)
+                        .ToList();
+                    var routeSummary = routeLabels.Count > 0
+                        ? string.Join(", ", routeLabels)
+                        : "(fuel/maintenance/activity history)";
+
+                    Logger.Warning(
+                        "Soft-retiring bus {BusId} — Restrict FKs present (routes={RouteCount}, fuel={HasFuel}, maint={HasMaint}, activities={HasAct}). Labels={Labels}",
+                        busId,
+                        assignedRoutes.Count,
+                        hasFuel,
+                        hasMaintenance,
+                        hasActivities,
+                        routeSummary);
 
                     bus.Status = "Retired";
                     bus.UpdatedDate = DateTime.UtcNow;
@@ -794,8 +843,6 @@ namespace BusBuddy.Core.Services
                     using var context = _contextFactory.CreateDbContext();
                     return await context.Buses
                         .AsNoTracking()
-                        .Include(b => b.AMRoutes)
-                        .Include(b => b.PMRoutes)
                         .Where(b => b.Status == "Active")
                         .ToListAsync();
                 }

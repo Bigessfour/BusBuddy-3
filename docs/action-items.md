@@ -102,6 +102,13 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
 
+### 2026-09-11 — Fleet + Fuel UTM breakages (PR #69)
+
+- Fuel chart `Circle` → `Ellipse` (XamlParseException)
+- Bus save: Find + SetValues; list/detail no longer load AMRoutes/PMRoutes
+- Bus delete: hard-delete only when Restrict FKs clear; else soft-retire + clear future route vehicle FKs; VM toast (no Npgsql dump)
+- Do not Cascade `FK_Routes_AMVehicle`
+
 ### 2026-09-11 — UTM runtime log remediations
 
 - Fuel chart: `ChartSymbol` `Circle` → `Ellipse` (XamlParseException on FuelManagementView)
