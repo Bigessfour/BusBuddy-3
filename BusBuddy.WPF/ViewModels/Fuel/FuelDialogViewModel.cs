@@ -70,7 +70,8 @@ public partial class FuelDialogViewModel : BaseViewModel
 
         DialogTitle = fuel.FuelId == 0 ? "Add Fuel Record" : "Edit Fuel Record";
 
-        SaveCommand = new RelayCommand(Save, () => IsValid);
+        // Always executable — Save() validates and UserToast explains blockers (Click must not no-op).
+        SaveCommand = new RelayCommand(Save);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, false));
 
         if (fuel.FuelId == 0)

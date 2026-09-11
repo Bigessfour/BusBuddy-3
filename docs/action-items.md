@@ -102,6 +102,23 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
 
+### 2026-09-11 — Fleet + Fuel UTM breakages (PR #69)
+
+- Fuel chart `Circle` → `Ellipse` (XamlParseException)
+- Bus save: Find + SetValues; list/detail no longer load AMRoutes/PMRoutes
+- Bus delete: hard-delete only when Restrict FKs clear; else soft-retire + clear future route vehicle FKs; VM toast (no Npgsql dump)
+- Do not Cascade `FK_Routes_AMVehicle`
+
+### 2026-09-11 — UTM runtime log remediations
+
+- Fuel chart: `ChartSymbol` `Circle` → `Ellipse` (XamlParseException on FuelManagementView)
+- Bus save: `UpdateBusEntityAsync` uses Find + `CurrentValues.SetValues` (no graph Update / Route tracking clash)
+- Bus delete: soft-retire `Status=Retired` + clear AM/PM vehicle FKs (no hard delete on `FK_Routes_AMVehicle`)
+- Driver delete: always soft-retire via `UpdateDriverStatusAsync(Inactive)`
+- Route grid school/bus combos: ItemsSource via `RoutesDataGrid` DataContext; Maintenance grid via RelativeSource UserControl
+- Vehicle VM: `OperationalStatusOptions` for closed status list
+- Evidence: Release build green; UTM Fuel/Maintenance/RouteManagement filter **15 passed**
+
 ### 2026-09-11 — RouteManagementView audit remediations
 
 - Stopped `CurrentCellEndEdit` auto-save; toolbar **Save Route**; Date `Pattern=ShortDate`

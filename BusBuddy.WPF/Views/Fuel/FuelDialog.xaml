@@ -15,8 +15,8 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip">
     <!--
-      Clerk numeric entry: SfTextBoxExt (no DoubleTextBox NumberDecimalDigits mask).
-      Syncfusion: fixed NumberDecimalDigits rounds mid-keystroke — free text + round on LostFocus/Save.
+      Clerk numeric entry: SfTextBoxExt (avoid DoubleTextBox decimal-digit masks).
+      Syncfusion fixed decimal masks round mid-keystroke — free text + round on LostFocus/Save.
       Editable ComboBoxAdv binds Text (not only SelectedItem) per Syncfusion MCP.
     -->
     <Window.Resources>

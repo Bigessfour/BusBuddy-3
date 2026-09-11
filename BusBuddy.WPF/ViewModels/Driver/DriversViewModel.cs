@@ -385,10 +385,10 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
                 var driver = SelectedDriver;
                 var result = System.Windows.MessageBox.Show(
-                    $"Delete driver '{driver.DriverName}'?\n\n" +
-                    "• Hard delete when they have no route assignments.\n" +
-                    "• Otherwise soft-retire (Status = Inactive), clear future route FKs, and remove from this list.",
-                    "Confirm Delete Driver",
+                    $"Retire driver '{driver.DriverName}'?\n\n" +
+                    "This marks them Inactive (soft-retire), clears route FKs where needed, " +
+                    "and removes them from this list. The record is kept for history.",
+                    "Confirm Retire Driver",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
 
@@ -684,70 +684,44 @@ namespace BusBuddy.WPF.ViewModels.Driver
         }
 
         /// <summary>
-        /// Hard-delete via IDriverService when possible; otherwise soft-retire and drop from the roster UI.
-        /// Never tries to Remove a detached EF entity. Outcomes surface as toasts so clerks see the rule path.
+        /// Soft-retire via IDriverService (Status = Inactive) and drop from the roster UI.
+        /// Never hard-deletes — route/history FKs must stay valid (UTM FK failures 2026-09-11).
         /// </summary>
         private async Task DeactivateOrDeleteDriverAsync(Core.Models.Driver driver)
         {
-            Logger.Information("Deleting/deactivating driver {DriverId} - {DriverName}", driver.DriverId, driver.DriverName);
+            Logger.Information("Soft-retiring driver {DriverId} - {DriverName}", driver.DriverId, driver.DriverName);
 
             if (_driverService is not null)
             {
-                // Prefer hard delete so "Delete" actually removes the row.
                 try
                 {
-                    var deleted = await _driverService.DeleteDriverAsync(driver.DriverId).ConfigureAwait(true);
-                    if (deleted)
-                    {
-                        RemoveDriverFromRoster(driver);
-                        base.StatusMessage = $"Driver '{driver.DriverName}' deleted";
-                        Logger.Information("Hard-deleted driver {DriverId}", driver.DriverId);
-                        UserToast.Success(
-                            $"Deleted '{driver.DriverName}' from the database.",
-                            "Driver deleted");
-                        return;
-                    }
-                }
-                catch (InvalidOperationException ex)
-                {
-                    Logger.Warning(ex, "Hard delete blocked for driver {DriverId} — soft-retiring", driver.DriverId);
-                    UserToast.Warning(
-                        $"Hard delete blocked for '{driver.DriverName}' (route assignments). Soft-retiring instead…",
-                        "Cannot hard-delete");
-                    // Fall through to soft-retire
-                }
-
-                try
-                {
-                    var deactivated = await _driverService.UpdateDriverStatusAsync(driver.DriverId, "Inactive")
-                        .ConfigureAwait(true);
+                    var deactivated = await _driverService.DeleteDriverAsync(driver.DriverId).ConfigureAwait(true);
                     if (deactivated)
                     {
-                        // Soft-retire still removes from the default roster view so Delete feels effective.
                         RemoveDriverFromRoster(driver);
                         base.StatusMessage =
-                            $"Driver '{driver.DriverName}' soft-retired (Inactive) — route FKs cleared where needed";
+                            $"Driver '{driver.DriverName}' soft-retired (Inactive)";
                         Logger.Information("Soft-retired and hid driver {DriverId}", driver.DriverId);
-                        UserToast.Warning(
-                            $"'{driver.DriverName}' was soft-retired (Inactive), not permanently deleted.\n" +
-                            "Future route assignments were cleared. The record remains for history.",
+                        UserToast.Success(
+                            $"'{driver.DriverName}' was soft-retired (Inactive).\n" +
+                            "Route assignments were cleared where needed. The record remains for history.",
                             "Driver soft-retired");
                         return;
                     }
 
-                    base.StatusMessage = "Driver was not removed (not found or blocked)";
+                    base.StatusMessage = "Driver was not retired (not found or blocked)";
                     UserToast.Error(
-                        "Could not delete or soft-retire this driver (not found or blocked).",
-                        "Delete failed");
+                        "Could not soft-retire this driver (not found or blocked).",
+                        "Retire failed");
                     return;
                 }
                 catch (InvalidOperationException ex)
                 {
-                    Logger.Warning(ex, "Cannot deactivate driver {DriverId}", driver.DriverId);
+                    Logger.Warning(ex, "Cannot soft-retire driver {DriverId}", driver.DriverId);
                     base.StatusMessage = ex.Message;
                     UserToast.Error(
                         $"{ex.Message}\n\nRemove them from active routes first, then try again.",
-                        "Delete blocked");
+                        "Retire blocked");
                     return;
                 }
             }
@@ -758,7 +732,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             if (tracked is null)
             {
                 base.StatusMessage = "Driver not found in database";
-                UserToast.Error("Driver not found in the database.", "Delete failed");
+                UserToast.Error("Driver not found in the database.", "Retire failed");
                 return;
             }
 

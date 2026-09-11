@@ -283,68 +283,9 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> DeleteDriverAsync(int driverId)
         {
-            try
-            {
-                Logger.Information("Deleting driver with ID: {DriverId}", driverId);
-
-                // First check if the driver is assigned to any routes
-                var (checkContext, disposeCheck) = GetReadContext();
-                bool hasActiveRoutes;
-                try
-                {
-                    hasActiveRoutes = await checkContext.Routes
-                        .CountAsync(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today) > 0;
-                }
-                finally
-                {
-                    if (disposeCheck)
-                    {
-                        await checkContext.DisposeAsync();
-                    }
-                }
-
-                if (hasActiveRoutes)
-                {
-                    Logger.Warning("Cannot delete driver {DriverId} as they are assigned to active routes", driverId);
-                    throw new InvalidOperationException("Cannot delete driver as they are assigned to active routes. Remove from routes first or mark as inactive.");
-                }
-
-                var (context, dispose) = GetWriteContext();
-                var driver = await context.Drivers.FindAsync(driverId);
-                if (driver == null)
-                {
-                    Logger.Warning("Driver with ID {DriverId} not found for deletion", driverId);
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                    return false;
-                }
-
-                context.Drivers.Remove(driver);
-                await context.SaveChangesAsync();
-
-                if (dispose)
-                {
-                    await context.DisposeAsync();
-                }
-
-                // Invalidate cache after deleting driver
-                _cachingService.InvalidateCache("AllDrivers");
-
-                Logger.Information("Successfully deleted driver: {DriverName}", driver.DriverName);
-                return true;
-            }
-            catch (InvalidOperationException)
-            {
-                // Rethrow business rule exceptions
-                throw;
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting driver with ID: {DriverId}", driverId);
-                throw;
-            }
+            // Soft-retire — never hard-delete while Routes / history may reference the driver.
+            Logger.Information("Soft-retiring driver {DriverId} via status Inactive", driverId);
+            return await UpdateDriverStatusAsync(driverId, "Inactive");
         }
 
         #endregion
@@ -918,18 +859,21 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Soft-retire (Inactive/Terminated) is allowed even with route assignments — history must remain.
-                // Hard delete still blocks elsewhere. Warn and clear future route FKs when retiring.
+                // Clear driver FKs only on today/future route days (do not rewrite historical assignment display).
                 if (!string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
                     && string.Equals(driver.Status, "Active", StringComparison.OrdinalIgnoreCase))
                 {
+                    var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
                     var assignedRoutes = await context.Routes
-                        .Where(r => r.AMDriverId == driverId || r.PMDriverId == driverId)
+                        .Where(r =>
+                            r.Date >= cutoffDate
+                            && (r.AMDriverId == driverId || r.PMDriverId == driverId))
                         .ToListAsync();
 
                     if (assignedRoutes.Count > 0)
                     {
                         Logger.Warning(
-                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} route(s) — clearing driver FKs",
+                            "Soft-retiring driver {DriverId} while assigned to {RouteCount} future route(s) — clearing driver FKs",
                             driverId,
                             assignedRoutes.Count);
 

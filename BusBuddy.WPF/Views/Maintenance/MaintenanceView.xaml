@@ -61,7 +61,7 @@
                                                Width="120"
                                                DisplayMemberPath="BusNumber"
                                                SelectedValuePath="BusId"
-                                               ItemsSource="{Binding Vehicles}"
+                                               ItemsSource="{Binding DataContext.Vehicles, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                AllowEditing="True"/>
                 <syncfusion:GridNumericColumn MappingName="OdometerReading" HeaderText="Odometer" Width="100"/>
                 <syncfusion:GridTextColumn MappingName="MaintenanceCompleted" HeaderText="Work" Width="160"/>
@@ -70,12 +70,12 @@
                 <syncfusion:GridComboBoxColumn MappingName="Status"
                                                HeaderText="Status"
                                                Width="120"
-                                               ItemsSource="{Binding StatusOptions}"
+                                               ItemsSource="{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                AllowEditing="True"/>
                 <syncfusion:GridComboBoxColumn MappingName="Priority"
                                                HeaderText="Priority"
                                                Width="100"
-                                               ItemsSource="{Binding PriorityOptions}"
+                                               ItemsSource="{Binding DataContext.PriorityOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="200"/>
             </syncfusion:SfDataGrid.Columns>

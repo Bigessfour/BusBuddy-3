@@ -85,9 +85,9 @@ namespace BusBuddy.Core.Services
                                         SpecialEquipment = v.SpecialEquipment,
                                         GPSTracking = v.GPSTracking,
                                         GPSDeviceId = v.GPSDeviceId,
-                                        Notes = v.Notes,
-                                        AMRoutes = v.AMRoutes,
-                                        PMRoutes = v.PMRoutes
+                                        Notes = v.Notes
+                                        // Fleet grid does not edit routes — omit AMRoutes/PMRoutes
+                                        // so Save never walks a Route graph (UTM EF identity conflict).
                                     })
                                     .ToListAsync();
                             }
@@ -239,12 +239,9 @@ namespace BusBuddy.Core.Services
                         try
                         {
                             return await context.Buses
-                                .AsNoTracking() // Use AsNoTracking for better performance in read operations
-                                .Include(v => v.AMRoutes)
-                                .Include(v => v.PMRoutes)
-                                .Include(v => v.Activities)
-                                .Include(v => v.FuelRecords)
-                                .Include(v => v.MaintenanceRecords)
+                                .AsNoTracking()
+                                // Fleet edit needs scalars only — Hop 4 owns route vehicle FKs.
+                                // Including AMRoutes/PMRoutes caused EF identity conflicts on Update.
                                 .FirstOrDefaultAsync(v => v.BusId == id);
                         }
                         finally
@@ -337,7 +334,17 @@ namespace BusBuddy.Core.Services
                     bus.BusId, bus.BusNumber);
 
                 using var context = _contextFactory.CreateWriteDbContext();
-                context.Buses.Update(bus);
+                // Never Attach/Update the full graph — loaded Bus often carries Route/Schedule
+                // navigations that collide with already-tracked Route rows (UTM log 2026-09-11).
+                var existing = await context.Buses.FindAsync(bus.BusId);
+                if (existing is null)
+                {
+                    Logger.Warning("Bus with ID: {BusId} not found for update", bus.BusId);
+                    return false;
+                }
+
+                context.Entry(existing).CurrentValues.SetValues(bus);
+                // Preserve key / identity; SetValues may overwrite BusId with same value (OK).
 
                 using (LogContext.PushProperty("OperationName", "UpdateBus"))
                 using (LogContext.PushProperty("DatabaseOperation", true))
@@ -389,68 +396,141 @@ namespace BusBuddy.Core.Services
             using (LogContext.PushProperty("OperationType", "DeleteBusEntity"))
             using (LogContext.PushProperty("BusId", busId))
             {
-                Logger.Information("Deleting bus entity with ID: {BusId}", busId);
+                Logger.Information("Deleting or soft-retiring bus entity with ID: {BusId}", busId);
 
                 using var context = _contextFactory.CreateWriteDbContext();
                 var bus = await context.Buses.FindAsync(busId);
-                if (bus != null)
+                if (bus is null)
                 {
-                    using (LogContext.PushProperty("BusNumber", bus.BusNumber))
+                    Logger.Warning("Bus with ID: {BusId} not found for deletion", busId);
+                    return false;
+                }
+
+                using (LogContext.PushProperty("BusNumber", bus.BusNumber))
+                {
+                    // Restrict FKs: Routes AM/PM, Fuel, Maintenance, Activities — never cascade-delete routes.
+                    var assignedRoutes = await context.Routes
+                        .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
+                        .Select(r => new { r.RouteId, r.RouteName, r.Date, r.AMVehicleId, r.PMVehicleId, r.BusNumber })
+                        .ToListAsync();
+                    var hasFuel = await context.FuelRecords.AnyAsync(f => f.VehicleFueledId == busId);
+                    var hasMaintenance = await context.MaintenanceRecords.AnyAsync(m => m.VehicleId == busId);
+                    var hasActivities = await context.Activities.AnyAsync(a => a.AssignedVehicleId == busId);
+
+                    var hasBlockingFks = assignedRoutes.Count > 0 || hasFuel || hasMaintenance || hasActivities;
+                    if (!hasBlockingFks)
                     {
-                        Logger.Information("Found bus to delete: {BusNumber} (ID: {BusId})",
-                            bus.BusNumber, busId);
-
                         context.Buses.Remove(bus);
-
-                        using (LogContext.PushProperty("OperationName", "DeleteBus"))
+                        using (LogContext.PushProperty("OperationName", "HardDeleteBus"))
                         using (LogContext.PushProperty("DatabaseOperation", true))
-                        using (LogContext.PushProperty("BusId", busId))
                         {
                             var stopwatch = Stopwatch.StartNew();
-                            Logger.Debug("Starting database operation: DeleteBus");
-
                             try
                             {
-                                var result = await context.SaveChangesAsync();
+                                await context.SaveChangesAsync();
                                 stopwatch.Stop();
-
-                                using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
-                                using (LogContext.PushProperty("ChangedEntities", result))
-                                {
-                                    Logger.Information("Database operation DeleteBus completed in {Duration}ms. Changed {ChangedEntities} entities.",
-                                        stopwatch.ElapsedMilliseconds, result);
-                                }
-
+                                Logger.Information(
+                                    "Hard-deleted bus {BusId} in {Duration}ms (no Restrict FKs)",
+                                    busId,
+                                    stopwatch.ElapsedMilliseconds);
                                 _cacheService.InvalidateBusCache(busId);
                                 _cacheService.InvalidateAllBusCache();
-
-                                if (result > 0)
-                                {
-                                    Logger.Information("Successfully deleted bus with ID: {BusId}", busId);
-                                    return true;
-                                }
-                                else
-                                {
-                                    Logger.Warning("No changes detected when deleting bus with ID: {BusId}", busId);
-                                    return false;
-                                }
+                                return true;
                             }
                             catch (Exception ex)
                             {
                                 stopwatch.Stop();
-                                using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
-                                {
-                                    DatabaseUserMessage.LogFailure(Logger, ex, "Database operation DeleteBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
-                                }
+                                DatabaseUserMessage.LogFailure(
+                                    Logger,
+                                    ex,
+                                    "Database operation HardDeleteBus failed after {Duration}ms",
+                                    stopwatch.ElapsedMilliseconds);
                                 throw;
                             }
                         }
                     }
-                }
-                else
-                {
-                    Logger.Warning("Bus with ID: {BusId} not found for deletion", busId);
-                    return false;
+
+                    // Soft-retire — clear vehicle FKs on today/future route days only (keep history).
+                    var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+                    var futureRoutes = await context.Routes
+                        .Where(r =>
+                            r.Date >= cutoffDate
+                            && (r.AMVehicleId == busId || r.PMVehicleId == busId))
+                        .ToListAsync();
+
+                    foreach (var route in futureRoutes)
+                    {
+                        if (route.AMVehicleId == busId)
+                        {
+                            route.AMVehicleId = null;
+                            context.Entry(route).Property(r => r.AMVehicleId).IsModified = true;
+                        }
+
+                        if (route.PMVehicleId == busId)
+                        {
+                            route.PMVehicleId = null;
+                            context.Entry(route).Property(r => r.PMVehicleId).IsModified = true;
+                        }
+
+                        if (string.Equals(route.BusNumber, bus.BusNumber, StringComparison.OrdinalIgnoreCase))
+                        {
+                            route.BusNumber = string.Empty;
+                            context.Entry(route).Property(r => r.BusNumber).IsModified = true;
+                        }
+                    }
+
+                    var routeLabels = assignedRoutes
+                        .Select(r => string.IsNullOrWhiteSpace(r.RouteName) ? $"Route {r.RouteId}" : r.RouteName!)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .Take(5)
+                        .ToList();
+                    var routeSummary = routeLabels.Count > 0
+                        ? string.Join(", ", routeLabels)
+                        : "(fuel/maintenance/activity history)";
+
+                    Logger.Warning(
+                        "Soft-retiring bus {BusId} — Restrict FKs present (routes={RouteCount}, fuel={HasFuel}, maint={HasMaint}, activities={HasAct}). Labels={Labels}",
+                        busId,
+                        assignedRoutes.Count,
+                        hasFuel,
+                        hasMaintenance,
+                        hasActivities,
+                        routeSummary);
+
+                    bus.Status = "Retired";
+                    bus.UpdatedDate = DateTime.UtcNow;
+                    context.Entry(bus).Property(b => b.Status).IsModified = true;
+                    context.Entry(bus).Property(b => b.UpdatedDate).IsModified = true;
+
+                    using (LogContext.PushProperty("OperationName", "SoftRetireBus"))
+                    using (LogContext.PushProperty("DatabaseOperation", true))
+                    {
+                        var stopwatch = Stopwatch.StartNew();
+                        try
+                        {
+                            var result = await context.SaveChangesAsync();
+                            stopwatch.Stop();
+                            Logger.Information(
+                                "Soft-retired bus {BusId} in {Duration}ms (changed {Changed})",
+                                busId,
+                                stopwatch.ElapsedMilliseconds,
+                                result);
+
+                            _cacheService.InvalidateBusCache(busId);
+                            _cacheService.InvalidateAllBusCache();
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            stopwatch.Stop();
+                            DatabaseUserMessage.LogFailure(
+                                Logger,
+                                ex,
+                                "Database operation SoftRetireBus failed after {Duration}ms",
+                                stopwatch.ElapsedMilliseconds);
+                            throw;
+                        }
+                    }
                 }
             }
         }
@@ -763,8 +843,6 @@ namespace BusBuddy.Core.Services
                     using var context = _contextFactory.CreateDbContext();
                     return await context.Buses
                         .AsNoTracking()
-                        .Include(b => b.AMRoutes)
-                        .Include(b => b.PMRoutes)
                         .Where(b => b.Status == "Active")
                         .ToListAsync();
                 }
