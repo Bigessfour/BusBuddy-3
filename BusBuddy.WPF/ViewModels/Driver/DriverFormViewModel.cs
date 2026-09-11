@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using DriverModel = BusBuddy.Core.Models.Driver;
@@ -201,8 +202,11 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 var missing = GetMissingRequiredFields();
                 if (missing.Count > 0)
                 {
-                    ShowError($"Fill required fields before saving: {string.Join(", ", missing)}");
-                    Logger.Information("Save blocked — missing required fields: {Missing}", string.Join(", ", missing));
+                    var detail = string.Join(", ", missing);
+                    ShowError(
+                        $"Cannot save yet — missing required fields: {detail}.",
+                        "Save blocked");
+                    Logger.Information("Save blocked — missing required fields: {Missing}", detail);
                     return;
                 }
 
@@ -227,7 +231,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 var validationErrors = await _driverService.ValidateDriverAsync(Driver);
                 if (validationErrors.Count > 0)
                 {
-                    ShowError($"Validation failed: {string.Join(", ", validationErrors)}");
+                    ShowError(
+                        $"Cannot save — validation failed:\n• {string.Join("\n• ", validationErrors)}",
+                        "Validation failed");
                     return;
                 }
 
@@ -237,19 +243,19 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     var success = await _driverService.UpdateDriverAsync(Driver);
                     if (!success)
                     {
-                        ShowError("Failed to update driver");
+                        ShowError("Failed to update driver in the database.", "Save failed");
                         Logger.Debug("Update operation returned false for Id={Id}", Driver.DriverId);
                         return;
                     }
                     savedDriver = Driver;
-                    ShowSuccess("Driver updated successfully");
+                    ShowSuccess($"Saved changes for '{savedDriver.DriverName}'.", "Driver updated");
                 }
                 else
                 {
                     TryUpdateDriverName();
                     savedDriver = await _driverService.AddDriverAsync(Driver);
                     Logger.Debug("Add operation returned Id={Id}", savedDriver.DriverId);
-                    ShowSuccess("Driver added successfully");
+                    ShowSuccess($"Added '{savedDriver.DriverName}' to the roster.", "Driver added");
                 }
 
                 Logger.Information("Driver saved successfully: {DriverName} (ID: {DriverId})",
@@ -261,7 +267,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error saving driver: {DriverName}", Driver.DriverName);
-                ShowError($"Error saving driver: {ex.Message}");
+                ShowError($"Error saving driver: {ex.Message}", "Save failed");
             }
             finally
             {
@@ -341,19 +347,20 @@ namespace BusBuddy.WPF.ViewModels.Driver
         }
 
         // Helpers
-        private void ShowError(string message)
+        private void ShowError(string message, string title = "Error")
         {
             StatusMessage = message;
             OnPropertyChanged(nameof(HasStatusMessage));
             Logger.Warning("User error: {Message}", message);
-            System.Windows.MessageBox.Show(message, "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            UserToast.Error(message, title);
         }
 
-        private void ShowSuccess(string message)
+        private void ShowSuccess(string message, string title = "Success")
         {
             StatusMessage = message;
             OnPropertyChanged(nameof(HasStatusMessage));
             Logger.Information("User success: {Message}", message);
+            UserToast.Success(message, title);
         }
 
         private async Task LoadDriversAsync()

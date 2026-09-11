@@ -10,6 +10,7 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
 using BusBuddy.WPF;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -378,20 +379,22 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 if (SelectedDriver is null)
                 {
                     base.StatusMessage = "Select a driver before deleting";
+                    UserToast.Warning("Select a driver in the grid first, then click Delete Driver.", "No driver selected");
                     return;
                 }
 
                 var driver = SelectedDriver;
                 var result = System.Windows.MessageBox.Show(
                     $"Delete driver '{driver.DriverName}'?\n\n" +
-                    "This permanently removes the driver when they have no route assignments.\n" +
-                    "If they are assigned to routes, they will be soft-retired (Status = Inactive) instead.",
+                    "• Hard delete when they have no route assignments.\n" +
+                    "• Otherwise soft-retire (Status = Inactive), clear future route FKs, and remove from this list.",
                     "Confirm Delete Driver",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
 
                 if (result != System.Windows.MessageBoxResult.Yes)
                 {
+                    UserToast.Info("Delete cancelled — no changes made.", "Cancelled");
                     return;
                 }
 
@@ -401,7 +404,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 Logger.Error(ex, "Error executing delete driver command");
                 base.StatusMessage = $"Error deleting driver: {ex.Message}";
-                System.Windows.MessageBox.Show(ex.Message, "Delete Driver", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                UserToast.Error($"Delete failed: {ex.Message}", "Delete Driver");
             }
         }
 
@@ -682,7 +685,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
         /// <summary>
         /// Hard-delete via IDriverService when possible; otherwise soft-retire and drop from the roster UI.
-        /// Never tries to Remove a detached EF entity.
+        /// Never tries to Remove a detached EF entity. Outcomes surface as toasts so clerks see the rule path.
         /// </summary>
         private async Task DeactivateOrDeleteDriverAsync(Core.Models.Driver driver)
         {
@@ -699,17 +702,18 @@ namespace BusBuddy.WPF.ViewModels.Driver
                         RemoveDriverFromRoster(driver);
                         base.StatusMessage = $"Driver '{driver.DriverName}' deleted";
                         Logger.Information("Hard-deleted driver {DriverId}", driver.DriverId);
-                        System.Windows.MessageBox.Show(
-                            $"Deleted '{driver.DriverName}'.",
-                            "Delete Driver",
-                            System.Windows.MessageBoxButton.OK,
-                            System.Windows.MessageBoxImage.Information);
+                        UserToast.Success(
+                            $"Deleted '{driver.DriverName}' from the database.",
+                            "Driver deleted");
                         return;
                     }
                 }
                 catch (InvalidOperationException ex)
                 {
                     Logger.Warning(ex, "Hard delete blocked for driver {DriverId} — soft-retiring", driver.DriverId);
+                    UserToast.Warning(
+                        $"Hard delete blocked for '{driver.DriverName}' (route assignments). Soft-retiring instead…",
+                        "Cannot hard-delete");
                     // Fall through to soft-retire
                 }
 
@@ -722,34 +726,28 @@ namespace BusBuddy.WPF.ViewModels.Driver
                         // Soft-retire still removes from the default roster view so Delete feels effective.
                         RemoveDriverFromRoster(driver);
                         base.StatusMessage =
-                            $"Driver '{driver.DriverName}' soft-retired (Inactive) — still assigned to routes, so not hard-deleted";
+                            $"Driver '{driver.DriverName}' soft-retired (Inactive) — route FKs cleared where needed";
                         Logger.Information("Soft-retired and hid driver {DriverId}", driver.DriverId);
-                        System.Windows.MessageBox.Show(
-                            $"'{driver.DriverName}' could not be hard-deleted (route assignments).\n" +
-                            "They were marked Inactive and removed from this list.",
-                            "Driver Soft-Retired",
-                            System.Windows.MessageBoxButton.OK,
-                            System.Windows.MessageBoxImage.Information);
+                        UserToast.Warning(
+                            $"'{driver.DriverName}' was soft-retired (Inactive), not permanently deleted.\n" +
+                            "Future route assignments were cleared. The record remains for history.",
+                            "Driver soft-retired");
                         return;
                     }
 
                     base.StatusMessage = "Driver was not removed (not found or blocked)";
-                    System.Windows.MessageBox.Show(
-                        "Could not delete or deactivate this driver.",
-                        "Delete Driver",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Warning);
+                    UserToast.Error(
+                        "Could not delete or soft-retire this driver (not found or blocked).",
+                        "Delete failed");
                     return;
                 }
                 catch (InvalidOperationException ex)
                 {
                     Logger.Warning(ex, "Cannot deactivate driver {DriverId}", driver.DriverId);
                     base.StatusMessage = ex.Message;
-                    System.Windows.MessageBox.Show(
-                        ex.Message + "\n\nRemove them from active routes first.",
-                        "Delete Driver",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Warning);
+                    UserToast.Error(
+                        $"{ex.Message}\n\nRemove them from active routes first, then try again.",
+                        "Delete blocked");
                     return;
                 }
             }
@@ -760,6 +758,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             if (tracked is null)
             {
                 base.StatusMessage = "Driver not found in database";
+                UserToast.Error("Driver not found in the database.", "Delete failed");
                 return;
             }
 
@@ -768,6 +767,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
             RemoveDriverFromRoster(driver);
             base.StatusMessage = $"Driver '{driver.DriverName}' soft-retired (Inactive)";
             Logger.Information("Soft-retired driver {DriverId} via DbContext", driver.DriverId);
+            UserToast.Warning(
+                $"'{driver.DriverName}' was marked Inactive (soft-retire) and removed from this list.",
+                "Driver soft-retired");
         }
 
         private void RemoveDriverFromRoster(Core.Models.Driver driver)
