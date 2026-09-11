@@ -44,7 +44,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
 
         StopTypeOptions = new ObservableCollection<string>(PickupStopTypes.All);
-        MapMarkers = new ObservableCollection<MapViewModel.MapMarker>();
+        MapMarkers = new ObservableCollection<MapMarker>();
         var camera = DistrictCameraUi.Resolve();
         MapCenter = new Point(camera.Latitude, camera.Longitude);
         MapZoomLevel = camera.ZoomLevel;
@@ -120,7 +120,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
     public int MapZoomLevel { get; private set; }
 
-    public ObservableCollection<MapViewModel.MapMarker> MapMarkers { get; }
+    public ObservableCollection<MapMarker> MapMarkers { get; }
 
     public int? SavedPickupStopId { get; private set; }
 
@@ -166,7 +166,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
         }
 
         var label = MapMarkerLabels.ForPickup(string.IsNullOrWhiteSpace(Name) ? "Pickup stop" : Name.Trim());
-        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(
+        MapMarkers.Add(MapMarker.FromDegrees(
             _latitudeValue,
             _longitudeValue,
             label,

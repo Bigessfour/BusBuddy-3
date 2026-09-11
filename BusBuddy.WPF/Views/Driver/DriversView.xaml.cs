@@ -60,6 +60,40 @@ namespace BusBuddy.WPF.Views.Driver
         {
             Logger.Information("DriversView Loaded");
             try { AuditButtonsAccessibility(); } catch (Exception ex) { Logger.Warning(ex, "DriversView: accessibility audit failed"); }
+
+            // Ensure roster is fresh when the view becomes visible
+            if (DataContext is DriversViewModel vm)
+            {
+                _ = vm.LoadDriversAsync();
+            }
+        }
+
+        /// <summary>
+        /// Syncfusion SfDataGrid SelectedItem TwoWay binding is unreliable; push selection into the VM explicitly.
+        /// </summary>
+        private void DriversDataGrid_SelectionChanged(object sender, Syncfusion.UI.Xaml.Grid.GridSelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (DataContext is not DriversViewModel vm)
+                {
+                    return;
+                }
+
+                var selected = DriversDataGrid.SelectedItem as BusBuddy.Core.Models.Driver;
+                if (!ReferenceEquals(vm.SelectedDriver, selected))
+                {
+                    vm.SelectedDriver = selected;
+                    Logger.Information(
+                        "DriversDataGrid selection synced -> Id={DriverId} Name={Name}",
+                        selected?.DriverId,
+                        selected?.DriverName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "DriversView: selection sync failed");
+            }
         }
 
         private void OnUnloaded(object? sender, RoutedEventArgs e)

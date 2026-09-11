@@ -4,10 +4,9 @@
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-                             xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
                              mc:Ignorable="d"
                              Title="{Binding FormTitle}"
-                             Height="600"
+                             Height="720"
                              Width="650"
                              WindowStartupLocation="CenterOwner"
                              ResizeMode="CanResize">
@@ -387,12 +386,25 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0"
-                                Grid.Column="0">
-                        <syncfusiontools:ToggleButtonExt Content="Training Complete"
-                                  IsChecked="{Binding Driver.TrainingComplete, Mode=TwoWay}"
-                                  Margin="0,5,0,10"
+                                Grid.Column="0"
+                                Margin="0,0,0,8">
+                        <TextBlock Text="Training status:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <!-- ToggleButtonExt was effectively invisible under Fluent; use a plain CheckBox. -->
+                        <CheckBox Content="Training complete (operational flag)"
+                                  IsChecked="{Binding Driver.TrainingComplete, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,8,0,4"
+                                  FontSize="14"
+                                  Foreground="{DynamicResource FormLabelForegroundBrush}"
+                                  VerticalContentAlignment="Center"
                                   AutomationProperties.Name="Training Complete"
-                                  AutomationProperties.HelpText="Check if driver has completed required training" />
+                                  AutomationProperties.HelpText="Marks the driver as training-complete for assignment. Dated training records are managed from Drivers → Training."
+                                  ToolTip="Operational readiness flag. Detailed dated training rows belong on the Drivers training checklist (specs/drivers.md)." />
+                        <TextBlock Text="Dated course records live on the Drivers Training checklist — this is the assignability flag only."
+                                   TextWrapping="Wrap"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                                   Margin="0,0,0,8" />
                     </StackPanel>
                     <StackPanel Grid.Row="0"
                                 Grid.Column="2">
@@ -474,7 +486,7 @@
                                       Command="{Binding SaveDriverCommand}"
                                       Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
                                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                                      ToolTip="Save driver"
+                                      ToolTip="Save driver (shows which required fields are missing if incomplete)"
                                       AutomationProperties.Name="Save Driver"
                                       AutomationProperties.HelpText="Save driver information to database" />
                 <syncfusion:ButtonAdv x:Name="CancelButton"

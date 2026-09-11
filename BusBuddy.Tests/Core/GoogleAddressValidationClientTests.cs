@@ -245,7 +245,7 @@ public class GoogleAddressValidationClientTests
         Assert.That(result.Ok, Is.False);
         Assert.That(result.MappingUnconfigured, Is.False);
         Assert.That(result.ErrorMessage, Does.Contain("quota project"));
-        Assert.That(result.ErrorMessage, Does.Contain("GCP_BILLING_PROJECT"));
+        Assert.That(result.ErrorMessage, Does.Contain("busbuddy-507301"));
     }
 
     private sealed class StubHandler : HttpMessageHandler

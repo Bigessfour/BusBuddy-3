@@ -37,12 +37,12 @@ This increment persists on existing student and route columns. No required migra
 
 ## MappingConfiguration (env / IOptions)
 
-| Field          | Source                                                                                                          |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| ApiKey         | `GOOGLE_MAPS_API_KEY`                                                                                           |
-| QuotaProject   | `busbuddy-507301` (`GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` overlay; do not header `new-coursera-490518`) |
-| EnableUspsCass | true (US)                                                                                                       |
-| RegionCode     | US                                                                                                              |
+| Field          | Source                                                                                                                                                                                                                        |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ApiKey         | `GOOGLE_MAPS_API_KEY`                                                                                                                                                                                                         |
+| QuotaProject   | Empty by default for API keys. Only set via `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` / JSON when intentionally using a quota project; do not header `new-coursera-490518`. Create the Maps key under `busbuddy-507301`. |
+| EnableUspsCass | true (US)                                                                                                                                                                                                                     |
+| RegionCode     | US                                                                                                                                                                                                                            |
 
 Never stored in git. Absence ⇒ Unconfigured (null geocode, UI message).
 

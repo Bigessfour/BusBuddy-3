@@ -73,7 +73,7 @@ Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powersh
 
 ### **Google Cloud & Maps Platform**
 
-Geo is Google Maps Platform (Address Validation, Places Autocomplete, Routes) plus Syncfusion SfMap/OSM. Earth Engine is **not** an app dependency.
+Geo is Google Maps Platform (Address Validation, Places Autocomplete, Routes) plus Syncfusion SfMap with Google Map Tiles only. Earth Engine is **not** an app dependency.
 
 | Item                                    | Value                                                                                       |
 | --------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -97,7 +97,7 @@ Inspect enabled Maps APIs and API-key restrictions (metadata only, no key string
 
 Cursor loads the official gcloud MCP from [`.cursor/mcp.json`](.cursor/mcp.json) (`gcloud` → `.github/scripts/run-gcloud-mcp.sh`). Reload MCP after clone. Live Address Validation / Places / Routes calls still use `GOOGLE_MAPS_API_KEY`, not `gcloud`.
 
-On app startup (Mac), Passwords entries load into env. Geo uses the database + OSM map. Google Maps Platform clients run when `GOOGLE_MAPS_API_KEY` is set (`X-Goog-User-Project` from `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` / `GoogleMaps:QuotaProject`, default `busbuddy-507301`). The app fail-opens without a key.
+On app startup (Mac), Passwords entries load into env. Geo uses the database + Google Map Tiles when `GOOGLE_MAPS_API_KEY` is set (empty basemap without a key/session — no OSM). Billing follows the GCP project that owns the API key — leave `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` / `GoogleMaps:QuotaProject` unset for API-key auth (`X-Goog-User-Project` causes HTTP 403 `serviceUsageConsumer` for many keys).
 
 Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md)
 
@@ -465,16 +465,16 @@ dotnet ef migrations add NewMigrationName
 
 **macOS (recommended):** Store in Passwords app; Name = env var. App loads automatically — see [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md).
 
-| Variable                                       | Purpose                                            |
-| ---------------------------------------------- | -------------------------------------------------- |
-| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF license (required for UI)           |
-| `XAI_API_KEY` / `GROK_API_KEY`                 | Grok / xAI route optimization                      |
-| `GOOGLE_MAPS_API_KEY`                          | Maps Platform Address Validation + Places + Routes |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Maps quota project (`busbuddy-507301`)             |
-| `ConnectionStrings__DefaultConnection`         | Database connection                                |
-| `BUSBUDDY_CONNECTION`                          | Postgres override for Docker profiles              |
+| Variable                                       | Purpose                                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------- |
+| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF license (required for UI)                            |
+| `XAI_API_KEY` / `GROK_API_KEY`                 | Grok / xAI route optimization                                       |
+| `GOOGLE_MAPS_API_KEY`                          | Maps Platform (Address Validation + Places + Routes + Map Tiles)    |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Leave unset for API keys (forces `X-Goog-User-Project` → often 403) |
+| `ConnectionStrings__DefaultConnection`         | Database connection                                                 |
+| `BUSBUDDY_CONNECTION`                          | Postgres override for Docker profiles                               |
 
-**Windows production:** Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/user env vars.
+**Windows production:** Set `GOOGLE_MAPS_API_KEY` as a machine/user env var (key created under `busbuddy-507301`). Do **not** set `GCP_BILLING_PROJECT` for API-key auth.
 
 **Deprecated / invalid:** Earth Engine (`GEE_*`, `GoogleEarthEngineService`, project `ee-bigessfour` as an app dependency), project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows.
 

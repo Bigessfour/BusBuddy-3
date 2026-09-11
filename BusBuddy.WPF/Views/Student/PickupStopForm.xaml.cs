@@ -60,7 +60,29 @@ public partial class PickupStopForm : ChromelessWindow
             }
         };
 
-        Loaded += (_, _) => SaveStopButton.IsEnabled = true;
+        Loaded += async (_, _) =>
+        {
+            SaveStopButton.IsEnabled = true;
+            if (StopPickLayer is not null)
+            {
+                var ok = await MapTileBootstrap.TryApplyGoogleTilesAsync(
+                    StopPickLayer,
+                    StopPickAttribution,
+                    StopPickAttributionText,
+                    StopPickMap,
+                    App.ServiceProvider,
+                    StopPickGoogleLogo,
+                    host: "StopPick").ConfigureAwait(true);
+                if (ok)
+                {
+                    _ = await MapTileBootstrap.RefreshGoogleAttributionAsync(
+                        StopPickLayer,
+                        StopPickAttributionText,
+                        StopPickMap,
+                        App.ServiceProvider).ConfigureAwait(true);
+                }
+            }
+        };
     }
 
     private async void SaveStopButton_Click(object sender, RoutedEventArgs e)

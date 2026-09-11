@@ -7,6 +7,7 @@ using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 
@@ -35,12 +36,17 @@ public static class RuntimeCapabilityLogger
         {
             var configuration = services?.GetService<IConfiguration>();
             var district = services?.GetService<IDistrictSettingsAccessor>()?.Current;
+            var mapsOptions = services?.GetService<IOptions<GoogleMapsOptions>>()?.Value;
             var mapsKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")
                 ?? configuration?["GoogleMaps:ApiKey"];
             var license = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
-            var gcp = Environment.GetEnvironmentVariable("GCP_BILLING_PROJECT")
+            var boundQuota = configuration?["GoogleMaps:QuotaProject"];
+            var gcp = mapsOptions?.QuotaProject
+                ?? Environment.GetEnvironmentVariable("GCP_BILLING_PROJECT")
                 ?? Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT")
-                ?? configuration?["GoogleMaps:QuotaProject"];
+                ?? boundQuota;
+            var quotaSource = GoogleMapsOptions.DescribeQuotaSource(boundQuota);
+            var keySource = GoogleMapsOptions.DescribeApiKeySource(configuration?["GoogleMaps:ApiKey"]);
             var provider = configuration?["DatabaseProvider"] ?? "(unset)";
             var connection = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
             var mapsDiagnostics = Environment.GetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride)
@@ -53,7 +59,7 @@ public static class RuntimeCapabilityLogger
                 "Runtime capability SyncfusionLicense={SyncfusionLicense} MapsKey={MapsKey} GcpProject={GcpProject} DatabaseProvider={DatabaseProvider} BusBuddyConnection={Connection} PostgresEndpoint={Endpoint} DepotLat={DepotLat} DepotLon={DepotLon} BBoxMinLat={BBoxMinLat} BBoxMaxLat={BBoxMaxLat} MapDiagnostics={MapDiagnostics} FuelService={Fuel} MaintenanceService={Maint} ScheduleService={Sched} ActivityLogService={ActivityLog} GeocodingService={Geo} RoutingService={Routing}",
                 DescribePresence(license),
                 DescribePresence(mapsKey),
-                string.IsNullOrWhiteSpace(gcp) ? "missing" : gcp,
+                string.IsNullOrWhiteSpace(gcp) ? "unset" : gcp,
                 provider,
                 DescribePresence(connection),
                 PostgresConnectionResolver.DescribeEndpoint(connection) ?? "(appsettings)",
@@ -69,12 +75,32 @@ public static class RuntimeCapabilityLogger
                 services?.GetService<IGeocodingService>() is not null,
                 services?.GetService<IRoutingService>() is not null);
 
+            UiDiagnosticsLog.Write(
+                Logger,
+                LogEventLevel.Information,
+                "MapsOptionsBound ApiKey={ApiKey} KeySource={KeySource} QuotaProject={QuotaProject} QuotaSource={QuotaSource}",
+                DescribePresence(mapsKey),
+                keySource,
+                string.IsNullOrWhiteSpace(gcp) ? "unset" : gcp,
+                quotaSource);
+
             if (string.Equals(DescribePresence(mapsKey), "missing", StringComparison.Ordinal))
             {
                 UiDiagnosticsLog.Write(
                     Logger,
                     LogEventLevel.Warning,
-                    "GOOGLE_MAPS_API_KEY missing — Address Validation / Places / Google tiles fail-open to OSM");
+                    "GOOGLE_MAPS_API_KEY missing — Address Validation / Places / Google tiles unavailable (no OSM fail-open)");
+            }
+
+            if (!string.IsNullOrWhiteSpace(gcp)
+                && string.Equals(DescribePresence(mapsKey), "present", StringComparison.Ordinal))
+            {
+                UiDiagnosticsLog.Write(
+                    Logger,
+                    LogEventLevel.Warning,
+                    "Maps QuotaProject is set ({QuotaProject} via {QuotaSource}) — API keys usually need this unset to avoid HTTP 403 serviceUsageConsumer",
+                    gcp,
+                    quotaSource);
             }
 
             if (string.Equals(DescribePresence(license), "missing", StringComparison.Ordinal))

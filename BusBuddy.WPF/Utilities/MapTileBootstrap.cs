@@ -11,9 +11,7 @@ using Syncfusion.UI.Xaml.Maps;
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Applies Map Tiles API session to the district imagery layer (Path A) or OSM fail-open.
-/// Keeps tile bootstrap out of MapView code-behind growth. The layer owns its own reload;
-/// this class never touches <c>SfMap.ZoomLevel</c> (a zoom "nudge" fires ZoomedIn/Out and two tile fetches).
+/// Applies Map Tiles API session to district / pick-map imagery (Google only; no OSM).
 /// </summary>
 public static class MapTileBootstrap
 {
@@ -25,16 +23,29 @@ public static class MapTileBootstrap
         TextBlock? attributionText,
         SfMap? mapControl,
         IServiceProvider? services,
-        System.Windows.Controls.Image? googleLogo = null)
+        System.Windows.Controls.Image? googleLogo = null,
+        string host = "DistrictMap")
     {
         ArgumentNullException.ThrowIfNull(layer);
 
         try
         {
             var tiles = services?.GetService<IGoogleMapTileSessionService>();
-            if (tiles is null || !tiles.IsConfigured)
+            if (tiles is null)
             {
-                ApplyOsm(layer, attributionBorder, attributionText, mapControl, googleLogo);
+                Logger.Warning(
+                    "MapTileBootstrap Host={Host} Outcome=no-service — IGoogleMapTileSessionService not registered",
+                    host);
+                ApplyUnavailable(layer, attributionBorder, attributionText, googleLogo, "Maps key not configured");
+                return false;
+            }
+
+            if (!tiles.IsConfigured)
+            {
+                Logger.Warning(
+                    "MapTileBootstrap Host={Host} Outcome=no-key — GOOGLE_MAPS_API_KEY not configured",
+                    host);
+                ApplyUnavailable(layer, attributionBorder, attributionText, googleLogo, "Maps key not configured");
                 return false;
             }
 
@@ -43,40 +54,60 @@ public static class MapTileBootstrap
                 .ConfigureAwait(true);
             if (session is null || string.IsNullOrWhiteSpace(session.UrlTemplate))
             {
-                Logger.Warning("Map Tiles session unavailable — using OpenStreetMap");
-                ApplyOsm(layer, attributionBorder, attributionText, mapControl, googleLogo);
+                Logger.Warning(
+                    "MapTileBootstrap Host={Host} Outcome=session-null — basemap empty (Google-only)",
+                    host);
+                ApplyUnavailable(layer, attributionBorder, attributionText, googleLogo, "Map tiles unavailable");
                 return false;
             }
 
             layer.UseGoogleTiles(session.UrlTemplate);
             SetAttribution(attributionBorder, attributionText, googleLogo, useGoogleMaps: true);
-            Logger.Information("District map using Google Map Tiles API roadmap");
+            Logger.Information(
+                "MapTileBootstrap Host={Host} Outcome=ok — Google Map Tiles roadmap",
+                host);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.Warning(ex, "Failed enabling Google Map Tiles — keeping OpenStreetMap");
-            ApplyOsm(layer, attributionBorder, attributionText, mapControl, googleLogo);
+            Logger.Warning(
+                ex,
+                "MapTileBootstrap Host={Host} Outcome=exception — basemap empty (Google-only)",
+                host);
+            ApplyUnavailable(layer, attributionBorder, attributionText, googleLogo, "Map tiles unavailable");
             return false;
         }
     }
 
-    public static void ApplyOsm(
+    /// <summary>Clear basemap and show a non-OSM status line when Google tiles cannot load.</summary>
+    public static void ApplyUnavailable(
         GoogleMapTilesImageryLayer layer,
         Border? attributionBorder,
         TextBlock? attributionText,
-        SfMap? mapControl = null,
-        System.Windows.Controls.Image? googleLogo = null)
+        System.Windows.Controls.Image? googleLogo = null,
+        string? statusMessage = null)
     {
         ArgumentNullException.ThrowIfNull(layer);
-        layer.UseOpenStreetMap();
-        SetAttribution(attributionBorder, attributionText, googleLogo, useGoogleMaps: false);
+        layer.ClearBasemap();
+        if (googleLogo is not null)
+        {
+            googleLogo.Visibility = Visibility.Collapsed;
+        }
+
+        if (attributionBorder is not null)
+        {
+            attributionBorder.Visibility = Visibility.Visible;
+        }
+
+        if (attributionText is not null)
+        {
+            attributionText.Text = statusMessage ?? "Map tiles unavailable";
+            attributionText.FontSize = 12;
+        }
     }
 
     /// <summary>
-    /// Map Tiles API Policies require the viewport <c>copyright</c> string (e.g. "Map data ©2026 Google")
-    /// to be shown for the tiles on screen. Call after the camera settles; no-op while OSM is active.
-    /// Returns the text applied, or null when the static label was kept.
+    /// Map Tiles API Policies require the viewport <c>copyright</c> string when Google tiles are active.
     /// </summary>
     public static async Task<string?> RefreshGoogleAttributionAsync(
         GoogleMapTilesImageryLayer layer,
@@ -138,13 +169,12 @@ public static class MapTileBootstrap
 
         if (googleLogo is not null)
         {
-            // Map Tiles API policies: show the official Google Maps logo whenever Google tiles are active.
             googleLogo.Visibility = useGoogleMaps ? Visibility.Visible : Visibility.Collapsed;
         }
 
         if (text is not null)
         {
-            text.Text = useGoogleMaps ? MapBasemap.Attribution : "© OpenStreetMap contributors";
+            text.Text = useGoogleMaps ? MapBasemap.Attribution : "Map tiles unavailable";
             text.FontSize = useGoogleMaps ? 13 : 12;
         }
     }

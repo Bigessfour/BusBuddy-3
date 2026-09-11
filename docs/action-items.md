@@ -13,16 +13,16 @@
 
 **Ship definition:** Clerk path proved on Windows VM + District Map / Settings smoke. Not a11y Phase 2, not portfolio wishlists.
 
-### Ship readiness (2026-09-09)
+### Ship readiness (2026-09-10)
 
-| Criterion               | Status                                                                                                |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| Clerk hops 1–6          | **Met** — DbPrep on Docker Postgres + PR #64                                                          |
-| Windows VM proof        | **Met (hybrid)** — UTM WPF testhost for Students/Map/Settings; optional ribbon clicks remain          |
-| District Map / Settings | **Met** — Settings recenter, map Zoom/Center/Reset/labels, Google logo, VM Maps env; PR #65 follow-up |
-| a11y Phase 2 / wishlist | Out of scope                                                                                          |
+| Criterion               | Status                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Clerk hops 1–6          | **Met** — DbPrep on Docker Postgres + PR #64                                                                 |
+| Windows VM proof        | **Met (hybrid)** — UTM testhost + live District Map smoke 2026-09-10; optional ribbon hops 1–6 UI still open |
+| District Map / Settings | **In progress** — Google-only basemap (no OSM); Bing placeholder until UrlTemplate; VM re-smoke still open   |
+| a11y Phase 2 / wishlist | Out of scope                                                                                                 |
 
-**Verdict:** Ship-ready. Remaining open boxes are optional live UI confidence, schema hygiene, or decide-later — not blockers.
+**Verdict:** Ship-ready. Remaining open boxes are optional ribbon UI clicks, schema hygiene, or decide-later — not blockers.
 
 Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
@@ -30,12 +30,28 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 ## Now
 
-Ship P0/P1 core items are closed. Next are optional VM UI smokes or parked cleanup — pick one:
+- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry)
 
-- [ ] Optional live District Map smoke on VM: pan/wheel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull logs → set `=0`
-- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; OSM-only layer combo leftovers
+Optional:
+
+- [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
+- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
+
+### Maps coupling checklist (harden / test)
+
+Lightly coupled surfaces that must stay Google-only:
+
+| Coupling          | Harden                                                                                                | Test                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys | Capability log; session create 200 without quota header |
+| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM)                            | `MapViewTests` + `LogTileHealth` after 2s               |
+| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap`        | XAML asserts; form Loaded bootstrap                     |
+| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor`                                                            | Settings recenter unit + live smoke                     |
+| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product                        | Do not copy probe OSM into WPF views                    |
+
+After map path stabilizes: incremental `/code-review` or `/check-work` on tile + settings coupling.
 
 ---
 
@@ -67,11 +83,11 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 - [x] **Settings VM:** save depot lat/lng + bbox → Serilog district write → District Map recenters (not US-centroid fallback) (see Done log)
 - [x] **District Map VM:** Zoom In/Out/Center/Reset + county fit + HOME/PK captions at zoom≥12 (see Done log)
-- [ ] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0`
+- [x] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0` (see Done log 2026-09-10)
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
 - [x] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes (see Done log)
-- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; OSM-only layer combo leftovers
+- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 ---
 
@@ -168,7 +184,7 @@ _Updated 2026-09-09: District Map VM unit proof closed; Now = Google Map Tiles l
 
 ### 2026-09-09 — Google Map Tiles logo beside attribution
 
-- **Policy:** [Map Tiles API policies](https://developers.google.com/maps/documentation/tile/policies) — show official Google Maps logo (outlined on map) + copyright when Google tiles are active; OSM text-only when fail-open.
+- **Policy:** [Map Tiles API policies](https://developers.google.com/maps/documentation/tile/policies) — show official Google Maps logo (outlined on map) + copyright when Google tiles are active; empty basemap status when key/session missing (no OSM).
 - **UI:** `GoogleMapsLogo` Image in `MapView` attribution stack; `MapTileBootstrap.SetAttribution` toggles logo visibility with basemap.
 - **Assets:** `Assets/Maps/google_maps_on_non_white.png` (and plain-bg variant) as WPF `Resource`.
 - **Harness:** MapView XAML/bootstrap asserts for `GoogleMapsLogo` + pack URI.
@@ -188,3 +204,16 @@ _Updated 2026-09-09: Migration closed; Now = Windows VM Maps env vars._
 - **Evidence:** guest PowerShell `GOOGLE_MAPS_API_KEY_SET=True`, project=`busbuddy-507301`. New processes pick up User env (restart WPF if already open).
 
 _Updated 2026-09-09: Map/Settings P1 ship items closed; Now = optional live smoke or parked cleanup._
+
+### 2026-09-10 — Live District Map smoke (Windows VM)
+
+- **Env:** User `BUSBUDDY_MAP_DIAGNOSTICS=1` via `Scripts/run-map-diag-smoke.cmd` (Explorer does not pick up registry User env until relaunch; launcher forces process env). Capability line `MapDiagnostics=1`.
+- **Basemap:** Google Map Tiles after quota-header retry — `Map Tiles session created` + `District map using Google Map Tiles API roadmap` (not OSM).
+- **Clerk clicks (Map toolbar):** Serilog `Map zoom in to 14`, `Map zoom out to 13`, `Reset view requested` (diag session ~16:25). Markers plotted: `HOME …` students + schools; `InitializeMapDataAsync completed … Students=20`.
+- **Logs pulled (guest → Mac `/tmp/busbuddy-map-smoke-20260910/`):**
+    - `map-interactions-20260910.log` — attach OK (`session-start`); toolbar Zoom/Reset go through ViewModel commands, not SfMap mouse hooks, so no pan/wheel breadcrumbs this pass
+    - `ui-diagnostics-20260910.log` — `UI surface Loaded View=MapView`; repeated `ShowDetailLabels` RelativeSource binding warnings (caption Visibility — known; labels may not toggle via that binding)
+- **Off:** User `BUSBUDDY_MAP_DIAGNOSTICS=0`; scheduled task `BusBuddyMapDiagSmoke` removed.
+- **Not this session:** Settings depot/bbox live re-save (already unit-proved); ribbon hops 1–6 UI clicks; mouse pan/wheel feel lines in `map-interactions`.
+
+_Updated 2026-09-10: Live map smoke closed; Now = optional ribbon hops or parked cleanup._

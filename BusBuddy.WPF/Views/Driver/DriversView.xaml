@@ -22,8 +22,9 @@
                 <Setter Property="IconWidth" Value="0"/>
                 <Setter Property="IconHeight" Value="0"/>
                 <Setter Property="SmallIcon" Value="{x:Null}"/>
-                <Setter Property="Padding" Value="12,8"/>
-                <Setter Property="Margin" Value="0,0,8,0"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="Margin" Value="0,4,16,4"/>
+                <Setter Property="MinHeight" Value="36"/>
                 <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
             </Style>
@@ -67,6 +68,7 @@
                 <WrapPanel Grid.Column="0" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Name="AddDriverButton" Label="Add Driver"
                             Command="{Binding AddDriverCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversPrimaryButton}"
                             AutomationProperties.Name="Add Driver"
                             AutomationProperties.HelpText="Opens form to add a new driver to the system"
@@ -74,44 +76,50 @@
                     <syncfusion:ButtonAdv Name="EditDriverButton" Label="Edit Driver"
                             Command="{Binding EditDriverCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
                             AutomationProperties.Name="Edit Driver"
                             AutomationProperties.HelpText="Opens form to edit the currently selected driver"
                             ToolTip="Edit selected driver"/>
-                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Label="Delete Driver"
+                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Label="Deactivate Driver"
                             Command="{Binding DeleteDriverCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
-                            AutomationProperties.Name="Delete Driver"
-                            AutomationProperties.HelpText="Removes the currently selected driver from the system"
-                            ToolTip="Delete selected driver"/>
-                    <Separator Margin="4,0,10,0"/>
+                            AutomationProperties.Name="Deactivate Driver"
+                            AutomationProperties.HelpText="Soft-retires the selected driver (Status = Inactive). History is kept. Hard delete only when no route assignments."
+                            ToolTip="Deactivate selected driver (soft-retire — specs/drivers.md)"/>
+                    <Separator Margin="8,4,16,4"/>
 
                     <syncfusion:ButtonAdv Name="ViewLicenseButton" Label="View License"
                             Command="{Binding ViewLicenseCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
                             AutomationProperties.Name="View License Details"
                             AutomationProperties.HelpText="View license information and expiration details"
                             ToolTip="View license details"/>
-                    <syncfusion:ButtonAdv Name="TrainingRecordsButton" Label="Training"
+                    <syncfusion:ButtonAdv Name="TrainingRecordsButton" Label="View Training"
                             Command="{Binding TrainingRecordsCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
                             AutomationProperties.Name="View Training Records"
-                            AutomationProperties.HelpText="View and manage driver training records"
-                            ToolTip="Training checklist"/>
+                            AutomationProperties.HelpText="Open the CDE training checklist for the selected driver"
+                            ToolTip="Open training checklist for selected driver"/>
                 </WrapPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                             Command="{Binding RefreshCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
                             AutomationProperties.Name="Refresh Driver List"
                             AutomationProperties.HelpText="Reload driver data from the database"
                             ToolTip="Refresh list"/>
                     <syncfusion:ButtonAdv Name="ExportButton" Label="Export"
                             Command="{Binding GenerateReportsCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource DriversToolbarButton}"
                             AutomationProperties.Name="Export Drivers"
                             AutomationProperties.HelpText="Export driver data to CSV file"
@@ -129,7 +137,8 @@
         <syncfusion:SfDataGrid Grid.Row="2"
                                Name="DriversDataGrid"
                                ItemsSource="{Binding FilteredDrivers}"
-                               SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+                               SelectedItem="{Binding SelectedDriver, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                               SelectionChanged="DriversDataGrid_SelectionChanged"
                                AutoGenerateColumns="False"
                                AllowEditing="False"
                                AllowSorting="True"
@@ -170,15 +179,34 @@
                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Total Drivers: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
-                    <TextBlock Text="{Binding TotalDrivers}" FontWeight="Bold"
-                               Foreground="{DynamicResource BusBuddy.Brush.Primary}" Margin="0,0,15,0"/>
-                    <TextBlock Text="Active: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
-                    <TextBlock Text="{Binding ActiveDrivers}" FontWeight="Bold"
-                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}" Margin="0,0,15,0"/>
-                    <TextBlock Text="Training Pending: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
-                    <TextBlock Text="{Binding TrainingPendingDrivers}" FontWeight="Bold"
-                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
+                    <!-- Footer stats locked to Drivers collection (not search filter). -->
+                    <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"
+                               VerticalAlignment="Center" Margin="0,0,4,0"
+                               ToolTip="Total drivers loaded from the database"/>
+                    <TextBlock Text="Total Drivers: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TotalDrivers, Mode=OneWay}" FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Primary}" Margin="0,0,16,0"
+                               VerticalAlignment="Center"
+                               AutomationProperties.Name="Total Drivers Count"/>
+                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}"
+                               VerticalAlignment="Center" Margin="0,0,4,0"
+                               ToolTip="Drivers with Status = Active"/>
+                    <TextBlock Text="Active: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding ActiveDrivers, Mode=OneWay}" FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}" Margin="0,0,16,0"
+                               VerticalAlignment="Center"
+                               AutomationProperties.Name="Active Drivers Count"/>
+                    <TextBlock Text="&#xE7C3;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
+                               VerticalAlignment="Center" Margin="0,0,4,0"
+                               ToolTip="Drivers where TrainingComplete is false"/>
+                    <TextBlock Text="Training Pending: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding TrainingPendingDrivers, Mode=OneWay}" FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
+                               VerticalAlignment="Center"
+                               AutomationProperties.Name="Training Pending Drivers Count"/>
                 </StackPanel>
             </Grid>
         </Border>

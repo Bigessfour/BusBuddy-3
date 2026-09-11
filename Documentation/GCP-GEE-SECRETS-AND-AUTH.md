@@ -6,7 +6,7 @@ Earth Engine is **not** an app dependency. Do not restore `GEE_*` keys, `GcpCred
 
 ## Status (active)
 
-Runtime: Syncfusion SfMap with **Google Map Tiles API** roadmap tiles when `GOOGLE_MAPS_API_KEY` is set (OSM fail-open without a key/session). Google Maps Platform also provides address validation, Places autocomplete, and drive routing.
+Runtime: Syncfusion SfMap with **Google Map Tiles API** roadmap tiles when `GOOGLE_MAPS_API_KEY` is set (empty basemap without a key/session — no OSM). Google Maps Platform also provides address validation, Places autocomplete, and drive routing.
 
 | API                                                                                                        | Use                                                           |
 | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
@@ -30,12 +30,12 @@ Students entered in the system are eligible — there is no geofence.
 
 Entry **Name** = env var. Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 
-| Env var                                        | Purpose                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------ |
-| `GOOGLE_MAPS_API_KEY`                          | Maps Platform (AV + Places + Routes + Map Tiles + Geocoding) |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `busbuddy-507301`                                            |
-| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                               |
-| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                     |
+| Env var                                        | Purpose                                                                                                                                                                                                                                                    |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GOOGLE_MAPS_API_KEY`                          | Maps Platform (AV + Places + Routes + Map Tiles + Geocoding)                                                                                                                                                                                               |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | **Leave unset for API keys.** Billing follows the project that owns `GOOGLE_MAPS_API_KEY` (create the key under `busbuddy-507301`). Setting these forces `X-Goog-User-Project` and often returns HTTP 403 (`serviceUsageConsumer`) even for a correct key. |
+| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                                                                                                                                                                             |
+| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                                                                                                                                                                   |
 
 ### API key restrictions (Cloud Console — not code)
 
@@ -59,7 +59,9 @@ The Map Tiles session token is scoped to the session and tiles are not written t
 
 ## Windows production / VM
 
-Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/user env vars — no Keychain.
+Set `GOOGLE_MAPS_API_KEY` as a machine/user env var (value from Credentials → **BusBuddy Maps Platform** under `busbuddy-507301`) — no Keychain. Do **not** set `GCP_BILLING_PROJECT` for API-key auth.
+
+**Quota header:** Official Maps samples authenticate with the API key only. The app omits `X-Goog-User-Project` unless `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` / `GoogleMaps:QuotaProject` is explicitly set. Map Tiles/Routes still retry once without the header if a mis-set quota project returns 403.
 
 ## Services in DI
 

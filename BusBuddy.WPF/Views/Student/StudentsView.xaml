@@ -17,14 +17,16 @@
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <!-- Text-only ButtonAdv: Fluent templates show a default glyph when SmallIcon is unset (the blue "A"). -->
+            <!-- Margin on ButtonAdv styles is often stomped by Fluent SkinManager; keep a large default and also set Margin on each toolbar button. -->
             <Style x:Key="StudentsToolbarButton"
                    TargetType="syncfusion:ButtonAdv">
                 <Setter Property="SizeMode" Value="Normal"/>
                 <Setter Property="IconWidth" Value="0"/>
                 <Setter Property="IconHeight" Value="0"/>
                 <Setter Property="SmallIcon" Value="{x:Null}"/>
-                <Setter Property="Padding" Value="12,8"/>
-                <Setter Property="Margin" Value="0,0,8,0"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="Margin" Value="0,4,16,4"/>
+                <Setter Property="MinHeight" Value="36"/>
                 <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
             </Style>
@@ -72,18 +74,21 @@
                 <WrapPanel Grid.Column="0" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Name="AddStudentButton" Label="Add Student"
                             Command="{Binding AddStudentCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsPrimaryButton}"
                             AutomationProperties.Name="Add Student"
                             AutomationProperties.HelpText="Opens form to add a new student to the system"
                             ToolTip="Add a new student"/>
                     <syncfusion:ButtonAdv Name="AddSchoolButton" Label="Add School"
                             Command="{Binding AddSchoolCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Add School"
                             AutomationProperties.HelpText="Catalog a school campus with bell times before generating routes"
                             ToolTip="Add a school destination (required before Generate Routes)"/>
                     <syncfusion:ButtonAdv Name="AddPickupStopButton" Label="Add Pickup Stop"
                             Command="{Binding AddPickupStopCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Add Pickup Stop"
                             AutomationProperties.HelpText="Place a shared corner or block stop on the map for multiple students"
@@ -91,20 +96,24 @@
                     <syncfusion:ButtonAdv Name="EditStudentButton" Label="Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Edit Student"
                             AutomationProperties.HelpText="Opens form to edit the currently selected student"
                             ToolTip="Edit selected student"/>
-                    <!-- Archive, not delete: specs/students.md forbids deleting a student to end service. -->
-                    <syncfusion:ButtonAdv Name="ArchiveStudentButton" Label="Archive Student"
+                    <!-- Soft end-of-service only: specs/students.md forbids hard delete. -->
+                    <syncfusion:ButtonAdv Name="ArchiveStudentButton"
+                            Label="{Binding ArchiveStudentButtonLabel}"
                             Command="{Binding ArchiveStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
-                            AutomationProperties.Name="Archive Student"
-                            AutomationProperties.HelpText="Stops service for the selected student while keeping the record and its history. Restores an already-archived student."
-                            ToolTip="Archive (or restore) selected student — the record and its history are kept"/>
+                            AutomationProperties.Name="Archive or Restore Student"
+                            AutomationProperties.HelpText="Stops service for the selected student while keeping the record and its history. Restores an already-archived student. There is no hard Delete — see specs/students.md."
+                            ToolTip="Archive or restore selected student (no hard delete — history is kept)"/>
                     <syncfusion:ButtonAdv Name="ShowIncompleteButton" Label="Incomplete Records"
                             Command="{Binding ShowIncompleteRecordsCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Show Incomplete Records"
                             AutomationProperties.HelpText="Lists students missing required intake data or an unvalidated address. Refresh returns to the full roster."
@@ -112,6 +121,7 @@
                     <syncfusion:ButtonAdv Name="ValidateAddressButton" Label="Validate Address"
                             Command="{Binding ValidateAddressCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Validate Address"
                             AutomationProperties.HelpText="Validates the selected student's home address and stores the resulting coordinates"
@@ -119,14 +129,16 @@
                     <syncfusion:ButtonAdv Name="SchoolTransferButton" Label="School Transfer"
                             Command="{Binding SchoolTransferCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="School Transfer"
                             AutomationProperties.HelpText="Assign school-to-school transfer with required pickup/dropoff locations and times"
                             ToolTip="School transfer for selected student"/>
-                    <Separator Margin="4,0,10,0"/>
+                    <Separator Margin="8,4,16,4"/>
 
                     <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="Import CSV"
                             Command="{Binding ImportStudentsCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsSuccessButton}"
                             AutomationProperties.Name="Import Students from CSV"
                             AutomationProperties.HelpText="Import student records from a CSV file"
@@ -134,20 +146,23 @@
                     <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
                             IsEnabled="{Binding HasSelectedStudents}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Bulk Assign Route"
                             AutomationProperties.HelpText="Assign routes to multiple selected students at once"
                             ToolTip="Bulk assign route"/>
-                    <Separator Margin="4,0,10,0"/>
+                    <Separator Margin="8,4,16,4"/>
 
                     <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="AI Optimize"
                             Command="{Binding OptimizeRoutesCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="AI Optimize Routes"
                             AutomationProperties.HelpText="Run AI-assisted route optimization for selected students"
                             ToolTip="AI-assisted route optimization"/>
                     <syncfusion:ButtonAdv Name="ViewMapButton" Label="View Map"
                             Command="{Binding ViewMapCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="View Map"
                             AutomationProperties.HelpText="Display student locations on interactive map"
@@ -157,12 +172,14 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                             Command="{Binding RefreshCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Refresh Student List"
                             AutomationProperties.HelpText="Reload student data from the database"
                             ToolTip="Refresh list"/>
                     <syncfusion:ButtonAdv Name="ExportButton" Label="Export"
                             Command="{Binding ExportCommand}"
+                            Margin="0,4,16,4"
                             Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Export Students"
                             AutomationProperties.HelpText="Export student data to CSV file"

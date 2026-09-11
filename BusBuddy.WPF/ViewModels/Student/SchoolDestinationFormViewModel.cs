@@ -82,7 +82,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
 
-        MapMarkers = new ObservableCollection<MapViewModel.MapMarker>();
+        MapMarkers = new ObservableCollection<MapMarker>();
         var camera = DistrictCameraUi.Resolve();
         MapCenter = new Point(camera.Latitude, camera.Longitude);
         MapZoomLevel = camera.ZoomLevel;
@@ -214,7 +214,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
     public int MapZoomLevel { get; private set; }
 
-    public ObservableCollection<MapViewModel.MapMarker> MapMarkers { get; }
+    public ObservableCollection<MapMarker> MapMarkers { get; }
 
     /// <summary>True after a successful save that stored school GPS.</summary>
     public bool SavedWithGps { get; private set; }
@@ -270,7 +270,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             return;
         }
 
-        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(
+        MapMarkers.Add(MapMarker.FromDegrees(
             _latitudeValue,
             _longitudeValue,
             MapMarkerLabels.ForSchool(string.IsNullOrWhiteSpace(Name) ? "School" : Name),

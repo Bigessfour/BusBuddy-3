@@ -5,7 +5,7 @@ Validation guide after implementation. Do not put secrets in the repo.
 ## Prerequisites
 
 - Maps APIs enabled on `busbuddy-507301`: Address Validation, Routes, **Places API (New)**
-- Passwords / env: `GOOGLE_MAPS_API_KEY` (restricted); optional `GCP_BILLING_PROJECT=busbuddy-507301`
+- Passwords / env: `GOOGLE_MAPS_API_KEY` (restricted). Leave `GCP_BILLING_PROJECT` unset for API keys.
 - Local: `dotnet` 9, `EnableWindowsTargeting` on Mac
 - Optional Windows VM for WPF map smoke
 

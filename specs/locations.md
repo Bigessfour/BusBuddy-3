@@ -77,7 +77,7 @@ Do not store student names on a location. Homes point _from_ the student record.
 - Drawing unofficial stops that skip validation.
 - Treating “trip” as a location type.
 - Auto-creating catalog stops from every student home.
-- AWS geocoders or a second tile vendor as source of truth (OSM is fail-open for tiles only).
+- AWS geocoders or a second tile vendor as source of truth (basemap is Google Map Tiles only).
 
 ## Code anchors
 

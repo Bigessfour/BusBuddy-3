@@ -253,7 +253,7 @@ Canonical entry points — do not call `GoogleAddressValidationClient` from WPF 
 | `MapViewModel`                   | Draws stored trail on select; Routes refresh on map **Refresh** / Drive Path              |
 | `RouteAssignmentViewModel`       | Plot stops via `IMapsGeoService` when configured                                          |
 
-Key: `GOOGLE_MAPS_API_KEY` (Passwords). Quota project: `busbuddy-507301`. Map tiles remain OSM/SfMap — no Google map tiles.
+Key: `GOOGLE_MAPS_API_KEY` (Passwords). Quota project: leave unset for API keys. Map tiles: Google Map Tiles via SfMap — no OSM.
 
 ### VM smoke (Windows only)
 

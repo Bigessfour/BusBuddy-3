@@ -3,9 +3,9 @@ using BusBuddy.Core.Mapping;
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// District-map marker captions and kinds. Prefixes are display-only; merge policy
-/// uses <see cref="Kind"/> on <c>MapMarker</c>, never cross-kind collapse.
-/// Syncfusion: choose visuals with <c>MarkerTemplateSelector</c> (school vs stop templates).
+/// District-map marker captions and kinds. Prefixes are for kind detection / merge only;
+/// UI templates bind <c>Caption</c> (clean name). Syncfusion MarkerTemplate uses screen pixels —
+/// sizes refresh with zoom via <see cref="ScaledMarkerSize"/>.
 /// </summary>
 public static class MapMarkerLabels
 {
@@ -15,9 +15,13 @@ public static class MapMarkerLabels
     public const string DepotPrefix = "DEPOT ";
     public const string WaypointPrefix = MapRouteTrail.WaypointPrefix;
 
-    public const double PrimaryMarkerSize = 12;
-    public const double HomeMarkerSize = 8;
-    public const double PrimaryLabelFontSize = 11;
+    /// <summary>Base pin diameter (DIP) at <see cref="MapDefaults.DetailLabelZoomLevel"/>.</summary>
+    public const double PrimaryMarkerSize = 10;
+
+    public const double HomeMarkerSize = 6;
+
+    public const double PrimaryLabelFontSize = 10;
+
     public const double HomeLabelFontSize = 9;
 
     public enum Kind
@@ -42,11 +46,56 @@ public static class MapMarkerLabels
     public static string ForDepot(string? name) =>
         DepotPrefix + DisplayName(name, "District Bus Barn");
 
+    /// <summary>Screen caption without SCH/PK/HOME/… prefixes (Syncfusion MarkerTemplate text).</summary>
+    public static string CaptionFrom(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return string.Empty;
+        }
+
+        var text = label.Trim();
+        foreach (var prefix in new[]
+                 {
+                     SchoolPrefix, PickupPrefix, HomePrefix, DepotPrefix, WaypointPrefix, "School "
+                 })
+        {
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                text = text[prefix.Length..].TrimStart();
+                break;
+            }
+        }
+
+        return text;
+    }
+
     public static double MarkerSize(Kind kind) =>
         kind == Kind.Home ? HomeMarkerSize : PrimaryMarkerSize;
 
     public static double LabelFontSize(Kind kind) =>
         kind == Kind.Home ? HomeLabelFontSize : PrimaryLabelFontSize;
+
+    /// <summary>
+    /// Syncfusion marker templates are fixed screen pixels (not geographic). Scale with zoom so
+    /// county overview stays compact and street zoom stays readable.
+    /// </summary>
+    public static double ZoomScale(int zoomLevel)
+    {
+        var z = MapDefaults.ClampZoom(zoomLevel);
+        // 1.0 at DetailLabelZoomLevel (12); shrink when zoomed out; grow slightly when zoomed in.
+        return Math.Clamp(0.55 + ((z - 6) * 0.075), 0.55, 1.35);
+    }
+
+    public static double ScaledMarkerSize(Kind kind, int zoomLevel) =>
+        Math.Round(MarkerSize(kind) * ZoomScale(zoomLevel), 1);
+
+    public static double ScaledLabelFontSize(Kind kind, int zoomLevel) =>
+        Math.Round(LabelFontSize(kind) * ZoomScale(zoomLevel), 1);
+
+    /// <summary>Schools/depots always caption; home/pickup/waypoint/student only at detail zoom.</summary>
+    public static bool ShowsCaption(Kind kind, int zoomLevel) =>
+        kind is Kind.School or Kind.Depot || MapDefaults.ShowsDetailLabels(zoomLevel);
 
     public static Kind GetKind(string? label)
     {

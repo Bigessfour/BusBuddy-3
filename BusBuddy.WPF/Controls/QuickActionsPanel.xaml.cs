@@ -40,6 +40,10 @@ namespace BusBuddy.WPF.Controls
             try
             {
                 var driverForm = new BusBuddy.WPF.Views.Driver.DriverForm();
+                if (driverForm.DataContext is BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel vm)
+                {
+                    vm.PrepareNewDriver();
+                }
                 var result = driverForm.ShowDialog();
                 if (result == true)
                 {

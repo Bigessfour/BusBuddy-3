@@ -26,7 +26,7 @@ Hard rules:
 - PickupMode is Home or CatalogStop. Special needs => home pickup.
 - Same-day "not riding" is a rider exception, not a route rewrite.
 - MappingService.cs is AutoMapper, not geospatial maps.
-- Maps: Syncfusion SfMap + official Google tiles (OSM fail-open).
+- Maps: Syncfusion SfMap + official Google tiles only (no OSM fail-open).
 - Default clerk center: 38.0872, -102.6208. Not MapDefaults US centroid as home view.
 - Live fleet GPS is deferred. Do not enable IsLiveTrackingEnabled to "finish" the map.
 - Plot only validated lat/lng. No 0,0 pins.
