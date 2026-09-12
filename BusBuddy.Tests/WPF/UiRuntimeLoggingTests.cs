@@ -55,6 +55,8 @@ public class UiRuntimeLoggingTests
         Assert.That(source, Does.Contain("RuntimeCapabilityLogger.WriteStartupSnapshot"));
         Assert.That(source, Does.Contain("LoggingModeManager.Initialize"));
         Assert.That(source, Does.Contain("OnUnobservedTaskException"));
+        Assert.That(source, Does.Contain("IsLayoutTransientException"));
+        Assert.That(source, Does.Contain("IsRepeatedUiError"));
     }
 
     [Test]

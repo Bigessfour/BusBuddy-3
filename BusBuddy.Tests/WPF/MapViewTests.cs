@@ -14,7 +14,8 @@ public class MapViewTests
     {
         var xaml = XamlViewFile.Read("Views/Map/MapView.xaml");
         Assert.That(xaml, Does.Contain("x:Class=\"BusBuddy.WPF.Views.Map.MapView\""));
-        Assert.That(xaml, Does.Contain("maps:SfMap"));
+        Assert.That(xaml, Does.Contain("utils:DistrictSfMap"));
+        Assert.That(xaml, Does.Not.Contain("maps:SfMap"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowRoutesCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
@@ -74,7 +75,7 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("EnablePan=\"True\""));
         Assert.That(xaml, Does.Contain("IsHitTestVisible=\"True\""));
         Assert.That(xaml, Does.Contain("Center=\"{Binding MapCenter, Mode=TwoWay}\""));
-        Assert.That(xaml, Does.Contain("Markers=\"{Binding MapMarkers}\""));
+        Assert.That(xaml, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(xaml, Does.Contain("MarkerTemplateSelector=\"{StaticResource DistrictMarkerTemplateSelector}\""));
         Assert.That(xaml, Does.Contain("x:Key=\"SchoolMarkerTemplate\""));
         Assert.That(xaml, Does.Contain("x:Key=\"StopMarkerTemplate\""));
@@ -99,6 +100,8 @@ public class MapViewTests
         Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("ScaledMarkerSize"));
         Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("CaptionFrom"));
         Assert.That(XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs"), Does.Contain("Binding Data.Caption"));
+        Assert.That(XamlViewFile.Read("Utilities/DistrictSfMap.cs"), Does.Contain("OnMouseMove"));
+        Assert.That(XamlViewFile.Read("Utilities/DistrictSfMap.cs"), Does.Contain("NullReferenceException"));
         Assert.That(bootstrap, Does.Contain("Host={Host} Outcome="));
         Assert.That(bootstrap, Does.Contain("Outcome=no-key"));
         Assert.That(bootstrap, Does.Contain("Outcome=ok"));
@@ -136,6 +139,8 @@ public class MapViewTests
         var codeBehind = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
         Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapZoomLevel)"));
         Assert.That(codeBehind, Does.Contain("RefreshMarkersOnImageryLayer()"));
+        Assert.That(codeBehind, Does.Contain("CanHostMarkers()"));
+        Assert.That(codeBehind, Does.Contain("DispatcherPriority.Background"));
         var labels = XamlViewFile.Read("Utilities/MapMarkerLabels.cs");
         Assert.That(labels, Does.Contain("MapDefaults.ShowsDetailLabels(zoomLevel)"));
         Assert.That(labels, Does.Not.Contain("kind is Kind.School or Kind.Depot ||"));
@@ -232,6 +237,11 @@ public class MapViewTests
         Assert.That(stop, Does.Contain("utils:GoogleMapTilesImageryLayer"));
         Assert.That(stop, Does.Contain("LayerType=\"Bing\""));
         Assert.That(stop, Does.Not.Contain("LayerType=\"OSM\""));
+
+        Assert.That(school, Does.Contain("utils:DistrictSfMap"));
+        Assert.That(stop, Does.Contain("utils:DistrictSfMap"));
+        Assert.That(school, Does.Not.Contain("maps:SfMap"));
+        Assert.That(stop, Does.Not.Contain("maps:SfMap"));
 
         var schoolCs = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml.cs");
         var stopCs = XamlViewFile.Read("Views/Student/PickupStopForm.xaml.cs");

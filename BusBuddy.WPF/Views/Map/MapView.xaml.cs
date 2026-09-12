@@ -37,6 +37,7 @@ namespace BusBuddy.WPF.Views.Map
         private DispatcherTimer? _attributionTimer;
         private MapInteractionDiagnostics? _diagnostics;
         private bool _pendingCameraSync;
+        private bool _pendingMarkerRefresh;
 
         public MapView()
         {
@@ -137,6 +138,7 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 _mapLayerInitialized = true;
+                RefreshMarkersOnImageryLayer();
                 Logger.Information("Map layer ready — pan/zoom enabled");
             }
             catch (Exception ex)
@@ -181,6 +183,7 @@ namespace BusBuddy.WPF.Views.Map
                 AttachViewModel(newViewModel);
                 ApplyDistrictImagery(newViewModel);
                 ReplayRouteLineFromViewModel(newViewModel);
+                RefreshMarkersOnImageryLayer();
             }
         }
 
@@ -238,7 +241,6 @@ namespace BusBuddy.WPF.Views.Map
         {
             if (vm is not null)
             {
-                imagery.Markers = vm.MapMarkers;
                 ApplyMarkerTemplates(imagery);
             }
         }
@@ -265,20 +267,53 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (DataContext is not MapViewModel vm || DistrictTilesLayer is not ImageryLayer imagery)
+                if (!_mapLayerInitialized ||
+                    DataContext is not MapViewModel vm ||
+                    DistrictTilesLayer is not ImageryLayer imagery)
                 {
+                    _pendingMarkerRefresh = true;
+                    return;
+                }
+
+                if (!CanHostMarkers())
+                {
+                    _pendingMarkerRefresh = true;
                     return;
                 }
 
                 ApplyMarkerTemplates(imagery);
 
-                // Re-assign collection so Syncfusion refreshes marker visuals.
+                // Re-assign collection so Syncfusion refreshes marker visuals. Do not bind Markers in
+                // XAML — CustomDataSymbol.ApplyTemplate calls TransformToVisual before the layer is
+                // parented (VM runtime-errors.log 2026-09-12 Maps click cascade).
                 imagery.Markers = vm.MapMarkers;
+                _pendingMarkerRefresh = false;
             }
             catch (Exception ex)
             {
+                _pendingMarkerRefresh = true;
                 Logger.Warning(ex, "Failed to refresh map markers on imagery layer");
             }
+        }
+
+        /// <summary>
+        /// Marker templates need a live HwndSource. Do not call TransformToVisual here — that is
+        /// what Syncfusion throws while inflating MarkerTemplate during first Measure.
+        /// </summary>
+        private bool CanHostMarkers()
+        {
+            var map = MapControl;
+            if (map is null || DistrictTilesLayer is null)
+            {
+                return false;
+            }
+
+            if (map.ActualWidth <= 0 || map.ActualHeight <= 0)
+            {
+                return false;
+            }
+
+            return PresentationSource.FromVisual(map) is not null;
         }
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -296,7 +331,7 @@ namespace BusBuddy.WPF.Views.Map
 
             if (e.PropertyName == nameof(MapViewModel.MapZoomLevel))
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher.BeginInvoke(() =>
                 {
                     if (MapControl is not null)
                     {
@@ -308,7 +343,7 @@ namespace BusBuddy.WPF.Views.Map
                     // re-assign Markers so captions shrink/hide with zoom (UTM clerk report 2026-09-11).
                     RefreshMarkersOnImageryLayer();
                     ScheduleAttributionRefresh();
-                });
+                }, DispatcherPriority.Background);
                 return;
             }
 
@@ -436,6 +471,11 @@ namespace BusBuddy.WPF.Views.Map
             if (_pendingCameraSync)
             {
                 SyncMapControlFromViewModel(DataContext as MapViewModel);
+            }
+
+            if (_pendingMarkerRefresh)
+            {
+                RefreshMarkersOnImageryLayer();
             }
         }
 

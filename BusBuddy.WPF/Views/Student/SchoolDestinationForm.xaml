@@ -204,19 +204,19 @@
                     <TextBlock Grid.Row="0" Margin="4,2,4,6" TextWrapping="Wrap"
                                Text="Click the map to pin this school. Scroll wheel zooms; drag pans."/>
                     <Grid Grid.Row="1">
-                        <maps:SfMap x:Name="SchoolPickMap"
+                        <utils:DistrictSfMap x:Name="SchoolPickMap"
                                     ZoomLevel="{Binding MapZoomLevel}"
                                     EnableZoom="True"
                                     EnablePan="True"
                                     MouseLeftButtonUp="SchoolPickMap_MouseLeftButtonUp"
                                     AutomationProperties.Name="School location map">
-                            <maps:SfMap.Layers>
+                            <utils:DistrictSfMap.Layers>
                                 <utils:GoogleMapTilesImageryLayer x:Name="SchoolPickLayer"
                                                    LayerType="Bing"
                                                    Center="{Binding MapCenter}"
                                                    Markers="{Binding MapMarkers}"/>
-                            </maps:SfMap.Layers>
-                        </maps:SfMap>
+                            </utils:DistrictSfMap.Layers>
+                        </utils:DistrictSfMap>
                         <Border x:Name="SchoolPickAttribution"
                                 Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
                                 Opacity="0.92"
