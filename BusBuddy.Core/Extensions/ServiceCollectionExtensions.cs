@@ -135,6 +135,14 @@ namespace BusBuddy.Core.Extensions
                     opts,
                     ownsHttpClient: true);
             });
+            services.AddSingleton<BusBuddy.Core.Services.GoogleMaps.IRouteOptimizationService>(sp =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
+                return new BusBuddy.Core.Services.GoogleMaps.GoogleRouteOptimizationService(
+                    new System.Net.Http.HttpClient(),
+                    opts,
+                    ownsHttpClient: true);
+            });
             services.AddSingleton<BusBuddy.Core.Services.GoogleMaps.IPlacesAutocompleteService>(sp =>
             {
                 var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();

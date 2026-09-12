@@ -44,17 +44,17 @@ Students (who rides)
 
 Extend existing Core types and services — do not invent parallel models:
 
-| Domain                    | Start here                                                                                    |
-| ------------------------- | --------------------------------------------------------------------------------------------- |
-| Students                  | `IStudentService`, Core `Student`                                                             |
-| Schools / destinations    | `IDestinationService`                                                                         |
-| Catalog stops             | `IPickupStopService`                                                                          |
-| Routes / waypoints        | `BusBuddy.Core.Models.Route`, `IGeoDataService`, `IRoutingService`, `RouteDrivePathRefresher` |
-| Trips (not routes)        | `BusBuddy.Core.Models.Trips.TripEvent`, `ITripEventService`                                   |
-| Geo / map VM              | `IMapsGeoService`, `MapViewModel`, `MapView`                                                  |
-| Buses                     | `IBusService`, `BusBuddy.Core.Models.Bus`                                                     |
-| Depot                     | `DistrictDepot`                                                                               |
-| Object mapping (not maps) | `MappingService`                                                                              |
+| Domain                    | Start here                                                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Students                  | `IStudentService`, Core `Student`                                                                                          |
+| Schools / destinations    | `IDestinationService`                                                                                                      |
+| Catalog stops             | `IPickupStopService`                                                                                                       |
+| Routes / waypoints        | `BusBuddy.Core.Models.Route`, `IGeoDataService`, `IRoutingService`, `IRouteOptimizationService`, `RouteDrivePathRefresher` |
+| Trips (not routes)        | `BusBuddy.Core.Models.Trips.TripEvent`, `ITripEventService`                                                                |
+| Geo / map VM              | `IMapsGeoService`, `MapViewModel`, `MapView`                                                                               |
+| Buses                     | `IBusService`, `BusBuddy.Core.Models.Bus`                                                                                  |
+| Depot                     | `DistrictDepot`                                                                                                            |
+| Object mapping (not maps) | `MappingService`                                                                                                           |
 
 ## If code conflicts with a spec
 

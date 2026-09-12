@@ -11,7 +11,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST use Syncfusion `SfMap` as the only map surface in the WPF client.
 - MUST use official Google Map Tiles (`tile.googleapis.com` via `GoogleMapTilesImageryLayer` / `MapTileBootstrap`) as the **only** basemap. No OpenStreetMap, Mapbox, or unofficial `mt1.google.com` tiles.
 - MUST fail closed on the basemap when `GOOGLE_MAPS_API_KEY` / Map Tiles session is unavailable (markers/polylines may still plot on an empty imagery layer; show Google attribution only when Google tiles are active).
-- MUST geocode and validate with Google Address Validation + Geocoding. MUST build drive paths with Google Routes.
+- MUST geocode and validate with Google Address Validation + Geocoding. MUST build drive paths with Google Routes. MUST use Google Route Optimization (`optimizeTours`) only as a clerk-initiated visit-order / fleet suggestion — never a nightly rewrite of published times.
 - MUST plot only validated coordinates. No pin at 0,0, no US centroid, no guessed “close enough” point.
 - MUST default the clerk map center to Lamar/Wiley CO (~38.0872, -102.6208) when nothing is selected. Do not use `MapDefaults` US-centroid fallback as the district home view.
 - MUST derive route polylines from published route stops (waypoints), refreshed by `RouteDrivePathRefresher` / `IRoutingService`. Freehand lines are not source of truth.
@@ -87,6 +87,7 @@ Distance and duration from Google Routes on the current published waypoint list 
 | Geo facade             | `IMapsGeoService`, `IGeoDataService`              |
 | Address                | `IGeocodingService`, Google Address Validation    |
 | Path                   | `IRoutingService`, `RouteDrivePathRefresher`      |
+| Visit order            | `IRouteOptimizationService` (`optimizeTours`)     |
 | Depot                  | `DistrictDepot`                                   |
 | Object mapping         | `MappingService` (AutoMapper — **not** this spec) |
 | Feature branch context | `feature/map-route-display` / PR #59              |

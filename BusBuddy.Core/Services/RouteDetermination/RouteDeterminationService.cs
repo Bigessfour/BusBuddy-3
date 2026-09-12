@@ -1,6 +1,8 @@
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services.GoogleMaps;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -18,6 +20,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
     private readonly RoutingDistrictSettings _settingsFallback;
     private readonly AssignFitnessEvaluator _fitnessEvaluator;
     private readonly IRouteWaypointRebuildService? _waypointRebuild;
+    private readonly IRouteOptimizationService? _routeOptimization;
 
     public RouteDeterminationService(
         IBusBuddyDbContextFactory contextFactory,
@@ -25,7 +28,8 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         IOptions<RoutingDistrictSettings>? settings = null,
         AssignFitnessEvaluator? fitnessEvaluator = null,
         IRouteWaypointRebuildService? waypointRebuild = null,
-        IDistrictSettingsAccessor? districtAccessor = null)
+        IDistrictSettingsAccessor? districtAccessor = null,
+        IRouteOptimizationService? routeOptimization = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
@@ -34,6 +38,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         _fitnessEvaluator = fitnessEvaluator
             ?? new AssignFitnessEvaluator(contextFactory, settings, districtAccessor);
         _waypointRebuild = waypointRebuild;
+        _routeOptimization = routeOptimization;
     }
 
     private RoutingDistrictSettings District =>
@@ -874,6 +879,10 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             return;
         }
 
+        (coords, meta) = await TryOptimizePickupOrderAsync(
+                coords, meta, school, pack.SeatingCapacity, slot, cancellationToken)
+            .ConfigureAwait(false);
+
         IReadOnlyList<TimeSpan> arrivals;
         if (slot == RouteTimeSlotKind.PM && school.DismissalTime is TimeSpan dismissal)
         {
@@ -923,6 +932,103 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             {
                 failures.Add($"Stop '{m.Name}': {add.Error}");
             }
+        }
+    }
+
+    private async Task<(
+        List<(double Lat, double Lon)> Coords,
+        List<(List<int> StudentIds, string Name, string Address, decimal Lat, decimal Lon)> Meta)>
+        TryOptimizePickupOrderAsync(
+            List<(double Lat, double Lon)> coords,
+            List<(List<int> StudentIds, string Name, string Address, decimal Lat, decimal Lon)> meta,
+            Destination school,
+            int seatingCapacity,
+            RouteTimeSlotKind slot,
+            CancellationToken cancellationToken)
+    {
+        if (_routeOptimization is not { IsConfigured: true } ||
+            meta.Count < 2 ||
+            !LocationCoordinate.IsValidated(school.Latitude, school.Longitude))
+        {
+            return (coords, meta);
+        }
+
+        try
+        {
+            var depotLat = (double)meta[0].Lat;
+            var depotLon = (double)meta[0].Lon;
+            if (DistrictDepot.TryGetCoordinates(District, out var barnLat, out var barnLon))
+            {
+                depotLat = barnLat;
+                depotLon = barnLon;
+            }
+
+            var schoolStop = new RouteOptimizationStop
+            {
+                Label = "school",
+                Latitude = (double)school.Latitude!,
+                Longitude = (double)school.Longitude!,
+            };
+            var depotStop = new RouteOptimizationStop
+            {
+                Label = "depot",
+                Latitude = depotLat,
+                Longitude = depotLon,
+            };
+            var homes = meta.Select((m, i) => new RouteOptimizationStop
+            {
+                Label = i.ToString(),
+                Latitude = (double)m.Lat,
+                Longitude = (double)m.Lon,
+                Load = Math.Max(1, m.StudentIds.Count),
+            }).ToList();
+
+            var isPm = slot == RouteTimeSlotKind.PM;
+            var problem = isPm
+                ? RouteOptimizationVisitOrder.ForDropoffRun(
+                    schoolStop, homes, depotStop, seatingCapacity, DateTime.UtcNow)
+                : RouteOptimizationVisitOrder.ForPickupRun(
+                    depotStop, homes, schoolStop, seatingCapacity, DateTime.UtcNow);
+            var result = await _routeOptimization.OptimizeToursAsync(problem, cancellationToken)
+                .ConfigureAwait(false);
+            if (!result.Succeeded)
+            {
+                Logger.Warning("Route Optimization skipped for generation: {Error}", result.Error);
+                return (coords, meta);
+            }
+
+            var original = new List<string> { isPm ? "school" : "depot" };
+            original.AddRange(homes.Select(p => p.Label));
+            original.Add(isPm ? "depot" : "school");
+            var merged = RouteOptimizationVisitOrder.MergePinnedOrder(original, result.Visits);
+            var newMeta = new List<(List<int> StudentIds, string Name, string Address, decimal Lat, decimal Lon)>(meta.Count);
+            var newCoords = new List<(double Lat, double Lon)>(meta.Count);
+            foreach (var label in merged)
+            {
+                if (!int.TryParse(label, out var idx) || idx < 0 || idx >= meta.Count)
+                {
+                    continue;
+                }
+
+                newMeta.Add(meta[idx]);
+                newCoords.Add(coords[idx]);
+            }
+
+            if (newMeta.Count != meta.Count)
+            {
+                return (coords, meta);
+            }
+
+            Logger.Information(
+                "Route Optimization reordered {Count} stops for {Slot} generation",
+                newMeta.Count,
+                slot);
+            return (newCoords, newMeta);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Route Optimization skipped — keeping heuristic stop order");
+            return (coords, meta);
         }
     }
 

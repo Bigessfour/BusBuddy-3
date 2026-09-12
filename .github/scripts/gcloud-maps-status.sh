@@ -11,6 +11,7 @@ EXPECTED_APIS=(
   addressvalidation.googleapis.com
   places.googleapis.com
   routes.googleapis.com
+  routeoptimization.googleapis.com
   tile.googleapis.com
 )
 
@@ -41,7 +42,7 @@ echo
 
 echo "=== Maps-related enabled APIs ==="
 gcloud services list --enabled --project="${PROJECT}" \
-  --filter='config.name~"maps" OR config.name~"places" OR config.name~"routes" OR config.name~"addressvalidation" OR config.name~"geocod"' \
+  --filter='config.name~"maps" OR config.name~"places" OR config.name~"routes" OR config.name~"routeoptimization" OR config.name~"addressvalidation" OR config.name~"geocod"' \
   --format='table(config.name,config.title)'
 echo
 
