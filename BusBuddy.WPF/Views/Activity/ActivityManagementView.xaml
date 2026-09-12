@@ -38,8 +38,14 @@
             <syncfusion:ButtonAdv Label="Refresh"
                                   Command="{Binding RefreshCommand}"
                                   SizeMode="Normal"
-                                  Margin="0,0,12,0"
+                                  Margin="0,0,8,0"
                                   AutomationProperties.Name="Refresh trip board"/>
+            <syncfusion:ButtonAdv Label="Optimize Day"
+                                  Command="{Binding OptimizeDayCommand}"
+                                  SizeMode="Normal"
+                                  Margin="0,0,12,0"
+                                  AutomationProperties.Name="Optimize today's trips"
+                                  AutomationProperties.HelpText="Suggest bus assignments for the selected date via Google Route Optimization. Does not change pickup times. Route is not a trip."/>
             <TextBlock Text="{Binding StatusMessage}"
                        VerticalAlignment="Center"
                        Foreground="{DynamicResource PrimaryTextBrush}"/>

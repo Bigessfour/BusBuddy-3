@@ -28,6 +28,7 @@ internal static class Program
         using var addressClient = new GoogleAddressValidationClient(http, options, ownsHttpClient: false);
         using var routingClient = new GoogleRoutingService(http, options, ownsHttpClient: false);
         using var placesClient = new GooglePlacesAutocompleteService(http, options, ownsHttpClient: false);
+        using var routeOptClient = new GoogleRouteOptimizationService(http, options, ownsHttpClient: false);
 
         Console.WriteLine($"Maps probe starting QuotaProject={options.Value.QuotaProject}");
 
@@ -84,6 +85,26 @@ internal static class Program
         }
 
         Console.WriteLine($"OK: Route matrix elements={matrix.Count} firstDistance={matrix[0].DistanceMeters}m");
+
+        var problem = RouteOptimizationVisitOrder.ForPinnedEnds(
+            [
+                new RouteOptimizationStop { Label = "start", Latitude = origin.Item1, Longitude = origin.Item2 },
+                new RouteOptimizationStop { Label = "mid", Latitude = 38.0872, Longitude = -102.6208 },
+                new RouteOptimizationStop { Label = "end", Latitude = destination.Item1, Longitude = destination.Item2 },
+            ],
+            seatingCapacity: 48,
+            utcDay: DateTime.UtcNow);
+        var optimized = await routeOptClient.OptimizeToursAsync(problem);
+        if (!optimized.Succeeded)
+        {
+            Console.WriteLine($"WARN: Route Optimization — {optimized.Error}");
+            Console.WriteLine("Enable routeoptimization.googleapis.com and IAM routeoptimization.locations.use if the key is rejected.");
+        }
+        else
+        {
+            Console.WriteLine($"OK: Route Optimization visits={optimized.Visits.Count}");
+        }
+
         Console.WriteLine("Maps probe passed.");
         return 0;
     }

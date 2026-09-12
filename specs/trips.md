@@ -91,15 +91,16 @@ MissingInfo → Draft (Scheduled) → Assigned → Confirmed → Completed
 
 ## Code anchors
 
-| Spec term             | Existing code                                                                   |
-| --------------------- | ------------------------------------------------------------------------------- |
-| Trip aggregate        | `BusBuddy.Core.Models.Trips.TripEvent` (extend — do not clone `Route`)          |
-| Leftover calendars    | `Activity`, `ActivitySchedule` — do not merge into Route                        |
-| Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination` |
-| Bus / driver loan     | `IBusService`, driver services                                                  |
-| Path                  | `IRoutingService`, `IMapsGeoService`                                            |
-| Map                   | `MapViewModel` when a trip is selected                                          |
-| AutoMapper (not maps) | `MappingService`                                                                |
+| Spec term             | Existing code                                                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| Trip aggregate        | `BusBuddy.Core.Models.Trips.TripEvent` (extend — do not clone `Route`)                              |
+| Leftover calendars    | `Activity`, `ActivitySchedule` — do not merge into Route                                            |
+| Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination`                     |
+| Bus / driver loan     | `IBusService`, driver services                                                                      |
+| Path                  | `IRoutingService`, `IMapsGeoService`                                                                |
+| Same-day fleet        | `IRouteOptimizationService` + `ITripEventService.SuggestSameDayFleetAsync` (does not set `RouteId`) |
+| Map                   | `MapViewModel` when a trip is selected                                                              |
+| AutoMapper (not maps) | `MappingService`                                                                                    |
 
 ## Worked examples
 

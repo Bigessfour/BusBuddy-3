@@ -143,6 +143,15 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Refresh Drive Path"
                 AutomationProperties.HelpText="Compute road polyline via Google Routes API for the selected route"/>
+            <syncfusion:ButtonAdv Name="OptimizeStopOrderButton" Label="Optimize Order"
+                            Style="{StaticResource RouteToolbarButton}"
+                            Command="{Binding OptimizeStopOrderCommand}"
+                SizeMode="Normal"
+                CornerRadius="4"
+                Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                AutomationProperties.Name="Optimize stop order"
+                AutomationProperties.HelpText="Reorder pickups with Google Route Optimization. Start and end stays pinned. Clerk-initiated; does not run overnight."/>
             <syncfusion:ButtonAdv Name="ExportCsvButton" Label="Export CSV"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding ExportCsvCommand}"
@@ -226,7 +235,7 @@
                                              Width="160"
                                              DisplayMemberPath="Name"
                                              SelectedValuePath="Name"
-                                             ItemsSource="{Binding DataContext.AvailableSchools, Source={x:Reference RoutesDataGrid}}"
+                                             ItemsSource="{Binding DataContext.AvailableSchools, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                              AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200" AllowEditing="False"/>
                 <syncfusion:GridComboBoxColumn MappingName="AMVehicleId"
@@ -234,7 +243,7 @@
                                              Width="120"
                                              DisplayMemberPath="BusNumber"
                                              SelectedValuePath="BusId"
-                                             ItemsSource="{Binding DataContext.AvailableBuses, Source={x:Reference RoutesDataGrid}}"
+                                             ItemsSource="{Binding DataContext.AvailableBuses, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                              AllowEditing="True"/>
         <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" AllowEditing="False" Pattern="ShortDate"/>
         <syncfusion:GridTextColumn MappingName="StudentCount" HeaderText="Students" Width="90" AllowEditing="False"/>

@@ -20,6 +20,7 @@ using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.Logging;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -44,6 +45,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IRouteService _routeService;
         private readonly IRoutingService? _routingService;
+        private readonly IRouteOptimizationService? _routeOptimization;
         private readonly IRouteDeterminationService? _routeDetermination;
         private readonly IDestinationService? _destinations;
         private IStudentService? _studentService;
@@ -66,6 +68,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private IAsyncRelayCommand _printScheduleRelay = null!;
         private IAsyncRelayCommand _refreshRelay = null!;
         private IAsyncRelayCommand _refreshDrivePathRelay = null!;
+        private IAsyncRelayCommand _optimizeStopOrderRelay = null!;
         private IAsyncRelayCommand _copyRouteRelay = null!;
 
         private readonly SemaphoreSlim _loadGate = new(1, 1);
@@ -314,6 +317,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         public ICommand PrintRouteMapsCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
         public ICommand RefreshDrivePathCommand { get; private set; } = null!;
+        public ICommand OptimizeStopOrderCommand { get; private set; } = null!;
         public ICommand CopyRouteCommand { get; private set; } = null!;
 
         public RouteManagementViewModel()
@@ -322,6 +326,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             _contextFactory = dependencies.ContextFactory;
             _routeService = dependencies.RouteService ?? new RouteService(_contextFactory);
             _routingService = dependencies.RoutingService ?? App.ServiceProvider?.GetService<IRoutingService>();
+            _routeOptimization = App.ServiceProvider?.GetService<IRouteOptimizationService>();
             _routeDetermination = dependencies.RouteDetermination;
             _destinations = dependencies.Destinations ?? App.ServiceProvider?.GetService<IDestinationService>();
             ResolveOptionalServices();
@@ -359,6 +364,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _routeService = routeService ?? new RouteService(_contextFactory);
             _routingService = routingService ?? App.ServiceProvider?.GetService<IRoutingService>();
+            _routeOptimization = App.ServiceProvider?.GetService<IRouteOptimizationService>();
             _routeDetermination = routeDetermination;
             _destinations = destinations ?? App.ServiceProvider?.GetService<IDestinationService>();
             ResolveOptionalServices();
@@ -420,6 +426,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             RefreshCommand = _refreshRelay;
             _refreshDrivePathRelay = new AsyncRelayCommand(RefreshDrivePathAsync, () => IsRouteSelected && !IsBusy);
             RefreshDrivePathCommand = _refreshDrivePathRelay;
+            _optimizeStopOrderRelay = new AsyncRelayCommand(OptimizeStopOrderAsync, () => IsRouteSelected && !IsBusy);
+            OptimizeStopOrderCommand = _optimizeStopOrderRelay;
             _copyRouteRelay = new AsyncRelayCommand(CopyRouteAsync, () => IsRouteSelected && !IsBusy);
             CopyRouteCommand = _copyRouteRelay;
 
@@ -649,6 +657,92 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
+        private async Task OptimizeStopOrderAsync()
+        {
+            if (SelectedRoute is null || IsBusy)
+            {
+                return;
+            }
+
+            try
+            {
+                IsBusy = true;
+                if (_routeOptimization is not { IsConfigured: true })
+                {
+                    StatusMessage = "Route Optimization is not configured. Drive Path still uses Google Routes.";
+                    return;
+                }
+
+                var stopsResult = await _routeService.GetRouteStopsAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                if (!stopsResult.IsSuccess || stopsResult.Value is null)
+                {
+                    StatusMessage = stopsResult.Error ?? "Could not load stops.";
+                    return;
+                }
+
+                var stops = stopsResult.Value
+                    .Where(s => s.HasValidatedCoordinates)
+                    .OrderBy(s => s.StopOrder)
+                    .ToList();
+                if (stops.Count < 3)
+                {
+                    StatusMessage = "Need at least three geocoded stops to optimize order. Use Drive Path for two-stop runs.";
+                    return;
+                }
+
+                var labeled = stops.Select(s => new RouteOptimizationStop
+                {
+                    Label = s.RouteStopId.ToString(),
+                    Latitude = (double)s.Latitude!.Value,
+                    Longitude = (double)s.Longitude!.Value,
+                }).ToList();
+
+                var problem = RouteOptimizationVisitOrder.ForPinnedEnds(
+                    labeled,
+                    seatingCapacity: Math.Max(1, SelectedRoute.MaxCapacity > 0 ? SelectedRoute.MaxCapacity : 70),
+                    DateTime.UtcNow);
+                var result = await _routeOptimization.OptimizeToursAsync(problem).ConfigureAwait(true);
+                if (!result.Succeeded)
+                {
+                    StatusMessage = result.Error ?? "Route Optimization failed.";
+                    return;
+                }
+
+                var merged = RouteOptimizationVisitOrder.MergePinnedOrder(
+                    labeled.Select(s => s.Label).ToList(),
+                    result.Visits);
+                var orderedIds = merged.Select(int.Parse).ToList();
+                var reorder = await _routeService.ReorderRouteStopsAsync(SelectedRoute.RouteId, orderedIds)
+                    .ConfigureAwait(true);
+                if (!reorder.IsSuccess)
+                {
+                    StatusMessage = reorder.Error ?? "Could not save stop order.";
+                    return;
+                }
+
+                var refresh = await RouteDrivePathRefresher
+                    .TryRefreshAsync(_routingService, SelectedRoute)
+                    .ConfigureAwait(true);
+                if (refresh.Success)
+                {
+                    await _routeService.UpdateRouteAsync(SelectedRoute).ConfigureAwait(true);
+                }
+
+                StatusMessage =
+                    "Stop order optimized (start/end pinned). Drive path refreshed. Regenerate the schedule if published times should follow the new sequence.";
+                Logger.Information("Optimize stop order RouteId={RouteId} Stops={Count}", SelectedRoute.RouteId, orderedIds.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed optimizing stop order");
+                StatusMessage = $"Error optimizing stop order: {ex.Message}";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
         private async Task CopyRouteAsync()
         {
             if (SelectedRoute is null)
@@ -810,10 +904,16 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = persisted
                     ? $"Schedule saved and opened: {Path.GetFileName(path)}"
                     : $"Schedule PDF opened (assign a bus and driver to persist a calendar row): {Path.GetFileName(path)}";
+                UiProofLog.Write(
+                    Logger,
+                    "Generate Schedule",
+                    "RouteManagementView",
+                    persisted ? "scheduled" : "pdf-only",
+                    SelectedRoute.RouteName);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Generate schedule failed");
+                UiProofLog.Failed(Logger, ex, "Generate Schedule", "RouteManagementView");
                 StatusMessage = $"Error generating schedule: {ex.Message}";
             }
             finally
@@ -838,6 +938,12 @@ namespace BusBuddy.WPF.ViewModels.Route
                     .ConfigureAwait(true);
 
                 StatusMessage = outcome.StatusMessage;
+                UiProofLog.Write(
+                    Logger,
+                    "Generate Routes",
+                    "RouteManagementView",
+                    outcome.Success ? "generated" : "failed",
+                    outcome.StatusMessage);
                 if (!outcome.Success || outcome.Result is null)
                 {
                     return;
@@ -861,7 +967,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Generate routes failed");
+                UiProofLog.Failed(Logger, ex, "Generate Routes", "RouteManagementView");
                 StatusMessage = $"Error generating routes: {ex.Message}";
             }
             finally
@@ -954,6 +1060,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             _printScheduleRelay?.NotifyCanExecuteChanged();
             _refreshRelay?.NotifyCanExecuteChanged();
             _refreshDrivePathRelay?.NotifyCanExecuteChanged();
+            _optimizeStopOrderRelay?.NotifyCanExecuteChanged();
             _copyRouteRelay?.NotifyCanExecuteChanged();
             CommandManager.InvalidateRequerySuggested();
         }

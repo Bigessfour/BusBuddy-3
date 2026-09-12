@@ -251,6 +251,7 @@ public class MapViewTests
         var xaml = XamlViewFile.Read("Views/Activity/ActivityManagementView.xaml");
         Assert.That(xaml, Does.Contain("Trip Board"));
         Assert.That(xaml, Does.Contain("Import CSV"));
+        Assert.That(xaml, Does.Contain("Optimize Day"));
         Assert.That(xaml, Does.Contain("MappingName=\"ExternalTicketNo\""));
         Assert.That(xaml, Does.Contain("MappingName=\"PlannedHeadcount\""));
         Assert.That(xaml, Does.Not.Contain("Regular Route"));

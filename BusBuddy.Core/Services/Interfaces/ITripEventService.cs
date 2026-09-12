@@ -25,5 +25,25 @@ namespace BusBuddy.Core.Services.Interfaces
 
         /// <summary>Refresh PathMiles from Google Routes only after origin and destination are validated.</summary>
         Task RefreshPathMilesAsync(int tripEventId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Clerk-initiated same-day fleet suggestion via Route Optimization API.
+        /// Does not rewrite PickupTime. Optionally assigns VehicleId on unassigned trips only.
+        /// </summary>
+        Task<TripFleetOptimizeResult> SuggestSameDayFleetAsync(
+            DateTime tripDate,
+            bool applyToUnassigned = false,
+            CancellationToken cancellationToken = default);
+    }
+
+    public sealed class TripFleetOptimizeResult
+    {
+        public bool Succeeded { get; init; }
+
+        public string Status { get; init; } = string.Empty;
+
+        public int SuggestedCount { get; init; }
+
+        public int AppliedCount { get; init; }
     }
 }

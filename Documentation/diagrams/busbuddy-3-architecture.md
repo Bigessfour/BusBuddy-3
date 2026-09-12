@@ -2,7 +2,7 @@
 
 Canonical repo architecture diagram. Update this file when services, CI jobs, or auth flows change; then run `python -m rag.index`.
 
-**Ship tracker (open work):** [docs/action-items.md](../../docs/action-items.md)  
+**Ship tracker (open work):** [docs/action-items.md](../../docs/action-items.md)
 **Historical finish narrative (archived):** [../Archive/2026-06-Steady-State-Finish/STEADY-STATE-AND-FINISH-ROADMAP.md](../Archive/2026-06-Steady-State-Finish/STEADY-STATE-AND-FINISH-ROADMAP.md)
 
 Optional editable Mermaid source: `busbuddy-3-architecture.mmd` in this folder if present.
@@ -81,7 +81,7 @@ flowchart TB
     S_FUEL["FuelService"]
     S_PDF["PdfReportService"]
     S_DASH["DashboardMetricsService"]
-    S_GEO["GeoDataService<br/>Address Validation + SfMap<br/>Maps Platform"]
+    S_GEO["GeoDataService<br/>Address Validation + SfMap<br/>Routes + Route Optimization"]
     S_AI["GrokGlobalAPI<br/>AIInsightService"]
     S_USR["UserContextService<br/>UserSettingsService"]
     S_ADDR["AddressValidationService"]

@@ -1,14 +1,13 @@
 # Research: 008 Route Determination / Fleet Sizing
 
-## Decision: Heuristic clustering + greedy fill (not full VRP solver)
+## Decision: Heuristic clustering + greedy fill, with optional Google Route Optimization
 
-**Rationale**: Spec requires minimize buses with comfort for &gt;100 riders, but constitution YAGNI forbids a heavy commercial OR-Tools/VRP dependency in this increment. Density/bbox cells + outlier gap split + greedy seat packing delivers SC-001/SC-002 and can later plug Maps matrix costs.
+**Rationale**: Spec requires minimize buses with comfort for &gt;100 riders. Density/bbox cells + outlier gap split + greedy seat packing delivers SC-001/SC-002 without a native OR-Tools dependency. When `IRouteOptimizationService` is configured, generation reorders pickups inside each packed route via Google Route Optimization `optimizeTours` (fail-open). Heuristic order remains if the API is missing or unauthorized.
 
 **Alternatives considered**:
 
-- Google OR-Tools VRP — stronger optima; heavier native deps and ops surface; deferred.
-- Single k-means only — weak rural outliers; rejected as sole method.
-- Manual routes only — fails year-start auto-assign requirement.
+- Google OR-Tools VRP — stronger optima; heavier native deps; still deferred as a local solver.
+- Route Optimization API only (no heuristic) — fails closed without a key / OAuth; rejected as the sole method.
 
 ## Decision: Q1:A — Separate transfer fleet / route pool
 

@@ -4,6 +4,7 @@ using System.Windows.Input;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF;
+using BusBuddy.WPF.Logging;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -35,6 +36,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
 
         public ICommand ImportCsvCommand { get; }
         public ICommand RefreshCommand { get; }
+        public ICommand OptimizeDayCommand { get; }
 
         public ActivityManagementViewModel()
             : this(App.ServiceProvider?.GetService<ITripEventService>())
@@ -46,6 +48,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
             _trips = trips;
             ImportCsvCommand = new AsyncRelayCommand(ImportCsvAsync, () => _trips is not null);
             RefreshCommand = new AsyncRelayCommand(LoadTripsAsync);
+            OptimizeDayCommand = new AsyncRelayCommand(OptimizeSameDayAsync, () => _trips is not null);
             _ = LoadTripsAsync();
         }
 
@@ -70,6 +73,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
 
                 StatusMessage = $"Trip board: {Trips.Count} row(s).";
                 Logger.Information("Trip board loaded Rows={Count}", Trips.Count);
+                UiProofLog.Write(Logger, "Trip Board", "ActivityManagementView", "loaded", $"Rows={Trips.Count}");
             }
             catch (Exception ex)
             {
@@ -120,6 +124,33 @@ namespace BusBuddy.WPF.ViewModels.Activity
             {
                 Logger.Error(ex, "Trip board CSV import failed");
                 StatusMessage = "Trip board import failed.";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private async Task OptimizeSameDayAsync()
+        {
+            if (_trips is null)
+            {
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                var day = SelectedTrip?.TripDate.Date ?? DateTime.Today;
+                var result = await _trips.SuggestSameDayFleetAsync(day, applyToUnassigned: true);
+                await LoadTripsAsync();
+                StatusMessage = result.Status;
+                Logger.Information("Trip board optimize-day Succeeded={Succeeded} Applied={Applied}", result.Succeeded, result.AppliedCount);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Trip board Route Optimization failed");
+                StatusMessage = "Could not optimize today's trips.";
             }
             finally
             {

@@ -4,7 +4,7 @@
 
 A route is the published, daily way the district picks up and drops off students. It is an ordered list of stops with target times, a session (AM, PM, Transfer, SpecialNeeds), and a default bus and driver. Parents and clerks plan around it. It is not a trip, and it is not a live GPS track.
 
-BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted on AWS. Do not add hosted routing-as-a-service or automatic re-optimization that rewrites published times without a clerk.
+BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted on AWS. Do not add hosted routing-as-a-service or automatic re-optimization that rewrites published times without a clerk. Clerk-initiated Google Route Optimization (`optimizeTours`) may propose a new stop order; the clerk still owns save and schedule times.
 
 ## Invariants
 
@@ -102,7 +102,7 @@ Pick one implementation: either two route rows (5 AM and 5 PM) or one route with
 ## Out of scope
 
 - Live ETA from the moving bus.
-- Solver that auto-rebuilds stop order every night.
+- Solver that auto-rebuilds stop order every night. Clerk **Optimize Order** (`IRouteOptimizationService`) is in scope.
 - Parent app that edits stops.
 - Treating a Friday-only activity bus as a route unless the clerk publishes it as one.
 
@@ -113,6 +113,7 @@ Pick one implementation: either two route rows (5 AM and 5 PM) or one route with
 | Route record           | `BusBuddy.Core.Models.Route` (`RouteModel` in WPF)              |
 | Stop / waypoint access | `IGeoDataService`, `IMapsGeoService`                            |
 | Drive path             | `IRoutingService`, `RouteDrivePathRefresher`, Google Routes API |
+| Visit order            | `IRouteOptimizationService` (`optimizeTours`); pins start/end   |
 | Polyline on map        | `MapViewModel.RouteLinePoints`, `RouteLineUpdated`              |
 | Students on the run    | `IStudentService` assignments                                   |
 | Default bus            | `IBusService`                                                   |
