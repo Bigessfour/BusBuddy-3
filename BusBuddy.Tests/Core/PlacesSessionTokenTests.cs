@@ -12,11 +12,11 @@ namespace BusBuddy.Tests.Core;
 public class PlacesSessionTokenTests
 {
     [Test]
-    public void CreateSessionToken_IsUuidWithoutHyphens()
+    public void CreateSessionToken_IsRfc4122Uuid()
     {
         var token = PlacesAddressAutocompleteCoordinator.CreateSessionToken();
-        Assert.That(token, Has.Length.EqualTo(32));
-        Assert.That(token, Does.Not.Contain("-"));
+        Assert.That(Guid.TryParse(token, out var parsed), Is.True);
+        Assert.That(token, Is.EqualTo(parsed.ToString("D")));
     }
 
     [Test]

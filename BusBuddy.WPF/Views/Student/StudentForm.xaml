@@ -18,6 +18,7 @@
                              xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
                              xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
                              xmlns:fields="clr-namespace:BusBuddy.WPF.Utilities"
+                             xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
                              mc:Ignorable="d"
                              Title="Student Form"
                              Height="1000" Width="940"
@@ -385,43 +386,20 @@
 
                         <StackPanel Grid.Row="0" Grid.ColumnSpan="3">
                             <Label Content="Home Address *"/>
-                            <Grid>
-                                <syncfusion:SfTextBoxExt Name="HomeAddressTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
-                                         Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
-                                         Watermark="123 Main Street"
-                                         AutoCompleteMode="None"
-                                         AutomationProperties.Name="Home Address">
-                                    <syncfusion:SfTextBoxExt.Text>
-                                        <Binding Path="Student.HomeAddress" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
-                                            <Binding.ValidationRules>
-                                                <validation:StringNotEmptyValidationRule FieldName="Home Address"/>
-                                            </Binding.ValidationRules>
-                                        </Binding>
-                                    </syncfusion:SfTextBoxExt.Text>
-                                </syncfusion:SfTextBoxExt>
-                                <Popup x:Name="AddressSuggestionsPopup"
-                                       PlacementTarget="{Binding ElementName=HomeAddressTextBox}"
-                                       Placement="Bottom"
-                                       AllowsTransparency="True"
-                                       StaysOpen="False"
-                                       IsOpen="{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}">
-                                    <Border MinWidth="{Binding ActualWidth, ElementName=HomeAddressTextBox}"
-                                            Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
-                                            BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Padding="2">
-                                        <ListBox x:Name="AddressSuggestionsList"
-                                                 ItemsSource="{Binding AddressSuggestions}"
-                                                 DisplayMemberPath="DisplayText"
-                                                 MaxHeight="180"
-                                                 BorderThickness="0"
-                                                 Background="Transparent"
-                                                 SelectionChanged="AddressSuggestionsList_SelectionChanged"
-                                                 AutomationProperties.Name="Address suggestions"/>
-                                    </Border>
-                                </Popup>
-                            </Grid>
+                            <controls:PlacesAddressBox x:Name="HomeAddressTextBox"
+                                                    Watermark="123 Main Street"
+                                                    FieldAutomationName="Home Address"
+                                                    IsSuggestionsEnabled="{Binding IsAddressAutocompleteEnabled}"
+                                                    AddressApplied="HomeAddress_Applied"
+                                                    Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}">
+                                <controls:PlacesAddressBox.AddressText>
+                                    <Binding Path="Student.HomeAddress" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="Home Address"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </controls:PlacesAddressBox.AddressText>
+                            </controls:PlacesAddressBox>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">

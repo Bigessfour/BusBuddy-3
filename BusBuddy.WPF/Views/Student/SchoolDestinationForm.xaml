@@ -4,6 +4,7 @@
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
                              xmlns:maps="clr-namespace:Syncfusion.UI.Xaml.Maps;assembly=Syncfusion.SfMaps.WPF"
                              xmlns:utils="clr-namespace:BusBuddy.WPF.Utilities"
+                             xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
                              Title="{Binding Title}"
                              Height="720"
                              Width="920"
@@ -66,38 +67,12 @@
                                              AutomationProperties.Name="School name"/>
 
                     <TextBlock Text="Street address *" Margin="0,0,0,4"/>
-                    <Grid Margin="0,0,0,10">
-                        <syncfusion:SfTextBoxExt x:Name="SchoolAddressBox"
-                                                 AutoCompleteMode="None"
-                                                 ShowClearButton="True"
-                                                 Watermark="1105 Parkview Ave"
-                                                 Height="40"
-                                                 IsEnabled="{Binding CanEditSchoolDetails}"
-                                                 TextChanged="SchoolAddressBox_TextChanged"
-                                                 AutomationProperties.Name="School street address"/>
-                        <Popup x:Name="SchoolAddressSuggestionsPopup"
-                               PlacementTarget="{Binding ElementName=SchoolAddressBox}"
-                               Placement="Bottom"
-                               AllowsTransparency="True"
-                               StaysOpen="False"
-                               IsOpen="{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}">
-                            <Border MinWidth="{Binding ActualWidth, ElementName=SchoolAddressBox}"
-                                    Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
-                                    BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="2">
-                                <ListBox x:Name="SchoolAddressSuggestionsList"
-                                         ItemsSource="{Binding AddressSuggestions}"
-                                         DisplayMemberPath="DisplayText"
-                                         MaxHeight="180"
-                                         BorderThickness="0"
-                                         Background="Transparent"
-                                         SelectionChanged="SchoolAddressSuggestionsList_SelectionChanged"
-                                         AutomationProperties.Name="School address suggestions"/>
-                            </Border>
-                        </Popup>
-                    </Grid>
+                    <controls:PlacesAddressBox x:Name="SchoolAddressBox"
+                                                Watermark="1105 Parkview Ave"
+                                                FieldAutomationName="School street address"
+                                                IsEnabled="{Binding CanEditSchoolDetails}"
+                                                AddressApplied="SchoolAddress_Applied"
+                                                Margin="0,0,0,10"/>
 
                     <TextBlock Text="City *" Margin="0,0,0,4"/>
                     <syncfusion:SfTextBoxExt x:Name="SchoolCityBox"

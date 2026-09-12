@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using BusBuddy.Core.Configuration;
+using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.ViewModels.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -34,6 +36,39 @@ namespace BusBuddy.WPF.Views.Settings
             catch (System.Exception ex)
             {
                 Logger.Error(ex, "SettingsView failed to resolve SettingsViewModel");
+            }
+        }
+
+        private void DepotAddress_Applied(object sender, PlaceAddressAppliedEventArgs e)
+        {
+            if (DataContext is not SettingsViewModel vm)
+            {
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(e.Applied.City))
+            {
+                vm.DepotCity = e.Applied.City;
+            }
+
+            if (!string.IsNullOrWhiteSpace(e.Applied.State))
+            {
+                vm.DepotState = e.Applied.State;
+            }
+
+            if (!string.IsNullOrWhiteSpace(e.Applied.Zip))
+            {
+                vm.DepotZipCode = e.Applied.Zip;
+            }
+
+            if (e.Applied.Latitude.HasValue)
+            {
+                vm.DepotLatitudeText = DistrictSettingsAccessor.FormatCoord(e.Applied.Latitude);
+            }
+
+            if (e.Applied.Longitude.HasValue)
+            {
+                vm.DepotLongitudeText = DistrictSettingsAccessor.FormatCoord(e.Applied.Longitude);
             }
         }
 

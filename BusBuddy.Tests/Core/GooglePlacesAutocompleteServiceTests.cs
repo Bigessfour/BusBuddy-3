@@ -101,6 +101,52 @@ public class GooglePlacesAutocompleteServiceTests
     }
 
     [Test]
+    public async Task GetSuggestions_SendsPlacesNewHeadersAndFivePrimaryTypes()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, """{"suggestions":[]}""");
+        using var http = new HttpClient(handler);
+        var svc = new GooglePlacesAutocompleteService(http, Options.Create(TestOptions));
+
+        await svc.GetSuggestionsAsync("100 Main", sessionToken: "11111111-1111-4111-8111-111111111111");
+
+        Assert.That(handler.LastRequest, Is.Not.Null);
+        Assert.That(handler.LastRequest!.Method, Is.EqualTo(HttpMethod.Post));
+        Assert.That(handler.LastRequest.RequestUri!.AbsolutePath, Does.Contain("places:autocomplete"));
+        Assert.That(handler.LastRequest.Headers.Contains("X-Goog-Api-Key"), Is.True);
+        Assert.That(
+            string.Join(",", handler.LastRequest.Headers.GetValues("X-Goog-FieldMask")),
+            Does.Contain("suggestions.placePrediction.placeId"));
+        var body = handler.LastRequestBody;
+        Assert.That(body, Does.Contain("includedRegionCodes"));
+        Assert.That(body, Does.Contain("street_address"));
+        Assert.That(body, Does.Contain("school"));
+        Assert.That(body, Does.Contain("establishment"));
+        Assert.That(body, Does.Contain("sessionToken"));
+        Assert.That(body, Does.Contain("50000"));
+        Assert.That(body, Does.Not.Contain("80000"));
+        Assert.That(GooglePlacesAutocompleteService.AutocompletePrimaryTypes, Has.Length.EqualTo(5));
+    }
+
+    [Test]
+    public async Task GetPlaceDetails_SendsRegionCodeAndSessionToken()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, """{"formattedAddress":"100 Main St"}""");
+        using var http = new HttpClient(handler);
+        var svc = new GooglePlacesAutocompleteService(http, Options.Create(TestOptions));
+
+        await svc.GetPlaceDetailsAsync("ChIJ_test_place", "11111111-1111-4111-8111-111111111111");
+
+        Assert.That(handler.LastRequest, Is.Not.Null);
+        Assert.That(handler.LastRequest!.Method, Is.EqualTo(HttpMethod.Get));
+        Assert.That(handler.LastRequest.RequestUri!.Query, Does.Contain("regionCode=us"));
+        Assert.That(handler.LastRequest.RequestUri.Query, Does.Contain("sessionToken="));
+        Assert.That(handler.LastRequest.Headers.Contains("X-Goog-Api-Key"), Is.True);
+        Assert.That(
+            string.Join(",", handler.LastRequest.Headers.GetValues("X-Goog-FieldMask")),
+            Does.Contain("formattedAddress"));
+    }
+
+    [Test]
     public void NormalizePlaceId_StripsPlacesPrefix()
     {
         Assert.That(
@@ -119,12 +165,22 @@ public class GooglePlacesAutocompleteServiceTests
             _body = body;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        public HttpRequestMessage? LastRequest { get; private set; }
+
+        public string? LastRequestBody { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(_status)
+            CancellationToken cancellationToken)
+        {
+            LastRequest = request;
+            LastRequestBody = request.Content is null
+                ? null
+                : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            return new HttpResponseMessage(_status)
             {
                 Content = new StringContent(_body, System.Text.Encoding.UTF8, "application/json"),
-            });
+            };
+        }
     }
 }

@@ -11,13 +11,13 @@ public partial class RouteStopEditDialog : Window
     {
         InitializeComponent();
         StopNameBox.Text = stopName ?? string.Empty;
-        StopAddressBox.Text = stopAddress ?? string.Empty;
+        StopAddressBox.AddressText = stopAddress ?? string.Empty;
         StopNameBox.Focus();
         Logger.Information("RouteStopEditDialog opened StopName={StopName}", StopNameBox.Text);
     }
 
     public string StopName => StopNameBox.Text.Trim();
-    public string StopAddress => StopAddressBox.Text.Trim();
+    public string StopAddress => (StopAddressBox.AddressText ?? string.Empty).Trim();
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {

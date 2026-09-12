@@ -9,12 +9,12 @@ using System.Windows.Automation; // AutomationProperties for accessibility check
 using Syncfusion.Windows.Controls.Input;
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion WPF docs
 using Syncfusion.SfSkinManager; // SfSkinManager per official docs
+using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.ViewModels.Student;
 using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.GoogleMaps;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -172,6 +172,12 @@ namespace BusBuddy.WPF.Views.Student
 
             if (target is null)
             {
+                return;
+            }
+
+            if (target is PlacesAddressBox placesBox)
+            {
+                placesBox.FocusAddressInput();
                 return;
             }
 
@@ -596,24 +602,20 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-        private async void AddressSuggestionsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void HomeAddress_Applied(object sender, PlaceAddressAppliedEventArgs e)
         {
-            if (ViewModel is null || AddressSuggestionsList.SelectedItem is not PlaceAutocompleteSuggestion suggestion)
+            if (ViewModel is null)
             {
                 return;
             }
 
             try
             {
-                await ViewModel.ApplyAddressSuggestionAsync(suggestion).ConfigureAwait(true);
+                await ViewModel.ApplyAppliedAddressAsync(e.Applied).ConfigureAwait(true);
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: Places suggestion apply failed");
-            }
-            finally
-            {
-                AddressSuggestionsList.SelectedItem = null;
             }
         }
 

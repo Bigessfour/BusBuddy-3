@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
-using BusBuddy.Core.Services.GoogleMaps;
+using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
 using CommunityToolkit.Mvvm.Input;
@@ -28,7 +28,7 @@ public partial class SchoolDestinationForm : ChromelessWindow
         // Seed controls from the VM — do not rely on Text DP bindings (they were not updating the VM).
         // In times-only edit mode the VM arrives prefilled from the campus being corrected.
         SchoolNameBox.Text = _vm.Name;
-        SchoolAddressBox.Text = _vm.Address;
+        SchoolAddressBox.AddressText = _vm.Address;
         SchoolCityBox.Text = _vm.City;
         SchoolStateBox.Text = _vm.State;
         SchoolZipBox.Text = _vm.ZipCode;
@@ -138,7 +138,7 @@ public partial class SchoolDestinationForm : ChromelessWindow
         }
 
         _vm.Name = SchoolNameBox.Text?.Trim() ?? string.Empty;
-        _vm.Address = SchoolAddressBox.Text?.Trim() ?? string.Empty;
+        _vm.Address = SchoolAddressBox.AddressText?.Trim() ?? string.Empty;
         _vm.City = SchoolCityBox.Text?.Trim() ?? string.Empty;
         _vm.State = SchoolStateBox.Text?.Trim() ?? string.Empty;
         _vm.ZipCode = SchoolZipBox.Text?.Trim() ?? string.Empty;
@@ -152,43 +152,15 @@ public partial class SchoolDestinationForm : ChromelessWindow
         }
     }
 
-    private void SchoolAddressBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    private void SchoolAddress_Applied(object sender, PlaceAddressAppliedEventArgs e)
     {
-        if (!_vm.CanEditSchoolDetails)
-        {
-            return;
-        }
-
-        _ = _vm.RefreshAddressSuggestionsAsync(SchoolAddressBox.Text);
-    }
-
-    private async void SchoolAddressSuggestionsList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-    {
-        if (SchoolAddressSuggestionsList.SelectedItem is not PlaceAutocompleteSuggestion suggestion)
-        {
-            return;
-        }
-
-        try
-        {
-            if (await _vm.ApplyAddressSuggestionAsync(suggestion).ConfigureAwait(true))
-            {
-                SchoolAddressBox.Text = _vm.Address;
-                SchoolCityBox.Text = _vm.City;
-                SchoolStateBox.Text = _vm.State;
-                SchoolZipBox.Text = _vm.ZipCode;
-                SchoolLatBox.Value = _vm.LatitudeValue;
-                SchoolLonBox.Value = _vm.LongitudeValue;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "School Places suggestion apply failed");
-        }
-        finally
-        {
-            SchoolAddressSuggestionsList.SelectedItem = null;
-        }
+        _vm.ApplyAppliedAddress(e.Applied);
+        SchoolAddressBox.AddressText = _vm.Address;
+        SchoolCityBox.Text = _vm.City;
+        SchoolStateBox.Text = _vm.State;
+        SchoolZipBox.Text = _vm.ZipCode;
+        SchoolLatBox.Value = _vm.LatitudeValue;
+        SchoolLonBox.Value = _vm.LongitudeValue;
     }
 
     private void SchoolForm_PreviewKeyDown(object sender, KeyEventArgs e)

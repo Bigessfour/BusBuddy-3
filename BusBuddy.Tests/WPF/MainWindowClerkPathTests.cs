@@ -15,6 +15,8 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("Click=\"FuelManagementButton_Click\""));
         Assert.That(xaml, Does.Contain("Click=\"Maintenance_Click\""));
         Assert.That(xaml, Does.Contain("Click=\"SettingsButton_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"DashboardButton_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"ActivitiesButton_Click\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedStudent, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedBus, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Text=\"{Binding StatusMessage"));
@@ -74,6 +76,8 @@ public class MainWindowClerkPathTests
         var xaml = XamlViewFile.Read("Views/Driver/DriverForm.xaml");
         Assert.That(xaml, Does.Contain("SfTextBoxExt Text=\"{Binding Driver.FirstName"));
         Assert.That(xaml, Does.Contain("SfTextBoxExt Text=\"{Binding Driver.DriverEmail"));
+        Assert.That(xaml, Does.Contain("PlacesAddressBox"));
+        Assert.That(xaml, Does.Contain("AddressText=\"{Binding Driver.Address"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding StatusOptions}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding LicenseClassOptions}\""));
         Assert.That(xaml, Does.Contain("Value=\"{Binding Driver.DriverPhone"));
@@ -109,7 +113,9 @@ public class MainWindowClerkPathTests
     public void TransferForm_UsesTextBoxExtAndMaskedTime()
     {
         var transfer = XamlViewFile.Read("Views/Student/StudentSchoolTransferForm.xaml");
-        Assert.That(transfer, Does.Contain("SfTextBoxExt Text=\"{Binding PickupAddress"));
+        Assert.That(transfer, Does.Contain("PlacesAddressBox"));
+        Assert.That(transfer, Does.Contain("AddressText=\"{Binding PickupAddress"));
+        Assert.That(transfer, Does.Contain("AddressText=\"{Binding DropoffAddress"));
         Assert.That(transfer, Does.Contain("Value=\"{Binding PickupTimeText"));
         Assert.That(transfer, Does.Not.Contain("MaskType=\"Text\""));
 

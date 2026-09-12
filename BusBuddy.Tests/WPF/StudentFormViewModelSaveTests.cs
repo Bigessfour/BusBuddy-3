@@ -156,9 +156,9 @@ public class StudentFormViewModelSaveTests
     public void StudentFormXaml_WiresPlacesAutocompletePopup()
     {
         var xaml = XamlViewFile.Read("Views/Student/StudentForm.xaml");
-        Assert.That(xaml, Does.Contain("AddressSuggestionsPopup"));
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AddressSuggestions}\""));
-        Assert.That(xaml, Does.Contain("IsOpen=\"{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}\""));
+        Assert.That(xaml, Does.Contain("controls:PlacesAddressBox"));
+        Assert.That(xaml, Does.Contain("AddressApplied=\"HomeAddress_Applied\""));
+        Assert.That(xaml, Does.Contain("AddressText"));
     }
 
     [Test]

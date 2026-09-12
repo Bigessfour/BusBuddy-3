@@ -4,6 +4,7 @@
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
                              xmlns:maps="clr-namespace:Syncfusion.UI.Xaml.Maps;assembly=Syncfusion.SfMaps.WPF"
                              xmlns:utils="clr-namespace:BusBuddy.WPF.Utilities"
+                             xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
                              Title="{Binding Title}"
                              Height="680"
                              Width="900"
@@ -60,12 +61,13 @@
                                              AutomationProperties.Name="Pickup stop name"/>
 
                     <TextBlock Text="Street / landmark (optional)" Margin="0,0,0,4"/>
-                    <syncfusion:SfTextBoxExt x:Name="StopAddressBox"
-                                             AutoCompleteMode="None"
-                                             ShowClearButton="True"
-                                             Watermark="NE corner Oak &amp; 4th"
-                                             Height="40" Margin="0,0,0,10"
-                                             AutomationProperties.Name="Pickup stop address"/>
+                    <controls:PlacesAddressBox x:Name="StopAddressBox"
+                                              AddressText="{Binding Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Watermark="NE corner Oak &amp; 4th"
+                                              FieldAutomationName="Pickup stop address"
+                                              UseFormattedAddress="True"
+                                              AddressApplied="StopAddress_Applied"
+                                              Margin="0,0,0,10"/>
 
                     <TextBlock Text="Stop type" Margin="0,0,0,4"/>
                     <syncfusion:ComboBoxAdv x:Name="StopTypeCombo"
