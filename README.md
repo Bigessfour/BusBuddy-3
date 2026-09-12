@@ -69,7 +69,7 @@ Use standard tools:
 - `./run-wpf.sh` (Mac) or `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (inside VM)
 - Docker for services/tests.
 
-Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). **What remains to ship:** [docs/action-items.md](docs/action-items.md). Architecture: [Documentation/diagrams/busbuddy-3-architecture.md](Documentation/diagrams/busbuddy-3-architecture.md).
+Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). **What remains to ship:** [docs/action-items.md](docs/action-items.md). **When the project is done:** [docs/done-checklist.md](docs/done-checklist.md) (`python3 .github/scripts/check-project-done.py`). Architecture: [Documentation/diagrams/busbuddy-3-architecture.md](Documentation/diagrams/busbuddy-3-architecture.md).
 
 ### **Google Cloud & Maps Platform**
 

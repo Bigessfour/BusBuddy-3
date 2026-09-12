@@ -8,7 +8,7 @@ using Syncfusion.Windows.Shared;
 namespace BusBuddy.WPF.Views.Vehicle
 {
     /// <summary>
-    /// Modal host for fleet CRUD. Content is always <see cref="VehicleManagementView"/>.
+    /// Modal host for fleet CRUD. Content is always <see cref="VehiclesView"/> (which hosts <see cref="VehicleManagementView"/>).
     /// </summary>
     public partial class VehicleForm : ChromelessWindow
     {
@@ -21,7 +21,7 @@ namespace BusBuddy.WPF.Views.Vehicle
         public VehicleForm(VehicleManagementStartup startup)
         {
             InitializeComponent();
-            Content = new VehicleManagementView(startup);
+            Content = new VehiclesView(startup);
             ApplySyncfusionTheme();
             Loaded += OnLoaded;
         }

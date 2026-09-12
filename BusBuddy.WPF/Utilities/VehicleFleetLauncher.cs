@@ -5,7 +5,7 @@ using Serilog;
 
 namespace BusBuddy.WPF.Utilities;
 
-/// <summary>Single entry point for fleet CRUD — always opens <see cref="VehicleForm"/> hosting <see cref="VehicleManagementView"/>.</summary>
+/// <summary>Single entry point for fleet CRUD — always opens <see cref="VehicleForm"/> hosting <see cref="VehiclesView"/>.</summary>
 public static class VehicleFleetLauncher
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(VehicleFleetLauncher));

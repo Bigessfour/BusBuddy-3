@@ -8,13 +8,13 @@ Earth Engine is **not** an app dependency. Do not restore `GEE_*` keys, `GcpCred
 
 Runtime: Syncfusion SfMap with **Google Map Tiles API** roadmap tiles when `GOOGLE_MAPS_API_KEY` is set (empty basemap without a key/session — no OSM). Google Maps Platform also provides address validation, Places autocomplete, and drive routing.
 
-| API                                                                                                        | Use                                                                |
-| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [Address Validation](https://developers.google.com/maps/documentation/address-validation)                  | Student/school validate + geocode (`IMapsGeoService`)              |
-| [Places API (New)](https://developers.google.com/maps/documentation/places/web-service/place-autocomplete) | Address type-ahead on Student + School forms                       |
-| [Routes API](https://developers.google.com/maps/documentation/routes)                                      | `computeRoutes` drive polyline + `computeRouteMatrix` ranking      |
-| [Route Optimization API](https://developers.google.com/maps/documentation/route-optimization)              | Clerk-initiated stop order + same-day trip fleet (`optimizeTours`) |
-| [Map Tiles API](https://developers.google.com/maps/documentation/tile)                                     | District Map base imagery (ToS-compliant with Google content)      |
+| API                                                                                                        | Use                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| [Address Validation](https://developers.google.com/maps/documentation/address-validation)                  | Student/school validate + geocode (`IMapsGeoService`)                                                                                    |
+| [Places API (New)](https://developers.google.com/maps/documentation/places/web-service/place-autocomplete) | Address type-ahead on student, school, driver, depot, pickup stop, route stop, transfer, and trip destination forms (`PlacesAddressBox`) |
+| [Routes API](https://developers.google.com/maps/documentation/routes)                                      | `computeRoutes` drive polyline + `computeRouteMatrix` ranking                                                                            |
+| [Route Optimization API](https://developers.google.com/maps/documentation/route-optimization)              | Clerk-initiated stop order + same-day trip fleet (`optimizeTours`)                                                                   |
+| [Map Tiles API](https://developers.google.com/maps/documentation/tile)                                     | District Map base imagery (ToS-compliant with Google content)                                                                            |
 
 Students entered in the system are eligible — there is no geofence.
 

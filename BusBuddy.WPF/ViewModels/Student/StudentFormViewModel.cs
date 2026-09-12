@@ -202,9 +202,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         // --- Address coordinator surface ---
         public string AddressValidationMessage => _address.ValidationMessage;
         public Brush AddressValidationColor => _address.ValidationColor;
-        public ObservableCollection<PlaceAutocompleteSuggestion> AddressSuggestions => _address.Suggestions;
         public bool IsAddressAutocompleteEnabled => _address.IsAutocompleteEnabled;
-        public bool IsAddressSuggestionPopupOpen => _address.IsPopupOpen;
 
         /// <summary>Suppresses interactive Places autocomplete only — never validation on save.</summary>
         public bool DisableAddressValidation
@@ -282,8 +280,8 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Code-behind entry points
 
-        public Task ApplyAddressSuggestionAsync(PlaceAutocompleteSuggestion? suggestion) =>
-            _address.ApplySuggestionAsync(Student, suggestion);
+        public Task ApplyAppliedAddressAsync(PlaceAddressApplier.AppliedAddress applied) =>
+            _address.ApplyAppliedAsync(Student, applied);
 
         /// <summary>Clear one field error when the operator edits that control.</summary>
         public void ClearFieldError(string fieldKey) => _validation.ClearFieldError(fieldKey);
@@ -297,7 +295,6 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 nameof(StudentFormAddressCoordinator.ValidationMessage) => nameof(AddressValidationMessage),
                 nameof(StudentFormAddressCoordinator.ValidationColor) => nameof(AddressValidationColor),
-                nameof(StudentFormAddressCoordinator.IsPopupOpen) => nameof(IsAddressSuggestionPopupOpen),
                 nameof(StudentFormAddressCoordinator.IsAutocompleteEnabled) => nameof(IsAddressAutocompleteEnabled),
                 nameof(StudentFormAddressCoordinator.DisableValidation) => nameof(DisableAddressValidation),
                 _ => null,
@@ -334,11 +331,6 @@ namespace BusBuddy.WPF.ViewModels.Student
             if (e.PropertyName == nameof(Core.Models.Student.RequiresSpecialNeedsBus))
             {
                 _catalog.RefreshAvailableRoutes();
-            }
-
-            if (e.PropertyName == nameof(Core.Models.Student.HomeAddress))
-            {
-                _ = _address.RefreshSuggestionsAsync(Student.HomeAddress);
             }
 
             _validation.SetCanSave(StudentFormSaveCoordinator.HasMinimumFields(Student));

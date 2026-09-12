@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
+using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Driver;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,6 +85,30 @@ namespace BusBuddy.WPF.Views.Driver
             {
                 Log.Error(ex, "DriverForm: error handling RequestClose");
                 Close();
+            }
+        }
+
+        private void DriverAddress_Applied(object sender, PlaceAddressAppliedEventArgs e)
+        {
+            if (ViewModel?.Driver is null)
+            {
+                return;
+            }
+
+            var applied = e.Applied;
+            if (!string.IsNullOrWhiteSpace(applied.City))
+            {
+                ViewModel.Driver.City = applied.City;
+            }
+
+            if (!string.IsNullOrWhiteSpace(applied.State))
+            {
+                ViewModel.Driver.State = applied.State;
+            }
+
+            if (!string.IsNullOrWhiteSpace(applied.Zip))
+            {
+                ViewModel.Driver.Zip = applied.Zip;
             }
         }
 

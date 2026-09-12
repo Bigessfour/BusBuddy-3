@@ -14,6 +14,11 @@ public class DashboardViewTests
         var xaml = XamlViewFile.Read("Views/Dashboard/DashboardView.xaml");
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateReportCommand}\""));
+        Assert.That(xaml, Does.Contain("Click=\"ViewRouteDetails_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"ViewFleetDetails_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"ViewDrivers_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"ViewStudentDetails_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"ViewAlerts_Click\""));
         Assert.That(xaml, Does.Contain("ShowTooltip=\"True\""));
         Assert.That(xaml, Does.Contain("ChartAdornmentInfo"));
         Assert.That(xaml, Does.Contain("ChartLegend"));

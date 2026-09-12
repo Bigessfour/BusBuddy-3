@@ -6,6 +6,7 @@ using System.Windows.Media;
 using Serilog;
 using Syncfusion.Windows.Tools.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.WPF.Logging;
 using BusBuddy.WPF.ViewModels.Route;
 
 namespace BusBuddy.WPF.Views.Route;
@@ -41,10 +42,11 @@ public partial class RouteManagementView : UserControl
 
             Loaded += OnLoadedAsync;
             Logger.Information("RouteManagementView initialized");
+            UiProofLog.Write(Logger, "Routes", "RouteManagementView", "initialized");
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "RouteManagementView initialization failed");
+            UiProofLog.Failed(Logger, ex, "Routes", "RouteManagementView");
             throw;
         }
     }

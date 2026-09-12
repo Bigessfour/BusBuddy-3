@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.Logging;
 using BusBuddy.WPF.ViewModels.Dashboard;
 using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Student;
-using BusBuddy.WPF.Views.Vehicle;
+using BusBuddy.WPF.Views.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -250,25 +251,25 @@ namespace BusBuddy.WPF.Views.Dashboard
             }
         }
 
-        // Dashboard event handlers (for future button implementations)
+        // Dashboard event handlers — header buttons drill into the same Postgres-backed editors as the clerk path
         private void ViewFleetDetails_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("ViewFleetDetails_Click event triggered");
+            var click = UiProofLog.Label(sender, "Buses");
             try
             {
                 Logger.Information("Fleet details view requested");
                 VehicleFleetLauncher.Show(Window.GetWindow(this));
-                Logger.Debug("Fleet details navigation completed");
+                UiProofLog.Write(Logger, click, "VehicleManagementView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error in ViewFleetDetails_Click");
+                UiProofLog.Failed(Logger, ex, click, "VehicleManagementView");
             }
         }
 
         private void ViewRouteDetails_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("ViewRouteDetails_Click event triggered");
+            var click = UiProofLog.Label(sender, "Routes");
             try
             {
                 Logger.Information("Route details view requested");
@@ -280,17 +281,17 @@ namespace BusBuddy.WPF.Views.Dashboard
                     Height = 800,
                     Owner = Window.GetWindow(this)
                 }.Show();
-                Logger.Debug("Route details navigation completed");
+                UiProofLog.Write(Logger, click, "RouteManagementView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error in ViewRouteDetails_Click");
+                UiProofLog.Failed(Logger, ex, click, "RouteManagementView");
             }
         }
 
         private void ViewStudentDetails_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("ViewStudentDetails_Click event triggered");
+            var click = UiProofLog.Label(sender, "Students");
             try
             {
                 Logger.Information("Student details view requested");
@@ -299,17 +300,40 @@ namespace BusBuddy.WPF.Views.Dashboard
                     Owner = Window.GetWindow(this)
                 };
                 students.Show();
-                Logger.Debug("Student details navigation completed");
+                UiProofLog.Write(Logger, click, "StudentsView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error in ViewStudentDetails_Click");
+                UiProofLog.Failed(Logger, ex, click, "StudentsView");
+            }
+        }
+
+        private void ViewDrivers_Click(object sender, RoutedEventArgs e)
+        {
+            var click = UiProofLog.Label(sender, "Drivers");
+            try
+            {
+                Logger.Information("Driver details view requested");
+                new Window
+                {
+                    Title = "Driver Management",
+                    Content = new DriverManagementView(),
+                    Width = 1000,
+                    Height = 700,
+                    Owner = Window.GetWindow(this),
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                }.Show();
+                UiProofLog.Write(Logger, click, "DriverManagementView", "opened");
+            }
+            catch (Exception ex)
+            {
+                UiProofLog.Failed(Logger, ex, click, "DriverManagementView");
             }
         }
 
         private void ViewAlerts_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("ViewAlerts_Click event triggered");
+            var click = UiProofLog.Label(sender, "Alerts");
             try
             {
                 Logger.Information("Alerts view requested");
@@ -321,11 +345,11 @@ namespace BusBuddy.WPF.Views.Dashboard
                     Height = 800,
                     Owner = Window.GetWindow(this)
                 }.Show();
-                Logger.Debug("Alerts navigation completed");
+                UiProofLog.Write(Logger, click, "AnalyticsDashboardView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error in ViewAlerts_Click");
+                UiProofLog.Failed(Logger, ex, click, "AnalyticsDashboardView");
             }
         }
 

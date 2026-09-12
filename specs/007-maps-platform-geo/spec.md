@@ -22,7 +22,7 @@
 
 Constitution: this feature **amends** the Geo constraint (Earth Engine → Maps Platform Address Validation + SfMap; no shapefile geofence).
 
-Nominated provider (working solution): **Google Maps Platform** on `busbuddy-507301` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`), Places Autocomplete (New), Route Optimization (`optimizeTours`, clerk-initiated). Earth Engine stays unused; do not re-enable it in this feature.
+Nominated provider (working solution): **Google Maps Platform** on `busbuddy-507301` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`), Places Autocomplete (New) on clerk address intake forms via `PlacesAddressBox`, Route Optimization (`optimizeTours`, clerk-initiated). Earth Engine stays unused; do not re-enable it in this feature.
 
 ## User Scenarios & Testing _(mandatory)_
 

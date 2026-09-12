@@ -33,6 +33,7 @@ Proof checkboxes live only in [action-items.md](./action-items.md) — do not du
 | 5       | Daily schedule                                  | Driver Schedule                                                               | `Schedules`                                       |
 | 6       | Fuel and maintenance                            | Header **Fuel** / **Maintenance**                                             | `FuelRecords` / `MaintenanceRecords` → `Vehicles` |
 | Map     | Plot kids who have coordinates                  | Map pane / Students View Map                                                  | reads `Students` + `Destinations`                 |
+| Trips   | Office trip board / activity timeline           | Header **Trips** → timeline; **Trip Board** on that window                    | `TripEvents` (not daily `Routes`)                 |
 | Reports | Print roster / assignment                       | Header **Reports**                                                            | reads the same tables                             |
 
 Dock **Students / Routes / Buses / Drivers** grids are summaries of Postgres. They do not invent sample rows. Status bar shows the load count or that the database is unavailable.

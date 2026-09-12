@@ -8,6 +8,7 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using BusBuddy.WPF.Logging;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Dashboard
@@ -163,6 +164,12 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 Logger.Information(
                     "Dashboard refresh completed Routes={RouteCount} Buses={BusCount} Drivers={DriverCount} Utilization={Utilization} ElapsedMs={ElapsedMs}",
                     TotalRoutes, Buses.Count, AvailableDrivers, AverageUtilizationPercent, stopwatch.ElapsedMilliseconds);
+                UiProofLog.Write(
+                    Logger,
+                    "Dashboard",
+                    "DashboardView",
+                    "loaded",
+                    $"Routes={TotalRoutes} Buses={Buses.Count} Drivers={AvailableDrivers}");
             }
             catch (Exception ex)
             {

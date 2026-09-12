@@ -24,6 +24,7 @@ using BusBuddy.WPF.Views.Reports;
 using BusBuddy.WPF.Views.Fuel;
 using BusBuddy.WPF.Views.Maintenance;
 using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.Logging;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
 using Syncfusion.SfSkinManager;
@@ -635,15 +636,16 @@ namespace BusBuddy.WPF.Views.Main
 
         private void DashboardButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("DashboardButton_Click event triggered");
+            var click = UiProofLog.Label(sender, "Dashboard");
             Logger.Information("Dashboard navigation requested");
             try
             {
                 ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720);
+                UiProofLog.Write(Logger, click, "DashboardView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Dashboard view");
+                UiProofLog.Failed(Logger, ex, click, "DashboardView");
                 MessageBox.Show($"Error opening Dashboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -760,16 +762,17 @@ namespace BusBuddy.WPF.Views.Main
         /// </summary>
         private void RouteManagementButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("RouteManagementButton_Click event triggered");
+            var click = UiProofLog.Label(sender, "Routes");
             Logger.Information("Route management navigation requested");
             try
             {
                 ShowViewInWindow(new RouteManagementView(), "Route Management", 1200, 800);
                 RefreshRoutesGrid();
+                UiProofLog.Write(Logger, click, "RouteManagementView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Route Management view");
+                UiProofLog.Failed(Logger, ex, click, "RouteManagementView");
                 MessageBox.Show($"Error opening Route Management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -888,14 +891,16 @@ namespace BusBuddy.WPF.Views.Main
 
         private void ActivitiesButton_Click(object sender, RoutedEventArgs e)
         {
+            var click = UiProofLog.Label(sender, "Trips");
             Logger.Information("Activities navigation requested");
             try
             {
                 ShowViewInWindow(new ActivityTimelineView(), "📋 Activity Timeline", 1100, 700);
+                UiProofLog.Write(Logger, click, "ActivityTimelineView", "opened");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Activity Timeline");
+                UiProofLog.Failed(Logger, ex, click, "ActivityTimelineView");
                 MessageBox.Show($"Error opening Activity Timeline: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

@@ -13,8 +13,8 @@ using StudentModel = BusBuddy.Core.Models.Student;
 namespace BusBuddy.WPF.ViewModels.Student;
 
 /// <summary>
-/// Address validation, Places autocomplete, and geocode for the student form.
-/// Keeps Maps orchestration out of <see cref="StudentFormViewModel"/>.
+/// Address validation and geocode for the student form.
+/// Places type-ahead lives on <c>PlacesAddressBox</c>; this coordinator maps an applied result.
 /// </summary>
 public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDisposable
 {
@@ -22,7 +22,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
     private readonly IMapsGeoService? _mapsGeo;
     private readonly IStudentService? _studentService;
-    private readonly PlacesAddressAutocompleteCoordinator _autocomplete;
+    private readonly IPlacesAutocompleteService? _places;
     private string _validationMessage = string.Empty;
     private Brush _validationColor = Brushes.Gray;
     private bool _validationFailed;
@@ -37,15 +37,8 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
     {
         _mapsGeo = mapsGeo;
         _studentService = studentService;
+        _places = placesAutocomplete;
         TrackPinnedAddress(loadedStudent);
-        _autocomplete = new PlacesAddressAutocompleteCoordinator(placesAutocomplete);
-        _autocomplete.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(PlacesAddressAutocompleteCoordinator.IsPopupOpen))
-            {
-                OnPropertyChanged(nameof(IsPopupOpen));
-            }
-        };
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -92,12 +85,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         }
     }
 
-    public System.Collections.ObjectModel.ObservableCollection<PlaceAutocompleteSuggestion> Suggestions =>
-        _autocomplete.Suggestions;
-
-    public bool IsAutocompleteEnabled => _autocomplete.IsEnabled && !DisableValidation;
-
-    public bool IsPopupOpen => _autocomplete.IsPopupOpen;
+    public bool IsAutocompleteEnabled => _places?.IsConfigured == true && !DisableValidation;
 
     /// <summary>
     /// Normalized street|city|state|zip. Used to tie the stored pin to the address text that produced it.
@@ -142,25 +130,8 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         ValidationColor = Brushes.Green;
     }
 
-    public Task RefreshSuggestionsAsync(string? input) =>
-        _autocomplete.RefreshSuggestionsAsync(input);
-
-    public async Task ApplySuggestionAsync(StudentModel student, PlaceAutocompleteSuggestion? suggestion)
+    public async Task ApplyAppliedAsync(StudentModel student, PlaceAddressApplier.AppliedAddress applied)
     {
-        var details = await _autocomplete.ApplySuggestionAsync(suggestion).ConfigureAwait(true);
-        if (suggestion is null)
-        {
-            return;
-        }
-
-        if (details is null)
-        {
-            ValidationMessage = "Could not load address details for that suggestion.";
-            ValidationColor = Brushes.Orange;
-            return;
-        }
-
-        var applied = PlaceAddressApplier.Apply(suggestion, details);
         if (!string.IsNullOrWhiteSpace(applied.Street))
         {
             student.HomeAddress = applied.Street;
@@ -181,13 +152,11 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             student.Zip = applied.Zip;
         }
 
-        if (!string.IsNullOrWhiteSpace(suggestion.PlaceId))
+        if (!string.IsNullOrWhiteSpace(applied.PlaceId))
         {
-            student.PlaceId = suggestion.PlaceId;
+            student.PlaceId = applied.PlaceId;
         }
 
-        // Place Details already returns geometry. Discarding it forced a second round trip and left
-        // the record unplottable until the clerk remembered to press Validate.
         var hasPlaceCoordinates = applied.Latitude.HasValue
             && applied.Longitude.HasValue
             && LocationCoordinate.IsValidated((decimal)applied.Latitude.Value, (decimal)applied.Longitude.Value);
@@ -212,7 +181,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         ValidationColor = hasPlaceCoordinates ? Brushes.Green : Brushes.Blue;
         Logger.Information(
             "Places suggestion applied PlaceIdPrefix={PlaceIdPrefix} CoordinatesCaptured={CoordinatesCaptured}",
-            suggestion.PlaceId[..Math.Min(8, suggestion.PlaceId.Length)],
+            string.IsNullOrEmpty(applied.PlaceId) ? string.Empty : applied.PlaceId[..Math.Min(8, applied.PlaceId.Length)],
             hasPlaceCoordinates);
 
         if (hasPlaceCoordinates)
@@ -376,7 +345,10 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         return TryGeocodeAsync(student);
     }
 
-    public void Dispose() => _autocomplete.Dispose();
+    public void Dispose()
+    {
+        // Address type-ahead lives on PlacesAddressBox; this coordinator only maps applied details.
+    }
 
     private async Task ApplyLocalFallbackAsync(StudentModel student, string prefix)
     {
