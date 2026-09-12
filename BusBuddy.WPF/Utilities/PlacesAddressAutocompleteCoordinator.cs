@@ -10,7 +10,7 @@ using Serilog;
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Debounced Places Autocomplete popup state shared by clerk address fields (StudentForm, SchoolDestinationForm).
+/// Debounced Places Autocomplete popup state for <c>PlacesAddressBox</c> (all clerk address fields).
 /// </summary>
 public sealed class PlacesAddressAutocompleteCoordinator : INotifyPropertyChanged, IDisposable
 {
@@ -49,7 +49,7 @@ public sealed class PlacesAddressAutocompleteCoordinator : INotifyPropertyChange
         }
     }
 
-    public static string CreateSessionToken() => Guid.NewGuid().ToString("N");
+    public static string CreateSessionToken() => Guid.NewGuid().ToString("D");
 
     public async Task RefreshSuggestionsAsync(string? input)
     {

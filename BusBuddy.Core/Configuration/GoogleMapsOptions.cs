@@ -104,6 +104,8 @@ public sealed class GoogleMapsOptions
 
     public double? AutocompleteBiasLongitude { get; set; }
 
-    /// <summary>Places Autocomplete bias radius in meters (~50 mi default).</summary>
-    public double AutocompleteBiasRadiusMeters { get; set; } = 80_000;
+    /// <summary>
+    /// Places Autocomplete (New) locationBias circle radius in meters. Vendor max is 50,000.
+    /// </summary>
+    public double AutocompleteBiasRadiusMeters { get; set; } = 50_000;
 }

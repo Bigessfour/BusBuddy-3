@@ -29,7 +29,6 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
     private readonly IDestinationService _destinations;
     private readonly BusBuddyDbContext? _context;
-    private readonly PlacesAddressAutocompleteCoordinator _addressAutocomplete;
     private readonly Destination? _editingSchool;
 
     private string _name = string.Empty;
@@ -67,15 +66,6 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         _destinations = destinations ?? throw new ArgumentNullException(nameof(destinations));
         _editingSchool = editingSchool;
         _context = TryCreateDbContextViaDi();
-        var places = App.ServiceProvider?.GetService<IPlacesAutocompleteService>();
-        _addressAutocomplete = new PlacesAddressAutocompleteCoordinator(places);
-        _addressAutocomplete.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(PlacesAddressAutocompleteCoordinator.IsPopupOpen))
-            {
-                OnPropertyChanged(nameof(IsAddressSuggestionPopupOpen));
-            }
-        };
         // Do NOT gate CanExecute — ButtonAdv often looks enabled while CanExecute=false → silent no-op.
         // Validate inside SaveAsync and surface ValidationMessage instead.
         SaveCommand = new AsyncRelayCommand(SaveAsync);
@@ -227,12 +217,6 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         get => _validationMessage;
         set => SetProperty(ref _validationMessage, value);
     }
-
-    public ObservableCollection<PlaceAutocompleteSuggestion> AddressSuggestions => _addressAutocomplete.Suggestions;
-
-    public bool IsAddressSuggestionPopupOpen => _addressAutocomplete.IsPopupOpen;
-
-    public bool IsAddressAutocompleteEnabled => _addressAutocomplete.IsEnabled;
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
@@ -502,18 +486,8 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         return TimeSpan.TryParse(cleaned, CultureInfo.InvariantCulture, out value);
     }
 
-    public async Task RefreshAddressSuggestionsAsync(string? input) =>
-        await _addressAutocomplete.RefreshSuggestionsAsync(input).ConfigureAwait(true);
-
-    public async Task<bool> ApplyAddressSuggestionAsync(PlaceAutocompleteSuggestion? suggestion)
+    public void ApplyAppliedAddress(PlaceAddressApplier.AppliedAddress applied)
     {
-        var details = await _addressAutocomplete.ApplySuggestionAsync(suggestion).ConfigureAwait(true);
-        if (suggestion is null || details is null)
-        {
-            return false;
-        }
-
-        var applied = PlaceAddressApplier.Apply(suggestion, details);
         if (!string.IsNullOrWhiteSpace(applied.Street))
         {
             Address = applied.Street;
@@ -540,7 +514,6 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         }
 
         ValidationMessage = "Address selected from Google Places — save to persist.";
-        return true;
     }
 
     private bool HasUsableGps() =>
@@ -582,7 +555,6 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _addressAutocomplete.Dispose();
         _context?.Dispose();
     }
 }

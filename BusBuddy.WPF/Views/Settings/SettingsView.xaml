@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
+             xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
              Background="{DynamicResource ContentBackgroundBrush}">
 
     <UserControl.Resources>
@@ -122,9 +123,10 @@
                                          AutomationProperties.Name="Bus barn name"/>
                 <TextBlock Text="Bus barn address" FontWeight="Medium" Margin="0,0,0,6"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
-                <syncfusion:SfTextBoxExt Text="{Binding DepotAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource SettingsFieldInput}"
-                                         AutomationProperties.Name="Bus barn address"/>
+                <controls:PlacesAddressBox AddressText="{Binding DepotAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           FieldAutomationName="Bus barn address"
+                                           AddressApplied="DepotAddress_Applied"
+                                           Margin="0,0,0,10"/>
                 <Grid Margin="0,0,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

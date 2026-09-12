@@ -9,7 +9,7 @@ using Serilog;
 
 namespace BusBuddy.Core.Services.GoogleMaps;
 
-/// <summary>Places API (New) autocomplete + place details for student address type-ahead.</summary>
+/// <summary>Places API (New) autocomplete + place details for clerk address type-ahead.</summary>
 public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService, IDisposable
 {
     private static readonly ILogger Logger = Log.ForContext<GooglePlacesAutocompleteService>();
@@ -17,6 +17,27 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
     private const string AutocompleteFieldMask =
         "suggestions.placePrediction.placeId,suggestions.placePrediction.text,suggestions.placePrediction.structuredFormat";
     private const string DetailsFieldMask = "id,formattedAddress,addressComponents,location";
+
+    /// <summary>
+    /// Places Autocomplete (New) allows at most five <c>includedPrimaryTypes</c> from Table A/B.
+    /// Street types cover clerk address fields; <c>school</c> and <c>establishment</c> cover trip
+    /// destinations such as a named campus. See
+    /// https://developers.google.com/maps/documentation/places/web-service/place-autocomplete
+    /// </summary>
+    internal static readonly string[] AutocompletePrimaryTypes =
+    [
+        "street_address",
+        "premise",
+        "subpremise",
+        "school",
+        "establishment",
+    ];
+
+    /// <summary>
+    /// Places Autocomplete (New) circle radius max is 50,000 m. See
+    /// https://developers.google.com/maps/documentation/places/web-service/place-autocomplete
+    /// </summary>
+    internal const double MaxAutocompleteBiasRadiusMeters = 50_000;
 
     private readonly HttpClient _httpClient;
     private readonly GoogleMapsOptions _options;
@@ -69,7 +90,7 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
             {
                 ["input"] = trimmed,
                 ["includedRegionCodes"] = new[] { "us" },
-                ["includedPrimaryTypes"] = new[] { "street_address", "premise", "subpremise" },
+                ["includedPrimaryTypes"] = AutocompletePrimaryTypes,
                 ["languageCode"] = "en",
             };
             if (TryResolveAutocompleteBias(out var biasLat, out var biasLon))
@@ -79,7 +100,10 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
                     circle = new
                     {
                         center = new { latitude = biasLat, longitude = biasLon },
-                        radius = _options.AutocompleteBiasRadiusMeters,
+                        radius = Math.Clamp(
+                            _options.AutocompleteBiasRadiusMeters,
+                            0.0,
+                            MaxAutocompleteBiasRadiusMeters),
                     },
                 };
             }
@@ -135,9 +159,14 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
         var sw = Stopwatch.StartNew();
         try
         {
-            var detailsUri = string.IsNullOrWhiteSpace(sessionToken)
-                ? $"https://places.googleapis.com/v1/places/{Uri.EscapeDataString(normalizedId)}"
-                : $"https://places.googleapis.com/v1/places/{Uri.EscapeDataString(normalizedId)}?sessionToken={Uri.EscapeDataString(sessionToken)}";
+            var query = new List<string> { "regionCode=us" };
+            if (!string.IsNullOrWhiteSpace(sessionToken))
+            {
+                query.Add("sessionToken=" + Uri.EscapeDataString(sessionToken));
+            }
+
+            var detailsUri =
+                $"https://places.googleapis.com/v1/places/{Uri.EscapeDataString(normalizedId)}?{string.Join("&", query)}";
             var uri = new Uri(detailsUri);
             using var request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);

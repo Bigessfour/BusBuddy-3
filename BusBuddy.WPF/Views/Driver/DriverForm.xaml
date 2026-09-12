@@ -4,6 +4,7 @@
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
                              mc:Ignorable="d"
                              Title="{Binding FormTitle}"
                              Height="720"
@@ -166,10 +167,11 @@
                                 Grid.ColumnSpan="3">
                         <TextBlock Text="Address:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfTextBoxExt Text="{Binding Driver.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldTextBoxStyle}"
-                                                 AutomationProperties.Name="Driver Address"
-                                                 AutomationProperties.HelpText="Enter street address" />
+                        <controls:PlacesAddressBox AddressText="{Binding Driver.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                    Watermark="123 Main Street"
+                                                    FieldAutomationName="Driver Address"
+                                                    AddressApplied="DriverAddress_Applied"
+                                                    Margin="0,0,0,10"/>
                     </StackPanel>
                     <StackPanel Grid.Row="3"
                                 Grid.Column="0">

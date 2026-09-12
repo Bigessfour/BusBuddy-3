@@ -2,8 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
         Title="Route Stop"
-        Height="260"
+        Height="320"
         Width="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
@@ -28,8 +29,9 @@
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,0,0,12">
             <TextBlock Text="Address" Margin="0,0,0,4"/>
-            <syncfusion:SfTextBoxExt x:Name="StopAddressBox" Height="40"
-                                     AutomationProperties.Name="Stop address"/>
+            <controls:PlacesAddressBox x:Name="StopAddressBox"
+                                        UseFormattedAddress="True"
+                                        FieldAutomationName="Stop address"/>
         </StackPanel>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="40" Margin="0,0,8,0"

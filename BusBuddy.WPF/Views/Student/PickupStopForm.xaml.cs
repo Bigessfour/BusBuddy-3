@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
+using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
 using CommunityToolkit.Mvvm.Input;
@@ -109,7 +110,7 @@ public partial class PickupStopForm : ChromelessWindow
     private void PushFieldsToViewModel()
     {
         _vm.Name = StopNameBox.Text?.Trim() ?? string.Empty;
-        _vm.Address = StopAddressBox.Text?.Trim() ?? string.Empty;
+        _vm.Address = StopAddressBox.AddressText?.Trim() ?? string.Empty;
         _vm.SelectedStopType = StopTypeCombo.SelectedItem as string ?? PickupStopTypes.Corner;
         _vm.Notes = StopNotesBox.Text?.Trim() ?? string.Empty;
         _vm.LatitudeValue = StopLatBox.Value ?? 0d;
@@ -117,6 +118,22 @@ public partial class PickupStopForm : ChromelessWindow
         if (Math.Abs(_vm.LatitudeValue) > 0.0001 || Math.Abs(_vm.LongitudeValue) > 0.0001)
         {
             _vm.ApplyMapClick(_vm.LatitudeValue, _vm.LongitudeValue);
+        }
+    }
+
+    private void StopAddress_Applied(object sender, PlaceAddressAppliedEventArgs e)
+    {
+        if (!e.Applied.Latitude.HasValue || !e.Applied.Longitude.HasValue)
+        {
+            return;
+        }
+
+        _vm.ApplyMapClick(e.Applied.Latitude.Value, e.Applied.Longitude.Value);
+        StopLatBox.Value = _vm.LatitudeValue;
+        StopLonBox.Value = _vm.LongitudeValue;
+        if (StopPickLayer is not null)
+        {
+            StopPickLayer.Center = new Point(_vm.LatitudeValue, _vm.LongitudeValue);
         }
     }
 
