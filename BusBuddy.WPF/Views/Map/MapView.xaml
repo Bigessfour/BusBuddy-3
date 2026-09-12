@@ -374,8 +374,10 @@
                                 LayerType=Bing with empty key is a no-op until UrlTemplate is set (avoids Syncfusion HTTP OSM).
                                 Camera is Center + ZoomLevel only. Do not bind ImageryLayer.Radius: it doubles the
                                 bounds before solving zoom and re-fits on every SizeChanged, overriding user zoom.
+                                Markers are assigned in code-behind after Loaded (CanHostMarkers) — binding them
+                                here inflates CustomDataSymbol templates during first Measure and throws TransformToVisual.
                             -->
-                            <maps:SfMap x:Name="GeoMap"
+                            <utils:DistrictSfMap x:Name="GeoMap"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
                                         IsHitTestVisible="True"
@@ -386,11 +388,10 @@
                                         MaxZoom="19"
                                         ZoomLevel="{Binding MapZoomLevel, Mode=TwoWay}"
                                         SizeChanged="GeoMap_SizeChanged">
-                                <maps:SfMap.Layers>
+                                <utils:DistrictSfMap.Layers>
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="Bing"
                                                        Center="{Binding MapCenter, Mode=TwoWay}"
-                                                       Markers="{Binding MapMarkers}"
                                                        MarkerTemplateSelector="{StaticResource DistrictMarkerTemplateSelector}">
                                         <maps:ImageryLayer.SubShapeFileLayers>
                                             <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
@@ -402,8 +403,8 @@
                                             </maps:SubShapeFileLayer>
                                         </maps:ImageryLayer.SubShapeFileLayers>
                                     </utils:GoogleMapTilesImageryLayer>
-                                </maps:SfMap.Layers>
-                            </maps:SfMap>
+                                </utils:DistrictSfMap.Layers>
+                            </utils:DistrictSfMap>
 
                             <!-- Map Loading — SfBusyIndicator pattern per docs: https://help.syncfusion.com/wpf/busy-indicator/getting-started -->
                             <Border x:Name="MapLoadingIndicator"

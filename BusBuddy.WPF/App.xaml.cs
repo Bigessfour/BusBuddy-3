@@ -689,6 +689,9 @@ namespace BusBuddy.WPF
         }
 
         // Global error handler for UI thread exceptions
+        private DateTime _lastUiErrorPopupUtc;
+        private string? _lastUiErrorPopupMessage;
+
         private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
             var logger = Log.Logger;
@@ -713,21 +716,56 @@ namespace BusBuddy.WPF
             var runtimeErrorsPath = Path.Combine(logsDir, "runtime-errors.log");
             System.IO.File.AppendAllText(runtimeErrorsPath, errorEntry);
 
-            // User-friendly popup with option to continue
+            e.Handled = true;
+
+            // Layout retries the same Syncfusion/WPF visual-tree failure dozens of times per click
+            // (VM 2026-09-12 Maps click: 30 TransformToVisual dialogs in two seconds).
+            if (IsRepeatedUiError(e.Exception.Message) || IsLayoutTransientException(e.Exception))
+            {
+                return;
+            }
+
+            _lastUiErrorPopupMessage = e.Exception.Message;
+            _lastUiErrorPopupUtc = DateTime.UtcNow;
+
             var result = System.Windows.MessageBox.Show(
                 $"An error occurred in {uiContext}.\n\nError: {e.Exception.Message}\n\nDetails have been logged. Continue?",
                 "BusBuddy Error",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
 
-            // Allow graceful shutdown if user chooses
             if (result == MessageBoxResult.No)
             {
                 logger.Information("User chose to exit after error");
                 Current.Shutdown();
             }
+        }
 
-            e.Handled = true; // Prevent app crash
+        private bool IsRepeatedUiError(string message)
+        {
+            return string.Equals(message, _lastUiErrorPopupMessage, StringComparison.Ordinal)
+                   && DateTime.UtcNow - _lastUiErrorPopupUtc < TimeSpan.FromSeconds(4);
+        }
+
+        /// <summary>
+        /// WPF/Syncfusion throws these while SfMap marker templates or mouse-hit test run before
+        /// the imagery layer is parented. They are logged; a MessageBox per layout pass is worse.
+        /// </summary>
+        internal static bool IsLayoutTransientException(Exception ex)
+        {
+            if (ex is NullReferenceException &&
+                ex.StackTrace?.Contains("Syncfusion.UI.Xaml.Maps", StringComparison.Ordinal) == true)
+            {
+                return true;
+            }
+
+            var text = ex.Message ?? string.Empty;
+            if (ex.InnerException is not null)
+            {
+                text += " " + ex.InnerException.Message;
+            }
+
+            return text.Contains("do not share a common ancestor", StringComparison.OrdinalIgnoreCase);
         }
 
         // Global error handler for non-UI thread exceptions
