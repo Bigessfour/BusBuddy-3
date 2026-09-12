@@ -58,6 +58,11 @@
                                           Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Print the last generated student map PDF"
                                           AutomationProperties.Name="Print Student Map PDF"/>
+                    <syncfusion:ButtonAdv Label="Dashboard" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
+                                          Click="DashboardButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Fleet metrics from Postgres (routes, buses, drivers)"
+                                          AutomationProperties.Name="Dashboard"/>
                     <syncfusion:ButtonAdv Label="Map" Margin="0,0,18,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="MapButton_Click" FontSize="14" FontWeight="SemiBold"
@@ -98,6 +103,11 @@
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>
+                    <syncfusion:ButtonAdv Label="Trips" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
+                                          Click="ActivitiesButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Activity timeline and office trip board (not daily routes)"
+                                          AutomationProperties.Name="Activity Timeline"/>
                     <syncfusion:ButtonAdv Label="Settings" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="SettingsButton_Click" FontSize="14" FontWeight="SemiBold"

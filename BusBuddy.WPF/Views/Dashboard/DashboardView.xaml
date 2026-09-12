@@ -54,11 +54,51 @@
                         <syncfusion:ButtonAdv Label="Report"
                                               SizeMode="Normal"
                                               Command="{Binding GenerateReportCommand}"
-                                              Padding="15,8"
+                                              Margin="0,0,10,0" Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
                                               BorderThickness="1"
                                               AutomationProperties.Name="Generate Dashboard Report"
                                               AutomationProperties.HelpText="Generate printable dashboard report"/>
+                        <syncfusion:ButtonAdv Label="Routes"
+                                              SizeMode="Normal"
+                                              Click="ViewRouteDetails_Click"
+                                              Margin="0,0,10,0" Padding="15,8"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
+                                              AutomationProperties.Name="Open routes from dashboard"
+                                              AutomationProperties.HelpText="Open route management for the routes counted on this dashboard"/>
+                        <syncfusion:ButtonAdv Label="Buses"
+                                              SizeMode="Normal"
+                                              Click="ViewFleetDetails_Click"
+                                              Margin="0,0,10,0" Padding="15,8"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
+                                              AutomationProperties.Name="Open buses from dashboard"
+                                              AutomationProperties.HelpText="Open fleet CRUD for the buses counted on this dashboard"/>
+                        <syncfusion:ButtonAdv Label="Drivers"
+                                              SizeMode="Normal"
+                                              Click="ViewDrivers_Click"
+                                              Margin="0,0,10,0" Padding="15,8"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
+                                              AutomationProperties.Name="Open drivers from dashboard"
+                                              AutomationProperties.HelpText="Open driver management for the drivers counted on this dashboard"/>
+                        <syncfusion:ButtonAdv Label="Students"
+                                              SizeMode="Normal"
+                                              Click="ViewStudentDetails_Click"
+                                              Margin="0,0,10,0" Padding="15,8"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
+                                              AutomationProperties.Name="Open students from dashboard"
+                                              AutomationProperties.HelpText="Open student records"/>
+                        <syncfusion:ButtonAdv Label="Alerts"
+                                              SizeMode="Normal"
+                                              Click="ViewAlerts_Click"
+                                              Padding="15,8"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
+                                              AutomationProperties.Name="Open fleet analytics from dashboard"
+                                              AutomationProperties.HelpText="Open fleet analytics for dashboard alerts"/>
                 </StackPanel>
             </Grid>
         </Border>

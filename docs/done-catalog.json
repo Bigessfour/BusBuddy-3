@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "rule": "Exit 0 only when every must-pass check is pass or deferred. Deferred items must be listed here with a reason. Unexplained stubs, orphans, and missing UI proof fail.",
+  "skip_dirs": [
+    "bin",
+    "obj",
+    ".git",
+    "node_modules",
+    "rag",
+    ".agents",
+    "Documentation/Archive",
+    "Archive",
+    "Tools/SfMapTileProbe"
+  ],
+  "required_files": [
+    "README.md",
+    "run-wpf.sh",
+    "utm_run_in_vm.ps1",
+    "BusBuddy.sln",
+    "docs/clerk-path.md",
+    "docs/action-items.md",
+    "specs/README.md",
+    "specs/students.md",
+    "specs/maps.md",
+    ".github/workflows/ci.yml",
+    ".github/scripts/validate-ci-local.sh",
+    "Scripts/utm-wpf-test.sh",
+    "BusBuddy.WPF/Views/Main/MainWindow.xaml",
+    "BusBuddy.WPF/Logging/RuntimeCapabilityLogger.cs"
+  ],
+  "karlsson_na": [
+    {
+      "id": "K06_ab_tests",
+      "reason": "Single-district WPF clerk app. No public experiment surface and no A/B framework."
+    },
+    {
+      "id": "K10_a11y_phase2",
+      "reason": "docs/action-items.md: a11y Phase 2 is out of ship and project-done scope."
+    }
+  ],
+  "deferrals": [
+    {
+      "id": "dead-families-guardians",
+      "kind": "dead-table",
+      "symbols": [
+        "Families",
+        "Guardians",
+        "FamilyService",
+        "IFamilyService",
+        "GuardianService",
+        "IGuardianService"
+      ],
+      "reason": "docs/clerk-path.md: tables exist; FamilyService is not in DI; not the clerk spine. Keep until a Spec-Kit feature or a drop migration."
+    },
+    {
+      "id": "dead-aiinsights",
+      "kind": "dead-table",
+      "symbols": ["AIInsights", "AIInsight"],
+      "reason": "docs/clerk-path.md: no source-of-truth UI."
+    },
+    {
+      "id": "dead-schoolcalendar",
+      "kind": "dead-table",
+      "symbols": ["SchoolCalendar", "ISchoolCalendarRepository"],
+      "reason": "docs/clerk-path.md: no source-of-truth UI."
+    },
+    {
+      "id": "dead-activitylogs",
+      "kind": "dead-table",
+      "symbols": ["ActivityLogs", "IActivityLogService"],
+      "reason": "docs/clerk-path.md: no source-of-truth UI."
+    },
+    {
+      "id": "route-assignments-table",
+      "kind": "duplicate-write",
+      "symbols": ["RouteAssignments"],
+      "reason": "Hop 4b: canonical write is Route.AM*/PM*. RouteAssignments stays in schema unused by Assign Vehicle/Driver."
+    },
+    {
+      "id": "live-gps",
+      "kind": "spec-deferral",
+      "symbols": ["IsLiveTrackingEnabled"],
+      "reason": "specs/maps.md and domain contract: live fleet GPS is deferred. Presence of the flag as a product feature is a FAIL; absence is PASS."
+    },
+    {
+      "id": "osm-probe-only",
+      "kind": "tooling",
+      "paths": ["Tools/SfMapTileProbe"],
+      "reason": "OSM allowed only in the Syncfusion isolation probe. Product WPF/Core must stay Google-only."
+    }
+  ],
+  "action_item_nonblocking": [
+    "Parked (not ship-blocking)",
+    "a11y Phase 2",
+    "Restore only if needed"
+  ],
+  "clerk_hops": [
+    {
+      "id": "hop1-add-school",
+      "title": "Add School",
+      "view": "Views/Student/SchoolDestinationForm.xaml",
+      "must_contain": ["SaveSchoolButton_Click", "SchoolPickMap"],
+      "core_marker": "Hop 1 —",
+      "ui_evidence_markers": ["Optional Hop 1 UI"]
+    },
+    {
+      "id": "hop2-add-student",
+      "title": "Add Student",
+      "view": "Views/Student/StudentForm.xaml",
+      "must_contain": ["Command=\"{Binding SaveCommand}\""],
+      "core_marker": "Hop 2 —",
+      "ui_evidence_markers": ["Optional Hop 2 UI"]
+    },
+    {
+      "id": "hop3-generate-routes",
+      "title": "Generate Routes",
+      "view": "Views/Route/RouteManagementView.xaml",
+      "must_contain": ["GenerateRoutesCommand"],
+      "core_marker": "Hop 3 —",
+      "ui_evidence_markers": ["Optional Hop 3 UI"]
+    },
+    {
+      "id": "hop4-assign-bus-driver",
+      "title": "Assign bus and driver",
+      "view": "Views/Route/RouteManagementView.xaml",
+      "must_contain": ["AssignVehicleCommand", "AssignDriverCommand"],
+      "core_marker": "Hop 4 —",
+      "ui_evidence_markers": ["Optional Hop 4 UI"]
+    },
+    {
+      "id": "hop5-schedule",
+      "title": "Daily schedule",
+      "view": "Views/Driver/DriverScheduleView.xaml",
+      "must_contain": ["Schedule"],
+      "core_marker": "Hop 5 —",
+      "ui_evidence_markers": ["Optional Hop 5 UI"]
+    },
+    {
+      "id": "hop6-fuel-maintenance",
+      "title": "Fuel and maintenance",
+      "view": "Views/Fuel/FuelManagementView.xaml",
+      "must_contain": ["Fuel"],
+      "alt_views": ["Views/Maintenance/MaintenanceView.xaml"],
+      "core_marker": "Hop 6 —",
+      "ui_evidence_markers": []
+    }
+  ],
+  "ui_ops_extra": [
+    {
+      "id": "map-vm-resmoke",
+      "title": "District Map VM re-smoke",
+      "markers": ["District Map VM re-smoke"]
+    },
+    {
+      "id": "settings-recenter",
+      "title": "Settings depot/bbox recenter",
+      "markers": ["Settings VM"]
+    }
+  ],
+  "forbidden_in_product": [
+    {
+      "id": "route-is-trip",
+      "pattern": "public bool IsTrip",
+      "roots": ["BusBuddy.Core/Models/Route.cs"],
+      "reason": "Route != Trip. Never add IsTrip to Route."
+    },
+    {
+      "id": "osm-layer",
+      "pattern": "LayerType=\"OSM\"",
+      "roots": ["BusBuddy.WPF"],
+      "reason": "Google Map Tiles only; no OSM fail-open."
+    },
+    {
+      "id": "osm-symbol",
+      "pattern": "OpenStreetMap",
+      "roots": ["BusBuddy.WPF/Views", "BusBuddy.WPF/Utilities"],
+      "reason": "Product views must not reference OSM templates."
+    },
+    {
+      "id": "wpf-datagrid",
+      "pattern": "<DataGrid[\\s>]",
+      "roots": ["BusBuddy.WPF"],
+      "reason": "Syncfusion-only UI: standard WPF DataGrid is forbidden."
+    },
+    {
+      "id": "sample-demo",
+      "pattern": "Monday Ready Demo|LoadSampleData|MONDAY DEMO",
+      "roots": ["BusBuddy.WPF"],
+      "reason": "Dock grids must load from Postgres, not sample rows."
+    }
+  ]
+}

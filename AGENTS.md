@@ -5,7 +5,7 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 ## Primary standards
 
 - **Constitution (Spec-Kit)**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — immutable architectural DNA. Use Cursor `/speckit-*` skills (Constitution → Specify → Plan → Tasks → Implement). Feature specs live under `specs/`. **Domain contract:** [specs/README.md](specs/README.md) plus `specs/{students,locations,routes,trips,drivers,buses,maps}.md`. Never run `specify init --here --force` without backing up the constitution.
-- **Due-outs tracker (ship SSOT)**: [docs/action-items.md](docs/action-items.md) — open work only. Clerk spine: [docs/clerk-path.md](docs/clerk-path.md). Historical finish narrative archived under [Documentation/Archive/2026-06-Steady-State-Finish/](Documentation/Archive/2026-06-Steady-State-Finish/) (root [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) is a stub).
+- **Due-outs tracker (ship SSOT)**: [docs/action-items.md](docs/action-items.md) — open work only. Clerk spine: [docs/clerk-path.md](docs/clerk-path.md). **Project-done judge:** [docs/done-checklist.md](docs/done-checklist.md) — run `python3 .github/scripts/check-project-done.py`; exit 0 means the project is done. Historical finish narrative archived under [Documentation/Archive/2026-06-Steady-State-Finish/](Documentation/Archive/2026-06-Steady-State-Finish/) (root [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) is a stub).
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
 - **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.2.3**); WPF MCP `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` → NuGet `Syncfusion.WPF.MCP` / `search_docs` ([WPF MCP docs](https://help.syncfusion.com/wpf/mcp)). Passwords Name = `SYNCFUSION_API_KEY` / `Syncfusion_API_Key`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
@@ -76,6 +76,7 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired 
 
 ```bash
 .github/scripts/validate-ci-local.sh
+python3 .github/scripts/check-project-done.py
 ```
 
 Or manually:
@@ -130,6 +131,7 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM), `./S
 | Auto-merge            | `.github/workflows/auto-merge.yml`                                                                       |
 | RAG indexer           | `rag/index.py`                                                                                           |
 | Spec-Kit constitution | `.specify/memory/constitution.md`                                                                        |
+| Project-done checker  | [docs/done-checklist.md](docs/done-checklist.md) + `.github/scripts/check-project-done.py`               |
 
 ## Documentation to keep in sync
 
@@ -140,4 +142,5 @@ When changing auth, CI, or architecture, update:
 3. `AGENTS.md` (this file)
 4. `Documentation/diagrams/busbuddy-3-architecture.md` (architecture map if structural)
 5. `docs/action-items.md` (if open ship work changed)
-6. Run `python -m rag.index`
+6. `docs/done-checklist.md` / `docs/done-catalog.json` (if the definition of done changed)
+7. Run `python -m rag.index`

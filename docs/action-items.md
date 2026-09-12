@@ -8,10 +8,13 @@
 | [specs/README.md](../specs/README.md)                                                                        | Domain contract                                                                        |
 | [../Documentation/diagrams/busbuddy-3-architecture.md](../Documentation/diagrams/busbuddy-3-architecture.md) | Architecture map                                                                       |
 | [function-tree.md](./function-tree.md)                                                                       | Surface overview (optional)                                                            |
+| [done-checklist.md](./done-checklist.md)                                                                     | Project-done judge (`python3 .github/scripts/check-project-done.py`)                   |
 
 **Update rule:** One hop proof per session. Check the box here and link the PR when done. Spec-Kit `tasks.md` stays feature-local; promote leftover open items into this file only.
 
 **Ship definition:** Clerk path proved on Windows VM + District Map / Settings smoke. Not a11y Phase 2, not portfolio wishlists.
+
+**Project-done:** [done-checklist.md](./done-checklist.md) — `python3 .github/scripts/check-project-done.py`. Ship-ready is a subset. The project is done only when the checker exits 0.
 
 ### Ship readiness (2026-09-10)
 
@@ -93,7 +96,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Decide later (non-ship)
 
-- [ ] **Activity Timeline:** add header button for `ActivitiesButton_Click`, or delete the unused Click + reconsider the view
+- [x] **Activity Timeline:** header **Trips** button wires `ActivitiesButton_Click`; timeline **Trip Board** opens `ActivityManagementView` (ITripEventService)
 - [ ] **Restore only if needed** (deleted in #62 as zero callers): `SyncfusionCultureFix` / `StartupOptimizationService` — do not restore as orphans
 
 ---

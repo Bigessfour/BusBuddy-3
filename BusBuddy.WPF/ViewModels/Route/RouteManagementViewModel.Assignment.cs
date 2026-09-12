@@ -3,6 +3,7 @@ using Serilog.Context;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.Logging;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -38,19 +39,31 @@ namespace BusBuddy.WPF.ViewModels.Route
                     {
                         StatusMessage = string.IsNullOrWhiteSpace(result.Error) ? "Assignment failed" : result.Error;
                         Logger.Warning("Vehicle assignment failed: {Message}", result.Error);
+                        UiProofLog.Write(
+                            Logger,
+                            "Assign Bus",
+                            "RouteManagementView",
+                            "failed",
+                            result.Error);
                         return;
                     }
 
                     Logger.Information(
                         "Assigned vehicle {VehicleId} to route {RouteId} for {Slot} ViaService={ViaService}",
                         SelectedBus.BusId, SelectedRoute.RouteId, SelectedTimeSlot, true);
+                    UiProofLog.Write(
+                        Logger,
+                        "Assign Bus",
+                        "RouteManagementView",
+                        "assigned",
+                        $"RouteId={SelectedRoute.RouteId} BusId={SelectedBus.BusId} Slot={SelectedTimeSlot}");
                     await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
                     StatusMessage = $"Assigned bus {SelectedBus.BusNumber} ({SelectedTimeSlot})";
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error assigning vehicle to route");
+                UiProofLog.Failed(Logger, ex, "Assign Bus", "RouteManagementView");
                 StatusMessage = $"Error assigning vehicle: {ex.Message}";
             }
             finally
@@ -99,19 +112,31 @@ namespace BusBuddy.WPF.ViewModels.Route
                             ? "Driver assignment failed"
                             : result.Error;
                         Logger.Warning("Driver assignment failed: {Message}", result.Error);
+                        UiProofLog.Write(
+                            Logger,
+                            "Assign Driver",
+                            "RouteManagementView",
+                            "failed",
+                            result.Error);
                         return;
                     }
 
                     Logger.Information(
                         "Assigned driver {DriverId} to route {RouteId} for {Slot} ViaService={ViaService}",
                         SelectedDriver.DriverId, SelectedRoute.RouteId, SelectedTimeSlot, true);
+                    UiProofLog.Write(
+                        Logger,
+                        "Assign Driver",
+                        "RouteManagementView",
+                        "assigned",
+                        $"RouteId={SelectedRoute.RouteId} DriverId={SelectedDriver.DriverId} Slot={SelectedTimeSlot}");
                     await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
                     StatusMessage = $"Assigned {SelectedDriver.DriverName} ({SelectedTimeSlot})";
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error assigning driver to route");
+                UiProofLog.Failed(Logger, ex, "Assign Driver", "RouteManagementView");
                 StatusMessage = $"Error assigning driver: {ex.Message}";
             }
             finally

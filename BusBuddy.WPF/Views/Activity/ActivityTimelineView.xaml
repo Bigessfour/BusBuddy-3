@@ -34,9 +34,18 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Activity Timeline" FontSize="24" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryTextBrush}"/>
-                <syncfusion:ButtonAdv Grid.Column="1" Label="Refresh"
-                                      Command="{Binding RefreshCommand}"
-                                      AutomationProperties.Name="Refresh activity timeline"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Label="Trip Board"
+                                          SizeMode="Normal"
+                                          Click="TripBoardButton_Click"
+                                          Margin="0,0,8,0"
+                                          AutomationProperties.Name="Open trip board"
+                                          AutomationProperties.HelpText="Office trip board (CSV import). Not the daily route editor."/>
+                    <syncfusion:ButtonAdv Label="Refresh"
+                                          SizeMode="Normal"
+                                          Command="{Binding RefreshCommand}"
+                                          AutomationProperties.Name="Refresh activity timeline"/>
+                </StackPanel>
             </Grid>
         </Border>
 
