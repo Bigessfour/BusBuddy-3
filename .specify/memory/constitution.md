@@ -53,7 +53,7 @@ When those conflict with this constitution, **this file wins** until amended und
 ### VI. Solo-Developer CI/CD
 
 - Branch from `master` as `feature/<short-description>`; open PR to `master`.
-- Merge gates: **Build & Test** and **Security (CodeQL)** must pass; squash auto-merge when green.
+- Merge gate: **Build & Test** must pass; squash auto-merge when green. No code-scanning gate while the repo is private (GitHub code scanning needs a paid Code Security license there; see `AGENTS.md`).
 - Direct push to `master` is blocked. Local pre-push: `.github/scripts/validate-ci-local.sh`.
 
 ### VII. Simplicity & Anti-Regression
@@ -108,4 +108,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.2.2 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-09
+**Version**: 1.2.3 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-15

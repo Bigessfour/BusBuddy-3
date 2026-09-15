@@ -8,13 +8,12 @@ on:
       - "docs/**"
       - "Documentation/**"
       - "Archive/**"
+  # No paths-ignore on pull_request: "Build & Test" is a required check in the
+  # "Master solo-dev gates" ruleset, and a skipped workflow never reports it, so a
+  # docs-only PR would be permanently unmergeable (workflow_dispatch runs do not
+  # count toward PR required checks either). Docs PRs cost ~3 min of Windows CI.
   pull_request:
     branches: [main, master]
-    paths-ignore:
-      - "**/*.md"
-      - "docs/**"
-      - "Documentation/**"
-      - "Archive/**"
   workflow_dispatch:
 
 concurrency:
