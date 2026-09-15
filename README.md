@@ -1,11 +1,12 @@
 # BusBuddy — School Transportation Management System
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
-[![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
+[![Build & Test](https://github.com/Bigessfour/BusBuddy-3/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Bigessfour/BusBuddy-3/actions/workflows/ci.yml)
+[![.NET](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![Syncfusion](https://img.shields.io/badge/Syncfusion-34.2.3-orange)](https://www.syncfusion.com/wpf-controls)
 
-> **Modern WPF application for school bus fleet management, built with .NET 9.0 and Syncfusion controls.**
+> **WPF desktop app for a school district transportation clerk: students, routes, buses, drivers, schedules. .NET 9 + Syncfusion, Postgres via EF Core.**
+>
+> Reviewer? Start with [docs/instructor-packet/](docs/instructor-packet/README.md).
 
 ## 🎯 **Project Vision**
 
