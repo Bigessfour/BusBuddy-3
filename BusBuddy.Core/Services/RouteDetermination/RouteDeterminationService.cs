@@ -3,6 +3,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.GoogleMaps;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -272,6 +273,18 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         if (student is null)
         {
             return new ClerkOverrideResult { Success = false, Error = $"Student {studentId} not found" };
+        }
+
+        if (fromRouteId <= 0)
+        {
+            var catalog = await context.Routes.AsNoTracking()
+                .Select(r => new { r.RouteId, r.RouteName })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            fromRouteId = StudentRouteAssignment.CurrentRouteId(
+                student,
+                timeSlot,
+                catalog.Select(r => (r.RouteId, r.RouteName)));
         }
 
         var mode = StudentRideModeHelper.FromStudent(student);

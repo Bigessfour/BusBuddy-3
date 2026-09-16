@@ -47,4 +47,28 @@ public class StudentRouteAssignmentTests
         Assert.That(StudentRouteAssignment.MatchesEither(student, route), Is.True);
         Assert.That(StudentRouteAssignment.Matches(student, route, RouteTimeSlot.AM), Is.False);
     }
+
+    [Test]
+    public void UniqueIdForName_OnlyWhenExactlyOneRouteCarriesTheName()
+    {
+        var routes = new (int RouteId, string? RouteName)[]
+        {
+            (1, "North"),
+            (2, "South"),
+            (3, "North")
+        };
+        Assert.That(StudentRouteAssignment.UniqueIdForName(routes, "South"), Is.EqualTo(2));
+        Assert.That(StudentRouteAssignment.UniqueIdForName(routes, "North"), Is.Null);
+        Assert.That(StudentRouteAssignment.UniqueIdForName(routes, "Missing"), Is.Null);
+    }
+
+    [Test]
+    public void CurrentRouteId_FallsBackToUniqueNameWhenKeyIsNull()
+    {
+        var student = new Student { AMRoute = "South", AmRouteId = null };
+        var routes = new (int RouteId, string? RouteName)[] { (1, "North"), (2, "South") };
+        Assert.That(
+            StudentRouteAssignment.CurrentRouteId(student, RouteTimeSlot.AM, routes),
+            Is.EqualTo(2));
+    }
 }

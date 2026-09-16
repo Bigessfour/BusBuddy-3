@@ -67,6 +67,47 @@ public static class StudentRouteAssignment
     public static bool IsAssignedAny(Student student) =>
         !IsUnassignedAm(student) || !IsUnassignedPm(student);
 
+    /// <summary>
+    /// Backfill rule: a name maps to a route id only when exactly one row carries that name.
+    /// </summary>
+    public static int? UniqueIdForName(IEnumerable<(int RouteId, string? RouteName)> routes, string? routeName)
+    {
+        if (string.IsNullOrWhiteSpace(routeName))
+        {
+            return null;
+        }
+
+        var ids = routes
+            .Where(r => string.Equals(r.RouteName, routeName, StringComparison.OrdinalIgnoreCase))
+            .Select(r => r.RouteId)
+            .Distinct()
+            .Take(2)
+            .ToList();
+        return ids.Count == 1 ? ids[0] : null;
+    }
+
+    /// <summary>Key first; unique name fallback when the FK backfill left the key null.</summary>
+    public static int CurrentRouteId(
+        Student student,
+        RouteTimeSlot slot,
+        IEnumerable<(int RouteId, string? RouteName)> routes)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        if (slot == RouteTimeSlot.Both)
+        {
+            throw new ArgumentOutOfRangeException(nameof(slot), slot, "Specify AM or PM.");
+        }
+
+        var key = slot == RouteTimeSlot.PM ? student.PmRouteId : student.AmRouteId;
+        if (key is > 0)
+        {
+            return key.Value;
+        }
+
+        var name = slot == RouteTimeSlot.PM ? student.PMRoute : student.AMRoute;
+        return UniqueIdForName(routes, name) ?? 0;
+    }
+
     public static bool MatchesEither(Student student, Route route) =>
         Matches(student, route, RouteTimeSlot.AM) || Matches(student, route, RouteTimeSlot.PM);
 

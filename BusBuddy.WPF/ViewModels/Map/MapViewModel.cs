@@ -555,12 +555,18 @@ namespace BusBuddy.WPF.ViewModels.Map
                     var student = students is null
                         ? null
                         : await students.GetStudentByIdAsync(studentId).ConfigureAwait(true);
-                    var fromId = assignmentSlot == RouteTimeSlot.PM
-                        ? student?.PmRouteId ?? 0
-                        : student?.AmRouteId ?? 0;
-                    if (fromId == target.RouteId)
+                    if (student is not null
+                        && StudentRouteAssignment.Matches(student, target, assignmentSlot))
                     {
                         continue;
+                    }
+
+                    var fromId = 0;
+                    if (student is not null)
+                    {
+                        fromId = assignmentSlot == RouteTimeSlot.PM
+                            ? student.PmRouteId ?? 0
+                            : student.AmRouteId ?? 0;
                     }
 
                     var result = await planner.ApplyClerkOverrideAsync(
