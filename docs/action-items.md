@@ -119,6 +119,11 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **WPF:** `RouteAssignmentViewModel.cs` hub plus existing `.Generation.cs`, new `.Commands.cs` and `.Loading.cs`. `MainWindow.xaml.cs` / `StudentsViewModel.cs` left alone.
 - **Invariant:** Route ≠ Trip; same-day not-riding stays `RecordRiderExceptionAsync`.
 
+### 2026-09-16 — Retired `*.disabled` source
+
+- Deleted the ten parked XAI / Azure / vehicle / config stubs. Git history is the archive. Do not create new `*.disabled` files.
+- Constitution v1.2.5 and copilot-instructions no longer tell agents to rename broken files to `.disabled`.
+
 ### 2026-09-16 — Leftover assignment writers wrap RouteService
 
 - **No `IAssignmentService`.** Clerk-path winners stay on `RouteService.AssignStudentToRouteAsync` / `AssignDriverToRouteAsync` / `AssignVehicleToRouteAsync`.
