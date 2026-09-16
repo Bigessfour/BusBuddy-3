@@ -42,7 +42,6 @@ Do in this order so parked work is not forgotten and is not started out of seque
 | 1     | District Map VM re-smoke, including **Move to selected route** | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                            |
 | 2     | `AMRoute` / `PMRoute` name-string drop                         | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop.    |
 | —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                           |
-| —     | Split `RouteService` / `RouteAssignmentViewModel`              | File-size debt. Dedicated pass only. Do not casually split.                                                                                                       |
 | —     | `StudentsBulkRouteCoordinator`                                 | Parked. Uses `SetSlot` + `UpdateStudentAsync`. Eventually call `IRouteService.AssignStudentToRouteAsync` so a shared name cannot null a known key. Not this pass. |
 
 - [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
@@ -112,6 +111,13 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-09-16 — Split RouteService and RouteAssignmentViewModel
+
+- **Partial files only.** `IRouteService` is unchanged. No new types, no DI changes, no assign/stop behavior change.
+- **Core:** `RouteService.cs` hub (ctors, context helpers, list metrics) plus `RouteService.Crud.cs`, `RouteService.Assignments.cs`, `RouteService.Stops.cs`.
+- **WPF:** `RouteAssignmentViewModel.cs` hub plus existing `.Generation.cs`, new `.Commands.cs` and `.Loading.cs`. `MainWindow.xaml.cs` / `StudentsViewModel.cs` left alone.
+- **Invariant:** Route ≠ Trip; same-day not-riding stays `RecordRiderExceptionAsync`.
 
 ### 2026-09-16 — Leftover assignment writers wrap RouteService
 
