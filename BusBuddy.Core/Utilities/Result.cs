@@ -68,10 +68,10 @@ public class Result
     /// <summary>
     /// Creates a successful generic result with a value
     /// </summary>
-    /// <summary>
-    /// Creates a successful generic result with a value
-    /// </summary>
     public static Result<T> SuccessResult<T>(T value) => new Result<T>(value, true, string.Empty);
+
+    /// <summary>Success with a clerk-facing message (e.g. soft-retire instead of hard delete).</summary>
+    public static Result<T> SuccessResult<T>(T value, string message) => new Result<T>(value, true, message);
 
     /// <summary>
     /// Creates a failed generic result with an error message

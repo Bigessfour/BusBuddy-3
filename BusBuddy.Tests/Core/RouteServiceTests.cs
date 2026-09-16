@@ -776,7 +776,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task DeleteRouteAsync_UnassignsStudentsAndRemovesSchedules()
+        public async Task DeleteRouteAsync_WithSchedules_SoftRetiresAndKeepsHistory()
         {
             var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
             _dbContext.Students.Add(new Student
@@ -787,7 +787,9 @@ namespace BusBuddy.Tests.Core
                 ParentGuardian = "P",
                 EmergencyPhone = "555-9",
                 AMRoute = "Route A",
-                PMRoute = "Route A"
+                PMRoute = "Route A",
+                AmRouteId = route.RouteId,
+                PmRouteId = route.RouteId
             });
             var bus = new Bus
             {
@@ -825,13 +827,15 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.DeleteRouteAsync(route.RouteId);
 
             Assert.That(result.IsSuccess, Is.True, result.Error);
+            Assert.That(result.Error, Does.Contain("retired"));
             _dbContext.ChangeTracker.Clear();
-            Assert.That(await _dbContext.Routes.AnyAsync(r => r.RouteId == route.RouteId), Is.False);
-            Assert.That(await _dbContext.Schedules.AnyAsync(s => s.RouteId == route.RouteId), Is.False);
-            Assert.That(await _dbContext.RouteStops.AnyAsync(s => s.RouteId == route.RouteId), Is.False);
+            var kept = await _dbContext.Routes.FirstAsync(r => r.RouteId == route.RouteId);
+            Assert.That(kept.IsActive, Is.False);
+            Assert.That(await _dbContext.Schedules.AnyAsync(s => s.RouteId == route.RouteId), Is.True);
+            Assert.That(await _dbContext.RouteStops.AnyAsync(s => s.RouteId == route.RouteId), Is.True);
             var rider = await _dbContext.Students.FirstAsync(s => s.StudentName == "Delete Rider");
-            Assert.That(rider.AMRoute, Is.Null);
-            Assert.That(rider.PMRoute, Is.Null);
+            Assert.That(rider.AmRouteId, Is.EqualTo(route.RouteId));
+            Assert.That(rider.PmRouteId, Is.EqualTo(route.RouteId));
         }
 
         [Test]

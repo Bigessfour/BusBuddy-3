@@ -65,12 +65,6 @@
       "reason": "docs/clerk-path.md: no source-of-truth UI."
     },
     {
-      "id": "dead-activitylogs",
-      "kind": "dead-table",
-      "symbols": ["ActivityLogs", "IActivityLogService"],
-      "reason": "docs/clerk-path.md: no source-of-truth UI."
-    },
-    {
       "id": "route-assignments-table",
       "kind": "duplicate-write",
       "symbols": ["RouteAssignments"],

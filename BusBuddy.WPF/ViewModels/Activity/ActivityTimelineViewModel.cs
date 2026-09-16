@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -11,10 +12,12 @@ using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Activity
 {
-    public partial class ActivityTimelineViewModel : ObservableObject
+    public partial class ActivityTimelineViewModel : ObservableObject, IDisposable
     {
         private static readonly ILogger Logger = Log.ForContext<ActivityTimelineViewModel>();
         private readonly IActivityLogService? _logService;
+        private readonly SemaphoreSlim _refreshGate = new(1, 1);
+        private int _refreshVersion;
 
         public ActivityTimelineViewModel(IActivityLogService? logService)
         {
@@ -171,12 +174,24 @@ namespace BusBuddy.WPF.ViewModels.Activity
                 return;
             }
 
+            var version = Interlocked.Increment(ref _refreshVersion);
+            await _refreshGate.WaitAsync().ConfigureAwait(true);
             try
             {
+                if (version != _refreshVersion)
+                {
+                    return;
+                }
+
                 IsLoading = true;
                 HasNoData = false;
 
-                var allLogs = await _logService.GetLogsAsync(1000);
+                var allLogs = await _logService.GetLogsAsync(1000).ConfigureAwait(true);
+                if (version != _refreshVersion)
+                {
+                    return;
+                }
+
                 var dateFiltered = allLogs
                     .Where(log => log.Timestamp >= StartDate && log.Timestamp <= EndDate)
                     .ToList();
@@ -214,7 +229,12 @@ namespace BusBuddy.WPF.ViewModels.Activity
             }
             finally
             {
-                IsLoading = false;
+                if (version == _refreshVersion)
+                {
+                    IsLoading = false;
+                }
+
+                _refreshGate.Release();
             }
         }
 
@@ -228,6 +248,12 @@ namespace BusBuddy.WPF.ViewModels.Activity
             if (lower.Contains("login") || lower.Contains("logout") || lower.Contains("auth")) return "Login";
             if (lower.Contains("error") || lower.Contains("except") || lower.Contains("fail")) return "Error";
             return "System";
+        }
+
+        public void Dispose()
+        {
+            _refreshGate.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 

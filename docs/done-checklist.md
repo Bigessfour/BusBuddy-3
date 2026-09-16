@@ -109,7 +109,7 @@ These stay **N/A** or **DEFERRED** so the finish line matches this product:
 - Marketing analytics, A/B tests, Power Week load tests
 - Accessibility Phase 2
 - Live fleet GPS
-- Families / Guardians / AIInsights / SchoolCalendar / ActivityLogs UI
+- Families / Guardians / AIInsights / SchoolCalendar UI
 - `RouteAssignments` as a second write path for hop 4
 - OSM anywhere except `Tools/SfMapTileProbe`
 

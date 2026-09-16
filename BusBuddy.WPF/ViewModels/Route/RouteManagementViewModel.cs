@@ -802,7 +802,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 var confirm = System.Windows.MessageBox.Show(
-                    $"Delete route '{routeToDelete.RouteName}'?\n\nStudents on this route will be unassigned and daily schedules for the route will be removed. This cannot be undone.",
+                    $"Delete or retire route '{routeToDelete.RouteName}'?\n\n"
+                    + "Empty routes are removed. If daily schedules, student keys, or trip events still reference it, the route is retired (IsActive = false) and those rows are kept.",
                     "Confirm Delete",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
@@ -832,14 +833,31 @@ namespace BusBuddy.WPF.ViewModels.Route
                         return;
                     }
 
-                    Routes.Remove(routeToDelete);
-                    SelectedRoute = null;
-                    RoutesView.Refresh();
-                    OnPropertyChanged(nameof(TotalRoutes));
-                    OnPropertyChanged(nameof(ActiveRoutes));
-                    StatusMessage = $"Deleted route '{name}'";
-                    Logger.Information("Deleted route {RouteId}:{RouteName} ViaService={ViaService}",
-                        routeToDelete.RouteId, name, true);
+                    var retired = result.IsSuccess && !string.IsNullOrWhiteSpace(result.Error);
+                    if (retired)
+                    {
+                        routeToDelete.IsActive = false;
+                        RoutesView.Refresh();
+                        OnPropertyChanged(nameof(TotalRoutes));
+                        OnPropertyChanged(nameof(ActiveRoutes));
+                        StatusMessage = result.Error;
+                        Logger.Information(
+                            "Retired route {RouteId}:{RouteName} {Message}",
+                            routeToDelete.RouteId,
+                            name,
+                            result.Error);
+                    }
+                    else
+                    {
+                        Routes.Remove(routeToDelete);
+                        SelectedRoute = null;
+                        RoutesView.Refresh();
+                        OnPropertyChanged(nameof(TotalRoutes));
+                        OnPropertyChanged(nameof(ActiveRoutes));
+                        StatusMessage = $"Deleted route '{name}'";
+                        Logger.Information("Deleted route {RouteId}:{RouteName} ViaService={ViaService}",
+                            routeToDelete.RouteId, name, true);
+                    }
                 }
             }
             catch (Exception ex)

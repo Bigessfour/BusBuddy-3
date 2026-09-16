@@ -95,7 +95,7 @@ public class ActivityLogServiceSettingsTests
             await settings.SaveSettingsAsync();
             await settings.LoadSettingsAsync();
 
-            var service = new ActivityLogService(db, settings);
+            var service = new ActivityLogService(new TestDbContextFactory(options), settings);
             await service.LogAsync("TestAction", "tester", "details");
 
             db.ActivityLogs.Count().Should().Be(0);
@@ -120,7 +120,7 @@ public class ActivityLogServiceSettingsTests
         var settings = new UserSettingsService(Path.Combine(Path.GetTempPath(), $"busbuddy-settings-{Guid.NewGuid():N}.json"));
         await settings.LoadSettingsAsync();
 
-        var service = new ActivityLogService(db, settings);
+        var service = new ActivityLogService(new TestDbContextFactory(options), settings);
         await service.LogAsync("TestAction", "tester", "details");
 
         db.ActivityLogs.Count().Should().Be(1);

@@ -8,6 +8,8 @@
 
 **Organization**: Setup → Foundational (unblock) → US1 → US2 → US3 → US4 → Polish.
 
+**Current product (after later map work):** District Map is Google Map Tiles only (`specs/maps.md`). T020/US2 originally left OSM as the default after removing unofficial Google tiles; that default is retired. Address intake is `PlacesAddressBox`; there is no `AddressValidationControl` in `BusBuddy.WPF/Controls`.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -66,7 +68,7 @@
 
 **Goal**: Delete EE client, probe, Drive export, unofficial tiles; docs still updated in polish if needed for compile
 
-**Independent Test**: Grep finds no `earthengine.googleapis.com` in Core/WPF; build succeeds; OSM-only map layer
+**Independent Test**: Grep finds no `earthengine.googleapis.com` in Core/WPF; build succeeds; product map layer is Google Map Tiles (no `LayerType="OSM"`)
 
 ### Implementation for User Story 2
 
@@ -74,10 +76,10 @@
 - [x] T017 [P] [US2] Delete or gut `BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs` and `BusBuddy.Core/Configuration/GoogleEarthEngineOptions.cs` if unused
 - [x] T018 [P] [US2] Remove `Google.Apis.Drive.v3` (and unused `Google.Apis.*`) from `BusBuddy.Core/BusBuddy.Core.csproj` after grep confirms no remaining references
 - [x] T019 [US2] **Skipped (pause):** `GeeConnectionProbe` deleted; `MapsConnectionProbe` not added until US1
-- [x] T020 [US2] Remove `GoogleImageryLayer` / `mt1.google.com` from `BusBuddy.WPF/Views/GoogleEarth/MapView.xaml.cs`; keep OSM default
+- [x] T020 [US2] Remove unofficial `mt1.google.com` imagery. Later superseded: product `MapView` uses Google Map Tiles only (`GoogleMapTilesImageryLayer`); OSM is probe-only.
 - [x] T021 [US2] Removed `.github/scripts/gcp-gee.env` and `.github/scripts/setup-gcp-gee.sh`; living docs no longer reference GEE setup scripts
 
-**Checkpoint**: No EE runtime types; map tiles OSM-only
+**Checkpoint**: No EE runtime types; product map tiles Google-only (no OSM fail-open)
 
 ---
 
@@ -95,7 +97,7 @@
 
 - [x] T023 [US3] Add `BusBuddy.Core/Services/Interfaces/IRoutingService.cs` and `BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs`
 - [x] T024 [US3] Extend `BusBuddy.Core/Mapping/RouteWaypointSerializer.cs` if needed to store encoded polyline + points
-- [x] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/GoogleEarth/MapViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
+- [x] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/Map/MapViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
 - [x] T026 [US3] Ensure `BusBuddy.Core/Services/StudentRouteOptimizer.cs` still assigns seats if routing fails (try/catch + Serilog Warning)
 - [x] T027 [US3] Register `IRoutingService` in `BusBuddy.WPF/App.xaml.cs` (via `AddDataServices`)
 

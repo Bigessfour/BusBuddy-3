@@ -70,10 +70,8 @@ Hop **4b (2026-09-09):** keep `Route.AM*` / `PM*` as the year-default bus/driver
 Do not wire these until the hops above are proved. Do not drop tables without a migration decision.
 
 - `Families` / `Guardians` (`FamilyService` is not in DI)
-- `TripEvents`
 - `AIInsights`
 - `SchoolCalendar`
-- `ActivityLogs`
 - `VehiclesViewModel` sample loader (unused; `VehiclesView` is excluded from compile)
 
 Activity Timeline is a separate sports/trip path (`Activity` / `ActivitySchedule`). It overlaps `Schedules` and is **not** hop 3–4.

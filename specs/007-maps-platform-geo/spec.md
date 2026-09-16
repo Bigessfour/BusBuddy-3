@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-17
 
-**Status**: Active (Maps clients wired via `IMapsGeoService` + `IRoutingService`; Earth Engine removed)
+**Status**: Implemented. Street geo is Maps Platform (`IMapsGeoService` + `IRoutingService`); Earth Engine is gone. District Map basemap is Google Map Tiles only (see [specs/maps.md](../maps.md)). Clerk address intake is `PlacesAddressBox`, not a leftover `AddressValidationControl`.
 
 **Input**: Earth Engine is the wrong product for student addresses, map plots, and trip planning. Replace it with Google Maps Platform Address Validation + Routes, keeping Syncfusion `SfMap`. Students entered in the system are eligible (no geofence).
 
@@ -16,7 +16,7 @@
 | Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                                                                            |
 | Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                                                                                 |
 | Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                                                                           |
-| Map UI                | Syncfusion `SfMap` + OSM only (unofficial Google tiles removed)                 | Keep `SfMap` + OSM; Maps Tiles API optional later                                                                                          |
+| Map UI                | Syncfusion `SfMap` + unofficial `mt1.google.com` / OSM experiments              | Syncfusion `SfMap` + official Google Map Tiles only (no OSM fail-open; empty basemap if the session is unavailable)                        |
 | District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                                                                                          |
 | GCP                   | `ee-bigessfour` EE project + broken SA JWT                                      | Billing project `busbuddy-507301` + Maps API key in Passwords (`new-coursera-490518` legacy billed only; do not header Maps traffic there) |
 
@@ -45,7 +45,7 @@ As a transportation clerk, when I enter a Wiley-area student street address, the
 
 ### User Story 2 - Earth Engine is gone from the running product (Priority: P1)
 
-As a maintainer, I can start the app and run CI without Earth Engine credentials, service-account JSON, Drive export, or mock Kansas GeoJSON. The map still loads routes from the database and OSM tiles.
+As a maintainer, I can start the app and run CI without Earth Engine credentials, service-account JSON, Drive export, or mock Kansas GeoJSON. The map still loads routes from the database and draws them on Google Map Tiles (or an empty imagery layer if the tile session is unavailable).
 
 **Why this priority**: Leaving a broken EE client registered as “configured” is a false positive and a secret/ops burden.
 
@@ -95,7 +95,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - Rural Prowers/Bent County addresses that USPS can certify but Google rooftop is approximate: store coordinates anyway; show precision (rooftop vs range vs approximate) to the clerk.
 - Rate limits / quota: cache by normalized address; do not geocode on every keystroke (except P3 suggestions).
 - Existing students with hash-scattered coordinates: treat as untrusted; re-validate on next edit, not a silent mass rewrite in this increment.
-- Unofficial `mt1.google.com` map tiles: remove or disable; OSM remains default.
+- Unofficial `mt1.google.com` map tiles: forbidden. Product basemap is Google Map Tiles only; OSM is allowed only in `Tools/SfMapTileProbe`, never as a District Map fail-open.
 - Mapping key present but Address Validation API not enabled on the GCP project: surface a configuration error, not a crash.
 - Offline tests and CI: never require a live Maps key; use fakes.
 
@@ -141,7 +141,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - Wiley-scale volume is hundreds of students; validate on save; cache; route compute on demand.
 - Renaming `MapView` / `MapViewModel` is out of scope (map UI stays; EE backend goes).
 - `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in this increment.
-- Local shapefiles remain the eligibility source; no Maps “dataset” upload in this feature.
+- Eligibility is “students in the system,” not a shapefile polygon. No Maps “dataset” upload in this feature.
 - Constitution Geo line is amended in the same PR as implementation.
 - Offline hasher remains only behind tests/demo flag if needed; production DI uses the mapping client or a no-op that returns null.
 

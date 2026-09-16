@@ -39,13 +39,13 @@ Expect: Address Validation HTTP 200 for a Wiley-area sample; Routes HTTP 200 for
 1. Open Students → add/edit address in Wiley (type-ahead on Student + School forms)
 2. Validate/save → success + coordinates
 3. Open map view → marker at that home, not random scatter
-4. Route with two stops → refresh path → polyline on SfMap
+4. Route with two stops → refresh path → polyline on SfMap over Google Map Tiles (empty basemap if the tile session is missing; never OSM)
 
 ## 5. Docs gate
 
 - [AGENTS.md](../../AGENTS.md) Maps key + billing project; EE unused
 - [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) rewritten for Maps
-- Architecture map: GeoDataService / Maps / ShapefileEligibility — no GoogleEarthEngine node
+- Architecture map: GeoDataService / Maps / Google Map Tiles — no GoogleEarthEngine node, no OSM product layer
 
 ## 6. RAG
 

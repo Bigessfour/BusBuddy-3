@@ -1527,7 +1527,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
 
             var result = MessageBox.Show(
-                $"Are you sure you want to delete route '{SelectedRoute.RouteName}'?\n\nThis will unassign all students and cannot be undone.",
+                $"Delete or retire route '{SelectedRoute.RouteName}'?\n\nEmpty routes are removed. Routes still referenced by schedules or student keys are retired.",
                 "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (result != MessageBoxResult.Yes)
@@ -1549,6 +1549,14 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
 
                 var routeName = SelectedRoute.RouteName;
+                if (!string.IsNullOrWhiteSpace(deleteResult.Error))
+                {
+                    SelectedRoute.IsActive = false;
+                    StatusMessage = deleteResult.Error;
+                    Logger.Information("Retired route {RouteName}", routeName);
+                    return;
+                }
+
                 AvailableRoutes.Remove(SelectedRoute);
                 SelectedRoute = AvailableRoutes.FirstOrDefault();
 

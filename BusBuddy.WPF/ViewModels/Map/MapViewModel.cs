@@ -311,7 +311,8 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private void RefreshMarkerZoomVisuals()
         {
-            foreach (var marker in MapMarkers)
+            // Snapshot: ResetView / plot can mutate MapMarkers while zoom PropertyChanged is in flight.
+            foreach (var marker in MapMarkers.ToList())
             {
                 marker.ApplyZoomVisuals(MapZoomLevel);
             }
