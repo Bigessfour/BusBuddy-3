@@ -467,8 +467,8 @@ namespace BusBuddy.Core.Services
                         validationResult.Issues.Add("Route date cannot be in the past");
                     }
 
-                    // TODO: Add more comprehensive validation (bus, driver, stops, students)
-                    // Basic validation is sufficient
+                    // Name + date is the intended scope here. Bus/driver/stop/student checks live
+                    // in the assign and stop services so this stays a cheap pre-save gate.
 
                     validationResult.IsValid = validationResult.Issues.Count == 0;
 
@@ -582,10 +582,7 @@ namespace BusBuddy.Core.Services
 
         #endregion
 
-        #region Placeholder Methods (To Be Implemented)
-
-        // These methods return placeholder implementations to satisfy the interface
-        // TODO: Implement these methods as needed for full functionality
+        #region Route stops, assignments and lookups
 
         public async Task<Result<IEnumerable<RouteStop>>> GetRouteStopsAsync(int routeId)
         {

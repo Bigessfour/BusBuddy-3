@@ -336,31 +336,6 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Seed sample activities for development/testing
-        /// </summary>
-        public async Task SeedActivitiesAsync(int count = 25)
-        {
-            try
-            {
-                using var context = _contextFactory.CreateDbContext();
-
-                // Check if activities already exist
-                var existingCount = await context.Activities.CountAsync();
-
-                // TODO: Add logic for seeding activities (currently not implemented)
-                // This method previously contained a mix of bus seeding and activity logic, which was invalid.
-                // Implement proper activity seeding here as needed.
-
-                Logger.Information("Successfully seeded {Count} activities", count);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error seeding activities");
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Seed students from real-world CSV data (BusRiders_25-26.xlsz.csv).
         /// </summary>
         public Task SeedStudentsFromCsvAsync()
@@ -1287,7 +1262,7 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
             await SeedBusesAsync(12);
             await SeedStudentsFromCsvAsync();
             await SeedRoutesAsync(8);
-            await SeedActivitiesAsync(25);
+            // Activities (one-off trips) are not seeded: the Trip Board is clerk-entered only.
             await EnsureMapDemoGeoAsync();
 
             // Leave no student pointing at a route name that has no Routes row, or the form refuses

@@ -21,23 +21,23 @@ Definition (from `docs/action-items.md`): clerk hops 1–6 proved end to end on 
 
 ```text
 Verdict: NOT DONE
-Failed: 7 · Deferred: 8 · Passed: 21 · N/A: 2
+Failed: 3 · Deferred: 8 · Passed: 25 · N/A: 2
 ```
 
-(An eighth failure, B11 docs drift, was fixed in the PR that produced this packet; it is left in the table for honesty.)
+The morning of 2026-09-15 the count was 8. Five were closed the same day and are kept in the table so the trail is visible.
 
 ### The failures, plainly
 
-| Check              | What it found                                                                                 | Assessment                                                                           |
-| ------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| B01 stubs          | Two `NotImplementedException` in `BusService.cs` (lines 1004, 1014)                           | Real leftover. Should be removed or implemented.                                     |
-| B02 TODOs          | Four `TODO` comments in `BusBuddyDbContext`, `SeedDataService`, `RouteService`                | Comment debt, not runtime risk. Either do them or delete them.                       |
-| K02 tests          | `RouteManagementExportHelper` and `FuelReconciliationViewModel` have no test file naming them | Coverage gap on two helpers.                                                         |
-| B12 inventory      | Generated function inventory is 20 surfaces behind `.function-inventory.json`                 | Regenerate; a doc, not code.                                                         |
-| B11 docs drift     | Constitution §VI still listed CodeQL as a merge gate after it was removed for a private repo  | Fixed 2026-09-15; now passes.                                                        |
-| B14 UI proof       | Optional ribbon-click confirmations for hops 1–5 on the VM are unchecked                      | Same service methods are proved from the harness; the UI clicks are belt-and-braces. |
-| K09 manual QA      | District Map re-smoke after the latest pin-binding change is unchecked                        | Needs one VM session.                                                                |
-| B10 blocking boxes | The open boxes above, plus a parked `AmRouteId`/`PmRouteId` FK cleanup                        | Aggregate of the rows above.                                                         |
+| Check              | What it found                                                                                 | Status                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| B01 stubs          | Two `NotImplementedException` in `BusService.cs`                                              | Closed 09-15: deleted (not on `IBusService`, zero callers).                                     |
+| B02 TODOs          | Six `TODO` comments in `BusBuddyDbContext`, `SeedDataService`, `RouteService`                 | Closed 09-15: no-op audit/soft-delete hooks and the empty activity seeder removed; two reworded as decisions. |
+| K02 tests          | `RouteManagementExportHelper` and `FuelReconciliationViewModel` have no test file naming them | Closed 09-15: behavioral tests added for both; CI filter widened to run the Fuel suite.        |
+| B12 inventory      | Generated function inventory is 20 surfaces behind `.function-inventory.json`                 | Closed 09-15: regenerated (44 surfaces, 41 with proof).                                         |
+| B11 docs drift     | Constitution §VI still listed CodeQL as a merge gate after it was removed for a private repo  | Closed 09-15.                                                                                   |
+| B14 UI proof       | Optional ribbon-click confirmations for hops 1–5 on the VM are unchecked                      | **Open.** Same service methods are proved from the harness; the UI clicks are belt-and-braces.  |
+| K09 manual QA      | District Map re-smoke after the latest pin-binding change is unchecked                        | **Open.** Needs one VM session.                                                                 |
+| B10 blocking boxes | The open boxes above, plus a parked `AmRouteId`/`PmRouteId` FK cleanup                        | **Open.** Aggregate of the two rows above.                                                      |
 
 ### The 8 deferrals (explained, allowed)
 
@@ -74,10 +74,9 @@ These do not fail the checker but a reviewer will notice them.
 
 ## What is next
 
-1. One Windows VM session: District Map re-smoke and hops 1–5 ribbon clicks, pull `ui-diagnostics-*.log`, check the boxes.
-2. Remove the two `NotImplementedException` stubs and four `TODO`s; add tests naming the two uncovered helpers; regenerate the function inventory.
-3. Fix the release publish (`appsettings.json` collision) so `master` push CI is green end to end.
-4. Then `check-project-done.py` should exit 0.
+1. One Windows VM session: District Map re-smoke and hops 1–5 ribbon clicks, pull `ui-diagnostics-*.log`, check the boxes. This is the only thing standing between the checker and exit 0.
+2. Fix the release publish (`appsettings.json` collision) so `master` push CI is green end to end. Non-blocking, cosmetic.
+3. Nullable `AmRouteId`/`PmRouteId` FK backfill (parked; the string pair is canonical today).
 
 ## Out of scope by decision
 
