@@ -6,7 +6,6 @@ public static class UserSettingsKeys
     public const string Theme = "Theme";
     public const string EnableActivityLogging = "EnableActivityLogging";
     public const string ShowDashboardOnStartup = "ShowDashboardOnStartup";
-    public const string EnableRouteGeoExport = "EnableRouteGeoExport";
 
     public const string DistrictDepotName = "DistrictDepotName";
     public const string DistrictDepotAddress = "DistrictDepotAddress";

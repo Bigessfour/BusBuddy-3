@@ -8,31 +8,21 @@ using Serilog;
 
 namespace BusBuddy.WPF.Utilities;
 
-internal readonly record struct RouteGeoExportResult(bool Success, string Message, string? Path);
+internal readonly record struct RouteGeoExportResult(bool Success, string Message, string? Path, bool Cancelled = false);
 
 /// <summary>
-/// Writes the selected map route as GeoJSON. Capability is gated by
-/// <see cref="UserSettingsKeys.EnableRouteGeoExport"/>.
+/// Writes the selected map route as GeoJSON (stop coordinates only — never student names).
+/// Always available: the clerk pressed the button, so no Settings gate stands in the way.
 /// </summary>
 internal static class MapRouteExporter
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(MapRouteExporter));
 
-    public static bool IsEnabled(IUserSettingsService? settings) =>
-        settings is not null && settings.EnableRouteGeoExport;
-
     public static async Task<RouteGeoExportResult> ExportSelectedAsync(
-        IUserSettingsService? settings,
         IGeoDataService geoDataService,
         Route? selected,
         CancellationToken cancellationToken = default)
     {
-        if (!IsEnabled(settings))
-        {
-            Logger.Information("Route GeoJSON export skipped — disabled in Settings");
-            return new RouteGeoExportResult(false, "Route GeoJSON export is off — enable it in Settings", null);
-        }
-
         if (selected is null)
         {
             return new RouteGeoExportResult(false, "Select a route to export", null);
@@ -44,7 +34,7 @@ internal static class MapRouteExporter
             ".geojson");
         if (string.IsNullOrWhiteSpace(path))
         {
-            return new RouteGeoExportResult(false, "Export cancelled", null);
+            return new RouteGeoExportResult(false, "Export cancelled", null, Cancelled: true);
         }
 
         return await ExportAsync(geoDataService, selected, path, cancellationToken).ConfigureAwait(false);

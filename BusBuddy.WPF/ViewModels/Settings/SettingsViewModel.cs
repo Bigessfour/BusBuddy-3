@@ -66,9 +66,6 @@ namespace BusBuddy.WPF.ViewModels.Settings
         private bool showDashboardOnStartup = true;
 
         [ObservableProperty]
-        private bool enableRouteGeoExport;
-
-        [ObservableProperty]
         private string depotName = string.Empty;
 
         [ObservableProperty]
@@ -140,7 +137,6 @@ namespace BusBuddy.WPF.ViewModels.Settings
                     SelectedTheme = await _settingsService.GetSettingAsync(UserSettingsKeys.Theme, "FluentDark").ConfigureAwait(true);
                     EnableActivityLogging = await _settingsService.GetSettingAsync(UserSettingsKeys.EnableActivityLogging, true).ConfigureAwait(true);
                     ShowDashboardOnStartup = await _settingsService.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, true).ConfigureAwait(true);
-                    EnableRouteGeoExport = await _settingsService.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, false).ConfigureAwait(true);
                     _districtSettings?.OverlayFromUserSettings(_settingsService);
                     HydrateDistrictFields(_districtSettings?.Current ?? _appDistrict);
                     _suppressThemePreview = false;
@@ -183,7 +179,6 @@ namespace BusBuddy.WPF.ViewModels.Settings
                     await _settingsService.SetSettingAsync(UserSettingsKeys.Theme, SelectedTheme).ConfigureAwait(true);
                     await _settingsService.SetSettingAsync(UserSettingsKeys.EnableActivityLogging, EnableActivityLogging).ConfigureAwait(true);
                     await _settingsService.SetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, ShowDashboardOnStartup).ConfigureAwait(true);
-                    await _settingsService.SetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, EnableRouteGeoExport).ConfigureAwait(true);
                     var district = DistrictFromForm();
                     await DistrictSettingsAccessor.WriteToUserAsync(_settingsService, district).ConfigureAwait(true);
                     _districtSettings?.Replace(district);

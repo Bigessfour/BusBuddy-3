@@ -80,6 +80,58 @@ internal sealed class MapDistrictLayers
         return PlotPickups(await LoadPickupCatalogAsync(scope).ConfigureAwait(true));
     }
 
+    /// <summary>
+    /// Published boarding points on the given routes (<c>RouteStop</c> rows with validated GPS). Generated
+    /// routes carry stops here rather than in the catalog. Plotted as route-stop (WP) pins: a stop that lands
+    /// on an existing home / catalog pin tags that pin (gold ring) instead of stacking a duplicate caption.
+    /// </summary>
+    public async Task<int> PlotRouteStopsAsync(IReadOnlyCollection<int> routeIds)
+    {
+        if (routeIds.Count == 0)
+        {
+            return 0;
+        }
+
+        using var scope = _scopes?.CreateScope();
+        var routes = Resolve<IRouteService>(null, scope);
+        if (routes is null)
+        {
+            Logger.Information("PlotRouteStopsAsync skipped — IRouteService not registered");
+            return 0;
+        }
+
+        var plotted = 0;
+        foreach (var routeId in routeIds)
+        {
+            IEnumerable<RouteStop> stops;
+            try
+            {
+                var result = await routes.GetRouteStopsAsync(routeId).ConfigureAwait(true);
+                if (!result.IsSuccess)
+                {
+                    Logger.Warning("Route stops unavailable RouteId={RouteId} Error={Error}", routeId, result.Error);
+                    continue;
+                }
+
+                stops = result.Value;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "GetRouteStopsAsync failed RouteId={RouteId}", routeId);
+                continue;
+            }
+
+            foreach (var stop in stops.Where(s => s.HasValidatedCoordinates).OrderBy(s => s.StopOrder))
+            {
+                var name = string.IsNullOrWhiteSpace(stop.StopName) ? $"Stop {stop.StopOrder}" : stop.StopName;
+                _plot((double)stop.Latitude!.Value, (double)stop.Longitude!.Value, null, MapMarkerLabels.ForRouteStop(name));
+                plotted++;
+            }
+        }
+
+        return plotted;
+    }
+
     /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
     public async Task<int> PlotStoredStudentsAsync()
     {

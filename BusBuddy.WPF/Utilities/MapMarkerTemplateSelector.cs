@@ -12,7 +12,7 @@ namespace BusBuddy.WPF.Utilities;
 /// <para>
 /// Syncfusion hands the selector its <see cref="CustomDataSymbol"/> wrapper, not the bound marker;
 /// the marker is <see cref="CustomDataSymbol.Data"/>. Template DataContext stays the wrapper —
-/// bind as <c>{Binding Data.Caption}</c> / <c>Data.MarkerSize</c> (not bare <c>Caption</c>).
+/// bind as <c>{Binding Data.DisplayCaption}</c> / <c>Data.MarkerSize</c> / <c>Data.FillBrush</c> (not bare <c>Caption</c>).
 /// </para>
 /// </summary>
 public sealed class MapMarkerTemplateSelector : DataTemplateSelector

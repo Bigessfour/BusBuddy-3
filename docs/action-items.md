@@ -33,7 +33,7 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 ## Now
 
-- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry)
+- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses.
 
 Optional:
 
@@ -104,6 +104,18 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ## Done log
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
+
+### 2026-09-15 — District Map toolbar, pins, and legend (clerk VM feedback)
+
+- Diagnosis: none of the reported symptoms were Google's. Tiles were fine; captions, colors, and the toolbar are BusBuddy XAML/VM (Syncfusion `ImageryLayer.MarkerTemplate` + `ButtonAdv`).
+- Labels: a route stop on an existing pin now **tags** that pin (`MapMarker.RouteStopLabel`, gold stroke, `Name (Stop n)`) instead of stacking a `WP` pin + second caption at the same coordinate. Household captions (home/student) wait for `MapDefaults.HomeLabelZoomLevel` (14); place captions keep 12.
+- Colors: one fixed fill per `MapMarkerLabels.Kind` (school black, pickup orange, route stop gold, depot purple, home blue, student green) bound via `MapMarker.FillBrush` / `StrokeBrush`; legend card generated from `MapMarkerLabels.Legend`.
+- Zoom In/Out vanishing: overlay `ButtonAdv` now owns an explicit `ControlTemplate` with literal brushes (theme `DynamicResource` lookups were dropping to transparent after the map re-rendered); toolbar `Panel.ZIndex=10`; map container `ClipToBounds`.
+- Export Route: `EnableRouteGeoExport` Settings gate removed everywhere (keys, service, Settings VM/XAML, exporter). Button always enabled; no selection → toast asking for a route; success/failure toasts.
+- Show Schools: schools-only view (`ClearMarkersExcept(School)`), center on schools, toast; Refresh restores the full district overlay.
+- Plot Pickup Stops: catalog pickups **plus** published route stops of every route (`MapDistrictLayers.PlotRouteStopsAsync`); toast when nothing to plot.
+- Active Buses card + `ActiveBuses` / `SelectedBus` / `IBusService` removed from `MapViewModel`.
+- Evidence: Release build green; UTM guest `--full` filter 574 passed / 2 pre-existing failures also failing on `master` (`DirectContext_StatusUpdate_Persists`, `IsDriverAvailableForRouteAsync_ReturnsFalseWhenAlreadyAssigned` — InMemory driver suite, VM-only). Spec: `specs/maps.md` § Pin colors and captions / District Map toolbar contract.
 
 ### 2026-09-15 — Release publish NETSDK1152
 

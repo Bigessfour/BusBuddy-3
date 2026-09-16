@@ -540,10 +540,8 @@ namespace BusBuddy.WPF
                         sp.GetRequiredService<IGeoDataService>(),
                         sp.GetService<IGeocodingService>(),
                         studentService: null,
-                        busService: null,
                         scopeFactory: sp.GetRequiredService<IServiceScopeFactory>(),
                         routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
-                        userSettings: sp.GetService<IUserSettingsService>(),
                         districtSettings: sp.GetService<IDistrictSettingsAccessor>()));
                 services.AddSingleton<BusBuddy.WPF.Services.IDistrictMapSync, BusBuddy.WPF.Services.DistrictMapSync>();
 

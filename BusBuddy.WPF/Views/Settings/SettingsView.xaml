@@ -104,14 +104,6 @@
                                                  Margin="0,0,0,20"
                                                  AutomationProperties.Name="Show dashboard on startup"/>
 
-                <TextBlock Text="District Map" Style="{StaticResource SettingsSectionHeader}" Margin="0,8,0,8"/>
-                <TextBlock Text="When on, District Map can save the selected route's waypoints as GeoJSON (stop coordinates, not student names). Leave off if clerks should not write route files."
-                           Style="{StaticResource SettingsHelpText}"/>
-                <syncfusiontools:ToggleButtonExt Content="Enable route GeoJSON export"
-                                                 IsChecked="{Binding EnableRouteGeoExport, Mode=TwoWay}"
-                                                 Margin="0,0,0,20"
-                                                 AutomationProperties.Name="Enable route GeoJSON export"/>
-
                 <TextBlock Text="This district (map &amp; routing)" Style="{StaticResource SettingsSectionHeader}"/>
                 <TextBlock Text="Leave blank to ship this app to another rural district. Maps follow the first school with GPS, then the bus barn, then the bounding box. Unconfigured maps show a US overview until you add a school or pin the barn."
                            Style="{StaticResource SettingsHelpText}"/>
