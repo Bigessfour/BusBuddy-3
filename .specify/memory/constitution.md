@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report
-Version change: 1.2.3 → 1.2.4 (PATCH — app AI is local Ollama only; cloud xAI removed)
-Modified: Technology constraint AI (app)
-Modified: Last Amended 2026-09-15
+Version change: 1.2.4 → 1.2.5 (PATCH — unused code is deleted, not parked as *.disabled)
+Modified: Principle IV (layered architecture unused-code rule)
+Modified: Last Amended 2026-09-16
 Added: none
-Removed: cloud XAI as an app AI provider
+Removed: agent habit of renaming files to .disabled
 Templates: no mandatory section changes
-Follow-up: AGENTS.md, README.md, specs/004-local-llm-ollama, Documentation/diagrams/busbuddy-3-architecture.md
+Follow-up: .github/copilot-instructions.md, docs/action-items.md, docs/clerk-path.md
 -->
 
 # BusBuddy Constitution
@@ -41,7 +41,7 @@ When those conflict with this constitution, **this file wins** until amended und
 - **Core**: domain models, EF Core data access, UnitOfWork + repository pattern, business services.
 - **WPF**: Views + ViewModels (MVVM + CommunityToolkit.Mvvm), DI wiring in `App.xaml.cs`.
 - **Tests**: prefer Postgres/Docker for realistic DB tests; filter out Integration/InMemoryFlaky in CI unit gates.
-- Keep experimental or broken services disabled via `.disabled` rather than deleting history casually.
+- Do not park unused or broken services as `*.disabled`. Delete them or leave them unreferenced. Git history is the archive.
 
 ### V. Hybrid Development Reality
 
@@ -108,4 +108,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.2.4 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-15
+**Version**: 1.2.5 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-16

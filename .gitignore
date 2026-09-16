@@ -1154,6 +1154,7 @@ global.json
 # Ignore designer and generated files
 *.Designer.cs
 *.resx
+# Do not reintroduce parked source. Retired types belong in git history, not *.disabled copies.
 *.disabled
 
 # Ignore other temp or tool files
