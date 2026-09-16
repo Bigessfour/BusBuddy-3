@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using System.IO;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
@@ -314,8 +313,8 @@ public class BusBuddyDbContext : DbContext
         System.Diagnostics.Debug.WriteLine($"[BusBuddyDbContext] SkipGlobalSeedData: {SkipGlobalSeedData}");
         base.OnModelCreating(modelBuilder);
 
-        // Configure global query filters for soft deletes
-        ConfigureGlobalQueryFilters(modelBuilder);
+        // No global soft-delete query filter: entities do not share a BaseEntity.IsDeleted.
+        // Retirement is per-aggregate (Bus.Status=Retired, Driver.Status=Inactive, Student.Active).
 
         // Configure global NULL handling for better error resilience
         ConfigureNullHandling(modelBuilder);
@@ -1133,30 +1132,6 @@ public class BusBuddyDbContext : DbContext
         // If SkipGlobalSeedData is true or using in-memory provider, do NOT call SeedData; ensures no global seed data for in-memory tests
     }
 
-    /// <summary>
-    /// Configure global query filters for soft deletes
-    /// </summary>
-    private static void ConfigureGlobalQueryFilters(ModelBuilder modelBuilder)
-    {
-        // TODO: Re-implement soft delete filter when entities inherit from BaseEntity
-        // Apply soft delete filter to all entities that inherit from BaseEntity
-        /*
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        {
-            if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
-            {
-                var parameter = Expression.Parameter(entityType.ClrType);
-                var propertyMethodInfo = typeof(EF).GetMethod("Property")?.MakeGenericMethod(typeof(bool));
-                var isDeletedProperty = Expression.Call(propertyMethodInfo!, parameter, Expression.Constant("IsDeleted"));
-                var compareExpression = Expression.MakeBinary(ExpressionType.Equal, isDeletedProperty, Expression.Constant(false));
-                var lambda = Expression.Lambda(compareExpression, parameter);
-
-                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
-            }
-        }
-        */
-    }
-
     private static void ConfigureNullHandling(ModelBuilder modelBuilder)
     {
         // Configure specific entities with NULL-safe defaults to prevent SqlNullValueException
@@ -1298,14 +1273,13 @@ public class BusBuddyDbContext : DbContext
     }
 
     /// <summary>
-    /// Override SaveChanges to apply audit fields with concurrency protection
+    /// Override SaveChanges to normalize student records with concurrency protection
     /// </summary>
     public override int SaveChanges()
     {
         try
         {
             ApplyStudentPersistenceNormalization();
-            ApplyAuditFields();
             return base.SaveChanges();
         }
         catch (DbUpdateConcurrencyException ex)
@@ -1317,14 +1291,13 @@ public class BusBuddyDbContext : DbContext
     }
 
     /// <summary>
-    /// Override SaveChangesAsync to apply audit fields with concurrency protection
+    /// Override SaveChangesAsync to normalize student records with concurrency protection
     /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             ApplyStudentPersistenceNormalization();
-            ApplyAuditFields();
             return await base.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException ex)
@@ -1374,42 +1347,6 @@ public class BusBuddyDbContext : DbContext
         {
             StudentRecordNormalizer.NormalizeForPersistence(entry.Entity);
         }
-    }
-
-    /// <summary>
-    /// Apply audit fields to entities before saving
-    /// TODO: Re-implement when entities inherit from BaseEntity
-    /// </summary>
-    private static void ApplyAuditFields()
-    {
-        // TODO: Re-implement audit fields when entities inherit from BaseEntity
-        /*
-        var entities = ChangeTracker.Entries<BaseEntity>()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
-
-        foreach (var entity in entities)
-        {
-            var now = DateTime.UtcNow;
-
-            if (entity.State == EntityState.Added)
-            {
-                entity.Entity.CreatedDate = now;
-                entity.Entity.CreatedBy = _currentAuditUser;
-            }
-
-            if (entity.State == EntityState.Modified)
-            {
-                entity.Entity.UpdatedDate = now;
-                entity.Entity.UpdatedBy = _currentAuditUser;
-                // Prevent modification of CreatedDate and CreatedBy
-                entity.Property(x => x.CreatedDate).IsModified = false;
-                entity.Property(x => x.CreatedBy).IsModified = false;
-            }
-
-            // Call entity-specific OnSaving method
-            entity.Entity.OnSaving();
-        }
-        */
     }
 
     private static void UseLocalDbFallback(DbContextOptionsBuilder optionsBuilder, ILogger logger)

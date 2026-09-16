@@ -54,11 +54,6 @@ namespace BusBuddy.Core.Services
         Task SeedBusesAsync(int count = 12);
 
         /// <summary>
-        /// Seed sample activities for development/testing
-        /// </summary>
-        Task SeedActivitiesAsync(int count = 25);
-
-        /// <summary>
         /// Seed all development data
         /// </summary>
         Task SeedAllAsync();

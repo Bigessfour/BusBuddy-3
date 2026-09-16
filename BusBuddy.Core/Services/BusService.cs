@@ -995,26 +995,6 @@ namespace BusBuddy.Core.Services
 
         #endregion
 
-        public Task<List<Route>> GetAllRoutesAsync()
-        {
-            Logger.Information("Retrieving all routes (legacy method - deprecated)");
-
-            // This method should be replaced with proper route service calls
-            // For now, throw an exception to indicate this method should not be used
-            throw new NotImplementedException(
-                "GetAllRoutesAsync is deprecated. Use IRouteService.GetAllActiveRoutesAsync() instead.");
-        }
-
-        public Task<List<Schedule>> GetSchedulesByRouteAsync(int routeId)
-        {
-            Logger.Information("Retrieving schedules for route ID: {RouteId} (legacy method - deprecated)", routeId);
-
-            // This method should be replaced with proper schedule service calls
-            // For now, throw an exception to indicate this method should not be used
-            throw new NotImplementedException(
-                "GetSchedulesByRouteAsync is deprecated. Use IScheduleService methods instead.");
-        }
-
         public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int busId)
         {
             return await context.Students.CountAsync(s => s.RouteAssignmentId != null &&

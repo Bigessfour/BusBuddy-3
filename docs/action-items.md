@@ -105,6 +105,16 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
 
+### 2026-09-15 — Project-done code debt sweep
+
+- Deleted `BusService.GetAllRoutesAsync` / `GetSchedulesByRouteAsync` (`NotImplementedException`, not on `IBusService`, zero callers).
+- `BusBuddyDbContext`: removed no-op `ConfigureGlobalQueryFilters` / `ApplyAuditFields` and their commented-out `BaseEntity` bodies; retirement stays per-aggregate (Bus/Driver `Status`, Student `Active`).
+- `SeedDataService.SeedActivitiesAsync` removed (logged "seeded" while writing nothing); interface + `SeedAllAsync` call dropped. Trip Board stays clerk-entered.
+- `RouteService`: validation scope and region comments reworded as decisions; no open TODOs remain in product code.
+- Tests: `RouteManagementExportHelperTests` (CSV escaping, report lines, hop-5 `TryPersistScheduleAsync` UTC day / AM→PM fallback / no-write guards) and `FuelReconciliationViewModelTests` (per-day sums, bulk discrepancy + detail rows, location filter, date validation, `RememberBulk` gating). CI filter gained `Fuel`.
+- Regenerated `docs/function-inventory.generated.md` (44 surfaces, 41 with proof).
+- Evidence: Release build green; `check-project-done.py` 7 → 3 failures (all remaining = the VM re-smoke / ribbon-click session).
+
 ### 2026-09-11 — Fleet + Fuel UTM breakages (PR #69)
 
 - Fuel chart `Circle` → `Ellipse` (XamlParseException)
