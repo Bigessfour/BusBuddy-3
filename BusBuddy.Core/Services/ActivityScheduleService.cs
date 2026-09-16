@@ -1,11 +1,8 @@
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Data.Interfaces;
-using BusBuddy.Core.Data.UnitOfWork;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace BusBuddy.Core.Services
@@ -18,26 +15,23 @@ namespace BusBuddy.Core.Services
     {
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private static readonly ILogger Logger = Log.ForContext<ActivityScheduleService>();
-        private readonly IUnitOfWork _unitOfWork;
 
-        public ActivityScheduleService(
-            IBusBuddyDbContextFactory contextFactory,
-            IUnitOfWork unitOfWork)
+        public ActivityScheduleService(IBusBuddyDbContextFactory contextFactory)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         #region CRUD Operations
 
         public async Task<IEnumerable<ActivitySchedule>> GetAllActivitySchedulesAsync()
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving all activity schedules");
 
                 // Use QueryNoTracking to get a queryable and then apply includes and ordering
-                var query = _unitOfWork.ActivitySchedules.QueryNoTracking()
+                var query = context.ActivitySchedules.AsNoTracking()
                     .Include(a => a.ScheduledVehicle)
                     .Include(a => a.ScheduledDriver)
                     .OrderByDescending(a => a.ScheduledDate);
@@ -53,12 +47,13 @@ namespace BusBuddy.Core.Services
 
         public async Task<ActivitySchedule?> GetActivityScheduleByIdAsync(int id)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedule with ID: {ActivityScheduleId}", id);
 
                 // Use QueryNoTracking to get a queryable and then apply includes
-                return await _unitOfWork.ActivitySchedules.QueryNoTracking()
+                return await context.ActivitySchedules.AsNoTracking()
                     .Include(a => a.ScheduledVehicle)
                     .Include(a => a.ScheduledDriver)
                     .FirstOrDefaultAsync(a => a.ActivityScheduleId == id);
@@ -72,6 +67,7 @@ namespace BusBuddy.Core.Services
 
         public async Task<ActivitySchedule> CreateActivityScheduleAsync(ActivitySchedule activitySchedule)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             ArgumentNullException.ThrowIfNull(activitySchedule);
 
             try
@@ -101,8 +97,8 @@ namespace BusBuddy.Core.Services
                 activitySchedule.CreatedDate = DateTime.UtcNow;
 
                 // Add to repository
-                await _unitOfWork.ActivitySchedules.AddAsync(activitySchedule);
-                await _unitOfWork.SaveChangesAsync();
+                context.ActivitySchedules.Add(activitySchedule);
+                await context.SaveChangesAsync();
 
                 Logger.Information("Successfully created activity schedule with ID: {ActivityScheduleId}", activitySchedule.ActivityScheduleId);
                 return activitySchedule;
@@ -116,6 +112,7 @@ namespace BusBuddy.Core.Services
 
         public async Task<ActivitySchedule> UpdateActivityScheduleAsync(ActivitySchedule activitySchedule)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             ArgumentNullException.ThrowIfNull(activitySchedule);
 
             try
@@ -123,7 +120,7 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Updating activity schedule with ID: {ActivityScheduleId}", activitySchedule.ActivityScheduleId);
 
                 // Get the existing record
-                var existingSchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(activitySchedule.ActivityScheduleId);
+                var existingSchedule = await context.ActivitySchedules.FindAsync(activitySchedule.ActivityScheduleId);
                 if (existingSchedule == null)
                 {
                     throw new InvalidOperationException($"Activity schedule with ID {activitySchedule.ActivityScheduleId} not found");
@@ -150,9 +147,7 @@ namespace BusBuddy.Core.Services
                 existingSchedule.UpdatedDate = DateTime.UtcNow;
                 existingSchedule.UpdatedBy = activitySchedule.UpdatedBy;
 
-                // Update in repository
-                _unitOfWork.ActivitySchedules.Update(existingSchedule);
-                await _unitOfWork.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 Logger.Information("Successfully updated activity schedule with ID: {ActivityScheduleId}", activitySchedule.ActivityScheduleId);
                 return existingSchedule;
@@ -166,19 +161,20 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> DeleteActivityScheduleAsync(int id)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             try
             {
                 Logger.Information("Deleting activity schedule with ID: {ActivityScheduleId}", id);
 
-                var activitySchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(id);
+                var activitySchedule = await context.ActivitySchedules.FindAsync(id);
                 if (activitySchedule == null)
                 {
                     Logger.Warning("Activity schedule with ID: {ActivityScheduleId} not found for deletion", id);
                     return false;
                 }
 
-                _unitOfWork.ActivitySchedules.Remove(activitySchedule);
-                await _unitOfWork.SaveChangesAsync();
+                context.ActivitySchedules.Remove(activitySchedule);
+                await context.SaveChangesAsync();
 
                 Logger.Information("Successfully deleted activity schedule with ID: {ActivityScheduleId}", id);
                 return true;
@@ -196,11 +192,12 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> GetActivitySchedulesByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedules between {StartDate} and {EndDate}", startDate, endDate);
 
-                return await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate);
+                return await context.ActivitySchedules.Where(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate).ToListAsync();
             }
             catch (Exception ex)
             {
@@ -211,11 +208,12 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> GetActivitySchedulesByDriverAsync(int driverId)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedules for driver ID: {DriverId}", driverId);
 
-                return await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDriverId == driverId);
+                return await context.ActivitySchedules.Where(a => a.ScheduledDriverId == driverId).ToListAsync();
             }
             catch (Exception ex)
             {
@@ -226,11 +224,12 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> GetActivitySchedulesByVehicleAsync(int vehicleId)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedules for vehicle ID: {VehicleId}", vehicleId);
 
-                return await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledVehicleId == vehicleId);
+                return await context.ActivitySchedules.Where(a => a.ScheduledVehicleId == vehicleId).ToListAsync();
             }
             catch (Exception ex)
             {
@@ -241,11 +240,12 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> GetActivitySchedulesByStatusAsync(string status)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedules with status: {Status}", status);
 
-                return await _unitOfWork.ActivitySchedules.FindAsync(a => a.Status == status);
+                return await context.ActivitySchedules.Where(a => a.Status == status).ToListAsync();
             }
             catch (Exception ex)
             {
@@ -256,11 +256,12 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> GetActivitySchedulesByTripTypeAsync(string tripType)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedules with trip type: {TripType}", tripType);
 
-                return await _unitOfWork.ActivitySchedules.FindAsync(a => a.TripType == tripType);
+                return await context.ActivitySchedules.Where(a => a.TripType == tripType).ToListAsync();
             }
             catch (Exception ex)
             {
@@ -271,11 +272,12 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> GetActivitySchedulesByDestinationAsync(string destination)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 Logger.Information("Retrieving activity schedules with destination: {Destination}", destination);
 
-                return await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDestination.Contains(destination));
+                return await context.ActivitySchedules.Where(a => a.ScheduledDestination.Contains(destination)).ToListAsync();
             }
             catch (Exception ex)
             {
@@ -290,16 +292,17 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> IsVehicleAvailableAsync(int vehicleId, DateTime scheduleDate, TimeSpan startTime, TimeSpan endTime)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 // Check if there are any conflicting schedules for this vehicle
-                var conflicts = await _unitOfWork.ActivitySchedules.FindAsync(a =>
+                var conflicts = await context.ActivitySchedules.Where(a =>
                     a.ScheduledVehicleId == vehicleId &&
                     a.ScheduledDate.Date == scheduleDate.Date &&
                     a.Status != "Cancelled" &&
                     ((a.ScheduledLeaveTime <= startTime && a.ScheduledEventTime > startTime) || // Overlaps start time
                      (a.ScheduledLeaveTime < endTime && a.ScheduledEventTime >= endTime) || // Overlaps end time
-                     (a.ScheduledLeaveTime >= startTime && a.ScheduledEventTime <= endTime))); // Within time range
+                     (a.ScheduledLeaveTime >= startTime && a.ScheduledEventTime <= endTime))).ToListAsync(); // Within time range
 
                 return !conflicts.Any();
             }
@@ -312,16 +315,17 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> IsDriverAvailableAsync(int driverId, DateTime scheduleDate, TimeSpan startTime, TimeSpan endTime)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
                 // Check if there are any conflicting schedules for this driver
-                var conflicts = await _unitOfWork.ActivitySchedules.FindAsync(a =>
+                var conflicts = await context.ActivitySchedules.Where(a =>
                     a.ScheduledDriverId == driverId &&
                     a.ScheduledDate.Date == scheduleDate.Date &&
                     a.Status != "Cancelled" &&
                     ((a.ScheduledLeaveTime <= startTime && a.ScheduledEventTime > startTime) || // Overlaps start time
                      (a.ScheduledLeaveTime < endTime && a.ScheduledEventTime >= endTime) || // Overlaps end time
-                     (a.ScheduledLeaveTime >= startTime && a.ScheduledEventTime <= endTime))); // Within time range
+                     (a.ScheduledLeaveTime >= startTime && a.ScheduledEventTime <= endTime))).ToListAsync(); // Within time range
 
                 return !conflicts.Any();
             }
@@ -400,9 +404,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> ConfirmActivityScheduleAsync(int activityScheduleId)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             try
             {
-                var activitySchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(activityScheduleId);
+                var activitySchedule = await context.ActivitySchedules.FindAsync(activityScheduleId);
                 if (activitySchedule == null)
                 {
                     Logger.Warning("Activity schedule with ID: {ActivityScheduleId} not found for confirmation", activityScheduleId);
@@ -412,8 +417,7 @@ namespace BusBuddy.Core.Services
                 activitySchedule.Status = "Confirmed";
                 activitySchedule.UpdatedDate = DateTime.UtcNow;
 
-                _unitOfWork.ActivitySchedules.Update(activitySchedule);
-                await _unitOfWork.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 Logger.Information("Successfully confirmed activity schedule with ID: {ActivityScheduleId}", activityScheduleId);
                 return true;
@@ -427,9 +431,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> CancelActivityScheduleAsync(int activityScheduleId, string? reason = null)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             try
             {
-                var activitySchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(activityScheduleId);
+                var activitySchedule = await context.ActivitySchedules.FindAsync(activityScheduleId);
                 if (activitySchedule == null)
                 {
                     Logger.Warning("Activity schedule with ID: {ActivityScheduleId} not found for cancellation", activityScheduleId);
@@ -446,8 +451,7 @@ namespace BusBuddy.Core.Services
                         : $"{activitySchedule.Notes}\nCancellation reason: {reason}";
                 }
 
-                _unitOfWork.ActivitySchedules.Update(activitySchedule);
-                await _unitOfWork.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 Logger.Information("Successfully cancelled activity schedule with ID: {ActivityScheduleId}", activityScheduleId);
                 return true;
@@ -461,9 +465,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> CompleteActivityScheduleAsync(int activityScheduleId)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             try
             {
-                var activitySchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(activityScheduleId);
+                var activitySchedule = await context.ActivitySchedules.FindAsync(activityScheduleId);
                 if (activitySchedule == null)
                 {
                     Logger.Warning("Activity schedule with ID: {ActivityScheduleId} not found for completion", activityScheduleId);
@@ -473,8 +478,7 @@ namespace BusBuddy.Core.Services
                 activitySchedule.Status = "Completed";
                 activitySchedule.UpdatedDate = DateTime.UtcNow;
 
-                _unitOfWork.ActivitySchedules.Update(activitySchedule);
-                await _unitOfWork.SaveChangesAsync();
+                await context.SaveChangesAsync();
 
                 Logger.Information("Successfully completed activity schedule with ID: {ActivityScheduleId}", activityScheduleId);
                 return true;
@@ -488,12 +492,13 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> SetActivityScheduleStatusAsync(int activityScheduleId, string status)
         {
+            using var context = _contextFactory.CreateWriteDbContext();
             if (string.IsNullOrWhiteSpace(status))
             {
                 throw new ArgumentException("Status is required", nameof(status));
             }
 
-            var activitySchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(activityScheduleId);
+            var activitySchedule = await context.ActivitySchedules.FindAsync(activityScheduleId);
             if (activitySchedule == null)
             {
                 Logger.Warning("Activity schedule {ActivityScheduleId} not found for status {Status}", activityScheduleId, status);
@@ -502,8 +507,7 @@ namespace BusBuddy.Core.Services
 
             activitySchedule.Status = status;
             activitySchedule.UpdatedDate = DateTime.UtcNow;
-            _unitOfWork.ActivitySchedules.Update(activitySchedule);
-            await _unitOfWork.SaveChangesAsync();
+            await context.SaveChangesAsync();
             Logger.Information("Set activity schedule {ActivityScheduleId} status to {Status}", activityScheduleId, status);
             return true;
         }
@@ -514,9 +518,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<IEnumerable<ActivitySchedule>> FindScheduleConflictsAsync(DateTime scheduleDate, TimeSpan startTime, TimeSpan endTime, int? excludeActivityScheduleId = null)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
-                var baseQuery = _unitOfWork.ActivitySchedules.Query()
+                var baseQuery = context.ActivitySchedules.AsQueryable()
                     .Where(a =>
                         a.ScheduledDate.Date == scheduleDate.Date &&
                         a.Status != "Cancelled" &&
@@ -591,9 +596,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<Dictionary<string, int>> GetActivityScheduleStatisticsByTripTypeAsync(DateTime startDate, DateTime endDate)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
-                var schedules = await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate);
+                var schedules = await context.ActivitySchedules.Where(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate).ToListAsync();
 
                 return schedules
                     .GroupBy(a => a.TripType)
@@ -662,9 +668,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<Dictionary<DateTime, int>> GetActivityScheduleStatisticsByDateAsync(DateTime startDate, DateTime endDate, string status)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
-                var schedules = await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate && a.Status == status);
+                var schedules = await context.ActivitySchedules.Where(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate && a.Status == status).ToListAsync();
 
                 return schedules
                     .GroupBy(a => a.ScheduledDate.Date)
@@ -679,9 +686,10 @@ namespace BusBuddy.Core.Services
 
         public async Task<Dictionary<string, int>> GetActivityScheduleStatisticsByStatusAsync(DateTime startDate, DateTime endDate)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
-                var schedules = await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate);
+                var schedules = await context.ActivitySchedules.Where(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate).ToListAsync();
 
                 return schedules
                     .GroupBy(a => a.Status)
@@ -696,9 +704,15 @@ namespace BusBuddy.Core.Services
 
         public async Task<string> ExportActivitySchedulesToCsvAsync(DateTime startDate, DateTime endDate)
         {
+            using var context = _contextFactory.CreateDbContext();
             try
             {
-                var schedules = await _unitOfWork.ActivitySchedules.FindAsync(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate);
+                var schedules = await context.ActivitySchedules
+                    .AsNoTracking()
+                    .Include(a => a.ScheduledDriver)
+                    .Include(a => a.ScheduledVehicle)
+                    .Where(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate)
+                    .ToListAsync();
 
                 var sb = new StringBuilder();
 

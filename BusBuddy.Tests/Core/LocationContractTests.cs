@@ -86,6 +86,13 @@ public class LocationContractTests
             (decimal)MapDefaults.UnconfiguredLongitude), Is.False);
         Assert.That(LocationCoordinate.IsValidated(38.0872m, -102.6208m), Is.True);
         Assert.That(LocationTypes.ValidationStatus(false), Is.EqualTo("needs validation"));
+
+        var dropped = LocationCoordinate.ValidatedOrNull(0m, 0m);
+        Assert.That(dropped.Latitude, Is.Null);
+        Assert.That(dropped.Longitude, Is.Null);
+        var kept = LocationCoordinate.ValidatedOrNull(38.0872m, -102.6208m);
+        Assert.That(kept.Latitude, Is.EqualTo(38.0872m));
+        Assert.That(kept.Longitude, Is.EqualTo(-102.6208m));
     }
 
     [Test]

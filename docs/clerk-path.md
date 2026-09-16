@@ -66,16 +66,20 @@ Hop **4b (2026-09-09):** keep `Route.AM*` / `PM*` as the year-default bus/driver
 
 ---
 
-## Dead for the clerk path (tables exist; no source-of-truth UI)
+## Leave alone (tables may exist; not the clerk spine)
 
-Do not wire these until the hops above are proved. Do not drop tables without a migration decision.
+Hops 1–6 are proved. That is not permission to wire these. Do not drop tables without a migration decision. Tracker: [action-items.md](./action-items.md) Leave alone.
 
-- `Families` / `Guardians` (`FamilyService` is not in DI)
-- `AIInsights`
-- `SchoolCalendar`
-- `VehiclesViewModel` sample loader (unused; `VehiclesView` is excluded from compile)
+| Leave alone                                                                          | Why                                                                                                                         |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `FamilyService` / `GuardianService`                                                  | Not in DI. Spec does not require a family graph for routing. Guardian name/phone live on the student (`specs/students.md`). |
+| `ActivityService` / `ActivityScheduleService`                                        | Parallel trip product. Board = `TripEventService` (`specs/trips.md`). Header **Trips** / Trip Board already use that path.  |
+| `FleetMonitoringService`                                                             | Live GPS deferred. Do not hook a timer.                                                                                     |
+| `BusBuddyAIReportingService`                                                         | No clerk surface.                                                                                                           |
+| `DataIntegrityService` (empty), `BusBuddyScheduleDataProvider` (empty), `*.disabled` | Delete in a hygiene PR; do not implement.                                                                                   |
+| Split `RouteService` because it is 80KB                                              | Explicitly parked in [action-items.md](./action-items.md).                                                                  |
 
-Activity Timeline is a separate sports/trip path (`Activity` / `ActivitySchedule`). It overlaps `Schedules` and is **not** hop 3–4.
+Also leftover (keep until a drop migration): `AIInsights`, `SchoolCalendar`, unused `VehiclesViewModel` sample loader (`VehiclesView` excluded from compile).
 
 ---
 
@@ -86,7 +90,7 @@ One hop per session. Call the method, watch Serilog, confirm the Postgres row. T
 | #         | Method                                                     | Proof                                                                                                              |
 | --------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | 1 **now** | `DestinationService.AddSchoolAsync`                        | Students → Add School → `Added school DestinationId=` → `Destinations` has times; GPS if Maps key or typed lat/lng |
-| 2         | Student save / CSV                                         | `DestinationId` + student coordinates                                                                              |
+| 2         | Student save / CSV                                         | `DestinationId` + student coordinates. Unvalidated GPS is stored as null (incomplete list, no 0,0 pin). Archive keeps the row; hard delete needs `StudentDeletionReason`. |
 | 3         | `RouteGenerationCoordinator` / `RouteDeterminationService` | `Route generation completed`                                                                                       |
 | 4         | Assign bus/driver                                          | `Routes.AMVehicleId` and `AMDriverId`                                                                              |
 | 4b        | Pick one write                                             | **Done:** canonical = `Route.AM*` / `PM*`; ignore `RouteAssignments` for Assign Vehicle/Driver                     |

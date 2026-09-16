@@ -39,14 +39,19 @@ The morning of 2026-09-15 the count was 8. Five were closed the same day and are
 | K09 manual QA      | District Map re-smoke after the latest pin-binding change is unchecked                        | **Open.** Needs one VM session.                                                                               |
 | B10 blocking boxes | The open boxes above, plus a parked `AmRouteId`/`PmRouteId` FK cleanup                        | **Open.** Aggregate of the two rows above.                                                                    |
 
-### The 8 deferrals (explained, allowed)
+### Deferrals (explained, allowed)
 
 Listed in `docs/done-catalog.json` with a reason each:
 
-- `IFamilyService` / `IGuardianService` not in DI — Families/Guardians tables exist but have no clerk surface yet.
+- `IFamilyService` / `IGuardianService` not in DI — Families/Guardians tables exist; spec does not require a family graph for routing. Leave alone.
 - `SchoolCalendar` and `AIInsight` DbSets unused — schema kept, no UI.
 - `RouteAssignments` table retained but not written by Assign Vehicle/Driver — Hop 4b decision.
 - `SyncfusionCultureFix` / `StartupOptimizationService` deleted as zero-caller; restore only if needed.
+- Parallel `ActivityService` / `ActivityScheduleService` — trip board is `TripEventService`.
+- `FleetMonitoringService` — live GPS deferred; do not hook a timer.
+- `BusBuddyAIReportingService` — no clerk surface.
+- Empty `DataIntegrityService` / `BusBuddyScheduleDataProvider` / `*.disabled` — hygiene delete later; do not implement.
+- Split `RouteService` for file size — parked in `docs/action-items.md`.
 
 ## Known design debts (self-reported)
 

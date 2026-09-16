@@ -108,8 +108,12 @@ These stay **N/A** or **DEFERRED** so the finish line matches this product:
 
 - Marketing analytics, A/B tests, Power Week load tests
 - Accessibility Phase 2
-- Live fleet GPS
-- Families / Guardians / AIInsights / SchoolCalendar UI
+- Live fleet GPS (do not hook a timer on `FleetMonitoringService`)
+- Families / Guardians family graph (`FamilyService` / `GuardianService` — not in DI; guardian fields live on the student)
+- `ActivityService` / `ActivityScheduleService` as a second trip product (board = `TripEventService`)
+- `BusBuddyAIReportingService` clerk surface
+- Implementing empty `DataIntegrityService` / `BusBuddyScheduleDataProvider` / `*.disabled` (hygiene delete later)
+- Splitting `RouteService` for file size (parked in action-items)
 - `RouteAssignments` as a second write path for hop 4
 - OSM anywhere except `Tools/SfMapTileProbe`
 

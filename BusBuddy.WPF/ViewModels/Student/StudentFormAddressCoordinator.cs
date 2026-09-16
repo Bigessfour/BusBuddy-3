@@ -293,10 +293,10 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         {
             var maps = await mapsGeo.ValidateAndGeocodeAsync(
                 student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-            if (maps.Ok && maps.Latitude.HasValue && maps.Longitude.HasValue)
+            if (maps.Ok && LocationCoordinate.IsValidated(maps.Latitude, maps.Longitude))
             {
-                student.Latitude = (decimal)maps.Latitude.Value;
-                student.Longitude = (decimal)maps.Longitude.Value;
+                student.Latitude = (decimal)maps.Latitude!.Value;
+                student.Longitude = (decimal)maps.Longitude!.Value;
                 if (!string.IsNullOrWhiteSpace(maps.PlaceId))
                 {
                     student.PlaceId = maps.PlaceId;
@@ -313,7 +313,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         {
             var geo = await geocoder.GeocodeAsync(
                 student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-            if (geo.HasValue)
+            if (geo.HasValue && LocationCoordinate.IsValidated(geo.Value.latitude, geo.Value.longitude))
             {
                 student.Latitude = (decimal)geo.Value.latitude;
                 student.Longitude = (decimal)geo.Value.longitude;

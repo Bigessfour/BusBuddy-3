@@ -151,4 +151,13 @@ public static class LocationCoordinate
         return Math.Abs(latitude - UsCentroidLatitude) >= 0.01
             || Math.Abs(longitude - UsCentroidLongitude) >= 0.01;
     }
+
+    /// <summary>
+    /// Persistable pair, or (null, null) when the point cannot be a pin.
+    /// Student homes and schools may save without GPS; catalog stops still require a validated point.
+    /// </summary>
+    public static (decimal? Latitude, decimal? Longitude) ValidatedOrNull(
+        decimal? latitude,
+        decimal? longitude) =>
+        IsValidated(latitude, longitude) ? (latitude, longitude) : (null, null);
 }

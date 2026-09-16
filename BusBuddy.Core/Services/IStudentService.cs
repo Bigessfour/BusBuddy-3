@@ -80,7 +80,7 @@ public interface IStudentService
     /// <summary>
     /// Writes only geocoded home coordinates (and PlaceId) from Address Validation.
     /// Does not run full intake validation — clerks must be able to persist lat/lng on an
-    /// otherwise incomplete roster row.
+    /// otherwise incomplete roster row. Rejects 0,0 and the US centroid. Both-null clears the pin.
     /// </summary>
     Task<Result<bool>> UpdateHomeGeocodeAsync(int studentId, decimal? latitude, decimal? longitude, string? placeId);
 

@@ -69,7 +69,8 @@ public sealed class StudentsMapCoordinator
                 }
 
                 var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                if (result is null)
+                if (result is null
+                    || !LocationCoordinate.IsValidated(result.Value.latitude, result.Value.longitude))
                 {
                     return "Could not locate address";
                 }

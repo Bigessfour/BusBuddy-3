@@ -50,7 +50,7 @@
         "GuardianService",
         "IGuardianService"
       ],
-      "reason": "docs/clerk-path.md: tables exist; FamilyService is not in DI; not the clerk spine. Keep until a Spec-Kit feature or a drop migration."
+      "reason": "Not in DI. specs/students.md does not require a family graph for routing; GuardianName/Phone live on the student. Keep until a drop migration. Do not implement FamilyService/GuardianService."
     },
     {
       "id": "dead-aiinsights",
@@ -74,7 +74,30 @@
       "id": "live-gps",
       "kind": "spec-deferral",
       "symbols": ["IsLiveTrackingEnabled"],
-      "reason": "specs/maps.md and domain contract: live fleet GPS is deferred. Presence of the flag as a product feature is a FAIL; absence is PASS."
+      "reason": "specs/maps.md: live fleet GPS is deferred. Do not enable IsLiveTrackingEnabled. Do not hook a timer on FleetMonitoringService. Presence of the flag as a product feature is a FAIL; absence is PASS."
+    },
+    {
+      "id": "parallel-activity-product",
+      "kind": "spec-deferral",
+      "symbols": [
+        "ActivityService",
+        "IActivityService",
+        "ActivityScheduleService",
+        "IActivityScheduleService"
+      ],
+      "reason": "Parallel trip product. Clerk board is ITripEventService. Do not implement Activity* as the trip path."
+    },
+    {
+      "id": "ai-reporting-no-surface",
+      "kind": "spec-deferral",
+      "symbols": ["BusBuddyAIReportingService"],
+      "reason": "No clerk surface. Leave alone; do not wire a ribbon for it."
+    },
+    {
+      "id": "hygiene-empty-shells",
+      "kind": "hygiene",
+      "symbols": ["DataIntegrityService", "BusBuddyScheduleDataProvider"],
+      "reason": "Empty leftovers (plus any *.disabled). Delete in a hygiene PR; do not implement."
     },
     {
       "id": "osm-probe-only",

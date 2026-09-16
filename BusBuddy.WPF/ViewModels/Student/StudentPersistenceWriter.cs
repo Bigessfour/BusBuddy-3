@@ -115,6 +115,9 @@ public sealed class StudentPersistenceWriter
 
     private async Task<StudentModel> WriteViaDbContextAsync(StudentModel student)
     {
+        // Bypass path skips IStudentService; still drop 0,0 / US-centroid so this is not a pin.
+        StudentRecordNormalizer.StripUnvalidatedHomeCoordinates(student);
+
         if (_isEditMode())
         {
             _context.Students.Update(student);

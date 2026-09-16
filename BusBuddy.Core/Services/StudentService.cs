@@ -465,22 +465,7 @@ public class StudentService : IStudentService
                 student.EnrollmentDate = DateTime.UtcNow.Date;
             }
 
-            if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
-            {
-                try
-                {
-                    var geo = await _geocodingService.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                    if (geo.HasValue)
-                    {
-                        student.Latitude = (decimal)geo.Value.latitude;
-                        student.Longitude = (decimal)geo.Value.longitude;
-                    }
-                }
-                catch (Exception geoEx)
-                {
-                    Logger.Debug(geoEx, "Geocoding failed for student {Name}; proceeding without coordinates", student.StudentName);
-                }
-            }
+            await TryFillHomeGeocodeAsync(student).ConfigureAwait(false);
 
             var (context, dispose) = GetWriteContext();
             try
@@ -526,22 +511,7 @@ public class StudentService : IStudentService
                 return Result.FailureResult<bool>($"Student validation failed: {string.Join(", ", validationErrors)}");
             }
 
-            if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
-            {
-                try
-                {
-                    var geo = await _geocodingService.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                    if (geo.HasValue)
-                    {
-                        student.Latitude = (decimal)geo.Value.latitude;
-                        student.Longitude = (decimal)geo.Value.longitude;
-                    }
-                }
-                catch (Exception geoEx)
-                {
-                    Logger.Debug(geoEx, "Geocoding failed for student {Id}; proceeding without coordinates", student.StudentId);
-                }
-            }
+            await TryFillHomeGeocodeAsync(student).ConfigureAwait(false);
 
             var (context, dispose) = GetWriteContext();
             try
@@ -589,6 +559,14 @@ public class StudentService : IStudentService
         if (studentId <= 0)
         {
             return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Student {studentId}"));
+        }
+
+        // null,null clears the pin. Any other pair must be a real geocoded point — never persist 0,0.
+        if ((latitude is not null || longitude is not null)
+            && !LocationCoordinate.IsValidated(latitude, longitude))
+        {
+            return Result.FailureResult<bool>(
+                "Home coordinates must be validated (not 0,0 or the US centroid).");
         }
 
         var (context, dispose) = GetWriteContext();
@@ -743,6 +721,40 @@ public class StudentService : IStudentService
             entry.ScheduleCount,
             entry.TransferCount,
             entry.RiderExceptionCount);
+    }
+
+    /// <summary>
+    /// Optional geocode on add/update. Only stores a pin Google actually produced. A miss leaves the
+    /// row incomplete instead of writing 0,0.
+    /// </summary>
+    private async Task TryFillHomeGeocodeAsync(Student student)
+    {
+        if (_geocodingService is null || student.HasValidatedHomeCoordinates)
+        {
+            StudentRecordNormalizer.StripUnvalidatedHomeCoordinates(student);
+            return;
+        }
+
+        try
+        {
+            var geo = await _geocodingService
+                .GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip)
+                .ConfigureAwait(false);
+            if (geo is { } g && LocationCoordinate.IsValidated(g.latitude, g.longitude))
+            {
+                student.Latitude = (decimal)g.latitude;
+                student.Longitude = (decimal)g.longitude;
+            }
+        }
+        catch (Exception geoEx)
+        {
+            Logger.Debug(
+                geoEx,
+                "Geocoding failed for student {Name}; proceeding without coordinates",
+                student.StudentName);
+        }
+
+        StudentRecordNormalizer.StripUnvalidatedHomeCoordinates(student);
     }
 
     private static string? TruncateDeletionNotes(string? notes)

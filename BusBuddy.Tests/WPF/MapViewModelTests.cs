@@ -1348,6 +1348,9 @@ public class MapViewModelTests
         Assert.That(plotPolicy, Does.Contain("PinsFromStored"));
         Assert.That(plotPolicy, Does.Contain("HasValidatedHomeCoordinates"));
 
+        var studentMap = XamlViewFile.Read("ViewModels/Student/StudentsMapCoordinator.cs");
+        Assert.That(studentMap, Does.Contain("LocationCoordinate.IsValidated"));
+
         var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
         Assert.That(trail, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));
         Assert.That(trail, Does.Contain("MarkerStops"));

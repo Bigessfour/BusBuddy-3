@@ -12,22 +12,23 @@ namespace BusBuddy.Core.Services;
 /// </summary>
 public class ActivityService : IActivityService
 {
-    private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
+    private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly PdfReportService _pdfReportService;
     private static readonly ILogger Logger = Log.ForContext<ActivityService>();
 
-    public ActivityService(BusBuddyDbContext context, PdfReportService pdfReportService)
+    public ActivityService(IBusBuddyDbContextFactory contextFactory, PdfReportService pdfReportService)
     {
-        _context = context;
+        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _pdfReportService = pdfReportService;
     }
 
     public async Task<IEnumerable<Activity>> GetAllActivitiesAsync()
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving all activities");
-            return await _context.Activities
+            return await context.Activities
             .Include(a => a.AssignedVehicle)
             .Include(a => a.Route)
             .Include(a => a.Driver)
@@ -43,10 +44,11 @@ public class ActivityService : IActivityService
 
     public async Task<Activity?> GetActivityByIdAsync(int id)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activity with ID: {ActivityId}", id);
-            return await _context.Activities
+            return await context.Activities
             .Include(a => a.AssignedVehicle)
             .Include(a => a.Route)
             .Include(a => a.Driver)
@@ -61,12 +63,13 @@ public class ActivityService : IActivityService
 
     public async Task<Activity> CreateActivityAsync(Activity activity)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Creating new activity for date: {ActivityDate}", activity.Date);
 
-            _context.Activities.Add(activity);
-            await _context.SaveChangesAsync();
+            context.Activities.Add(activity);
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully created activity with ID: {ActivityId}", activity.ActivityId);
             return activity;
@@ -80,12 +83,13 @@ public class ActivityService : IActivityService
 
     public async Task<Activity> UpdateActivityAsync(Activity activity)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Updating activity with ID: {ActivityId}", activity.ActivityId);
 
-            _context.Activities.Update(activity);
-            await _context.SaveChangesAsync();
+            context.Activities.Update(activity);
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully updated activity with ID: {ActivityId}", activity.ActivityId);
             return activity;
@@ -99,19 +103,20 @@ public class ActivityService : IActivityService
 
     public async Task<bool> DeleteActivityAsync(int id)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Deleting activity with ID: {ActivityId}", id);
 
-            var activity = await _context.Activities.FindAsync(id);
+            var activity = await context.Activities.FindAsync(id);
             if (activity == null)
             {
                 Logger.Warning("Activity with ID {ActivityId} not found for deletion", id);
                 return false;
             }
 
-            _context.Activities.Remove(activity);
-            await _context.SaveChangesAsync();
+            context.Activities.Remove(activity);
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully deleted activity with ID: {ActivityId}", id);
             return true;
@@ -125,10 +130,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities between {StartDate} and {EndDate}", startDate, endDate);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -146,10 +152,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByRouteAsync(int routeId)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities for route ID: {RouteId}", routeId);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -166,10 +173,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByDriverAsync(int driverId)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities for driver ID: {DriverId}", driverId);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -186,10 +194,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByVehicleAsync(int vehicleId)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities for vehicle ID: {VehicleId}", vehicleId);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -207,10 +216,11 @@ public class ActivityService : IActivityService
     // Additional interface implementations
     public async Task<IEnumerable<Activity>> GetActivitiesByDateAsync(DateTime activityDate)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities for date: {Date}", activityDate);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -227,13 +237,14 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetUpcomingActivitiesAsync(int days = 7)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             var startDate = DateTime.Today;
             var endDate = startDate.AddDays(days);
 
             Logger.Information("Retrieving upcoming activities for next {Days} days", days);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -251,10 +262,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByTypeAsync(string activityType)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities for type: {ActivityType}", activityType);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -271,10 +283,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByStatusAsync(string status)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities with status: {Status}", status);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -291,10 +304,11 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetActivitiesByRequestorAsync(string requestedBy)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities requested by: {RequestedBy}", requestedBy);
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -311,11 +325,12 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> SearchActivitiesAsync(string searchTerm)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Searching activities with term: {SearchTerm}", searchTerm);
 
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -337,11 +352,12 @@ public class ActivityService : IActivityService
 
     public async Task<bool> AssignDriverToActivityAsync(int activityId, int driverId)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Assigning driver {DriverId} to activity {ActivityId}", driverId, activityId);
 
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for driver assignment", activityId);
@@ -351,7 +367,7 @@ public class ActivityService : IActivityService
             activity.DriverId = driverId;
             activity.UpdatedDate = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully assigned driver {DriverId} to activity {ActivityId}", driverId, activityId);
             return true;
@@ -365,11 +381,12 @@ public class ActivityService : IActivityService
 
     public async Task<bool> AssignVehicleToActivityAsync(int activityId, int vehicleId)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Assigning vehicle {VehicleId} to activity {ActivityId}", vehicleId, activityId);
 
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for vehicle assignment", activityId);
@@ -379,7 +396,7 @@ public class ActivityService : IActivityService
             activity.AssignedVehicleId = vehicleId;
             activity.UpdatedDate = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully assigned vehicle {VehicleId} to activity {ActivityId}", vehicleId, activityId);
             return true;
@@ -393,11 +410,12 @@ public class ActivityService : IActivityService
 
     public async Task<bool> UpdateActivityStatusAsync(int activityId, string status)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Updating activity {ActivityId} status to {Status}", activityId, status);
 
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for status update", activityId);
@@ -407,7 +425,7 @@ public class ActivityService : IActivityService
             activity.Status = status;
             activity.UpdatedDate = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully updated activity {ActivityId} status to {Status}", activityId, status);
             return true;
@@ -421,18 +439,19 @@ public class ActivityService : IActivityService
 
     public async Task<List<Driver>> GetAvailableDriversForActivityAsync(DateTime activityDate, TimeSpan startTime, TimeSpan endTime)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Finding available drivers for activity on {Date} from {StartTime} to {EndTime}",
                 activityDate, startTime, endTime);
 
             // Get all active drivers
-            var allDrivers = await _context.Drivers
+            var allDrivers = await context.Drivers
                 .Where(d => d.Status == "Active")
                 .ToListAsync();
 
             // Get IDs of drivers who are already scheduled during this time
-            var busyDriverIds = await _context.Activities
+            var busyDriverIds = await context.Activities
                 .Where(a =>
                     a.Date.Date == activityDate.Date &&
                     a.Status != "Cancelled" &&
@@ -457,18 +476,19 @@ public class ActivityService : IActivityService
 
     public async Task<List<Bus>> GetAvailableVehiclesForActivityAsync(DateTime activityDate, TimeSpan startTime, TimeSpan endTime)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Finding available vehicles for activity on {Date} from {StartTime} to {EndTime}",
                 activityDate, startTime, endTime);
 
             // Get all active buses
-            var allBuses = await _context.Buses
+            var allBuses = await context.Buses
                 .Where(v => v.Status == "Active")
                 .ToListAsync();
 
             // Get IDs of buses that are already scheduled during this time
-            var busyBusIds = await _context.Activities
+            var busyBusIds = await context.Activities
                 .Where(a =>
                     a.Date.Date == activityDate.Date &&
                     a.Status != "Cancelled" &&
@@ -493,13 +513,14 @@ public class ActivityService : IActivityService
 
     public async Task<bool> IsDriverAvailableForActivityAsync(int driverId, DateTime activityDate, TimeSpan startTime, TimeSpan endTime)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Checking if driver {DriverId} is available on {Date} from {StartTime} to {EndTime}",
                 driverId, activityDate, startTime, endTime);
 
             // Check if the driver is scheduled during this time
-            var conflicts = await _context.Activities
+            var conflicts = await context.Activities
                 .Where(a =>
                     a.DriverId == driverId &&
                     a.Date.Date == activityDate.Date &&
@@ -520,13 +541,14 @@ public class ActivityService : IActivityService
 
     public async Task<bool> IsVehicleAvailableForActivityAsync(int vehicleId, DateTime activityDate, TimeSpan startTime, TimeSpan endTime)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Checking if vehicle {VehicleId} is available on {Date} from {StartTime} to {EndTime}",
                 vehicleId, activityDate, startTime, endTime);
 
             // Check if the vehicle is scheduled during this time
-            var conflicts = await _context.Activities
+            var conflicts = await context.Activities
                 .Where(a =>
                     a.AssignedVehicleId == vehicleId &&
                     a.Date.Date == activityDate.Date &&
@@ -553,6 +575,7 @@ public class ActivityService : IActivityService
         int recurrenceInterval,
         List<DayOfWeek>? daysOfWeek = null)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         var activities = new List<Activity>();
 
         try
@@ -586,7 +609,7 @@ public class ActivityService : IActivityService
                         UpdatedDate = DateTime.UtcNow
                     };
 
-                    _context.Activities.Add(newActivity);
+                    context.Activities.Add(newActivity);
                     activities.Add(newActivity);
                 }
 
@@ -600,7 +623,7 @@ public class ActivityService : IActivityService
                 };
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             Logger.Information("Created {Count} recurring activities", activities.Count);
 
             return activities;
@@ -614,12 +637,13 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetRecurringSeriesAsync(int activityId)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving recurring series for activity {ActivityId}", activityId);
 
             // First get the activity to check if it's part of a series
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found", activityId);
@@ -630,7 +654,7 @@ public class ActivityService : IActivityService
             var seriesId = activity.RecurringSeriesId ?? activity.ActivityId;
 
             // Get all activities in the series
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -648,6 +672,7 @@ public class ActivityService : IActivityService
 
     public async Task<bool> UpdateRecurringSeriesAsync(Activity updatedActivity, bool updateAll)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Updating recurring series for activity {ActivityId}, updateAll: {UpdateAll}",
@@ -656,14 +681,14 @@ public class ActivityService : IActivityService
             if (!updateAll)
             {
                 // Update only this instance
-                _context.Activities.Update(updatedActivity);
-                await _context.SaveChangesAsync();
+                context.Activities.Update(updatedActivity);
+                await context.SaveChangesAsync();
                 return true;
             }
 
             // Get all activities in the series
             var seriesId = updatedActivity.RecurringSeriesId ?? updatedActivity.ActivityId;
-            var activitiesInSeries = await _context.Activities
+            var activitiesInSeries = await context.Activities
                 .Where(a => (a.RecurringSeriesId == seriesId || a.ActivityId == seriesId) &&
                            a.Date >= updatedActivity.Date) // Only update this and future occurrences
                 .ToListAsync();
@@ -684,7 +709,7 @@ public class ActivityService : IActivityService
                 activity.UpdatedDate = DateTime.UtcNow;
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully updated {Count} activities in recurring series", activitiesInSeries.Count);
             return true;
@@ -698,13 +723,14 @@ public class ActivityService : IActivityService
 
     public async Task<bool> DeleteRecurringSeriesAsync(int activityId, bool deleteAll)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Deleting recurring series for activity {ActivityId}, deleteAll: {DeleteAll}",
                 activityId, deleteAll);
 
             // First get the activity to check if it's part of a series
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for deletion", activityId);
@@ -714,20 +740,20 @@ public class ActivityService : IActivityService
             if (!deleteAll)
             {
                 // Delete only this instance
-                _context.Activities.Remove(activity);
-                await _context.SaveChangesAsync();
+                context.Activities.Remove(activity);
+                await context.SaveChangesAsync();
                 return true;
             }
 
             // Get all activities in the series
             var seriesId = activity.RecurringSeriesId ?? activity.ActivityId;
-            var activitiesInSeries = await _context.Activities
+            var activitiesInSeries = await context.Activities
                 .Where(a => (a.RecurringSeriesId == seriesId || a.ActivityId == seriesId) &&
                            a.Date >= activity.Date) // Only delete this and future occurrences
                 .ToListAsync();
 
-            _context.Activities.RemoveRange(activitiesInSeries);
-            await _context.SaveChangesAsync();
+            context.Activities.RemoveRange(activitiesInSeries);
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully deleted {Count} activities in recurring series", activitiesInSeries.Count);
             return true;
@@ -741,11 +767,12 @@ public class ActivityService : IActivityService
 
     public async Task<bool> SubmitActivityForApprovalAsync(int activityId)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Submitting activity {ActivityId} for approval", activityId);
 
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for approval submission", activityId);
@@ -755,7 +782,7 @@ public class ActivityService : IActivityService
             activity.Status = "PendingApproval";
             activity.UpdatedDate = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully submitted activity {ActivityId} for approval", activityId);
             return true;
@@ -769,11 +796,12 @@ public class ActivityService : IActivityService
 
     public async Task<bool> ApproveActivityAsync(int activityId, string approvedBy)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Approving activity {ActivityId} by {ApprovedBy}", activityId, approvedBy);
 
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for approval", activityId);
@@ -785,7 +813,7 @@ public class ActivityService : IActivityService
             activity.ApprovalDate = DateTime.UtcNow;
             activity.UpdatedDate = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully approved activity {ActivityId} by {ApprovedBy}", activityId, approvedBy);
             return true;
@@ -799,12 +827,13 @@ public class ActivityService : IActivityService
 
     public async Task<bool> RejectActivityAsync(int activityId, string rejectedBy, string rejectionReason)
     {
+        using var context = _contextFactory.CreateWriteDbContext();
         try
         {
             Logger.Information("Rejecting activity {ActivityId} by {RejectedBy}: {Reason}",
                 activityId, rejectedBy, rejectionReason);
 
-            var activity = await _context.Activities.FindAsync(activityId);
+            var activity = await context.Activities.FindAsync(activityId);
             if (activity == null)
             {
                 Logger.Warning("Activity {ActivityId} not found for rejection", activityId);
@@ -819,7 +848,7 @@ public class ActivityService : IActivityService
                 : $"{activity.Notes}\nRejection reason: {rejectionReason}";
             activity.UpdatedDate = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             Logger.Information("Successfully rejected activity {ActivityId} by {RejectedBy}", activityId, rejectedBy);
             return true;
@@ -833,11 +862,12 @@ public class ActivityService : IActivityService
 
     public async Task<IEnumerable<Activity>> GetPendingApprovalActivitiesAsync()
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving activities pending approval");
 
-            return await _context.Activities
+            return await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -855,13 +885,14 @@ public class ActivityService : IActivityService
 
     public async Task<List<Activity>> DetectScheduleConflictsAsync(Activity newActivity)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Detecting schedule conflicts for activity on {Date} from {StartTime} to {EndTime}",
                 newActivity.Date, newActivity.LeaveTime, newActivity.ReturnTime);
 
             // Check for conflicts with other activities
-            var conflicts = await _context.Activities
+            var conflicts = await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Driver)
                 .Where(a =>
@@ -886,6 +917,7 @@ public class ActivityService : IActivityService
 
     public async Task<List<string>> ValidateActivityAsync(Activity activity)
     {
+        using var context = _contextFactory.CreateDbContext();
         var errors = new List<string>();
 
         try
@@ -943,7 +975,7 @@ public class ActivityService : IActivityService
             // Check if driver exists and is active
             if (activity.DriverId > 0)
             {
-                var driver = await _context.Drivers.FindAsync(activity.DriverId);
+                var driver = await context.Drivers.FindAsync(activity.DriverId);
                 if (driver == null)
                 {
                     errors.Add("Selected driver does not exist");
@@ -959,7 +991,7 @@ public class ActivityService : IActivityService
             // Check if vehicle exists and is active
             if (activity.AssignedVehicleId > 0)
             {
-                var bus = await _context.Buses.FindAsync(activity.AssignedVehicleId);
+                var bus = await context.Buses.FindAsync(activity.AssignedVehicleId);
                 if (bus == null)
                 {
                     errors.Add("Selected bus does not exist");
@@ -984,11 +1016,12 @@ public class ActivityService : IActivityService
 
     public async Task<Dictionary<string, int>> GetActivityStatisticsAsync(DateTime startDate, DateTime endDate)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Generating activity statistics from {StartDate} to {EndDate}", startDate, endDate);
 
-            var activities = await _context.Activities
+            var activities = await context.Activities
                 .Where(a => a.Date >= startDate && a.Date <= endDate)
                 .ToListAsync();
 
@@ -1037,11 +1070,12 @@ public class ActivityService : IActivityService
 
     public async Task<Dictionary<string, double>> GetActivityMetricsAsync(DateTime startDate, DateTime endDate)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Generating activity metrics from {StartDate} to {EndDate}", startDate, endDate);
 
-            var activities = await _context.Activities
+            var activities = await context.Activities
                 .Where(a => a.Date >= startDate && a.Date <= endDate)
                 .ToListAsync();
 
@@ -1090,6 +1124,7 @@ public class ActivityService : IActivityService
 
     public async Task<string> ExportActivitiesToCsvAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             startDate ??= DateTime.Today.AddMonths(-1);
@@ -1097,7 +1132,7 @@ public class ActivityService : IActivityService
 
             Logger.Information("Exporting activities to CSV from {StartDate} to {EndDate}", startDate, endDate);
 
-            var activities = await _context.Activities
+            var activities = await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Driver)
                 .Include(a => a.Route)
@@ -1162,11 +1197,12 @@ public class ActivityService : IActivityService
 
     public async Task<byte[]> GenerateActivityReportAsync(int activityId)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Generating PDF report for activity {ActivityId}", activityId);
 
-            var activity = await _context.Activities
+            var activity = await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -1189,12 +1225,13 @@ public class ActivityService : IActivityService
 
     public async Task<byte[]> GenerateActivityCalendarReportAsync(DateTime startDate, DateTime endDate)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Generating PDF calendar report from {StartDate} to {EndDate}", startDate, endDate);
 
             // Get activities for the specified date range
-            var activities = await _context.Activities
+            var activities = await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Route)
                 .Include(a => a.Driver)
@@ -1215,11 +1252,12 @@ public class ActivityService : IActivityService
 #if DEBUG
     public async Task<Dictionary<string, object>> GetActivityDiagnosticsAsync(int activityId)
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving diagnostics for activity {ActivityId}", activityId);
 
-            var activity = await _context.Activities
+            var activity = await context.Activities
                 .Include(a => a.AssignedVehicle)
                 .Include(a => a.Driver)
                 .Include(a => a.Route)
@@ -1236,7 +1274,7 @@ public class ActivityService : IActivityService
             // Calculate additional metrics
             var duration = (activity.ReturnTime - activity.LeaveTime).TotalHours;
             var daysUntilActivity = (activity.Date.Date - DateTime.Today).TotalDays;
-            var conflictCount = await _context.Activities
+            var conflictCount = await context.Activities
                 .CountAsync(a =>
                     a.ActivityId != activityId &&
                     a.Date.Date == activity.Date.Date &&
@@ -1245,10 +1283,10 @@ public class ActivityService : IActivityService
                      (a.LeaveTime >= activity.LeaveTime && a.ReturnTime <= activity.ReturnTime)) &&
                     (a.DriverId == activity.DriverId || a.AssignedVehicleId == activity.AssignedVehicleId));
 
-            var driverActivityCount = await _context.Activities
+            var driverActivityCount = await context.Activities
                 .CountAsync(a => a.DriverId == activity.DriverId);
 
-            var vehicleActivityCount = await _context.Activities
+            var vehicleActivityCount = await context.Activities
                 .CountAsync(a => a.AssignedVehicleId == activity.AssignedVehicleId);
 
             return new Dictionary<string, object>
@@ -1293,6 +1331,7 @@ public class ActivityService : IActivityService
 
     public async Task<Dictionary<string, object>> GetScheduleOperationMetricsAsync()
     {
+        using var context = _contextFactory.CreateDbContext();
         try
         {
             Logger.Information("Retrieving schedule operation metrics");
@@ -1304,23 +1343,23 @@ public class ActivityService : IActivityService
             var thisMonth = new DateTime(today.Year, today.Month, 1);
             var nextMonth = thisMonth.AddMonths(1);
 
-            var totalCount = await _context.Activities.CountAsync();
-            var todayCount = await _context.Activities.CountAsync(a => a.Date.Date == today);
-            var tomorrowCount = await _context.Activities.CountAsync(a => a.Date.Date == tomorrow);
-            var nextWeekCount = await _context.Activities.CountAsync(a => a.Date >= today && a.Date < nextWeek);
-            var thisMonthCount = await _context.Activities.CountAsync(a => a.Date >= thisMonth && a.Date < nextMonth);
+            var totalCount = await context.Activities.CountAsync();
+            var todayCount = await context.Activities.CountAsync(a => a.Date.Date == today);
+            var tomorrowCount = await context.Activities.CountAsync(a => a.Date.Date == tomorrow);
+            var nextWeekCount = await context.Activities.CountAsync(a => a.Date >= today && a.Date < nextWeek);
+            var thisMonthCount = await context.Activities.CountAsync(a => a.Date >= thisMonth && a.Date < nextMonth);
 
-            var pendingApprovalCount = await _context.Activities.CountAsync(a => a.Status == "PendingApproval");
-            var approvedCount = await _context.Activities.CountAsync(a => a.Status == "Approved");
-            var completedCount = await _context.Activities.CountAsync(a => a.Status == "Completed");
-            var cancelledCount = await _context.Activities.CountAsync(a => a.Status == "Cancelled");
+            var pendingApprovalCount = await context.Activities.CountAsync(a => a.Status == "PendingApproval");
+            var approvedCount = await context.Activities.CountAsync(a => a.Status == "Approved");
+            var completedCount = await context.Activities.CountAsync(a => a.Status == "Completed");
+            var cancelledCount = await context.Activities.CountAsync(a => a.Status == "Cancelled");
 
-            var typeDistribution = await _context.Activities
+            var typeDistribution = await context.Activities
                 .GroupBy(a => a.ActivityType)
                 .Select(g => new { Type = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Type ?? "Unknown", x => x.Count);
 
-            var mostActiveDrivers = await _context.Activities
+            var mostActiveDrivers = await context.Activities
                 .Where(a => a.Date >= thisMonth && a.Date < nextMonth && a.DriverId > 0)
                 .GroupBy(a => a.DriverId)
                 .Select(g => new { DriverId = g.Key, Count = g.Count() })
@@ -1328,7 +1367,7 @@ public class ActivityService : IActivityService
                 .Take(5)
                 .ToListAsync();
 
-            var driverNames = await _context.Drivers
+            var driverNames = await context.Drivers
                 .Where(d => mostActiveDrivers.Select(m => m.DriverId).Contains(d.DriverId))
                 .ToDictionaryAsync(d => d.DriverId, d => d.FullName);
 

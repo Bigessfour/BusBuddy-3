@@ -557,6 +557,111 @@ namespace BusBuddy.Tests.Core
             reloaded.HasValidatedHomeCoordinates.Should().BeTrue();
         }
 
+        [Test]
+        public async Task AddStudentAsync_DropsPlaceholderCoordinates()
+        {
+            var added = await _studentService.AddStudentAsync(new Student
+            {
+                StudentName = "TEST_STUDENT_PLACEHOLDER_PIN",
+                Grade = "4",
+                HomeAddress = "400 Test St",
+                City = "Testville",
+                State = "CO",
+                Zip = "81000",
+                Latitude = 0m,
+                Longitude = 0m,
+                RidesAm = true,
+                RidesPm = false,
+            });
+
+            added.IsSuccess.Should().BeTrue(added.Error);
+            added.Value!.Latitude.Should().BeNull();
+            added.Value.Longitude.Should().BeNull();
+            added.Value.HasValidatedHomeCoordinates.Should().BeFalse();
+            added.Value.IsIntakeIncomplete.Should().BeTrue();
+
+            var fromDb = await _dbContext.Students.AsNoTracking()
+                .FirstAsync(s => s.StudentId == added.Value.StudentId);
+            fromDb.Latitude.Should().BeNull();
+            fromDb.Longitude.Should().BeNull();
+        }
+
+        [Test]
+        public async Task AddStudentAsync_AmOnly_DoesNotForcePm()
+        {
+            var added = await _studentService.AddStudentAsync(new Student
+            {
+                StudentName = "TEST_STUDENT_AM_ONLY",
+                Grade = "4",
+                HomeAddress = "500 Test St",
+                City = "Testville",
+                State = "CO",
+                Zip = "81000",
+                Latitude = 38.0872m,
+                Longitude = -102.6208m,
+                DestinationId = null,
+                RidesAm = true,
+                RidesPm = false,
+            });
+
+            added.IsSuccess.Should().BeTrue(added.Error);
+            added.Value!.RidesAm.Should().BeTrue();
+            added.Value.RidesPm.Should().BeFalse();
+
+            var fromDb = await _dbContext.Students.AsNoTracking()
+                .FirstAsync(s => s.StudentId == added.Value.StudentId);
+            fromDb.RidesAm.Should().BeTrue();
+            fromDb.RidesPm.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task UpdateHomeGeocodeAsync_RejectsPlaceholderAndKeepsExistingPin()
+        {
+            var seeded = await SeedStudentAsync();
+            seeded.Latitude = 38.0872m;
+            seeded.Longitude = -102.6208m;
+            _dbContext.Students.Update(seeded);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var rejected = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId,
+                0m,
+                0m,
+                placeId: null);
+
+            rejected.IsSuccess.Should().BeFalse();
+            rejected.Error.Should().Contain("validated");
+
+            var reloaded = await _dbContext.Students.AsNoTracking()
+                .FirstAsync(s => s.StudentId == seeded.StudentId);
+            reloaded.Latitude.Should().Be(38.0872m);
+            reloaded.Longitude.Should().Be(-102.6208m);
+        }
+
+        [Test]
+        public async Task UpdateHomeGeocodeAsync_BothNullClearsThePin()
+        {
+            var seeded = await SeedStudentAsync();
+            seeded.Latitude = 38.0872m;
+            seeded.Longitude = -102.6208m;
+            _dbContext.Students.Update(seeded);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var cleared = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId,
+                latitude: null,
+                longitude: null,
+                placeId: null);
+
+            cleared.IsSuccess.Should().BeTrue(cleared.Error);
+            var reloaded = await _dbContext.Students.AsNoTracking()
+                .FirstAsync(s => s.StudentId == seeded.StudentId);
+            reloaded.Latitude.Should().BeNull();
+            reloaded.Longitude.Should().BeNull();
+        }
+
         #endregion
     }
 }

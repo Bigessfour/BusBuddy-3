@@ -71,6 +71,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 
 - Live bus GPS / parent “where is the bus” tracking.
 - Parent mobile self-service.
+- A Family / Guardian entity graph (`FamilyService` / `GuardianService`) for routing. Guardian name and phone live on the student.
 - Automatic routing of a new student onto a route without a clerk assignment.
 - Committing transcribed paper rosters to the git repo.
 - AWS, Amplify, or any hosted backend.
@@ -85,7 +86,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 | In-town gathering point             | `IPickupStopService`                                                       |
 | Map plot of homes / schools / stops | `IGeoDataService`, `IMapsGeoService`, `MapViewModel`                       |
 | Address → coordinates               | Google Address Validation + Geocoding                                      |
-| Object mapping (DTO ↔ VM)          | `MappingService` (AutoMapper — not maps)                                   |
+| Object mapping (DTO ↔ VM)           | `MappingService` (AutoMapper — not maps)                                   |
 | Worked roster (local only)          | `artifacts/rosters/AM-Bus-5-Special-Needs-2026-2027.*` — do not commit PII |
 
 ## Pickup rules (do not collapse these)

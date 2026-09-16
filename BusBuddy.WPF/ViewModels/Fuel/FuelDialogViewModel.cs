@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -26,6 +27,7 @@ public partial class FuelDialogViewModel : BaseViewModel
     private readonly IBusService _busService;
     private readonly IFuelService? _fuelService;
     private readonly IFuelLocationCatalog? _locationCatalog;
+    private readonly SemaphoreSlim _lookupGate = new(1, 1);
 
     private FuelModel _fuel;
     private BusModel? _selectedBus;
@@ -89,8 +91,7 @@ public partial class FuelDialogViewModel : BaseViewModel
 
         SyncTextsFromFuel();
         ValidateForm();
-        _ = LoadBusesAsync();
-        _ = LoadFuelLocationsAsync();
+        _ = LoadDialogLookupsAsync();
     }
 
     public FuelModel Fuel
@@ -537,6 +538,22 @@ public partial class FuelDialogViewModel : BaseViewModel
         OnPropertyChanged(nameof(PricePerGallonText));
         OnPropertyChanged(nameof(TotalCostText));
         OnPropertyChanged(nameof(OdometerText));
+    }
+
+    internal Task LoadDialogLookupsForTestAsync() => LoadDialogLookupsAsync();
+
+    private async Task LoadDialogLookupsAsync()
+    {
+        await _lookupGate.WaitAsync().ConfigureAwait(true);
+        try
+        {
+            await LoadBusesAsync().ConfigureAwait(true);
+            await LoadFuelLocationsAsync().ConfigureAwait(true);
+        }
+        finally
+        {
+            _lookupGate.Release();
+        }
     }
 
     private async Task LoadFuelLocationsAsync()

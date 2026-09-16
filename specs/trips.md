@@ -90,23 +90,24 @@ MissingInfo → Draft (Scheduled) → Assigned → Confirmed → Completed
 - Overnight hotel itineraries (`IsOvernightPending` + notes only).
 - Parent self-serve signup.
 - Auto-creating a daily route from a repeated trip.
+- Implementing `ActivityService` / `ActivityScheduleService` as the office trip board.
 - Committing the office CSV or manifests to git.
 
 ## Code anchors
 
-| Spec term             | Existing code                                                                                       |
-| --------------------- | --------------------------------------------------------------------------------------------------- |
-| Trip aggregate        | `BusBuddy.Core.Models.Trips.TripEvent` (extend — do not clone `Route`)                              |
-| Leftover calendars    | `Activity`, `ActivitySchedule` — do not merge into Route                                            |
-| Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination`                     |
-| Bus / driver loan     | `IBusService`, driver services                                                                      |
-| Path                  | `IRoutingService`, `IMapsGeoService`                                                                |
-| Trip ticket PDF       | `PdfReportService.GenerateTripTicket` + `PdfPreviewWindow`                                          |
-| Driver hours          | `TripEvent.DriverHours` (duration + `PrePostTripInspectionHours`)                                   |
-| Clerk purpose catalog | `ITripReasonCatalog` (`user-settings.json` keys `Trip.Purposes` / `Trip.Sports`)                    |
-| Same-day fleet        | `IRouteOptimizationService` + `ITripEventService.SuggestSameDayFleetAsync` (does not set `RouteId`) |
-| Map                   | `MapViewModel` when a trip is selected                                                              |
-| AutoMapper (not maps) | `MappingService`                                                                                    |
+| Spec term             | Existing code                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Trip aggregate        | `BusBuddy.Core.Models.Trips.TripEvent` (extend — do not clone `Route`)                                                |
+| Leftover calendars    | `Activity`, `ActivitySchedule`, `ActivityService` — parallel leftover. Board = `ITripEventService`. Do not implement. |
+| Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination`                                       |
+| Bus / driver loan     | `IBusService`, driver services                                                                                        |
+| Path                  | `IRoutingService`, `IMapsGeoService`                                                                                  |
+| Trip ticket PDF       | `PdfReportService.GenerateTripTicket` + `PdfPreviewWindow`                                                            |
+| Driver hours          | `TripEvent.DriverHours` (duration + `PrePostTripInspectionHours`)                                                     |
+| Clerk purpose catalog | `ITripReasonCatalog` (`user-settings.json` keys `Trip.Purposes` / `Trip.Sports`)                                      |
+| Same-day fleet        | `IRouteOptimizationService` + `ITripEventService.SuggestSameDayFleetAsync` (does not set `RouteId`)                   |
+| Map                   | `MapViewModel` when a trip is selected                                                                                |
+| AutoMapper (not maps) | `MappingService`                                                                                                      |
 
 ## Worked examples
 

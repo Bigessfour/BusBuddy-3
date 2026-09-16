@@ -13,6 +13,21 @@ public static class StudentRecordNormalizer
         NormalizeDateTimes(student);
         NormalizeSchoolYear(student);
         EnforceSpecialNeedsHomePickup(student);
+        StripUnvalidatedHomeCoordinates(student);
+        // RidesAm / RidesPm stay as stated. Do not copy one onto the other or infer from route names
+        // (specs/students.md: AM and PM eligibility are independent; eligibility is not assignment).
+    }
+
+    /// <summary>
+    /// specs/students.md + specs/maps.md: an unvalidated home saves as incomplete, never as 0,0
+    /// or the US centroid. Those placeholders are not pins.
+    /// </summary>
+    public static void StripUnvalidatedHomeCoordinates(Student student)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        var (lat, lon) = LocationCoordinate.ValidatedOrNull(student.Latitude, student.Longitude);
+        student.Latitude = lat;
+        student.Longitude = lon;
     }
 
     /// <summary>

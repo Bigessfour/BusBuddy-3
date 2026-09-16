@@ -11,13 +11,12 @@ namespace BusBuddy.Core.Services
 {
     public class GuardianService : IGuardianService
     {
-        // Use the canonical context type
-        private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
+        private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly ILogger _logger;
 
-        public GuardianService(BusBuddyDbContext context, ILogger logger)
+        public GuardianService(IBusBuddyDbContextFactory contextFactory, ILogger logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -25,7 +24,8 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                return await _context.Guardians
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Guardians
                     .Include(g => g.Family)
                     .FirstOrDefaultAsync(g => g.GuardianId == guardianId);
             }
@@ -40,7 +40,8 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                return await _context.Guardians
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Guardians
                     .Include(g => g.Family)
                     .ToListAsync();
             }
@@ -53,16 +54,17 @@ namespace BusBuddy.Core.Services
 
         public async Task<Guardian> AddGuardianAsync(Guardian guardian)
         {
-            var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
+            using var context = _contextFactory.CreateWriteDbContext();
+            var useTxn = context.Database?.ProviderName is not null && !context.Database.IsInMemory();
             Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             try
             {
                 if (useTxn)
                 {
-                    transaction = await _context.Database!.BeginTransactionAsync();
+                    transaction = await context.Database!.BeginTransactionAsync();
                 }
-                _context.Guardians.Add(guardian);
-                await _context.SaveChangesAsync();
+                context.Guardians.Add(guardian);
+                await context.SaveChangesAsync();
                 if (transaction is not null)
                 {
                     await transaction.CommitAsync();
@@ -82,22 +84,23 @@ namespace BusBuddy.Core.Services
 
         public async Task<Guardian?> UpdateGuardianAsync(Guardian guardian)
         {
-            var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
+            using var context = _contextFactory.CreateWriteDbContext();
+            var useTxn = context.Database?.ProviderName is not null && !context.Database.IsInMemory();
             Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             try
             {
                 if (useTxn)
                 {
-                    transaction = await _context.Database!.BeginTransactionAsync();
+                    transaction = await context.Database!.BeginTransactionAsync();
                 }
-                var existing = await _context.Guardians.FindAsync(guardian.GuardianId);
+                var existing = await context.Guardians.FindAsync(guardian.GuardianId);
                 if (existing == null)
                 {
                     return null;
                 }
 
-                _context.Entry(existing).CurrentValues.SetValues(guardian);
-                await _context.SaveChangesAsync();
+                context.Entry(existing).CurrentValues.SetValues(guardian);
+                await context.SaveChangesAsync();
                 if (transaction is not null)
                 {
                     await transaction.CommitAsync();
@@ -117,22 +120,23 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> DeleteGuardianAsync(int guardianId)
         {
-            var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
+            using var context = _contextFactory.CreateWriteDbContext();
+            var useTxn = context.Database?.ProviderName is not null && !context.Database.IsInMemory();
             Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             try
             {
                 if (useTxn)
                 {
-                    transaction = await _context.Database!.BeginTransactionAsync();
+                    transaction = await context.Database!.BeginTransactionAsync();
                 }
-                var guardian = await _context.Guardians.FindAsync(guardianId);
+                var guardian = await context.Guardians.FindAsync(guardianId);
                 if (guardian == null)
                 {
                     return false;
                 }
 
-                _context.Guardians.Remove(guardian);
-                await _context.SaveChangesAsync();
+                context.Guardians.Remove(guardian);
+                await context.SaveChangesAsync();
                 if (transaction is not null)
                 {
                     await transaction.CommitAsync();
@@ -154,7 +158,8 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var guardians = await _context.Guardians
+                using var context = _contextFactory.CreateDbContext();
+                var guardians = await context.Guardians
                     .Include(g => g.Family!)
                         .ThenInclude(f => f.Students)
                     .Where(g => g.Family != null && g.Family.Students.Any(s => s.StudentId == studentId))

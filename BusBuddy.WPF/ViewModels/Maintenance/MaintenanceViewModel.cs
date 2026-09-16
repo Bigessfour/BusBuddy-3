@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading;
 using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -17,6 +18,8 @@ public class MaintenanceViewModel : BaseViewModel
     private static readonly new ILogger Logger = Log.ForContext<MaintenanceViewModel>();
     private readonly IMaintenanceService _maintenanceService;
     private readonly IBusService _busService;
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
+    private int _loadVersion;
     private MaintenanceModel? _selectedRecord;
 
     public MaintenanceViewModel(IMaintenanceService maintenanceService, IBusService busService)
@@ -57,13 +60,30 @@ public class MaintenanceViewModel : BaseViewModel
 
     private async Task LoadAsync()
     {
+        var version = Interlocked.Increment(ref _loadVersion);
+        await _loadGate.WaitAsync().ConfigureAwait(true);
         var stopwatch = Stopwatch.StartNew();
         try
         {
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             StatusMessage = "Loading maintenance records...";
             Logger.Information("Loading maintenance records and vehicles");
             var records = await _maintenanceService.GetAllMaintenanceRecordsAsync();
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             var buses = await _busService.GetAllBusesAsync();
+            if (version != _loadVersion)
+            {
+                return;
+            }
+
             Records.Clear();
             foreach (var record in records)
             {
@@ -87,6 +107,10 @@ public class MaintenanceViewModel : BaseViewModel
             stopwatch.Stop();
             DatabaseUserMessage.LogFailure(Logger, ex, "Failed to load maintenance records after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             StatusMessage = DatabaseUserMessage.ForOperation(ex, "load maintenance records");
+        }
+        finally
+        {
+            _loadGate.Release();
         }
     }
 

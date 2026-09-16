@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Serilog;
-using BusBuddy.Core.Data.UnitOfWork;
+using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.GoogleMaps;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace BusBuddy.Core.Services
 {
@@ -15,14 +16,16 @@ namespace BusBuddy.Core.Services
     /// </summary>
     public class AddressValidationService : IAddressValidationService
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapsGeoService? _mapsGeo;
+        private readonly IBusBuddyDbContextFactory? _contextFactory;
         private static readonly ILogger Logger = Log.ForContext<AddressValidationService>();
 
-        public AddressValidationService(IUnitOfWork unitOfWork, IMapsGeoService? mapsGeo = null)
+        public AddressValidationService(
+            IMapsGeoService? mapsGeo = null,
+            IBusBuddyDbContextFactory? contextFactory = null)
         {
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _mapsGeo = mapsGeo;
+            _contextFactory = contextFactory;
         }
 
         /// <inheritdoc />
@@ -74,8 +77,13 @@ namespace BusBuddy.Core.Services
                 // For this implementation, we'll fetch all routes from the database
                 // and create mock bus stops based on the routes
 
-                // Get all routes from the database
-                var routes = await _unitOfWork.Routes.GetAllAsync();
+                if (_contextFactory is null)
+                {
+                    return new List<string>();
+                }
+
+                using var context = _contextFactory.CreateDbContext();
+                var routes = await context.Routes.AsNoTracking().ToListAsync();
 
                 // Extract all unique bus stops from routes
                 // Since our Route model doesn't have explicit bus stops, we'll create simulated ones

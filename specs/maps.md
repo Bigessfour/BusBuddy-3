@@ -103,7 +103,7 @@ Distance and duration from Google Routes on the current published waypoint list 
 
 ## Out of scope
 
-- Live fleet GPS, driver phone breadcrumbs, parent “where is the bus.”
+- Live fleet GPS, driver phone breadcrumbs, parent “where is the bus.” Do not hook a timer on `FleetMonitoringService` to simulate pings.
 - Turn-by-turn in-cab navigation app (waypoints may later feed one; not this WPF surface).
 - Editing geometry by dragging the polyline. Change the stop list, then refresh.
 - A second basemap vendor as source of truth.

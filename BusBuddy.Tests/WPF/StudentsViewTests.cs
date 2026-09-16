@@ -38,6 +38,10 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Not.Contain("DisplayMemberPath=\"RouteName\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Latitude\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Longitude\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"RidesAm\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"RidesPm\""));
+        Assert.That(xaml, Does.Contain("Mistake, Moved, or Not attending"));
+        Assert.That(xaml, Does.Contain("ShowIncompleteRecordsCommand"));
     }
 
     [Test]

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using BusBuddy.Core.Models;
@@ -22,6 +23,8 @@ namespace BusBuddy.WPF.ViewModels.Fuel
         private readonly IBusService _busService;
         private readonly IFuelLocationCatalog? _fuelLocationCatalog;
         private readonly IUserSettingsService? _userSettings;
+        private readonly SemaphoreSlim _loadGate = new(1, 1);
+        private int _loadVersion;
 
         private ObservableCollection<FuelModel> _fuelRecords = new();
         public ObservableCollection<FuelModel> FuelRecords
@@ -96,31 +99,52 @@ namespace BusBuddy.WPF.ViewModels.Fuel
             }
         }
 
+        internal Task ReloadFuelRecordsAsync() => LoadFuelRecordsAsync();
+
         private async Task LoadFuelRecordsAsync()
         {
-            await LoadDataAsync(async () =>
+            var version = Interlocked.Increment(ref _loadVersion);
+            await _loadGate.WaitAsync().ConfigureAwait(true);
+            try
             {
-                var correlationId = Guid.NewGuid().ToString("N")[..8];
-
-                using (LogContext.PushProperty("CorrelationId", correlationId))
-                using (LogContext.PushProperty("ViewModelType", nameof(FuelManagementViewModel)))
-                using (LogContext.PushProperty("OperationType", "LoadFuelRecords"))
+                if (version != _loadVersion)
                 {
-                    Logger.Information("Loading fuel records");
-
-                    FuelRecords.Clear();
-                    var records = await _fuelService.GetAllFuelRecordsAsync();
-                    foreach (var record in records)
-                    {
-                        FuelRecords.Add(record);
-                    }
-
-                    CalculateTrends();
-
-                    Logger.Information("Loaded {RecordCount} fuel records", FuelRecords.Count);
-                    StatusMessage = $"Loaded {FuelRecords.Count} fuel records";
+                    return;
                 }
-            });
+
+                await LoadDataAsync(async () =>
+                {
+                    var correlationId = Guid.NewGuid().ToString("N")[..8];
+
+                    using (LogContext.PushProperty("CorrelationId", correlationId))
+                    using (LogContext.PushProperty("ViewModelType", nameof(FuelManagementViewModel)))
+                    using (LogContext.PushProperty("OperationType", "LoadFuelRecords"))
+                    {
+                        Logger.Information("Loading fuel records");
+
+                        FuelRecords.Clear();
+                        var records = await _fuelService.GetAllFuelRecordsAsync();
+                        if (version != _loadVersion)
+                        {
+                            return;
+                        }
+
+                        foreach (var record in records)
+                        {
+                            FuelRecords.Add(record);
+                        }
+
+                        CalculateTrends();
+
+                        Logger.Information("Loaded {RecordCount} fuel records", FuelRecords.Count);
+                        StatusMessage = $"Loaded {FuelRecords.Count} fuel records";
+                    }
+                });
+            }
+            finally
+            {
+                _loadGate.Release();
+            }
         }
 
         private async Task AddFuelRecordAsync()

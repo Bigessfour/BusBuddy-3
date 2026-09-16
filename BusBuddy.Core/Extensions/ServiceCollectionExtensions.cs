@@ -163,8 +163,8 @@ namespace BusBuddy.Core.Extensions
 
             services.AddScoped<IAddressValidationService>(sp =>
                 new AddressValidationService(
-                    sp.GetRequiredService<IUnitOfWork>(),
-                    sp.GetService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>()));
+                    sp.GetService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>(),
+                    sp.GetRequiredService<IBusBuddyDbContextFactory>()));
             services.AddScoped<IActivityLogService>(sp =>
                 new ActivityLogService(
                     sp.GetRequiredService<IBusBuddyDbContextFactory>(),

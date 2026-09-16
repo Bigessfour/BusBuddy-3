@@ -42,7 +42,7 @@ Do in this order so parked work is not forgotten and is not started out of seque
 | 1     | District Map VM re-smoke, including **Move to selected route** | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                            |
 | 2     | `AMRoute` / `PMRoute` name-string drop                         | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop.    |
 | —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                           |
-| —     | Split `RouteService` / `RouteAssignmentViewModel`              | File-size debt. Dedicated pass only. Do not casually split.                                                                                                       |
+| —     | Split `RouteService` / `RouteAssignmentViewModel`              | File-size debt (~80KB). Dedicated pass only. Do not casually split.                                                                                               |
 | —     | `StudentsBulkRouteCoordinator`                                 | Parked. Uses `SetSlot` + `UpdateStudentAsync`. Eventually call `IRouteService.AssignStudentToRouteAsync` so a shared name cannot null a known key. Not this pass. |
 
 - [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
@@ -52,6 +52,19 @@ Optional:
 - [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
 
 Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
+
+### Leave alone (not next work)
+
+No checkboxes. Do not implement, register, or “finish” these because hops 1–6 are proved.
+
+| Leave alone                                                                          | Why                                                                                                   |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `FamilyService` / `GuardianService`                                                  | Not in DI. Spec does not require a family graph for routing. Guardian name/phone live on the student. |
+| `ActivityService` / `ActivityScheduleService`                                        | Parallel trip product. Board = `TripEventService`.                                                    |
+| `FleetMonitoringService`                                                             | Live GPS deferred. Do not hook a timer.                                                               |
+| `BusBuddyAIReportingService`                                                         | No clerk surface.                                                                                     |
+| `DataIntegrityService` (empty), `BusBuddyScheduleDataProvider` (empty), `*.disabled` | Delete in a hygiene PR; do not implement.                                                             |
+| Split `RouteService` because it is 80KB                                              | Explicitly parked in the leftover queue above.                                                        |
 
 ### Maps coupling checklist (harden / test)
 
@@ -112,6 +125,22 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-09-16 — One context per operation
+
+- **Core leftovers:** `ActivityService`, `FamilyService`, and `GuardianService` take `IBusBuddyDbContextFactory` and dispose a context per call (same as Fuel/ActivityLog). Family/Guardian stay out of DI.
+- **UoW callers:** `ActivityScheduleService` is factory-only. `AddressValidationService` dropped `IUnitOfWork`; `FindNearbyBusStopsAsync` reads `Routes` through the factory. `UnitOfWork` type remains registered.
+- **Hop-6 UI:** Fuel list/chart reload and Maintenance grid refresh are gated with `SemaphoreSlim` (stale loads dropped). Fuel add/edit dialog loads buses, then locations, not both at once.
+- **Left parked:** Student form still holds one context for the form lifetime (`StudentFormBootstrap`).
+- **Evidence:** UTM guest testhost **11 passed, 0 failed** (`ActivityServiceTests` + `FamilyServiceTests` + `GuardianServiceTests` + `GapsCoverageTests.AddressValidation` + `FuelManagementViewModelTests` + `FuelDialogViewModelTests` + `MaintenanceViewModelTests` + `ActivityTimelineViewModelTests`).
+
+### 2026-09-16 — Student cheap guards (specs/students.md)
+
+- **RidesAm / RidesPm:** stay independent on persist. Add/update does not copy one flag onto the other.
+- **Archive vs delete:** unchanged — `ArchiveStudentAsync` is the keep-the-row path; `DeleteStudentAsync` still requires `StudentDeletionReason`.
+- **Unvalidated address:** `StudentRecordNormalizer` drops 0,0 and the US centroid before save (same idea as school GPS). `UpdateHomeGeocodeAsync` rejects those placeholders so they cannot overwrite a real pin. Form/map geocode also fail closed. Incomplete roster remains `GetStudentsWithMissingInfoAsync`.
+- **Invariant:** "MUST allow AM eligibility, PM eligibility, both, or neither, independently." "MUST NOT delete a student by accident." "Map plots a student only after lat/lng exist. Unvalidated addresses show as incomplete, not as pins at 0,0."
+- **Evidence:** UTM guest testhost **53 passed, 0 failed** (`StudentArchiveAndEligibilityTests` + `StudentRecordNormalizerTests` + `LocationContractTests` + `StudentsViewTests.StudentsViewXaml_WiresClerkWriteCommands` + `StudentServiceTests.AddStudentAsync_ValidStudent` + `MapViewModel_RequiresMapsGeoDistrictDepotAndDrivePathRefresherInCore`). Placeholder coords drop on add; AM-only does not force PM; `UpdateHomeGeocodeAsync` rejects 0,0 without wiping a real pin.
 
 ### 2026-09-16 — Clerk write errors share Result sentences
 

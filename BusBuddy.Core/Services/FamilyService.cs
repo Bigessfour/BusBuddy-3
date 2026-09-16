@@ -11,34 +11,25 @@ namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Service for managing Family entities with async CRUD operations.
-    /// Uses DI for BusBuddyDbContext and Serilog ILogger.
+    /// One context per call via <see cref="IBusBuddyDbContextFactory"/>.
     /// </summary>
     public class FamilyService : IFamilyService
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly ILogger _logger;
 
-        /// <summary>
-        /// Constructs FamilyService with injected DbContext and logger.
-        /// </summary>
-        /// <param name="context">Injected BusBuddyDbContext</param>
-        /// <param name="logger">Injected Serilog ILogger</param>
-        public FamilyService(BusBuddyDbContext context, ILogger logger)
+        public FamilyService(IBusBuddyDbContextFactory contextFactory, ILogger logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Gets a Family by its ID, including Students and Guardians.
-        /// </summary>
-        /// <param name="familyId">Family ID</param>
-        /// <returns>Family or null</returns>
         public async Task<Family?> GetFamilyAsync(int familyId)
         {
             try
             {
-                return await _context.Families
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Families
                     .Include(f => f.Students)
                     .Include(f => f.Guardians)
                     .FirstOrDefaultAsync(f => f.FamilyId == familyId);
@@ -50,15 +41,12 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        /// <summary>
-        /// Gets all Families, including Students and Guardians.
-        /// </summary>
-        /// <returns>List of Families</returns>
         public async Task<List<Family>> GetAllFamiliesAsync()
         {
             try
             {
-                return await _context.Families
+                using var context = _contextFactory.CreateDbContext();
+                return await context.Families
                     .Include(f => f.Students)
                     .Include(f => f.Guardians)
                     .ToListAsync();
@@ -70,25 +58,21 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        /// <summary>
-        /// Adds a new Family and commits transaction.
-        /// </summary>
-        /// <param name="family">Family entity</param>
-        /// <returns>Added Family</returns>
         public async Task<Family> AddFamilyAsync(Family family)
         {
-            var db = _context.Database;
+            using var context = _contextFactory.CreateWriteDbContext();
+            var db = context.Database;
             var useTxn = db is not null && db.ProviderName is not null && !db.IsInMemory();
             IDbContextTransaction? transaction = null;
             try
             {
                 if (useTxn)
                 {
-                    transaction = await _context.Database.BeginTransactionAsync();
+                    transaction = await context.Database.BeginTransactionAsync();
                 }
 
-                _context.Families.Add(family);
-                await _context.SaveChangesAsync();
+                context.Families.Add(family);
+                await context.SaveChangesAsync();
 
                 if (transaction is not null)
                 {
@@ -107,31 +91,27 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        /// <summary>
-        /// Updates an existing Family and commits transaction.
-        /// </summary>
-        /// <param name="family">Family entity</param>
-        /// <returns>Updated Family or null</returns>
         public async Task<Family?> UpdateFamilyAsync(Family family)
         {
-            var db = _context.Database;
+            using var context = _contextFactory.CreateWriteDbContext();
+            var db = context.Database;
             var useTxn = db is not null && db.ProviderName is not null && !db.IsInMemory();
             IDbContextTransaction? transaction = null;
             try
             {
                 if (useTxn)
                 {
-                    transaction = await _context.Database.BeginTransactionAsync();
+                    transaction = await context.Database.BeginTransactionAsync();
                 }
 
-                var existing = await _context.Families.FindAsync(family.FamilyId);
+                var existing = await context.Families.FindAsync(family.FamilyId);
                 if (existing == null)
                 {
                     return null;
                 }
 
-                _context.Entry(existing).CurrentValues.SetValues(family);
-                await _context.SaveChangesAsync();
+                context.Entry(existing).CurrentValues.SetValues(family);
+                await context.SaveChangesAsync();
 
                 if (transaction is not null)
                 {
@@ -150,31 +130,27 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        /// <summary>
-        /// Deletes a Family by ID and commits transaction.
-        /// </summary>
-        /// <param name="familyId">Family ID</param>
-        /// <returns>True if deleted, false if not found</returns>
         public async Task<bool> DeleteFamilyAsync(int familyId)
         {
-            var db = _context.Database;
+            using var context = _contextFactory.CreateWriteDbContext();
+            var db = context.Database;
             var useTxn = db is not null && db.ProviderName is not null && !db.IsInMemory();
             IDbContextTransaction? transaction = null;
             try
             {
                 if (useTxn)
                 {
-                    transaction = await _context.Database.BeginTransactionAsync();
+                    transaction = await context.Database.BeginTransactionAsync();
                 }
 
-                var family = await _context.Families.FindAsync(familyId);
+                var family = await context.Families.FindAsync(familyId);
                 if (family == null)
                 {
                     return false;
                 }
 
-                _context.Families.Remove(family);
-                await _context.SaveChangesAsync();
+                context.Families.Remove(family);
+                await context.SaveChangesAsync();
 
                 if (transaction is not null)
                 {

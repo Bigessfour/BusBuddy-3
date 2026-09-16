@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using BusBuddy.Core.Data;
 using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
@@ -14,19 +15,29 @@ namespace BusBuddy.Tests.Core
     [Category("Unit")]
     public class FamilyServiceTests : IDisposable
     {
+        private DbContextOptions<BusBuddyDbContext> _options = null!;
         private BusBuddyDbContext _dbContext = null!;
         private Mock<ILogger> _mockLogger = null!;
         private FamilyService _service = null!;
 
+        private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
+        {
+            private readonly DbContextOptions<BusBuddyDbContext> _options;
+            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
+            public BusBuddyDbContext CreateDbContext() => new(_options);
+            public BusBuddyDbContext CreateWriteDbContext() => new(_options);
+        }
+
         [SetUp]
         public void Setup()
         {
-            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+            BusBuddyDbContext.SkipGlobalSeedData = true;
+            _options = new DbContextOptionsBuilder<BusBuddyDbContext>()
                 .UseInMemoryDatabase($"FamilyDb_{Guid.NewGuid()}")
                 .Options;
-            _dbContext = new BusBuddyDbContext(options);
+            _dbContext = new BusBuddyDbContext(_options);
             _mockLogger = new Mock<ILogger>();
-            _service = new FamilyService(_dbContext, _mockLogger.Object);
+            _service = new FamilyService(new TestDbContextFactory(_options), _mockLogger.Object);
         }
 
         [Test]
