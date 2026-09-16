@@ -25,7 +25,7 @@ internal sealed class MapDistrictLayers
     private readonly IStudentService? _students;
     private readonly IGeocodingService? _geocoding;
     private readonly IServiceScopeFactory? _scopes;
-    private readonly Action<double, double, IEnumerable<string>?, string?> _plot;
+    private readonly MapPinPlot _plot;
     private readonly Func<(double Lat, double Lon, string Name)?>? _depot;
 
     public MapDistrictLayers(
@@ -34,7 +34,7 @@ internal sealed class MapDistrictLayers
         IStudentService? students,
         IGeocodingService? geocoding,
         IServiceScopeFactory? scopes,
-        Action<double, double, IEnumerable<string>?, string?> plot,
+        MapPinPlot plot,
         Func<(double Lat, double Lon, string Name)?>? depot = null)
     {
         _pickups = pickups;
@@ -131,7 +131,7 @@ internal sealed class MapDistrictLayers
             foreach (var stop in stops.Where(s => s.HasValidatedCoordinates).OrderBy(s => s.StopOrder))
             {
                 var name = string.IsNullOrWhiteSpace(stop.StopName) ? $"Stop {stop.StopOrder}" : stop.StopName;
-                _plot((double)stop.Latitude!.Value, (double)stop.Longitude!.Value, null, MapMarkerLabels.ForRouteStop(name));
+                _plot((double)stop.Latitude!.Value, (double)stop.Longitude!.Value, null, MapMarkerLabels.ForRouteStop(name), null);
                 plotted++;
             }
         }
@@ -226,7 +226,7 @@ internal sealed class MapDistrictLayers
         var plotted = 0;
         foreach (var school in schools.Where(s => s.HasValidatedCoordinates))
         {
-            _plot((double)school.Latitude!, (double)school.Longitude!, null, MapMarkerLabels.ForSchool(school.Name));
+            _plot((double)school.Latitude!, (double)school.Longitude!, null, MapMarkerLabels.ForSchool(school.Name), null);
             plotted++;
         }
 
@@ -238,7 +238,7 @@ internal sealed class MapDistrictLayers
         var plotted = 0;
         foreach (var stop in catalog.Values.Where(s => s.HasValidatedCoordinates))
         {
-            _plot((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name));
+            _plot((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name), null);
             plotted++;
         }
 
@@ -252,7 +252,7 @@ internal sealed class MapDistrictLayers
             return 0;
         }
 
-        _plot(depot.Lat, depot.Lon, null, MapMarkerLabels.ForDepot(depot.Name));
+        _plot(depot.Lat, depot.Lon, null, MapMarkerLabels.ForDepot(depot.Name), null);
         return 1;
     }
 

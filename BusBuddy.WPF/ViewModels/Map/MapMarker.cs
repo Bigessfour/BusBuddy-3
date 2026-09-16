@@ -142,6 +142,9 @@ public sealed class MapMarker : INotifyPropertyChanged
 
     public List<string> StudentNames { get; } = new();
 
+    /// <summary>Roster keys at this pin so the clerk override can call Core without matching names.</summary>
+    public List<int> StudentIds { get; } = new();
+
     public void ApplyZoomVisuals(int zoomLevel)
     {
         MarkerSize = MapMarkerLabels.ScaledMarkerSize(Kind, zoomLevel);
@@ -186,8 +189,13 @@ public sealed class MapMarker : INotifyPropertyChanged
     /// Adds a student name to this marker. Only unlabeled <see cref="MapMarkerLabels.Kind.Student"/>
     /// markers rewrite <see cref="Label"/> for aggregation; typed kinds keep their prefix label.
     /// </summary>
-    public void AddStudent(string name)
+    public void AddStudent(string name, int? studentId = null)
     {
+        if (studentId is > 0 && !StudentIds.Contains(studentId.Value))
+        {
+            StudentIds.Add(studentId.Value);
+        }
+
         if (string.IsNullOrWhiteSpace(name))
         {
             return;

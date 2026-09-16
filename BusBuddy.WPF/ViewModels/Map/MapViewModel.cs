@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using Serilog;
@@ -47,12 +48,15 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private ObservableCollection<RouteModel> _routes = new();
         private RouteModel? _selectedRoute;
+        private MapMarker? _selectedMarker;
         private bool _isMapLoading;
         private bool _eligibilityPdfBusy;
+        private bool _clerkOverrideBusy;
         private string _statusMessage = "Ready";
         private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
         private byte[]? _lastGeneratedEligibilityPdf;
         private IAsyncRelayCommand _generateEligibilityPdfRelay = null!;
+        private IAsyncRelayCommand _applyClerkOverrideRelay = null!;
         /// <summary>Lamar/Wiley clerk default per <c>specs/maps.md</c> — not the US-centroid overview.</summary>
         private const double DistrictDefaultLatitude = 38.0872;
         private const double DistrictDefaultLongitude = -102.6208;
@@ -113,7 +117,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 studentService,
                 geocodingService,
                 scopeFactory,
-                (lat, lon, names, label) => PlotStop(lat, lon, names, label),
+                (lat, lon, names, label, ids) => PlotStop(lat, lon, names, label, studentIds: ids),
                 ResolveDepotMarker);
 
             LoadRoutesCommand = new AsyncRelayCommand(LoadRoutesAsync);
@@ -141,6 +145,10 @@ namespace BusBuddy.WPF.ViewModels.Map
             // Add marker (stop) plotting command. Accepts parameter forms documented in AddMarkerFromParam.
             AddMarkerCommand = new BusBuddy.WPF.Commands.RelayCommand(p => AddMarkerFromParam(p));
             BulkPlotEligibleStudentsCommand = new AsyncRelayCommand(BulkPlotEligibleStudentsAsync);
+            _applyClerkOverrideRelay = new AsyncRelayCommand(
+                ApplyClerkOverrideFromMapAsync,
+                CanApplyClerkOverrideFromMap);
+            ApplyClerkOverrideCommand = _applyClerkOverrideRelay;
 
             MapMarkers = new ObservableCollection<MapMarker>();
             MapMarkers.CollectionChanged += (_, _) => NotifyMapMarkersChanged();
@@ -201,7 +209,7 @@ namespace BusBuddy.WPF.ViewModels.Map
 
             StatusMessage =
                 $"Draft proposals: {result.Proposals.Count} route(s), {result.AssignedStudentCount} assigned, " +
-                $"{result.UnclusteredStudentIds.Count} unclustered — select a Draft-* route to review / override";
+                $"{result.UnclusteredStudentIds.Count} unclustered — select a student pin and a Draft-* route, then Move to selected route";
 
             Logger.Information(
                 "Map status updated for generation OpId={OpId} Drafts={DraftCount}",
@@ -371,6 +379,13 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
+        /// <summary>Pin the clerk last clicked on the District Map (student override source).</summary>
+        public MapMarker? SelectedMarker
+        {
+            get => _selectedMarker;
+            private set => SetProperty(ref _selectedMarker, value);
+        }
+
         #endregion
 
         #region Commands
@@ -390,7 +405,8 @@ namespace BusBuddy.WPF.ViewModels.Map
         public ICommand AddMarkerCommand { get; private set; } = null!;
         public ICommand PrintRouteMapsCommand { get; private set; } = null!;
         public ICommand GenerateEligibilityRoutePdfCommand { get; private set; } = null!; // New command to trigger eligibility PDF generation
-        public ICommand BulkPlotEligibleStudentsCommand { get; private set; } = null!; // New: auto geocode + plot eligible rural students
+        public ICommand BulkPlotEligibleStudentsCommand { get; private set; } = null!;
+        public ICommand ApplyClerkOverrideCommand { get; private set; } = null!;
 
         #endregion
 
@@ -430,6 +446,7 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private void OnSelectedRouteChanged()
         {
+            NotifyClerkOverrideCanExecute();
             try
             {
                 if (SelectedRoute is null)
@@ -457,6 +474,139 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             _selectedRoute = route;
             OnPropertyChanged(nameof(SelectedRoute));
+            NotifyClerkOverrideCanExecute();
+        }
+
+        /// <summary>Called from <c>ImageryLayer.MarkerSelected</c> after Syncfusion unwraps the pin.</summary>
+        public void SelectMapMarker(MapMarker? marker)
+        {
+            SelectedMarker = marker;
+            NotifyClerkOverrideCanExecute();
+            if (marker is null)
+            {
+                return;
+            }
+
+            if (marker.StudentIds.Count == 1)
+            {
+                StatusMessage = "Student pin selected — pick a route and Move to selected route";
+                return;
+            }
+
+            if (marker.StudentIds.Count > 1)
+            {
+                StatusMessage =
+                    $"{marker.StudentIds.Count} students on this pin — Move to selected route moves all of them";
+            }
+        }
+
+        private bool CanApplyClerkOverrideFromMap() =>
+            !_clerkOverrideBusy
+            && SelectedRoute is not null
+            && SelectedMarker is not null
+            && SelectedMarker.StudentIds.Count > 0;
+
+        private void NotifyClerkOverrideCanExecute() =>
+            _applyClerkOverrideRelay?.NotifyCanExecuteChanged();
+
+        /// <summary>
+        /// Moves the selected student pin onto <see cref="SelectedRoute"/> via
+        /// <see cref="IRouteDeterminationService.ApplyClerkOverrideAsync"/> (spec 008 FR-009).
+        /// Slot comes from the selected row's AM/PM identity, not a third session model.
+        /// </summary>
+        private async Task ApplyClerkOverrideFromMapAsync()
+        {
+            var target = SelectedRoute;
+            var marker = SelectedMarker;
+            if (target is null || marker is null || marker.StudentIds.Count == 0)
+            {
+                StatusMessage = "Select a student pin and a destination route, then Move to selected route.";
+                return;
+            }
+
+            if (_scopeFactory is null)
+            {
+                StatusMessage = "Route planner unavailable";
+                return;
+            }
+
+            _clerkOverrideBusy = true;
+            NotifyClerkOverrideCanExecute();
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var planner = scope.ServiceProvider.GetService<IRouteDeterminationService>();
+                var students = scope.ServiceProvider.GetService<IStudentService>();
+                if (planner is null)
+                {
+                    StatusMessage = "Route planner unavailable";
+                    return;
+                }
+
+                var assignmentSlot = RouteSession.ToAssignmentSlot(target);
+                var kind = assignmentSlot == RouteTimeSlot.PM
+                    ? RouteTimeSlotKind.PM
+                    : RouteTimeSlotKind.AM;
+
+                var moved = 0;
+                string? firstError = null;
+                foreach (var studentId in marker.StudentIds.Distinct())
+                {
+                    var student = students is null
+                        ? null
+                        : await students.GetStudentByIdAsync(studentId).ConfigureAwait(true);
+                    var fromId = assignmentSlot == RouteTimeSlot.PM
+                        ? student?.PmRouteId ?? 0
+                        : student?.AmRouteId ?? 0;
+                    if (fromId == target.RouteId)
+                    {
+                        continue;
+                    }
+
+                    var result = await planner.ApplyClerkOverrideAsync(
+                            studentId,
+                            fromId,
+                            target.RouteId,
+                            kind,
+                            "District Map")
+                        .ConfigureAwait(true);
+                    if (result.Success)
+                    {
+                        moved++;
+                    }
+                    else
+                    {
+                        firstError ??= result.Error ?? $"Could not move student {studentId}";
+                    }
+                }
+
+                if (moved > 0 && firstError is null)
+                {
+                    StatusMessage = $"Moved {moved} rider(s) onto {target.RouteName}";
+                }
+                else if (moved > 0)
+                {
+                    StatusMessage = $"Moved {moved}; others failed: {firstError}";
+                }
+                else if (firstError is not null)
+                {
+                    StatusMessage = firstError;
+                }
+                else
+                {
+                    StatusMessage = $"Already on {target.RouteName}";
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(Logger, ex, "Clerk map override failed");
+                StatusMessage = "Could not apply route override";
+            }
+            finally
+            {
+                _clerkOverrideBusy = false;
+                NotifyClerkOverrideCanExecute();
+            }
         }
 
         private async Task RefreshMapAsync()
@@ -1007,12 +1157,14 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// <param name="studentNames">Optional collection of student names to aggregate at this stop.</param>
         /// <param name="label">Optional explicit label (overrides auto aggregation label if provided).</param>
         /// <param name="kind">Marker kind (SCH/PK/HOME/WP/DEPOT). Defaults from <paramref name="label"/> prefix.</param>
+        /// <param name="studentIds">Optional roster keys so clerk override does not match pins by name.</param>
         public MapMarker PlotStop(
             double latitude,
             double longitude,
             IEnumerable<string>? studentNames = null,
             string? label = null,
-            MapMarkerLabels.Kind? kind = null)
+            MapMarkerLabels.Kind? kind = null,
+            IEnumerable<int>? studentIds = null)
         {
             if (!IsPlottableCoordinate(latitude, longitude))
             {
@@ -1028,6 +1180,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             if (incomingKind == MapMarkerLabels.Kind.Waypoint
                 && TryTagRouteStop(latitude, longitude, label) is { } tagged)
             {
+                AddStudents(tagged, studentNames, studentIds);
                 return tagged;
             }
 
@@ -1046,7 +1199,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                     latitude,
                     longitude,
                     label ?? "<auto>");
-                AddStudents(existing, studentNames);
+                AddStudents(existing, studentNames, studentIds);
                 NotifyMapMarkersChanged();
                 return existing;
             }
@@ -1059,9 +1212,11 @@ namespace BusBuddy.WPF.ViewModels.Map
                 mutated = true;
             }
 
-            if (studentNames is not null)
+            var beforeIds = existing.StudentIds.Count;
+            var beforeNames = existing.StudentNames.Count;
+            AddStudents(existing, studentNames, studentIds);
+            if (existing.StudentIds.Count != beforeIds || existing.StudentNames.Count != beforeNames)
             {
-                AddStudents(existing, studentNames);
                 mutated = true;
             }
 
@@ -1210,16 +1365,26 @@ namespace BusBuddy.WPF.ViewModels.Map
         private void ApplyMarkerStyle(MapMarker marker, MapMarkerLabels.Kind kind) =>
             ApplyMarkerStyle(marker, kind, MapZoomLevel);
 
-        private static void AddStudents(MapMarker marker, IEnumerable<string>? names)
+        private static void AddStudents(MapMarker marker, IEnumerable<string>? names, IEnumerable<int>? ids = null)
         {
-            if (names is null)
+            var nameList = names?
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n.Trim())
+                .ToList() ?? [];
+            var idList = ids?.Where(id => id > 0).Distinct().ToList() ?? [];
+            if (nameList.Count == 0 && idList.Count == 0)
             {
                 return;
             }
 
-            foreach (var name in names)
+            var count = Math.Max(nameList.Count, idList.Count);
+            for (var i = 0; i < count; i++)
             {
-                marker.AddStudent(name);
+                var name = i < nameList.Count
+                    ? nameList[i]
+                    : $"Student {idList[i]}";
+                int? id = i < idList.Count ? idList[i] : null;
+                marker.AddStudent(name, id);
             }
         }
 
@@ -1243,7 +1408,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 switch (param)
                 {
                     case MapMarker mm:
-                        PlotStop(mm.LatitudeDegrees, mm.LongitudeDegrees, mm.StudentNames, mm.Label);
+                        PlotStop(mm.LatitudeDegrees, mm.LongitudeDegrees, mm.StudentNames, mm.Label, studentIds: mm.StudentIds);
                         break;
                     case ValueTuple<double, double, string?> tuple:
                         PlotStop(tuple.Item1, tuple.Item2, null, tuple.Item3);

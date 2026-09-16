@@ -241,6 +241,11 @@
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
                                           AutomationProperties.Name="Plot Students"/>
 
+                <syncfusion:ButtonAdv Label="Move to selected route"
+                                      AutomationProperties.Name="Move to selected route"
+                                      ToolTip="Move the selected student pin onto the route in the list (clerk override; seating may be exceeded)"
+                                      Command="{Binding ApplyClerkOverrideCommand}"/>
+
                 <syncfusion:ButtonAdv Label="Generate Eligibility PDF"
                               AutomationProperties.Name="Generate Eligibility PDF"
                               ToolTip="Generate the student map PDF and open it"

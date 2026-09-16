@@ -87,14 +87,15 @@ The map does not need its own table of pins. Persist facts on Location and Route
 
 ### District Map toolbar contract
 
-| Button            | Behavior                                                                                                                                                                                                                         |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Zoom In / Out     | Step zoom around the current center. Buttons use an explicit `ButtonAdv` template with literal brushes (no theme `DynamicResource`) and sit above the map (`Panel.ZIndex`, clipped container) so they never vanish after a zoom. |
-| Home / Refresh    | Recenter to the configured depot; Refresh reloads the **full** district overlay (schools + catalog stops + depots + route homes) and undoes any filter.                                                                          |
-| Show Schools      | **Schools-only** view: clears every non-school pin, plots schools, centers on them. Refresh restores everything.                                                                                                                 |
-| Plot Pickup Stops | Plots catalog pickup stops **and** the published stops of every route. Toast when there is nothing to plot; never a silent no-op.                                                                                                |
-| Export Route      | Always enabled. No route selected → toast “select a route”; otherwise GeoJSON of the selected route via `IGeoDataService`. No hidden Settings gate.                                                                              |
-| Print             | Snapshot of the current view for the route PDF.                                                                                                                                                                                  |
+| Button                 | Behavior                                                                                                                                                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zoom In / Out          | Step zoom around the current center. Buttons use an explicit `ButtonAdv` template with literal brushes (no theme `DynamicResource`) and sit above the map (`Panel.ZIndex`, clipped container) so they never vanish after a zoom. |
+| Home / Refresh         | Recenter to the configured depot; Refresh reloads the **full** district overlay (schools + catalog stops + depots + route homes) and undoes any filter.                                                                          |
+| Show Schools           | **Schools-only** view: clears every non-school pin, plots schools, centers on them. Refresh restores everything.                                                                                                                 |
+| Plot Pickup Stops      | Plots catalog pickup stops **and** the published stops of every route. Toast when there is nothing to plot; never a silent no-op.                                                                                                |
+| Move to selected route | Clerk override (spec 008): select a student/home pin, pick a route in the list, then move the rider onto that AM or PM row. Seating may be exceeded; reason is logged as `District Map`.                                         |
+| Export Route           | Always enabled. No route selected → toast “select a route”; otherwise GeoJSON of the selected route via `IGeoDataService`. No hidden Settings gate.                                                                              |
+| Print                  | Snapshot of the current view for the route PDF.                                                                                                                                                                                  |
 
 ## Efficiency metrics
 

@@ -46,7 +46,7 @@ Listed in `docs/done-catalog.json` with a reason each:
 - `IFamilyService` / `IGuardianService` not in DI — Families/Guardians tables exist but have no clerk surface yet.
 - `SchoolCalendar` and `AIInsight` DbSets unused — schema kept, no UI.
 - `RouteAssignments` table retained but not written by Assign Vehicle/Driver — Hop 4b decision.
-- Unused shapefile path columns on `Route`; unused `AddressValidationControl`; historical OSM narrative in spec 007.
+- Unused `AddressValidationControl`; historical OSM narrative in spec 007.
 - `SyncfusionCultureFix` / `StartupOptimizationService` deleted as zero-caller; restore only if needed.
 
 ## Known design debts (self-reported)

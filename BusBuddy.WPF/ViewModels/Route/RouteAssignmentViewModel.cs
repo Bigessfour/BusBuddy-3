@@ -1976,7 +1976,12 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                             System.Windows.Application.Current.Dispatcher.Invoke(() =>
                             {
-                                mapVm.PlotStop(lat.Value, lon.Value, new[] { s.StudentName ?? "Student" }, s.StudentName);
+                                mapVm.PlotStop(
+                                    lat.Value,
+                                    lon.Value,
+                                    new[] { s.StudentName ?? "Student" },
+                                    s.StudentName,
+                                    studentIds: new[] { s.StudentId });
                             });
                         }
                         catch (Exception ex)

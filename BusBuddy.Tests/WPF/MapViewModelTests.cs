@@ -9,6 +9,7 @@ using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
@@ -535,6 +536,85 @@ public class MapViewModelTests
         Assert.That(vm.StatusMessage, Does.Contain("2 pickup stop(s)"));
         Assert.That(vm.StatusMessage, Does.Contain("0 catalog"));
         Assert.That(vm.StatusMessage, Does.Contain("2 on published routes"));
+    }
+
+    [Test]
+    public async Task PlotStop_AttachesStudentIdsForClerkOverride()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        var marker = vm.PlotStop(
+            38.1,
+            -102.7,
+            new[] { "Ada" },
+            MapMarkerLabels.ForHome("Ada"),
+            MapMarkerLabels.Kind.Home,
+            studentIds: new[] { 7 });
+
+        Assert.That(marker.StudentIds, Is.EqualTo(new[] { 7 }));
+        vm.SelectMapMarker(marker);
+        Assert.That(vm.SelectedMarker, Is.SameAs(marker));
+        Assert.That(((IAsyncRelayCommand)vm.ApplyClerkOverrideCommand).CanExecute(null), Is.False,
+            "needs a destination route");
+    }
+
+    [Test]
+    public async Task ApplyClerkOverride_MovesSelectedStudentOntoSelectedPmRoute()
+    {
+        var planner = new Mock<IRouteDeterminationService>();
+        planner.Setup(p => p.ApplyClerkOverrideAsync(
+                7, 11, 22, RouteTimeSlotKind.PM, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ClerkOverrideResult { Success = true });
+
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetStudentByIdAsync(7)).ReturnsAsync(new Student
+        {
+            StudentId = 7,
+            AmRouteId = 10,
+            PmRouteId = 11
+        });
+
+        var services = new ServiceCollection();
+        services.AddSingleton(planner.Object);
+        services.AddSingleton(students.Object);
+        var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
+
+        var vm = await CreateSettledViewModelAsync(scopes: scopes);
+        var marker = vm.PlotStop(
+            38.1,
+            -102.7,
+            new[] { "Ada" },
+            MapMarkerLabels.ForHome("Ada"),
+            MapMarkerLabels.Kind.Home,
+            studentIds: new[] { 7 });
+        vm.SelectMapMarker(marker);
+        vm.SelectedRoute = new Route { RouteId = 22, RouteName = "Draft-School-1-PM", Session = RouteSession.PM };
+
+        Assert.That(((IAsyncRelayCommand)vm.ApplyClerkOverrideCommand).CanExecute(null), Is.True);
+        await ((IAsyncRelayCommand)vm.ApplyClerkOverrideCommand).ExecuteAsync(null);
+
+        planner.Verify(
+            p => p.ApplyClerkOverrideAsync(7, 11, 22, RouteTimeSlotKind.PM, "District Map", It.IsAny<CancellationToken>()),
+            Times.Once);
+        Assert.That(vm.StatusMessage, Does.Contain("Moved 1 rider"));
+        Assert.That(vm.StatusMessage, Does.Contain("Draft-School-1-PM"));
+    }
+
+    [Test]
+    public async Task ApplyClerkOverride_SchoolPinWithoutStudentId_DoesNotCallPlanner()
+    {
+        var planner = new Mock<IRouteDeterminationService>(MockBehavior.Strict);
+        var services = new ServiceCollection();
+        services.AddSingleton(planner.Object);
+        var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
+
+        var vm = await CreateSettledViewModelAsync(scopes: scopes);
+        var school = vm.PlotStop(38.15, -102.72, null, MapMarkerLabels.ForSchool("Wiley"), MapMarkerLabels.Kind.School);
+        vm.SelectMapMarker(school);
+        vm.SelectedRoute = new Route { RouteId = 22, RouteName = "Draft-AM", Session = RouteSession.AM };
+
+        Assert.That(((IAsyncRelayCommand)vm.ApplyClerkOverrideCommand).CanExecute(null), Is.False);
+        await ((IAsyncRelayCommand)vm.ApplyClerkOverrideCommand).ExecuteAsync(null);
+        planner.VerifyNoOtherCalls();
     }
 
     private static string BrushHex(string hex) =>
@@ -1365,6 +1445,8 @@ public class MapViewModelTests
         Assert.That(codeBehind, Does.Contain("MapRouteTrailLayer.Apply"));
         Assert.That(codeBehind, Does.Contain("ApplyMarkerTemplates"));
         Assert.That(codeBehind, Does.Contain("DistrictMarkerTemplateSelector"));
+        Assert.That(codeBehind, Does.Contain("OnImageryMarkerSelected"));
+        Assert.That(codeBehind, Does.Contain("SelectMapMarker"));
         Assert.That(codeBehind, Does.Not.Contain("CheckBackendConnectivityAsync"));
         Assert.That(codeBehind, Does.Not.Contain("MapControl.Layers.Add"));
         Assert.That(codeBehind, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));

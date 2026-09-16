@@ -21,6 +21,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PlotPickupStopsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ApplyClerkOverrideCommand}\""));
+        Assert.That(xaml, Does.Contain("Label=\"Move to selected route\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding CenterOnFleetCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshMapCommand}\""));
         // Sidebar ButtonAdv: Label + Command only — no local Background (stomps Fluent pressed chrome).
@@ -171,6 +173,8 @@ public class MapViewTests
         Assert.That(vm, Does.Contain("ClearMarkersExcept(MapMarkerLabels.Kind.School)"));
         Assert.That(vm, Does.Contain("PlotRouteStopsAsync"));
         Assert.That(vm, Does.Contain("TryTagRouteStop"));
+        Assert.That(vm, Does.Contain("ApplyClerkOverrideFromMapAsync"));
+        Assert.That(vm, Does.Contain("SelectMapMarker"));
 
         // Tooltips describe the fixed behaviours (no "Enable in Settings").
         Assert.That(xaml, Does.Not.Contain("Enable in Settings"));

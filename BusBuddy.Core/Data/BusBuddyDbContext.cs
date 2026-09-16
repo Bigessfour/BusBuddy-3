@@ -499,8 +499,6 @@ public class BusBuddyDbContext : DbContext
 
             // Geo metadata — encoded polyline + stops; do not cap at 4000 (road paths exceed that)
             entity.Property(e => e.WaypointsJson);
-            entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
-            entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
         });
 
         // Vehicle-to-route assignment. Delete behavior previously came only from the

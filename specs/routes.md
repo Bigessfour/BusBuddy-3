@@ -113,7 +113,6 @@ Implementation: **two route rows** (5 AM and 5 PM). Core already keys routes tha
 - Parent app that edits stops.
 - Treating a Friday-only activity bus as a route unless the clerk publishes it as one.
 - A `RouteVersion` / effective-date history table.
-- Shapefile overlays on `Route` (`DistrictBoundaryShapefilePath` / `TownBoundaryShapefilePath` are leftover columns; maps use Google tiles only).
 
 ## Code anchors
 

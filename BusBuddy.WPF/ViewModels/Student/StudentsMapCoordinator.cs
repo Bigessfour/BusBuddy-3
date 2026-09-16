@@ -88,8 +88,8 @@ public sealed class StudentsMapCoordinator
             MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
             {
                 MapStudentPlot.Draw(
-                    (lat, lon, names, label) => vm.PlotStop(lat, lon, names, label),
-                    studentName,
+                    (lat, lon, names, label, ids) => vm.PlotStop(lat, lon, names, label, studentIds: ids),
+                    student,
                     pins);
                 vm.CenterOnMarkers();
             });

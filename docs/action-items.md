@@ -38,7 +38,7 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 Optional:
 
 - [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
-- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
+- [ ] Parked (not ship-blocking): unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
@@ -91,8 +91,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
 - [x] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes (see Done log)
-- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
-- [ ] Parked: wire `ApplyClerkOverrideAsync` to the District Map (method exists, no production UI). Hop 4b already chose year-default `AM*`/`PM*` pairings and `Schedule` as the daily instance.
+- [ ] Parked (not ship-blocking): unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 ---
 
@@ -104,6 +103,13 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-09-16 — Shapefile columns dropped; District Map clerk override
+
+- **Shapefile paths:** `DistrictBoundaryShapefilePath` / `TownBoundaryShapefilePath` removed from `Route`, fluent config, and snapshot. `20260916200000_DropRouteShapefilePaths` actually drops the columns (the 20250814 migration was empty). Maps stay Google tiles only; `ImageryLayer.SubShapeFileLayers` remains the Syncfusion polyline host, not a `.shp` file.
+- **Clerk override:** District Map **Move to selected route** calls `ApplyClerkOverrideAsync`. Pins now carry `StudentIds`; click selects the pin; the destination is the combo `SelectedRoute`; AM/PM comes from `RouteSession.ToAssignmentSlot`.
+- **Left parked:** `AMRoute`/`PMRoute` name strings (phased drop); unused `AddressValidationControl`; historical OSM narrative in spec 007.
+- **Evidence:** UTM guest `MapViewModelTests` + `MapViewTests` + `RouteDeterminationServiceTests` **67 passed, 0 failed**.
 
 ### 2026-09-16 — Npgsql timestamp resolution + Student→Route foreign key
 
@@ -124,7 +130,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Dead:** deleted `RoutePopulationScaffold` / `IRoutePopulationScaffold`; stripped unused `IRouteRepository` query methods (CRUD stays for `IUnitOfWork`); removed unused `AMBusId`/`PMBusId` aliases, `NewRouteDate`/`TimeSlots`/`IsRouteSelected`, and a no-op in `AssignFitnessEvaluator`.
 - **Auto-assign:** `AutoAssignStudentsAsync` `continue`s on a per-student rejection (special-needs mismatch) and only `break`s when the route is at capacity. Covered by `AutoAssignStudentsAsync_SkipsIneligibleAndContinues`.
 - **Dates:** `Route.NormalizeRouteDate` no longer calls `ToUniversalTime()` (SfDatePicker Local values kept their calendar day). `DistrictWallClock` / stop-estimate fallbacks / clone default date use `DateTime.UtcNow.Date`.
-- **Clerk override:** `ApplyClerkOverrideAsync` now passes `overrideSeating: true` so a clerk override onto a full bus is not blocked by the check it exists to bypass. Reason is still log-only until an override table exists; no map UI caller yet.
+- **Clerk override:** `ApplyClerkOverrideAsync` now passes `overrideSeating: true` so a clerk override onto a full bus is not blocked by the check it exists to bypass. Reason is still log-only until an override table exists. District Map **Move to selected route** is the production caller.
 - **Evidence:** `dotnet build` 0 errors; `has-pending-model-changes` reports no changes; UTM guest gate **609 passed, 0 failed**.
 
 ### 2026-09-16 — Routes vertical production hardening
