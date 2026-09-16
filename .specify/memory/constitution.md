@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report
-Version change: 1.2.0 → 1.2.1 (PATCH — GCP map: primary Maps billing/quota/`gcloud` project is busbuddy-507301)
-Modified: GCP project map (add busbuddy-507301; Coursera is legacy billed only — do not header Maps traffic there)
-Modified: Last Amended 2026-09-06
+Version change: 1.2.3 → 1.2.4 (PATCH — app AI is local Ollama only; cloud xAI removed)
+Modified: Technology constraint AI (app)
+Modified: Last Amended 2026-09-15
 Added: none
-Removed: none
+Removed: cloud XAI as an app AI provider
 Templates: no mandatory section changes
-Follow-up: AGENTS.md, Documentation/GCP-GEE-SECRETS-AND-AUTH.md, specs/007-maps-platform-geo, README.md
+Follow-up: AGENTS.md, README.md, specs/004-local-llm-ollama, Documentation/diagrams/busbuddy-3-architecture.md
 -->
 
 # BusBuddy Constitution
@@ -69,7 +69,7 @@ When those conflict with this constitution, **this file wins** until amended und
 | UI       | Syncfusion WPF only; Windows target                                                                                                                                                                                                                        |
 | Logging  | Serilog only                                                                                                                                                                                                                                               |
 | Data     | EF Core; Postgres preferred for real tests (`docker-compose` profiles)                                                                                                                                                                                     |
-| AI (app) | Prefer local Ollama (or compatible) behind existing service interfaces; cloud XAI is not required for core path                                                                                                                                            |
+| AI (app) | Local Ollama (or OpenAI-compatible local endpoint) behind existing service interfaces. Cloud xAI is not an app dependency. Missing Ollama is a warning + offline fallback, not an actionable error                                                         |
 | Geo      | Google Maps Platform (Address Validation, Routes, Map Tiles) on documented billing project; Syncfusion SfMap + Google Map Tiles for display (no OSM). Students entered in the system are eligible — no geofence. Earth Engine is **not** an app dependency |
 | Hosting  | No cloud app hosting / no AWS for BusBuddy runtime                                                                                                                                                                                                         |
 
@@ -108,4 +108,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.2.3 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-15
+**Version**: 1.2.4 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-15

@@ -76,7 +76,7 @@ These do not fail the checker but a reviewer will notice them.
 
 1. One Windows VM session: District Map re-smoke and hops 1–5 ribbon clicks, pull `ui-diagnostics-*.log`, check the boxes. This is the only thing standing between the checker and exit 0.
 2. Nullable `AmRouteId`/`PmRouteId` FK backfill (parked; the string pair is canonical today).
-3. Reconcile `BusBuddy.Core/appsettings.json` with the WPF copy (it still carries LocalDB and the pre-Ollama xAI section; only DbPrep and the test host read it, and both take connection strings from the environment first).
+3. Reconcile `BusBuddy.Core/appsettings.json` with the WPF copy (it still carries LocalDB; only DbPrep and the test host read it, and both take connection strings from the environment first).
 
 ## Out of scope by decision
 

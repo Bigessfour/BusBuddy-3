@@ -22,7 +22,7 @@ using System.Collections.Generic; // For generic collections
 using System.Linq; // For LINQ operations
 using System.Windows.Media; // For VisualTreeHelper during snapshot
 using System.Windows.Media.Imaging; // For RenderTargetBitmap / PngBitmapEncoder (Microsoft WPF docs: Imaging)
-using System.IO; // For saving generated eligibility PDF to disk
+using System.IO; // Map snapshot PNG encoding
 using BusBuddy.WPF;
 
 namespace BusBuddy.WPF.ViewModels.Map
@@ -48,8 +48,11 @@ namespace BusBuddy.WPF.ViewModels.Map
         private ObservableCollection<RouteModel> _routes = new();
         private RouteModel? _selectedRoute;
         private bool _isMapLoading;
+        private bool _eligibilityPdfBusy;
         private string _statusMessage = "Ready";
         private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
+        private byte[]? _lastGeneratedEligibilityPdf;
+        private IAsyncRelayCommand _generateEligibilityPdfRelay = null!;
         /// <summary>Lamar/Wiley clerk default per <c>specs/maps.md</c> — not the US-centroid overview.</summary>
         private const double DistrictDefaultLatitude = 38.0872;
         private const double DistrictDefaultLongitude = -102.6208;
@@ -130,7 +133,10 @@ namespace BusBuddy.WPF.ViewModels.Map
             PrintRouteMapsCommand = new BusBuddy.WPF.Commands.RelayCommand(_ => OnPrintRequested(), _ => true);
 
             // Eligibility route PDF generation
-            GenerateEligibilityRoutePdfCommand = new AsyncRelayCommand(GenerateEligibilityRoutePdfAndSaveAsync);
+            _generateEligibilityPdfRelay = new AsyncRelayCommand(
+                GenerateEligibilityRoutePdfAndPreviewAsync,
+                () => !_eligibilityPdfBusy);
+            GenerateEligibilityRoutePdfCommand = _generateEligibilityPdfRelay;
 
             // Add marker (stop) plotting command. Accepts parameter forms documented in AddMarkerFromParam.
             AddMarkerCommand = new BusBuddy.WPF.Commands.RelayCommand(p => AddMarkerFromParam(p));
@@ -1091,11 +1097,27 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// <summary>
         /// Plot a selected trip only when origin/destination coordinates are validated.
         /// No 0,0 or US-centroid fallback pins (specs/trips.md, specs/maps.md).
+        /// Drive path uses Google Routes via <see cref="IRoutingService"/> — not MappingService.
         /// </summary>
         public int TryPlotTrip(TripEvent trip)
         {
             ArgumentNullException.ThrowIfNull(trip);
 
+            var plotted = TryPlotTripPins(trip);
+            _ = PlotTripPathAsync(trip);
+            return plotted;
+        }
+
+        public async Task<int> TryPlotTripAsync(TripEvent trip)
+        {
+            ArgumentNullException.ThrowIfNull(trip);
+            var plotted = TryPlotTripPins(trip);
+            await PlotTripPathAsync(trip).ConfigureAwait(true);
+            return plotted;
+        }
+
+        private int TryPlotTripPins(TripEvent trip)
+        {
             var plotted = 0;
             plotted += TryPlotTripPlace(
                 trip.OriginLocation,
@@ -1115,6 +1137,47 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
 
             return plotted;
+        }
+
+        private async Task PlotTripPathAsync(TripEvent trip)
+        {
+            try
+            {
+                if (_routingService is null || !trip.HasValidatedOrigin || !trip.HasValidatedDestination)
+                {
+                    return;
+                }
+
+                var origin = (
+                    (double)trip.OriginLocation!.Latitude!.Value,
+                    (double)trip.OriginLocation.Longitude!.Value);
+                var dest = (
+                    (double)trip.DestinationLocation!.Latitude!.Value,
+                    (double)trip.DestinationLocation.Longitude!.Value);
+                var path = await _routingService.ComputeDrivePathAsync(
+                    origin,
+                    dest,
+                    Array.Empty<(double, double)>()).ConfigureAwait(true);
+
+                IReadOnlyList<(double Latitude, double Longitude)> vertices = path.Points.Count >= 2
+                    ? path.Points
+                    : EncodedPolylineCodec.Decode(path.EncodedPolyline);
+                if (vertices.Count < 2)
+                {
+                    return;
+                }
+
+                await UpdatePolylineAsync(vertices.Select(p => new Point(p.Latitude, p.Longitude)))
+                    .ConfigureAwait(true);
+                StatusMessage = trip.PathMiles.HasValue
+                    ? $"Trip path {trip.PathMiles.Value:0.00} miles"
+                    : "Trip path plotted";
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Trip path plot failed Ticket={Ticket}",
+                    trip.ExternalTicketNo ?? trip.TripEventId.ToString());
+            }
         }
 
         private int TryPlotTripPlace(Destination? place, string? name, MapMarkerLabels.Kind kind)
@@ -1257,14 +1320,26 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
+        private readonly record struct EligibilityPdfBuild(
+            byte[] Pdf,
+            int MappedCount,
+            int Total,
+            string? Blocker);
+
         /// <summary>
-        /// Build a route PDF of students already in the system who have coordinates.
-        /// For each student: create a RouteStop sequentially ordered. Bus is fixed to #17 (84 passenger) per requirement (placeholder bus object).
-        /// Returns tuple(pdfBytes, countEligible, totalConsidered).
+        /// Build a route PDF of students who already have a map pin (catalog stop or validated home).
+        /// Stops are nearest-neighbor ordered from the bus barn. Does not mutate map markers.
         /// </summary>
-        public async Task<(byte[] Pdf, int EligibleCount, int Total)> GenerateEligibilityRoutePdfAsync(BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
+        public async Task<(byte[] Pdf, int EligibleCount, int Total)> GenerateEligibilityRoutePdfAsync(
+            BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
         {
-            var allStudents = new List<BusBuddy.Core.Models.Student>();
+            var built = await BuildEligibilityRoutePdfAsync(slot);
+            return (built.Pdf, built.MappedCount, built.Total);
+        }
+
+        private async Task<EligibilityPdfBuild> BuildEligibilityRoutePdfAsync(BusBuddy.Core.Models.RouteTimeSlot slot)
+        {
+            List<BusBuddy.Core.Models.Student> allStudents;
             try
             {
                 using var scope = _scopeFactory?.CreateScope();
@@ -1272,7 +1347,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 if (studentService is null)
                 {
                     StatusMessage = "Student service unavailable";
-                    return (Array.Empty<byte>(), 0, 0);
+                    return new EligibilityPdfBuild(Array.Empty<byte>(), 0, 0, "Student records are not available.");
                 }
 
                 allStudents = await studentService.GetAllStudentsAsync() ?? new();
@@ -1280,108 +1355,137 @@ namespace BusBuddy.WPF.ViewModels.Map
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Failed loading students for eligibility route PDF");
+                StatusMessage = "Student map PDF: could not load students";
+                return new EligibilityPdfBuild(
+                    Array.Empty<byte>(),
+                    0,
+                    0,
+                    "Could not load students. Check the database connection.");
             }
 
             if (allStudents.Count == 0)
             {
-                return (Array.Empty<byte>(), 0, 0);
+                StatusMessage = "Student map PDF: no students";
+                return new EligibilityPdfBuild(Array.Empty<byte>(), 0, 0, "There are no students to map.");
             }
 
-            var eligibleStudents = allStudents
-                .Where(s => s.HasValidatedHomeCoordinates)
-                .ToList();
-
-            if (eligibleStudents.Count == 0)
+            IReadOnlyDictionary<int, PickupStop> pickups;
+            try
             {
-                Logger.Information("No students with coordinates (Total={Total})", allStudents.Count);
-                return (Array.Empty<byte>(), 0, allStudents.Count);
+                pickups = await _layers.LoadPickupIndexAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Pickup catalog unavailable for student map PDF; using home pins only");
+                pickups = StudentPlotLocation.Index(null);
+            }
+
+            var mappable = new List<(BusBuddy.Core.Models.Student Student, StudentPlotPoint Pin)>();
+            foreach (var student in allStudents)
+            {
+                var pin = StudentPlotLocation.TryFromStored(student, pickups);
+                if (pin is null || !IsPlottableCoordinate(pin.Value.Latitude, pin.Value.Longitude))
+                {
+                    continue;
+                }
+
+                mappable.Add((student, pin.Value));
+            }
+
+            if (mappable.Count == 0)
+            {
+                Logger.Information("No students with map pins (Total={Total})", allStudents.Count);
+                StatusMessage = "Student map PDF: no map pins";
+                return new EligibilityPdfBuild(
+                    Array.Empty<byte>(),
+                    0,
+                    allStudents.Count,
+                    $"None of the {allStudents.Count} students have a map pin (home or catalog stop). Validate addresses first.");
             }
 
             // ORDER STOPS (Nearest Neighbor heuristic) starting at the district bus barn and ending at the catalog school.
             var (startLat, startLon) = await ResolveRouteStartAnchorAsync();
             var schoolCamera = await ResolveDistrictCameraAsync();
-            var schoolLat = schoolCamera.Lat;
-            var schoolLon = schoolCamera.Lon;
-            var remaining = eligibleStudents.Where(s => s.HasValidatedHomeCoordinates).ToList();
-            var ordered = new List<BusBuddy.Core.Models.Student>();
+            var remaining = mappable.ToList();
+            var ordered = new List<(BusBuddy.Core.Models.Student Student, StudentPlotPoint Pin)>();
             double currentLat = startLat, currentLon = startLon;
             while (remaining.Count > 0)
             {
-                BusBuddy.Core.Models.Student? nearest = null;
-                double nearestDist = double.MaxValue;
-                foreach (var s in remaining)
+                var nearestIndex = 0;
+                var nearestDist = double.MaxValue;
+                for (var i = 0; i < remaining.Count; i++)
                 {
-                    var dist = HaversineMiles(currentLat, currentLon, (double)s.Latitude!, (double)s.Longitude!);
+                    var pin = remaining[i].Pin;
+                    var dist = HaversineMiles(currentLat, currentLon, pin.Latitude, pin.Longitude);
                     if (dist < nearestDist)
                     {
                         nearestDist = dist;
-                        nearest = s;
+                        nearestIndex = i;
                     }
                 }
-                if (nearest == null) break;
+
+                var nearest = remaining[nearestIndex];
                 ordered.Add(nearest);
-                currentLat = (double)nearest.Latitude!;
-                currentLon = (double)nearest.Longitude!;
-                remaining.Remove(nearest);
+                currentLat = nearest.Pin.Latitude;
+                currentLon = nearest.Pin.Longitude;
+                remaining.RemoveAt(nearestIndex);
             }
 
-            // BUILD ROUTE & STOPS WITH SCHEDULE ESTIMATION
-            // Assumptions:
-            //  • Departure from district bus barn (RoutingDistrict config) when configured.
-            //  • Average route speed on county / rural roads: 35 mph (approximation; configurable later).
-            //  • Dwell time per stop: 1 minute (boarding + safety check).
-            //  • Return to catalog school after last pickup.
-            var averageMph = Math.Max(5.0, AverageRouteSpeedMph); // safety floor
+            var averageMph = Math.Max(5.0, AverageRouteSpeedMph);
             var dwellPerStop = TimeSpan.FromMinutes(Math.Max(0, DwellMinutesPerStop));
-            var departTimeOfDay = new TimeSpan(6, 50, 0); // 6:50 AM
-            var cumulative = TimeSpan.Zero; // travel + dwell elapsed since departure
+            var dwellMinutes = (int)Math.Max(0, DwellMinutesPerStop);
+            var departTimeOfDay = new TimeSpan(6, 50, 0);
+            var routeDay = DateTime.Today;
+            var cumulative = TimeSpan.Zero;
             double totalMiles = 0.0;
             var stops = new List<BusBuddy.Core.Models.RouteStop>();
-            int order = 1;
-            currentLat = startLat; currentLon = startLon;
-            foreach (var stu in ordered)
+            var order = 1;
+            currentLat = startLat;
+            currentLon = startLon;
+            foreach (var (stu, pin) in ordered)
             {
-                var legMiles = HaversineMiles(currentLat, currentLon, (double)stu.Latitude!, (double)stu.Longitude!);
+                var legMiles = HaversineMiles(currentLat, currentLon, pin.Latitude, pin.Longitude);
                 totalMiles += legMiles;
-                var travelMinutes = legMiles / averageMph * 60.0;
-                cumulative += TimeSpan.FromMinutes(travelMinutes);
+                cumulative += TimeSpan.FromMinutes(legMiles / averageMph * 60.0);
                 var arrival = departTimeOfDay + cumulative;
                 var departure = arrival + dwellPerStop;
                 cumulative += dwellPerStop;
+                var stopName = pin.AtPickup && !string.IsNullOrWhiteSpace(pin.PickupName)
+                    ? $"{stu.StudentName ?? "Student"} @ {pin.PickupName}"
+                    : stu.StudentName ?? "(Student)";
                 stops.Add(new BusBuddy.Core.Models.RouteStop
                 {
                     RouteId = -1,
                     StopOrder = order++,
-                    StopName = stu.StudentName ?? "(Student)",
-                    Latitude = (decimal?)stu.Latitude,
-                    Longitude = (decimal?)stu.Longitude,
+                    StopName = stopName,
+                    Latitude = (decimal)pin.Latitude,
+                    Longitude = (decimal)pin.Longitude,
                     ScheduledArrival = arrival,
                     ScheduledDeparture = departure,
+                    EstimatedArrivalTime = routeDay.Add(arrival),
+                    EstimatedDepartureTime = routeDay.Add(departure),
+                    StopDuration = dwellMinutes,
                     CreatedDate = DateTime.UtcNow
                 });
-                // Update marker with time in label
-                PlotStop((double)stu.Latitude!, (double)stu.Longitude!, new[] { stu.StudentName ?? "Student" }, $"{arrival:hh\\:mm} {stu.StudentName}");
-                currentLat = (double)stu.Latitude!;
-                currentLon = (double)stu.Longitude!;
+                currentLat = pin.Latitude;
+                currentLon = pin.Longitude;
             }
-            // Return leg to school
-            var backLegMiles = HaversineMiles(currentLat, currentLon, schoolLat, schoolLon);
+
+            var backLegMiles = HaversineMiles(currentLat, currentLon, schoolCamera.Lat, schoolCamera.Lon);
             totalMiles += backLegMiles;
-            var backMinutes = backLegMiles / averageMph * 60.0;
-            cumulative += TimeSpan.FromMinutes(backMinutes);
+            cumulative += TimeSpan.FromMinutes(backLegMiles / averageMph * 60.0);
             var arrivalBack = departTimeOfDay + cumulative;
 
-            // Build pseudo route (summary metrics could later be embedded in PDF template)
             var route = new RouteModel
             {
                 RouteId = -1,
-                RouteName = $"Eligibility Route (Auto) {DateTime.Today:MMM d}",
-                Date = DateTime.Today,
+                RouteName = $"Student Map {routeDay:MMM d}",
+                Date = routeDay,
                 IsActive = true,
-                WaypointsJson = BuildWaypointsJson(ordered)
+                WaypointsJson = RouteWaypointSerializer.FromPairs(
+                    ordered.Select(x => (x.Pin.Latitude, x.Pin.Longitude)))
             };
 
-            // Placeholder bus & driver per requirement (bus #17 84 passenger). Driver left null.
             var bus = new BusBuddy.Core.Models.Bus
             {
                 BusNumber = "17",
@@ -1389,11 +1493,18 @@ namespace BusBuddy.WPF.ViewModels.Map
                 Status = "Active"
             };
 
-            byte[]? mapPng = LatestMapSnapshotPng; // may be null if user hasn't printed/captured yet
+            var roster = ordered.Select(x => x.Student).ToList();
             byte[] pdf;
             try
             {
-                pdf = _pdfReportService.GenerateRouteSummaryReport(route, stops, eligibleStudents, bus, null, slot, mapPng);
+                pdf = _pdfReportService.GenerateRouteSummaryReport(
+                    route,
+                    stops,
+                    roster,
+                    bus,
+                    null,
+                    slot,
+                    LatestMapSnapshotPng);
             }
             catch (Exception ex)
             {
@@ -1401,141 +1512,130 @@ namespace BusBuddy.WPF.ViewModels.Map
                 pdf = Array.Empty<byte>();
             }
 
-            Logger.Information("Student map PDF generated WithCoords={Eligible} Total={Total} Stops={Stops} Miles~{Miles:F1} ETA-Back={EtaBack}", eligibleStudents.Count, allStudents.Count, stops.Count, totalMiles, arrivalBack);
+            if (pdf.Length == 0 || !Views.Reports.PdfPreviewWindow.IsPdfPayload(pdf))
+            {
+                StatusMessage = "Student map PDF: generation failed";
+                return new EligibilityPdfBuild(
+                    Array.Empty<byte>(),
+                    roster.Count,
+                    allStudents.Count,
+                    "The student map PDF could not be created.");
+            }
+
+            Logger.Information(
+                "Student map PDF generated Mapped={Mapped} Total={Total} Stops={Stops} Miles~{Miles:F1} ETA-Back={EtaBack} HasSnapshot={HasSnapshot}",
+                roster.Count,
+                allStudents.Count,
+                stops.Count,
+                totalMiles,
+                arrivalBack,
+                LatestMapSnapshotPng is { Length: > 0 });
             StatusMessage = $"Student map PDF: {stops.Count} stops ~{totalMiles:F1} mi";
-            return (pdf, eligibleStudents.Count, allStudents.Count);
+            return new EligibilityPdfBuild(pdf, roster.Count, allStudents.Count, null);
         }
 
-        // UI wrapper made public so MainWindow can trigger it without hosting the MapView
-        public async Task GenerateEligibilityRoutePdfAndSaveAsync()
+        /// <summary>
+        /// Builds the student map PDF and opens it in the in-app viewer. Public so MainWindow
+        /// can trigger it without hosting MapView.
+        /// </summary>
+        public async Task GenerateEligibilityRoutePdfAndPreviewAsync()
         {
+            if (_eligibilityPdfBusy)
+            {
+                return;
+            }
+
+            _eligibilityPdfBusy = true;
+            _generateEligibilityPdfRelay.NotifyCanExecuteChanged();
             try
             {
-                StatusMessage = "Generating eligibility PDF...";
-                var (pdf, eligible, considered) = await GenerateEligibilityRoutePdfAsync();
-                // Always ensure the PdfReports folder exists so user can find where output would go even if no data.
-                var reportsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PdfReports");
-                Directory.CreateDirectory(reportsDir);
-
-                if (pdf.Length == 0)
+                StatusMessage = "Generating student map PDF...";
+                var built = await BuildEligibilityRoutePdfAsync(BusBuddy.Core.Models.RouteTimeSlot.AM);
+                if (built.Blocker is not null)
                 {
-                    try
-                    {
-                        var noDataNote = Path.Combine(reportsDir, "NO-DATA.txt");
-                        // Overwrite each invocation to reflect latest attempt.
-                        File.WriteAllText(noDataNote, $"No eligibility PDF generated at {DateTime.UtcNow:O}. Eligible={eligible} Considered={considered}. This file is created so the folder is visible.\n");
-                        Logger.Information("Eligibility PDF skipped (no data). Placeholder NO-DATA.txt written to {Path}", noDataNote);
-                    }
-                    catch (Exception ioEx)
-                    {
-                        Logger.Warning(ioEx, "Failed writing NO-DATA.txt placeholder for empty eligibility PDF result");
-                    }
-                    StatusMessage = "Eligibility PDF: no data";
+                    Logger.Information(
+                        "Student map PDF skipped: {Blocker} Mapped={Mapped} Total={Total}",
+                        built.Blocker,
+                        built.MappedCount,
+                        built.Total);
+                    UserToast.Warning(built.Blocker, "Student Map PDF");
                     return;
                 }
 
-                // Persist PDFs into the dedicated folder under the app base directory: /PdfReports
-                var fileName = $"EligibilityRoute-{DateTime.UtcNow:yyyyMMdd-HHmmss}.pdf";
-                var path = Path.Combine(reportsDir, fileName);
-                File.WriteAllBytes(path, pdf);
-                LastGeneratedEligibilityPdfPath = path;
-
-                // Optional auto-open (default true). Uses shell execute to open in system default PDF viewer.
-                if (UseInternalPdfViewer)
-                {
-                    try
-                    {
-                        // Defer to UI thread to open preview window hosting Syncfusion PdfViewerControl
-                        _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => // fire-and-forget UI preview (intentional)
-                        {
-                            try
-                            {
-                                var preview = new BusBuddy.WPF.Views.Reports.PdfPreviewWindow(path);
-                                preview.Show();
-                            }
-                            catch (Exception exWin)
-                            {
-                                Logger.Warning(exWin, "Failed opening internal PDF preview window");
-                            }
-                        }));
-                    }
-                    catch (Exception exInternal)
-                    {
-                        Logger.Warning(exInternal, "Internal viewer launch failed, falling back to external open");
-                        TryExternalOpen(path);
-                    }
-                }
-                else if (AutoOpenEligibilityPdf)
-                {
-                    TryExternalOpen(path);
-                }
-
-                StatusMessage = $"Saved eligibility PDF ({eligible}/{considered}) -> PdfReports\\{fileName}";
+                _lastGeneratedEligibilityPdf = built.Pdf;
+                StatusMessage = $"Student map PDF: {built.MappedCount} of {built.Total} students with map pins";
+                ShowEligibilityPdfPreview(built.Pdf);
             }
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Eligibility PDF wrapper failed");
-                StatusMessage = "Eligibility PDF error";
+                StatusMessage = "Student map PDF error";
+                UserToast.Error($"Could not generate the student map PDF: {ex.Message}", "Student Map PDF");
             }
-        }
-
-        // Configuration flag: automatically open generated eligibility PDF in default viewer.
-        private bool _autoOpenEligibilityPdf = true;
-        public bool AutoOpenEligibilityPdf
-        {
-            get => _autoOpenEligibilityPdf;
-            set
+            finally
             {
-                if (_autoOpenEligibilityPdf != value)
-                {
-                    _autoOpenEligibilityPdf = value;
-                    OnPropertyChanged();
-                }
+                _eligibilityPdfBusy = false;
+                _generateEligibilityPdfRelay.NotifyCanExecuteChanged();
             }
         }
 
-        // When true, opens Syncfusion PdfViewerControl in an internal preview window after generation.
-        private bool _useInternalPdfViewer = true;
-        public bool UseInternalPdfViewer
+        public void PreviewLastEligibilityPdf()
         {
-            get => _useInternalPdfViewer;
-            set
+            var pdf = _lastGeneratedEligibilityPdf;
+            if (pdf is not { Length: > 0 } || !Views.Reports.PdfPreviewWindow.IsPdfPayload(pdf))
             {
-                if (_useInternalPdfViewer != value)
-                {
-                    _useInternalPdfViewer = value;
-                    OnPropertyChanged();
-                }
+                UserToast.Info("Generate a student map PDF first.", "Student Map PDF");
+                return;
             }
-        }
 
-        // Holds the full path to the most recently generated eligibility PDF (for printing from MainWindow or other views)
-        private string? _lastGeneratedEligibilityPdfPath;
-        public string? LastGeneratedEligibilityPdfPath
-        {
-            get => _lastGeneratedEligibilityPdfPath;
-            private set
-            {
-                if (_lastGeneratedEligibilityPdfPath != value)
-                {
-                    _lastGeneratedEligibilityPdfPath = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        private static void TryExternalOpen(string path)
-        {
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = true
-                });
+                ShowEligibilityPdfPreview(pdf);
             }
-            catch { /* non critical */ }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed reopening student map PDF");
+                UserToast.Error($"Could not open the PDF: {ex.Message}", "Student Map PDF");
+            }
         }
+
+        private void ShowEligibilityPdfPreview(byte[] pdf)
+        {
+            ShowOnUi(() =>
+            {
+                var preview = new Views.Reports.PdfPreviewWindow(pdf, "Student Map PDF");
+                DialogOwner.Assign(preview);
+                preview.Show();
+                preview.Activate();
+            });
+        }
+
+        private static void ShowOnUi(Action action)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher == null)
+            {
+                Logger.Warning("No WPF dispatcher — student map PDF preview skipped");
+                return;
+            }
+
+            try
+            {
+                if (dispatcher.CheckAccess())
+                {
+                    action();
+                    return;
+                }
+
+                dispatcher.Invoke(action);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "UI dispatch for student map PDF failed");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Compute Haversine distance in miles between two geo coordinates (double precision) — documented formula per .NET math usage.
         /// </summary>
@@ -1550,17 +1650,6 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         private static double DegreesToRadians(double deg) => deg * Math.PI / 180.0;
-
-        /// <summary>
-        /// Serialize ordered student coordinates to a compact JSON array [[lat,lon], ...] for persistence in Route.WaypointsJson.
-        /// </summary>
-        private static string BuildWaypointsJson(System.Collections.Generic.IEnumerable<BusBuddy.Core.Models.Student> ordered)
-        {
-            return RouteWaypointSerializer.FromPairs(
-                ordered
-                    .Where(s => s.HasValidatedHomeCoordinates)
-                    .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
-        }
 
         private void ClearDepotMarkers() => ClearMarkersOfKind(MapMarkerLabels.Kind.Depot);
 

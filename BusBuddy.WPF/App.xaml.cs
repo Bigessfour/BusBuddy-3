@@ -131,13 +131,13 @@ namespace BusBuddy.WPF
         /// into the current process environment variables.
         /// This makes them available to the documented entry points:
         /// - EnsureSyncfusionLicenseRegistered()  (looks for SYNCFUSION_LICENSE_KEY)
-        /// - GrokGlobalAPI constructor / XaiService paths (looks for XAI_API_KEY)
         /// - mcp.json consumers for Syncfusion_API_Key (if the MCP client inherits process env)
         ///
         /// Uses the standard `security` CLI (no extra dependencies).
         /// Safe on non-macOS (no-op).
-        /// Assumes entries in Passwords app have "Name" matching the env var name (e.g. "XAI_API_KEY").
+        /// Assumes entries in Passwords app have "Name" matching the env var name.
         /// If not found or on error, existing env vars are used (graceful fallback).
+        /// Local Ollama does not require an API key.
         /// </summary>
         private static void LoadApiKeysFromMacPasswords()
         {
@@ -154,8 +154,6 @@ namespace BusBuddy.WPF
             // Those set X-Goog-User-Project and cause HTTP 403 serviceUsageConsumer for API-key clients.
             var keysToLoad = new[]
             {
-                "XAI_API_KEY",
-                "GROK_API_KEY",
                 "SYNCFUSION_LICENSE_KEY",
                 "SYNCFUSION_API_KEY",
                 "Syncfusion_API_Key",
@@ -473,31 +471,22 @@ namespace BusBuddy.WPF
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
 
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
-                services.AddTransient<BusBuddy.WPF.Services.IRoutePopulationScaffold, BusBuddy.WPF.Services.RoutePopulationScaffold>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
 
-                // Local AI chat (Ollama by default; graceful fallback when unavailable).
-                // Separate HttpClient instances — GrokGlobalAPI mutates DefaultRequestHeaders/Timeout.
-                services.AddSingleton<BusBuddy.WPF.Services.IXAIChatService>(sp =>
-                {
-                    var cfg = sp.GetRequiredService<IConfiguration>();
-                    var provider = cfg["XAI:Provider"] ?? "Ollama";
-                    if (string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return new BusBuddy.WPF.Services.OllamaChatService(new HttpClient(), cfg);
-                    }
-
-                    // Disabled / legacy Xai chat: keep mock keyword assistant (no cloud dependency)
-                    return new BusBuddy.WPF.Services.XAIChatService();
-                });
-                services.AddTransient<BusBuddy.Core.Services.GrokGlobalAPI>(sp =>
-                    new BusBuddy.Core.Services.GrokGlobalAPI(
+                // Local AI chat (Ollama). Separate HttpClient — OllamaAiService mutates DefaultRequestHeaders/Timeout.
+                services.AddSingleton<BusBuddy.WPF.Services.IAiChatService>(sp =>
+                    new BusBuddy.WPF.Services.OllamaChatService(
+                        new HttpClient(),
+                        sp.GetRequiredService<IConfiguration>()));
+                services.AddTransient<BusBuddy.Core.Services.OllamaAiService>(sp =>
+                    new BusBuddy.Core.Services.OllamaAiService(
                         new HttpClient(),
                         sp.GetRequiredService<IConfiguration>()));
 
                 services.AddSingleton<IUserSettingsService, UserSettingsService>();
                 services.AddScoped<IFuelService, FuelService>();
                 services.AddScoped<IFuelLocationCatalog, FuelLocationCatalog>();
+                services.AddScoped<ITripReasonCatalog, TripReasonCatalog>();
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
                 services.AddScoped<IScheduleService, ScheduleService>();
                 services.AddScoped<IActivityScheduleService, ActivityScheduleService>();
@@ -528,10 +517,12 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
                     new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
                         sp.GetRequiredService<IBusBuddyDbContextFactory>(),
-                        sp.GetService<IRouteService>(),
+                        sp.GetRequiredService<IRouteService>(),
                         sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
                         sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>(),
-                        sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>()));
+                        sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
+                        sp.GetService<BusBuddy.Core.Services.GoogleMaps.IRouteOptimizationService>(),
+                        sp.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
@@ -906,7 +897,7 @@ namespace BusBuddy.WPF
                 }
 
                 using var scope = ServiceProvider.CreateScope();
-                var grok = scope.ServiceProvider.GetRequiredService<GrokGlobalAPI>();
+                var ollama = scope.ServiceProvider.GetRequiredService<OllamaAiService>();
                 var request = new BusBuddy.Core.Models.RouteOptimizationRequest
                 {
                     RouteId = routeId,
@@ -929,7 +920,7 @@ namespace BusBuddy.WPF
                     }
                 }
 
-                var result = Task.Run(() => grok.OptimizeRoutesAsync(request)).GetAwaiter().GetResult();
+                var result = Task.Run(() => ollama.OptimizeRoutesAsync(request)).GetAwaiter().GetResult();
 
                 var json = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
 

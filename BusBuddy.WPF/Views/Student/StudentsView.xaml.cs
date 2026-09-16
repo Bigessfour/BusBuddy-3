@@ -116,14 +116,20 @@ namespace BusBuddy.WPF.Views.Student
                     var addReady = vm.AddStudentCommand != null;
                     var editReady = vm.EditStudentCommand != null;
                     var archiveReady = vm.ArchiveStudentCommand != null;
-                    Logger.Information("Command readiness — Add:{Add} Edit:{Edit} Archive:{Archive}", addReady, editReady, archiveReady);
+                    var deleteReady = vm.DeleteStudentCommand != null;
+                    Logger.Information(
+                        "Command readiness — Add:{Add} Edit:{Edit} Archive:{Archive} Delete:{Delete}",
+                        addReady,
+                        editReady,
+                        archiveReady,
+                        deleteReady);
 
                     if (_startup != StudentsViewStartup.None)
                     {
                         _ = RunStartupActionAsync(vm);
                     }
 
-                    // If no selection yet, select first row to enable edit/delete
+                    // If no selection yet, select first row to enable edit/archive
                     if (vm.SelectedStudent == null && vm.Students.Count > 0)
                     {
                         Dispatcher.BeginInvoke(new Action(() =>

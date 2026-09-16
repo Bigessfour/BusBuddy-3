@@ -172,7 +172,76 @@ public class MapViewModelTests
         Assert.That(vm, Does.Not.Contain("IsLiveTrackingEnabled"));
         Assert.That(vm, Does.Contain("PlotPickupStopsCommand"));
         Assert.That(vm, Does.Contain("TryPlotTrip"));
-        Assert.That(vm, Does.Contain("HasValidatedHomeCoordinates"));
+        Assert.That(vm, Does.Contain("StudentPlotLocation.TryFromStored"));
+    }
+
+    [Test]
+    public async Task GenerateEligibilityRoutePdfAsync_NoStudents_ReturnsEmptyWithoutPlotting()
+    {
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(new List<Student>());
+        var vm = await CreateSettledViewModelAsync(students: students.Object);
+        var before = vm.MapMarkers.Count;
+
+        var (pdf, mapped, total) = await vm.GenerateEligibilityRoutePdfAsync();
+
+        Assert.That(pdf, Is.Empty);
+        Assert.That(mapped, Is.EqualTo(0));
+        Assert.That(total, Is.EqualTo(0));
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(before));
+        Assert.That(vm.StatusMessage, Does.Contain("no students").IgnoreCase);
+    }
+
+    [Test]
+    public async Task GenerateEligibilityRoutePdfAsync_CatalogStopWithoutHome_IsIncludedAndDoesNotPlot()
+    {
+        var pickups = new Mock<IPickupStopService>();
+        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new PickupStop { PickupStopId = 7, Name = "Oak & 4th", Latitude = 38.16m, Longitude = -102.71m }
+            });
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
+        [
+            new Student
+            {
+                StudentId = 9,
+                StudentName = "Bea",
+                PickupStopId = 7
+            }
+        ]);
+        var vm = await CreateSettledViewModelAsync(pickupStops: pickups.Object, students: students.Object);
+        var before = vm.MapMarkers.Count;
+
+        var (pdf, mapped, total) = await vm.GenerateEligibilityRoutePdfAsync();
+
+        Assert.That(total, Is.EqualTo(1));
+        Assert.That(mapped, Is.EqualTo(1));
+        Assert.That(pdf, Is.Not.Empty);
+        Assert.That(pdf[0], Is.EqualTo((byte)'%'));
+        Assert.That(pdf[1], Is.EqualTo((byte)'P'));
+        Assert.That(pdf[2], Is.EqualTo((byte)'D'));
+        Assert.That(pdf[3], Is.EqualTo((byte)'F'));
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(before), "PDF generation must not mutate the district overlay");
+    }
+
+    [Test]
+    public async Task GenerateEligibilityRoutePdfAsync_UnvalidatedHomeOnly_IsSkipped()
+    {
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
+        [
+            new Student { StudentId = 4, StudentName = "NoPin", Latitude = 0m, Longitude = 0m }
+        ]);
+        var vm = await CreateSettledViewModelAsync(students: students.Object);
+
+        var (pdf, mapped, total) = await vm.GenerateEligibilityRoutePdfAsync();
+
+        Assert.That(pdf, Is.Empty);
+        Assert.That(mapped, Is.EqualTo(0));
+        Assert.That(total, Is.EqualTo(1));
+        Assert.That(vm.StatusMessage, Does.Contain("no map pins").IgnoreCase);
     }
 
     [Test]
@@ -222,6 +291,64 @@ public class MapViewModelTests
 
         Assert.That(vm.TryPlotTrip(trip), Is.EqualTo(1));
         Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task TryPlotTrip_PlotsValidatedPathPolyline()
+    {
+        var routing = new Mock<IRoutingService>(MockBehavior.Strict);
+        var drivePoints = new[]
+        {
+            (38.09, -102.62),
+            (38.12, -102.70),
+            (39.74, -104.32)
+        };
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default))
+            .ReturnsAsync(new DrivePathResult
+            {
+                EncodedPolyline = EncodedPolylineCodec.Encode(drivePoints),
+                Points = drivePoints,
+                DistanceMeters = 16093
+            });
+
+        var vm = await CreateSettledViewModelAsync(routing: routing.Object);
+        var trip = new TripEvent
+        {
+            OriginName = "Wiley HS",
+            OriginLocation = new Destination
+            {
+                Name = "Wiley HS",
+                Address = "1 School",
+                City = "Wiley",
+                State = "CO",
+                ZipCode = "81092",
+                Latitude = 38.09m,
+                Longitude = -102.62m,
+                DestinationType = DestinationTypes.School
+            },
+            DestinationName = "Strasburg HS",
+            DestinationLocation = new Destination
+            {
+                Name = "Strasburg HS",
+                Address = "1 Main",
+                City = "Strasburg",
+                State = "CO",
+                ZipCode = "80136",
+                Latitude = 39.74m,
+                Longitude = -104.32m,
+                DestinationType = DestinationTypes.TripDestination
+            },
+            PathMiles = 10m
+        };
+
+        await vm.TryPlotTripAsync(trip);
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(2));
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+        Assert.That(vm.RouteLinePoints, Has.Count.EqualTo(3));
     }
 
     [Test]
@@ -1114,6 +1241,10 @@ public class MapViewModelTests
         Assert.That(vm, Does.Contain("PlotPickupsAsync()"));
         Assert.That(vm, Does.Contain("PlotStoredStudentsAsync()"));
         Assert.That(vm, Does.Contain("UpdateMapForRouteAsync(routeWithTrail, refreshDrivePath: true)"));
+        Assert.That(vm, Does.Contain("GenerateEligibilityRoutePdfAndPreviewAsync"));
+        Assert.That(vm, Does.Contain("StudentPlotLocation.TryFromStored"));
+        Assert.That(vm, Does.Not.Contain("PdfReports"));
+        Assert.That(vm, Does.Not.Contain("GenerateEligibilityRoutePdfAndSaveAsync"));
 
         var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
         Assert.That(layers, Does.Contain("StudentPlotLocation.PinsFromStored"));

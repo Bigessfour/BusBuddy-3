@@ -53,6 +53,23 @@ public static class RouteSession
         return AM;
     }
 
+    /// <summary>
+    /// Student / pairing slot for this row. Special-needs and transfer still use AM or PM
+    /// keys; a <c>-PM</c> suffix or <see cref="PM"/> session is the PM row.
+    /// </summary>
+    public static RouteTimeSlot ToAssignmentSlot(Route route)
+    {
+        ArgumentNullException.ThrowIfNull(route);
+        if (string.Equals(route.Session, PM, StringComparison.OrdinalIgnoreCase)
+            || (!string.IsNullOrWhiteSpace(route.RouteName)
+                && route.RouteName.EndsWith("-PM", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RouteTimeSlot.PM;
+        }
+
+        return RouteTimeSlot.AM;
+    }
+
     private static bool ContainsToken(string? value, string token) =>
         !string.IsNullOrWhiteSpace(value)
         && value.Contains(token, StringComparison.OrdinalIgnoreCase);

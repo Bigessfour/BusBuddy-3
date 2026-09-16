@@ -1,7 +1,6 @@
 using System.IO;
 using Serilog.Context;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Logging;
 
@@ -217,10 +216,11 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 existing.AMVehicleId = updated.AMVehicleId;
                 existing.PMVehicleId = updated.PMVehicleId;
-                existing.PMBusId = updated.PMBusId;
                 existing.BusNumber = updated.BusNumber;
                 existing.AMDriverId = updated.AMDriverId;
                 existing.PMDriverId = updated.PMDriverId;
+                existing.StudentCount = updated.StudentCount;
+                existing.StopCount = updated.StopCount;
                 OnPropertyChanged(nameof(SelectedRoute));
                 SyncAssignmentFromSelectedRoute();
             }
@@ -229,41 +229,6 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Error(ex, "Failed refreshing route after assignment");
             }
         }
-        private async Task EnrichRouteCountsAsync(IList<BusBuddy.Core.Models.Route> routes)
-        {
-            if (_studentService is null || routes.Count == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                var students = await _studentService.GetAllStudentsAsync().ConfigureAwait(true) ?? [];
-                foreach (var route in routes)
-                {
-                    route.StudentCount = students.Count(s =>
-                        string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase));
-                    try
-                    {
-                        var stops = await _routeService.GetRouteStopsAsync(route.RouteId).ConfigureAwait(true);
-                        if (stops.IsSuccess)
-                        {
-                            route.StopCount = stops.Value?.Count() ?? 0;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Debug(ex, "Stop count skipped for route {RouteId}", route.RouteId);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed enriching route student/stop counts");
-            }
-        }
-
         private async Task ExportCsvAsync()
         {
             try
@@ -280,12 +245,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                     if (_exportService is not null)
                     {
-                        var generated = await _exportService.ExportRoutesToCsvAsync().ConfigureAwait(true);
-                        if (!string.Equals(generated, path, StringComparison.OrdinalIgnoreCase))
-                        {
-                            File.Copy(generated, path, overwrite: true);
-                        }
-
+                        await _exportService.ExportRoutesToCsvAsync(path).ConfigureAwait(true);
                         RouteManagementExportHelper.RevealOrOpen(path);
                         StatusMessage = $"Exported CSV: {Path.GetFileName(path)}";
                         return;
@@ -319,12 +279,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                     if (_exportService is not null)
                     {
-                        var generated = await _exportService.GenerateRouteReportAsync().ConfigureAwait(true);
-                        if (!string.Equals(generated, path, StringComparison.OrdinalIgnoreCase))
-                        {
-                            File.Copy(generated, path, overwrite: true);
-                        }
-
+                        await _exportService.GenerateRouteReportAsync(path).ConfigureAwait(true);
                         RouteManagementExportHelper.RevealOrOpen(path);
                         StatusMessage = $"Exported report: {Path.GetFileName(path)}";
                         return;

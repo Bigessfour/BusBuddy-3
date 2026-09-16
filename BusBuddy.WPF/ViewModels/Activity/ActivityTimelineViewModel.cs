@@ -50,6 +50,22 @@ namespace BusBuddy.WPF.ViewModels.Activity
         [ObservableProperty]
         private DateTime endDate = DateTime.Now;
 
+        partial void OnStartDateChanged(DateTime value)
+        {
+            if (IsCustomDateRange)
+            {
+                _ = RefreshTimelineAsync();
+            }
+        }
+
+        partial void OnEndDateChanged(DateTime value)
+        {
+            if (IsCustomDateRange)
+            {
+                _ = RefreshTimelineAsync();
+            }
+        }
+
         private DateRangeOption _selectedDateRange = new() { Range = DateRange.LastWeek, DisplayName = "Last 7 Days" };
 
         public DateRangeOption SelectedDateRange

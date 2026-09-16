@@ -243,7 +243,7 @@
 
                 <syncfusion:ButtonAdv Label="Generate Eligibility PDF"
                               AutomationProperties.Name="Generate Eligibility PDF"
-                              ToolTip="Generate eligibility route PDF"
+                              ToolTip="Generate the student map PDF and open it"
                               Command="{Binding GenerateEligibilityRoutePdfCommand}"/>
                             </StackPanel>
                         </Border>

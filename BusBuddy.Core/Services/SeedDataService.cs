@@ -1685,8 +1685,7 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
             await context.SaveChangesAsync();
             messages.Add($"Prepared {regCount} regular student(s) for contrast routing");
 
-            route.StudentCount = await context.Students.CountAsync(s =>
-                s.AMRoute == routeName || s.PMRoute == routeName);
+            route.StudentCount = await context.Students.WhereOnRoute(route).CountAsync();
             await context.SaveChangesAsync();
 
             Logger.Information(

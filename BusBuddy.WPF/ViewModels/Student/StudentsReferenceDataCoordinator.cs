@@ -65,9 +65,9 @@ public sealed class StudentsReferenceDataCoordinator
         {
             var destService = App.ServiceProvider?.GetService<IDestinationService>();
             var destinations = destService is not null
-                ? await destService.GetActiveSchoolsAsync().ConfigureAwait(true)
+                ? await destService.GetRosterSchoolsAsync().ConfigureAwait(true)
                 : await context.Destinations
-                    .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                    .Where(d => !d.IsDeleted && d.DestinationType == DestinationTypes.School && d.IsActive)
                     .ToListAsync()
                     .ConfigureAwait(true);
             foreach (var d in destinations)

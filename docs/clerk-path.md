@@ -59,7 +59,7 @@ Keep both for now. After a dialog closes, the dock grid refreshes from the servi
 | -------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Bus and driver on a route  | **`Routes.AMVehicleId` / `AMDriverId` (and PM)** via `RouteService.Assign*ToRouteAsync`     | `RouteAssignments` table; do not invent a fourth path   |
 | Daily schedule for a route | **`Schedules`** via `IScheduleService.AddScheduleAsync` (reads bus/driver from `Route.AM*`) | —                                                       |
-| Kid on a route             | `Student.AMRoute` / `PMRoute` strings; `Student.RouteId`; `Student.RouteAssignmentId`       | still open                                              |
+| Kid on a route             | `Student.AmRouteId` / `PmRouteId` (names still mirrored until the string drop)              | still open                                              |
 
 Hop **4b (2026-09-09):** keep `Route.AM*` / `PM*` as the year-default bus/driver source of truth. `RouteAssignments` stays in the schema unused by Assign Vehicle/Driver. `Schedules` is the next hop (daily instance), not a competing place to store the default pairing.
 

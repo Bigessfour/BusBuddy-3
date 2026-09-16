@@ -67,7 +67,7 @@ namespace BusBuddy.WPF.ViewModels.Reports
         public ObservableCollection<ReportEntry> GeneratedReports { get; } = new ObservableCollection<ReportEntry>();
 
         /// <summary>
-        /// AI-powered summary from Ollama / GrokGlobalAPI (mock fallback when offline).
+        /// AI-powered summary from local Ollama (mock fallback when offline).
         /// </summary>
         public string AIReportSummary
         {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BusBuddy.Core.Data;
@@ -38,13 +39,36 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void GrokGlobalAPI_CanBeInstantiated_WithMockConfig()
+        public void OllamaAiService_CanBeInstantiated_WithMockConfig()
         {
-            var mockConfig = new Mock<IConfiguration>();
+            IConfiguration config = new ConfigurationBuilder().Build();
             using var httpClient = new HttpClient();
-            var api = new GrokGlobalAPI(httpClient, mockConfig.Object);
+            var api = new OllamaAiService(httpClient, config);
 
             Assert.That(api, Is.Not.Null);
+            Assert.That(api.IsConfigured, Is.True);
+        }
+
+        [Test]
+        public async Task OllamaAiService_OptimizeRoutes_WhenUnreachable_ReturnsMock()
+        {
+            var inMemory = new Dictionary<string, string?>
+            {
+                ["Ollama:BaseUrl"] = "http://127.0.0.1:1/v1",
+                ["Ollama:Enabled"] = "true",
+                ["Ollama:TimeoutSeconds"] = "2"
+            };
+            IConfiguration config = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemory)
+                .Build();
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+            var api = new OllamaAiService(httpClient, config);
+
+            var result = await api.OptimizeRoutesAsync(new RouteOptimizationRequest { RouteId = "test-1" });
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.AIModel, Is.EqualTo("Mock-AI"));
+            Assert.That(result.OptimizationSuggestions, Does.Contain("Mock optimization"));
         }
 
         [Test]

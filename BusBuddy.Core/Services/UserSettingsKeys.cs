@@ -22,6 +22,12 @@ public static class UserSettingsKeys
     /// <summary>Clerk-maintained fuel vendor/location names (yearly bid list).</summary>
     public const string FuelLocations = "Fuel.Locations";
 
+    /// <summary>Clerk-maintained trip purposes (Sports, Field Trip, Band, …).</summary>
+    public const string TripPurposes = "Trip.Purposes";
+
+    /// <summary>Clerk-maintained sports / trip reasons under Sports.</summary>
+    public const string TripSports = "Trip.Sports";
+
     /// <summary>UTC timestamp of last successful fuel reconciliation export / save.</summary>
     public const string FuelLastReconciliationUtc = "Fuel.LastReconciliationUtc";
 

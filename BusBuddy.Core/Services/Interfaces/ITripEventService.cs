@@ -17,6 +17,18 @@ namespace BusBuddy.Core.Services.Interfaces
         Task<bool> HasConflictsAsync(int? vehicleId, int? driverId, DateTime startTime, DateTime endTime, int? excludeTripId = null);
         Task<IEnumerable<TripEvent>> GetConflictingTripsAsync(int? vehicleId, int? driverId, DateTime startTime, DateTime endTime);
 
+        /// <summary>
+        /// Warn when a loan overlaps another trip or a published AM/PM home session.
+        /// Does not refuse the assignment and does not change HomeRouteId or RouteId.
+        /// </summary>
+        Task<IReadOnlyList<string>> GetAssignmentWarningsAsync(
+            int? vehicleId,
+            int? driverId,
+            DateTime startTime,
+            DateTime endTime,
+            int? excludeTripId = null,
+            CancellationToken cancellationToken = default);
+
         /// <summary>Clerk import of the office trip board. Upserts by ExternalTicketNo. Does not create students.</summary>
         Task<TripBoardImportResult> ImportBoardCsvAsync(string csv, CancellationToken cancellationToken = default);
 

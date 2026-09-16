@@ -42,6 +42,7 @@ public class PlacesAddressSurfaceTests
         var routeStop = XamlViewFile.Read("Views/Route/RouteStopEditDialog.xaml");
         Assert.That(routeStop, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(routeStop, Does.Contain("UseFormattedAddress=\"True\""));
+        Assert.That(routeStop, Does.Contain("AddressApplied=\"StopAddressBox_AddressApplied\""));
 
         var transfer = XamlViewFile.Read("Views/Student/StudentSchoolTransferForm.xaml");
         Assert.That(transfer, Does.Contain("AddressText=\"{Binding PickupAddress"));
@@ -50,6 +51,10 @@ public class PlacesAddressSurfaceTests
         var activity = XamlViewFile.Read("Views/Activity/ActivityScheduleEditDialog.xaml");
         Assert.That(activity, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(activity, Does.Contain("AddressText=\"{Binding ScheduledDestination"));
+
+        var trip = XamlViewFile.Read("Views/Activity/TripEventEditDialog.xaml");
+        Assert.That(trip, Does.Contain("controls:PlacesAddressBox"));
+        Assert.That(trip, Does.Contain("AddressText=\"{Binding DestinationName"));
     }
 
     [Test]

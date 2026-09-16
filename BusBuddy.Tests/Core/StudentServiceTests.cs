@@ -166,6 +166,28 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task GetStudentsByRouteAsync_KeyedStudentWithStaleName_StaysOnKeyedRoute()
+        {
+            var west = await _dbContext.Routes.FirstAsync(r => r.RouteName == "West Route");
+            _dbContext.Students.Add(new Student
+            {
+                StudentName = "S4",
+                Grade = "1",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                AMRoute = "East Route",
+                AmRouteId = west.RouteId
+            });
+            await _dbContext.SaveChangesAsync();
+
+            var east = await _studentService.GetStudentsByRouteAsync("East Route");
+            east.Select(s => s.StudentName).Should().NotContain("S4");
+            var westRiders = await _studentService.GetStudentsByRouteAsync("West Route");
+            westRiders.Select(s => s.StudentName).Should().Contain("S4");
+        }
+
+        [Test]
         public async Task AssignStudentToRouteAsync_UpdatesAMandPM()
         {
             var s = new Student
@@ -186,6 +208,8 @@ namespace BusBuddy.Tests.Core
             var updated = await _dbContext.Students.FindAsync(s.StudentId);
             updated!.AMRoute.Should().Be("East Route");
             updated.PMRoute.Should().Be("West Route");
+            updated.AmRouteId.Should().Be(1);
+            updated.PmRouteId.Should().Be(2);
         }
 
         [Test]

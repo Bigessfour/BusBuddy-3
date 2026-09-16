@@ -6,6 +6,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core;
@@ -31,6 +32,7 @@ public class RouteStopReorderTests : IDisposable
     {
         var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
             .UseInMemoryDatabase($"RouteReorder_{Guid.NewGuid()}")
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .EnableSensitiveDataLogging()
             .Options;
         _context = new BusBuddyDbContext(options);

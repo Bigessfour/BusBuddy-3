@@ -10,22 +10,22 @@ using Serilog;
 namespace BusBuddy.WPF.Services
 {
     /// <summary>
-    /// Local Ollama-backed chat implementing <see cref="IXAIChatService"/>.
+    /// Local Ollama-backed chat implementing <see cref="IAiChatService"/>.
     /// Uses Ollama's OpenAI-compatible /v1/chat/completions endpoint.
     /// Gracefully degrades when Ollama is not running.
     /// </summary>
-    public class OllamaChatService : IXAIChatService
+    public class OllamaChatService : IAiChatService
     {
         private static readonly ILogger Logger = Log.ForContext<OllamaChatService>();
         private readonly HttpClient _httpClient;
-        private readonly XaiOptions _options;
+        private readonly OllamaOptions _options;
         private bool _isInitialized;
         private bool _ollamaReachable;
 
         public OllamaChatService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _options = BindOptions(configuration);
+            _options = OllamaOptions.Bind(configuration);
             var timeout = TimeSpan.FromSeconds(Math.Clamp(_options.TimeoutSeconds, 1, 300));
             if (_httpClient.Timeout < timeout)
             {
@@ -42,15 +42,15 @@ namespace BusBuddy.WPF.Services
                     await InitializeAsync();
                 }
 
-                if (!_ollamaReachable || _options.IsDisabled || !_options.UseLiveAPI)
+                if (!_ollamaReachable || !_options.Enabled)
                 {
                     return BuildUnavailableMessage();
                 }
 
-                var model = string.IsNullOrWhiteSpace(_options.OllamaModel)
+                var model = string.IsNullOrWhiteSpace(_options.Model)
                     ? "llama3.2"
-                    : _options.OllamaModel;
-                var baseUrl = (_options.OllamaBaseUrl ?? "http://localhost:11434/v1").TrimEnd('/');
+                    : _options.Model;
+                var baseUrl = (_options.BaseUrl ?? "http://localhost:11434/v1").TrimEnd('/');
                 var payload = new
                 {
                     model,
@@ -98,10 +98,10 @@ namespace BusBuddy.WPF.Services
         {
             try
             {
-                var native = (_options.OllamaNativeBaseUrl ?? "http://localhost:11434").TrimEnd('/');
+                var native = (_options.NativeBaseUrl ?? "http://localhost:11434").TrimEnd('/');
                 using var response = await _httpClient.GetAsync($"{native}/api/tags");
                 _ollamaReachable = response.IsSuccessStatusCode;
-                return _ollamaReachable && _options.UseLiveAPI && !_options.IsDisabled;
+                return _ollamaReachable && _options.Enabled;
             }
             catch (Exception ex)
             {
@@ -123,55 +123,17 @@ namespace BusBuddy.WPF.Services
             if (_ollamaReachable)
             {
                 Logger.Information("OllamaChatService ready at {BaseUrl} model {Model}",
-                    _options.OllamaBaseUrl, _options.OllamaModel);
+                    _options.BaseUrl, _options.Model);
             }
             else
             {
                 Logger.Warning(
                     "Ollama not reachable at {NativeBase}. Chat will use graceful offline fallback. Start Ollama locally to enable live AI.",
-                    _options.OllamaNativeBaseUrl);
+                    _options.NativeBaseUrl);
             }
         }
 
         private static string BuildUnavailableMessage() =>
             "Local AI (Ollama) is not available right now. Start Ollama on this machine (default http://localhost:11434) and ensure a model is pulled (e.g. `ollama pull llama3.2`). BusBuddy continues to work offline without chat AI.";
-
-        private static XaiOptions BindOptions(IConfiguration configuration)
-        {
-            var section = configuration.GetSection(XaiOptions.SectionName);
-            var options = new XaiOptions
-            {
-                Provider = section["Provider"] ?? "Ollama",
-                ApiKey = section["ApiKey"] ?? string.Empty,
-                BaseUrl = section["BaseUrl"] ?? "https://api.x.ai/v1",
-                OllamaBaseUrl = section["OllamaBaseUrl"] ?? "http://localhost:11434/v1",
-                OllamaNativeBaseUrl = section["OllamaNativeBaseUrl"] ?? "http://localhost:11434",
-                OllamaModel = section["OllamaModel"] ?? "llama3.2",
-                DefaultModel = section["DefaultModel"] ?? "grok-4-latest",
-                PriorityLevel = section["PriorityLevel"] ?? "Standard"
-            };
-
-            if (int.TryParse(section["TimeoutSeconds"], out var timeout))
-            {
-                options.TimeoutSeconds = timeout;
-            }
-
-            if (double.TryParse(section["Temperature"], out var temperature))
-            {
-                options.Temperature = temperature;
-            }
-
-            if (bool.TryParse(section["UseLiveAPI"], out var useLive))
-            {
-                options.UseLiveAPI = useLive;
-            }
-
-            if (string.IsNullOrWhiteSpace(options.Provider))
-            {
-                options.Provider = "Ollama";
-            }
-
-            return options;
-        }
     }
 }

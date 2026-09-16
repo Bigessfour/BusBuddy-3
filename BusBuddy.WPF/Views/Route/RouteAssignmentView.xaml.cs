@@ -30,34 +30,28 @@ namespace BusBuddy.WPF.Views.Route
 
         public RouteAssignmentView()
         {
+            InitializeView(null);
+        }
+
+        /// <summary>
+        /// Overload allowing caller to provide a pre-selected route (used when invoked from RouteManagementView)
+        /// </summary>
+        /// <param name="preselectedRoute">Route to preselect in assignment UI</param>
+        public RouteAssignmentView(BusBuddy.Core.Models.Route preselectedRoute)
+        {
+            InitializeView(preselectedRoute);
+        }
+
+        private void InitializeView(BusBuddy.Core.Models.Route? preselectedRoute)
+        {
             Logger.Debug("RouteAssignmentView constructor starting");
             try
             {
                 Logger.Debug("Initializing RouteAssignmentView XAML components");
                 InitializeComponent();
 
-                Logger.Debug("Setting DataContext to RouteAssignmentViewModel");
-                RouteAssignmentViewModel viewModel;
-                try
-                {
-                    var sp = App.ServiceProvider;
-                    if (sp != null)
-                    {
-                        var routeService = sp.GetService<IRouteService>();
-                        viewModel = new RouteAssignmentViewModel(routeService);
-                    }
-                    else
-                    {
-                        viewModel = new RouteAssignmentViewModel();
-                    }
-                }
-                catch
-                {
-                    viewModel = new RouteAssignmentViewModel();
-                }
-                DataContext = viewModel;
+                SetDataContextFromServices(preselectedRoute);
 
-                Logger.Information("RouteAssignmentView initialized successfully");
                 Loaded += OnLoaded;
                 Unloaded += OnUnloaded;
 
@@ -83,26 +77,30 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
-        /// <summary>
-        /// Overload allowing caller to provide a pre-selected route (used when invoked from RouteManagementView)
-        /// </summary>
-        /// <param name="preselectedRoute">Route to preselect in assignment UI</param>
-        public RouteAssignmentView(BusBuddy.Core.Models.Route preselectedRoute) : this()
+        private void SetDataContextFromServices(BusBuddy.Core.Models.Route? preselectedRoute)
         {
             try
             {
-                if (DataContext is RouteAssignmentViewModel vm)
-                {
-                    // Replace DataContext with one that has preselected route so initial load can pick it
-                    var sp = App.ServiceProvider;
-                    IRouteService? routeService = null;
-                    try { routeService = sp?.GetService<IRouteService>(); } catch { }
-                    DataContext = new RouteAssignmentViewModel(routeService, preselectedRoute);
-                }
+                var serviceProvider = App.ServiceProvider
+                    ?? throw new InvalidOperationException("App.ServiceProvider is not available");
+                var routeService = serviceProvider.GetRequiredService<IRouteService>();
+
+                DataContext = preselectedRoute is null
+                    ? new RouteAssignmentViewModel(routeService)
+                    : new RouteAssignmentViewModel(routeService, preselectedRoute);
+
+                Logger.Information("RouteAssignmentView initialized successfully");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to apply preselected route in RouteAssignmentView");
+                // Without IRouteService the surface has no trustworthy data; it must stay empty rather than invent rows.
+                DataContext = null;
+                Logger.Error(ex, "Failed to resolve IRouteService for RouteAssignmentView; leaving DataContext null");
+                ServiceErrorText.Text =
+                    "Route service unavailable — route assignment is disabled. No route, student, or stop data is shown. "
+                    + $"Check the database connection and reopen this view. ({ex.Message})";
+                ServiceErrorBanner.Visibility = Visibility.Visible;
+                RouteConfigurationBar.IsEnabled = false;
             }
         }
 

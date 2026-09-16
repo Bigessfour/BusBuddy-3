@@ -13,8 +13,8 @@ namespace BusBuddy.Tests.Core
 {
     /// <summary>
     /// Covers the specs/students.md invariants added in the Students ship-readiness pass:
-    /// archive-instead-of-delete, explicit AM/PM eligibility + SchoolYear, and the
-    /// <see cref="StudentService.SearchStudentsAsync"/> EF-translation fix.
+    /// archive-when-they-may-return, logged delete with a required reason, explicit AM/PM eligibility
+    /// + SchoolYear, and the <see cref="StudentService.SearchStudentsAsync"/> EF-translation fix.
     /// </summary>
     /// <remarks>All fixtures use obviously synthetic tokens — no student PII.</remarks>
     [TestFixture]
@@ -74,7 +74,7 @@ namespace BusBuddy.Tests.Core
             return student;
         }
 
-        #region Item 1 — archive instead of delete
+        #region Item 1 — archive and logged delete
 
         [Test]
         public async Task ArchiveStudentAsync_ClearsActiveButKeepsRow()
@@ -116,21 +116,36 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task PurgeStudentRecordAsync_RefusesWhileStudentIsActive()
+        public async Task DeleteStudentAsync_RemovesAnActiveStudentAndWritesTheLog()
         {
             var student = await SeedStudentAsync();
 
-            var act = async () => await _studentService.PurgeStudentRecordAsync(student.StudentId, "typo row");
+            var deleted = await _studentService.DeleteStudentAsync(
+                student.StudentId,
+                StudentDeletionReason.Moved,
+                "left for TEST_DISTRICT");
 
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*Archive the student instead*");
-            (await _dbContext.Students.FindAsync(student.StudentId)).Should().NotBeNull();
+            deleted.Should().BeTrue();
+            (await _dbContext.Students.FindAsync(student.StudentId)).Should().BeNull();
+            var log = _dbContext.StudentDeletionLogs.Should().ContainSingle().Subject;
+            log.StudentId.Should().Be(student.StudentId);
+            log.StudentNumber.Should().Be("TEST-0001");
+            log.Reason.Should().Be(nameof(StudentDeletionReason.Moved));
+            log.Notes.Should().Be("left for TEST_DISTRICT");
+            log.WasActive.Should().BeTrue();
+            log.ScheduleCount.Should().Be(0);
+            log.TransferCount.Should().Be(0);
         }
 
         [Test]
-        public async Task PurgeStudentRecordAsync_RefusesWhenTransferHistoryExists()
+        public async Task DeleteStudentAsync_RemovesRelatedAssignmentRowsAndCountsThem()
         {
-            var student = await SeedStudentAsync(active: false);
+            var student = await SeedStudentAsync();
+            _dbContext.StudentSchedules.Add(new StudentSchedule
+            {
+                StudentId = student.StudentId,
+                AssignmentType = "Regular",
+            });
             _dbContext.StudentSchoolTransfers.Add(new StudentSchoolTransfer
             {
                 StudentId = student.StudentId,
@@ -142,39 +157,37 @@ namespace BusBuddy.Tests.Core
             await _dbContext.SaveChangesAsync();
             _dbContext.ChangeTracker.Clear();
 
-            var act = async () => await _studentService.PurgeStudentRecordAsync(student.StudentId, "cleanup");
+            var deleted = await _studentService.DeleteStudentAsync(
+                student.StudentId,
+                StudentDeletionReason.NotAttending);
 
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("*history*");
-            (await _dbContext.Students.FindAsync(student.StudentId)).Should().NotBeNull();
-        }
-
-        [Test]
-        public async Task PurgeStudentRecordAsync_RequiresAReason()
-        {
-            var student = await SeedStudentAsync(active: false);
-
-            var act = async () => await _studentService.PurgeStudentRecordAsync(student.StudentId, "   ");
-
-            await act.Should().ThrowAsync<ArgumentException>();
-        }
-
-        [Test]
-        public async Task PurgeStudentRecordAsync_RemovesArchivedRowWithNoHistory()
-        {
-            var student = await SeedStudentAsync(active: false);
-
-            var purged = await _studentService.PurgeStudentRecordAsync(student.StudentId, "row created in error");
-
-            purged.Should().BeTrue();
+            deleted.Should().BeTrue();
             (await _dbContext.Students.FindAsync(student.StudentId)).Should().BeNull();
+            _dbContext.StudentSchedules.Should().BeEmpty();
+            _dbContext.StudentSchoolTransfers.Should().BeEmpty();
+            var log = _dbContext.StudentDeletionLogs.Should().ContainSingle().Subject;
+            log.Reason.Should().Be(nameof(StudentDeletionReason.NotAttending));
+            log.ScheduleCount.Should().Be(1);
+            log.TransferCount.Should().Be(1);
+        }
+
+        [Test]
+        public async Task DeleteStudentAsync_RejectsAnUndefinedReason()
+        {
+            var student = await SeedStudentAsync();
+
+            var act = async () => await _studentService.DeleteStudentAsync(
+                student.StudentId,
+                (StudentDeletionReason)0);
+
+            await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+            (await _dbContext.Students.FindAsync(student.StudentId)).Should().NotBeNull();
         }
 
         [Test]
         public void FamilyToStudent_DeleteBehaviourIsRestrict()
         {
-            // specs/students.md forbids deleting a student to end service, so a Family delete must not
-            // be able to cascade one away.
+            // A Family delete must not cascade-delete students. Clerk deletion is explicit.
             var foreignKey = _dbContext.Model
                 .FindEntityType(typeof(Student))!
                 .GetForeignKeys()

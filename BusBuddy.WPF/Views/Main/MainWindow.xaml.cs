@@ -320,50 +320,42 @@ namespace BusBuddy.WPF.Views.Main
                     if (vm == null)
                     {
                         Logger.Warning("MapViewModel not resolved for eligibility PDF generation");
-                        System.Windows.MessageBox.Show("Map ViewModel not available (MapViewModel)", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        UserToast.Warning("Map is not available.", "Student Map PDF");
                         return;
                     }
-                    await vm.GenerateEligibilityRoutePdfAndSaveAsync();
-                    System.Windows.MessageBox.Show("Eligibility PDF generated. Check PdfReports folder.", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Information);
+                    await vm.GenerateEligibilityRoutePdfAndPreviewAsync();
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Eligibility PDF generation failed from MainWindow");
-                System.Windows.MessageBox.Show($"Eligibility PDF error: {ex.Message}", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Error);
+                UserToast.Error($"Could not generate the student map PDF: {ex.Message}", "Student Map PDF");
             }
         }
 
-        // Print the last generated eligibility PDF via shell print verb.
         private void PrintEligibilityPdfButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 var sp = App.ServiceProvider;
                 var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
-                var path = vm?.LastGeneratedEligibilityPdfPath;
-                if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path))
+                if (vm == null)
                 {
-                    System.Windows.MessageBox.Show("No previously generated eligibility PDF found.", "Print Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Information);
+                    UserToast.Warning("Map is not available.", "Student Map PDF");
                     return;
                 }
+
                 using (Serilog.Context.LogContext.PushProperty("UIAction", "PrintEligibilityPdf"))
                 {
-                    Logger.Information("Printing eligibility PDF {Path}", path);
+                    Logger.Information("Reopening last student map PDF");
                 }
-                var psi = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = path,
-                    Verb = "print",
-                    UseShellExecute = true,
-                    CreateNoWindow = true
-                };
-                System.Diagnostics.Process.Start(psi);
+
+                vm.PreviewLastEligibilityPdf();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to print eligibility PDF");
-                System.Windows.MessageBox.Show($"Print failed: {ex.Message}", "Print Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Failed to reopen eligibility PDF");
+                UserToast.Error($"Could not open the PDF: {ex.Message}", "Student Map PDF");
             }
         }
 
@@ -673,21 +665,6 @@ namespace BusBuddy.WPF.Views.Main
                     Logger.Error(inner, "Failed to apply fallback theme");
                 }
             }
-        }
-
-        // Quick theme toggle buttons (🌙 / ☀️)
-        private void DarkThemeButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Information("DarkThemeButton_Click invoked - applying FluentDark theme");
-            ApplyThemeGlobally("FluentDark");
-            TrySyncThemeSelector("FluentDark");
-        }
-
-        private void LightThemeButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Information("LightThemeButton_Click invoked - applying FluentLight theme");
-            ApplyThemeGlobally("FluentLight");
-            TrySyncThemeSelector("FluentLight");
         }
 
         private void TrySyncThemeSelector(string themeName)
@@ -1139,8 +1116,22 @@ namespace BusBuddy.WPF.Views.Main
                     return;
                 }
 
-                var csvTask = exportService.ExportRoutesToCsvAsync();
-                var reportTask = exportService.GenerateRouteReportAsync();
+                var csvName = $"BusBuddy_Routes_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                var csvPath = ExportFilePrompt.TryGetPath(csvName, "CSV files (*.csv)|*.csv|All files (*.*)|*.*");
+                if (csvPath is null)
+                {
+                    return;
+                }
+
+                var reportName = $"BusBuddy_Report_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+                var reportPath = ExportFilePrompt.TryGetPath(reportName, "Text files (*.txt)|*.txt|All files (*.*)|*.*");
+                if (reportPath is null)
+                {
+                    return;
+                }
+
+                var csvTask = exportService.ExportRoutesToCsvAsync(csvPath);
+                var reportTask = exportService.GenerateRouteReportAsync(reportPath);
 
                 Task.Run(async () =>
                 {

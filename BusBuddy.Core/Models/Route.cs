@@ -49,12 +49,9 @@ public partial class Route : INotifyPropertyChanged
             return DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
         }
 
-        var calendarDate = value.Kind switch
-        {
-            DateTimeKind.Utc => value.Date,
-            DateTimeKind.Local => value.ToUniversalTime().Date,
-            _ => value.Date
-        };
+        // Keep the calendar face date. Converting Local to UTC here shifted the day backwards
+        // for any zone east of UTC, and a Syncfusion SfDatePicker hands back Kind=Local.
+        var calendarDate = value.Date;
 
         var maxDate = DateTime.UtcNow.Date.AddYears(1);
         if (calendarDate > maxDate)
@@ -251,13 +248,6 @@ public partial class Route : INotifyPropertyChanged
     public virtual Driver? PMDriver { get; set; }
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
 
-    // Computed properties with null safety
-    public string SafeRouteName => string.IsNullOrWhiteSpace(RouteName) ? $"Route-{RouteId}" : RouteName;
-    public string DateFormatted => Date.ToString("yyyy-MM-dd");
-    public bool HasAMAssignment => AMVehicleId.HasValue && AMDriverId.HasValue;
-    public bool HasPMAssignment => PMVehicleId.HasValue && PMDriverId.HasValue;
-    public decimal TotalMiles => (AMEndMiles - AMBeginMiles ?? 0) + (PMEndMiles - PMBeginMiles ?? 0);
-
     [StringLength(100)]
     [Display(Name = "School")]
     public string? School
@@ -305,20 +295,5 @@ public partial class Route : INotifyPropertyChanged
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    // Backwards-compatible aliases for older WPF naming
-    [NotMapped]
-    public int? AMBusId
-    {
-        get => AMVehicleId;
-        set => AMVehicleId = value;
-    }
-
-    [NotMapped]
-    public int? PMBusId
-    {
-        get => PMVehicleId;
-        set => PMVehicleId = value;
     }
 }

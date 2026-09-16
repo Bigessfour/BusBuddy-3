@@ -222,7 +222,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public bool HasSelectedStudent => SelectedStudent != null;
 
         /// <summary>
-        /// Toolbar label for soft end-of-service. specs/students.md forbids hard delete.
+        /// Toolbar label for archive/restore when the child may return. Delete is a separate command.
         /// </summary>
         public string ArchiveStudentButtonLabel =>
             SelectedStudent is { Active: false } ? "Restore Student" : "Archive Student";
@@ -240,12 +240,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Number of students with assigned routes
         /// </summary>
-        public int StudentsWithRoutes => Students.Count(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute));
+        public int StudentsWithRoutes => Students.Count(StudentRouteAssignment.IsAssignedAny);
 
         /// <summary>
         /// Number of students without assigned routes
         /// </summary>
-        public int UnassignedStudents => Students.Count(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
+        public int UnassignedStudents => Students.Count(s => !StudentRouteAssignment.IsAssignedAny(s));
 
         /// <summary>
         /// Text used for quick filtering; updates ICollectionView filter and status text.
@@ -265,8 +265,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Whether the grid shows active students, archived students, or both. Archiving replaces
-        /// deletion (specs/students.md), so archived rows must stay reachable.
+        /// Whether the grid shows active students, archived students, or both.
+        /// Archive keeps the row when the child may return; delete is a separate logged action.
         /// </summary>
         public BusBuddy.WPF.Models.FilterStatus ActiveFilter
         {
@@ -360,9 +360,12 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         public ICommand AddStudentCommand { get; private set; } = null!;
         public ICommand AddSchoolCommand { get; private set; } = null!;
+        public ICommand EditSchoolCommand { get; private set; } = null!;
+        public ICommand DeleteSchoolCommand { get; private set; } = null!;
         public ICommand AddPickupStopCommand { get; private set; } = null!;
         public ICommand EditStudentCommand { get; private set; } = null!;
         public ICommand ArchiveStudentCommand { get; private set; } = null!;
+        public ICommand DeleteStudentCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
         public ICommand ExportCommand { get; private set; } = null!;
         public ICommand ValidateAddressCommand { get; private set; } = null!;
@@ -376,6 +379,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         // Backing fields to allow NotifyCanExecuteChanged on selection changes
         private RelayCommand? _editStudentRelay;
         private AsyncRelayCommand? _archiveStudentRelay;
+        private AsyncRelayCommand? _deleteStudentRelay;
         private AsyncRelayCommand? _validateAddressRelay;
         private AsyncRelayCommand? _bulkAssignRouteRelay;
 
@@ -403,11 +407,15 @@ namespace BusBuddy.WPF.ViewModels.Student
             // Existing commands
             AddStudentCommand = new RelayCommand(ExecuteAddStudent);
             AddSchoolCommand = new RelayCommand(ExecuteAddSchool);
+            EditSchoolCommand = new AsyncRelayCommand(ExecuteEditSchoolAsync);
+            DeleteSchoolCommand = new AsyncRelayCommand(ExecuteDeleteSchoolAsync);
             AddPickupStopCommand = new RelayCommand(ExecuteAddPickupStop);
             _editStudentRelay = new RelayCommand(ExecuteEditStudent, CanExecuteEditStudent);
             EditStudentCommand = _editStudentRelay;
             _archiveStudentRelay = new AsyncRelayCommand(ExecuteArchiveStudentAsync, CanExecuteArchiveStudent);
             ArchiveStudentCommand = _archiveStudentRelay;
+            _deleteStudentRelay = new AsyncRelayCommand(ExecuteDeleteStudentAsync, CanExecuteDeleteStudent);
+            DeleteStudentCommand = _deleteStudentRelay;
             RefreshCommand = new AsyncRelayCommand(LoadStudentsAsync);
             ExportCommand = new RelayCommand(ExecuteExport);
             _validateAddressRelay = new AsyncRelayCommand(ExecuteValidateAddressAsync, CanExecuteValidateAddress);
@@ -427,13 +435,14 @@ namespace BusBuddy.WPF.ViewModels.Student
             _schoolTransferRelay = new RelayCommand(ExecuteSchoolTransfer, () => HasSelectedStudent);
             SchoolTransferCommand = _schoolTransferRelay;
 
-            Logger.Debug("Commands initialized: AddStudent/AddSchool/Edit/Archive/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/SchoolTransfer");
+            Logger.Debug("Commands initialized: AddStudent/AddSchool/EditSchool/DeleteSchool/Edit/Archive/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/SchoolTransfer");
         }
 
         private void NotifySelectionDependentCommands()
         {
             _editStudentRelay?.NotifyCanExecuteChanged();
             _archiveStudentRelay?.NotifyCanExecuteChanged();
+            _deleteStudentRelay?.NotifyCanExecuteChanged();
             _validateAddressRelay?.NotifyCanExecuteChanged();
             _bulkAssignRouteRelay?.NotifyCanExecuteChanged();
             _schoolTransferRelay?.NotifyCanExecuteChanged();
@@ -446,6 +455,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         private void ExecuteAddStudent() => ApplyDialogOutcome(_dialogs.AddStudent());
 
         private void ExecuteAddSchool() => ApplyDialogOutcome(_dialogs.AddSchool());
+
+        private async Task ExecuteEditSchoolAsync() =>
+            ApplyDialogOutcome(await _dialogs.EditSchoolAsync().ConfigureAwait(true));
+
+        private async Task ExecuteDeleteSchoolAsync() =>
+            ApplyDialogOutcome(await _dialogs.DeleteSchoolAsync().ConfigureAwait(true));
 
         private void ExecuteAddPickupStop() => ApplyDialogOutcome(_dialogs.AddPickupStop());
 
@@ -487,8 +502,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         #region Command Handlers — roster operations
 
         /// <summary>
-        /// Archives or restores the selected student. specs/students.md: "MUST NOT delete a student to
-        /// end service." There is deliberately no delete path here.
+        /// Archives or restores the selected student. specs/students.md: Archive when the child may
+        /// return. <see cref="ExecuteDeleteStudentAsync"/> removes a row after a logged reason.
         /// </summary>
         private async Task ExecuteArchiveStudentAsync()
         {
@@ -519,6 +534,38 @@ namespace BusBuddy.WPF.ViewModels.Student
             OnPropertyChanged(nameof(TotalStudents));
             OnPropertyChanged(nameof(ActiveStudents));
             OnPropertyChanged(nameof(ArchiveStudentButtonLabel));
+            NotifySelectionDependentCommands();
+        }
+
+        /// <summary>
+        /// Permanently removes the selected student after the clerk picks Mistake, Moved, or Not
+        /// attending. specs/students.md: there is no default reason.
+        /// </summary>
+        private async Task ExecuteDeleteStudentAsync()
+        {
+            var student = SelectedStudent;
+            if (student is null)
+            {
+                return;
+            }
+
+            var request = StudentsArchiveCoordinator.PromptDeletionReason(student);
+            if (request is null)
+            {
+                return;
+            }
+
+            if (!await _archive.ApplyDeleteAsync(student, request.Value).ConfigureAwait(true))
+            {
+                return;
+            }
+
+            Students.Remove(student);
+            SelectedStudent = null;
+            StudentsView?.Refresh();
+            StatusMessage = "Student deleted";
+            OnPropertyChanged(nameof(TotalStudents));
+            OnPropertyChanged(nameof(ActiveStudents));
         }
 
         /// <summary>
@@ -773,6 +820,16 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             var can = HasSelectedStudent && !IsLoading;
             Logger.Debug("CanExecuteArchiveStudent evaluated — HasSelectedStudent={Can}", can);
+            return can;
+        }
+
+        private bool CanExecuteDeleteStudent()
+        {
+            var can = HasSelectedStudent && !IsLoading;
+            Logger.Debug(
+                "CanExecuteDeleteStudent evaluated — HasSelectedStudent={Has} Result={Can}",
+                HasSelectedStudent,
+                can);
             return can;
         }
 

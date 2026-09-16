@@ -1,0 +1,221 @@
+<Window x:Class="BusBuddy.WPF.Views.Activity.TripEventEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
+        Title="{Binding DialogTitle}"
+        Height="780"
+        Width="580"
+        MinHeight="680"
+        MinWidth="540"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="{Binding DialogTitle}"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Margin="0,0,0,16"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                <TextBlock Margin="0,0,0,10">
+                    <Run Text="Status: "/><Run Text="{Binding StatusDisplay, Mode=OneWay}"/>
+                </TextBlock>
+
+                <TextBlock Text="Ticket #" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Text="{Binding ExternalTicketNo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Trip ticket number"/>
+
+                <TextBlock Text="Purpose" Margin="0,0,0,4"/>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding PurposeOptions}"
+                                            SelectedItem="{Binding Purpose, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Text="{Binding Purpose, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            IsEditable="True"
+                                            Height="40"
+                                            AutomationProperties.Name="Trip purpose"
+                                            AutomationProperties.HelpText="Type a new purpose, then Add to list, so it is available on later trips."/>
+                    <syncfusion:ButtonAdv Grid.Column="1" Label="Add"
+                                          Command="{Binding RememberPurposeCommand}"
+                                          SizeMode="Normal" Height="35" Margin="8,0,0,0"
+                                          AutomationProperties.Name="Add trip purpose to list"/>
+                    <syncfusion:ButtonAdv Grid.Column="2" Label="Remove"
+                                          Command="{Binding RemovePurposeCommand}"
+                                          SizeMode="Normal" Height="35" Margin="8,0,0,0"
+                                          AutomationProperties.Name="Remove trip purpose from list"/>
+                </Grid>
+
+                <TextBlock Text="Sport or trip reason" Margin="0,0,0,4"
+                           Visibility="{Binding IsSports, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                <Grid Margin="0,0,0,10"
+                      Visibility="{Binding IsSports, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding SportKinds}"
+                                            SelectedItem="{Binding SportKind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            Text="{Binding SportKind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            IsEditable="True"
+                                            Height="40"
+                                            AutomationProperties.Name="Sport"
+                                            AutomationProperties.HelpText="Type a sport or reason, then Add to list. Remove drops it from later trips."/>
+                    <syncfusion:ButtonAdv Grid.Column="1" Label="Add"
+                                          Command="{Binding RememberSportCommand}"
+                                          SizeMode="Normal" Height="35" Margin="8,0,0,0"
+                                          AutomationProperties.Name="Add sport to list"/>
+                    <syncfusion:ButtonAdv Grid.Column="2" Label="Remove"
+                                          Command="{Binding RemoveSportCommand}"
+                                          SizeMode="Normal" Height="35" Margin="8,0,0,0"
+                                          AutomationProperties.Name="Remove sport from list"/>
+                </Grid>
+
+                <TextBlock Text="Requesting school" Margin="0,0,0,4"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding RequestingSchools}"
+                                        SelectedItem="{Binding RequestingSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        Text="{Binding RequestingSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        IsEditable="True"
+                                        Height="40" Margin="0,0,0,10"
+                                        AutomationProperties.Name="Requesting school"/>
+
+                <TextBlock Text="Group traveling" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Text="{Binding GroupOrActivity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40" Margin="0,0,0,10"
+                                         Watermark="Varsity, Junior Varsity, High School..."
+                                         AutomationProperties.Name="Group traveling"/>
+
+                <TextBlock Text="Point of contact" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Text="{Binding PocName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Trip point of contact"/>
+
+                <TextBlock Text="Origin" Margin="0,0,0,4"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding Origins}"
+                                        SelectedItem="{Binding SelectedOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMemberPath="Name"
+                                        IsEditable="False"
+                                        Height="40" Margin="0,0,0,10"
+                                        AutomationProperties.Name="Trip origin"/>
+
+                <TextBlock Text="Pickup point" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Text="{Binding PickupPoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Pickup point"/>
+
+                <TextBlock Text="Destination" Margin="0,0,0,4"/>
+                <controls:PlacesAddressBox AddressText="{Binding DestinationName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           UseFormattedAddress="True"
+                                           FieldAutomationName="Destination"
+                                           AddressApplied="Destination_Applied"
+                                           Margin="0,0,0,10"/>
+
+                <TextBlock Text="Date" Margin="0,0,0,4"/>
+                <syncfusion:SfDatePicker Value="{Binding TripDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,10" FontSize="14" Height="40"
+                                         AutomationProperties.Name="Trip date"/>
+
+                <TextBlock Text="Leave time (hh:mm)" Margin="0,0,0,4"/>
+                <syncfusion:SfMaskedEdit Value="{Binding LeaveTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40" Margin="0,0,0,10"
+                                         Mask="99:99" AutomationProperties.Name="Leave time"/>
+
+                <TextBlock Text="Return time (hh:mm)" Margin="0,0,0,4"/>
+                <syncfusion:SfMaskedEdit Value="{Binding ReturnTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40" Margin="0,0,0,10"
+                                         Mask="99:99" AutomationProperties.Name="Return time"/>
+
+                <TextBlock Text="Estimated travelers" Margin="0,0,0,4"/>
+                <syncfusion:IntegerTextBox Value="{Binding PlannedHeadcount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Height="40" Margin="0,0,0,10"
+                                          AutomationProperties.Name="Estimated travelers"/>
+
+                <TextBlock Text="Rode" Margin="0,0,0,4"/>
+                <syncfusion:IntegerTextBox Value="{Binding ActualHeadcount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Height="40" Margin="0,0,0,10"
+                                          AutomationProperties.Name="Actual riders"/>
+
+                <TextBlock Text="Driver" Margin="0,0,0,4"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
+                                        SelectedItem="{Binding SelectedDriver, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMemberPath="DriverName"
+                                        IsEditable="False"
+                                        Height="40" Margin="0,0,0,10"
+                                        AutomationProperties.Name="Driver"/>
+
+                <TextBlock Text="Bus" Margin="0,0,0,4"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableVehicles}"
+                                        SelectedItem="{Binding SelectedVehicle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        DisplayMemberPath="BusNumber"
+                                        IsEditable="False"
+                                        Height="40" Margin="0,0,0,10"
+                                        AutomationProperties.Name="Bus"/>
+
+                <TextBlock Margin="0,0,0,4">
+                    <Run Text="Distance: "/><Run Text="{Binding PathMilesDisplay, Mode=OneWay}"/>
+                </TextBlock>
+                <TextBlock Margin="0,0,0,10">
+                    <Run Text="Driver hours: "/><Run Text="{Binding DriverHoursDisplay, Mode=OneWay}"/>
+                </TextBlock>
+
+                <TextBlock Text="Notes" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"
+                                         AutomationProperties.Name="Trip notes"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Margin="0,8,0,8">
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Danger}"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasValidationErrors, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <TextBlock Text="{Binding AssignmentWarning}"
+                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,0"
+                       Visibility="{Binding HasAssignmentWarning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <syncfusion:ButtonAdv x:Name="SaveButton"
+                    Label="{Binding SaveButtonText}"
+                    MinWidth="140"
+                    Height="35"
+                    Margin="0,0,10,0"
+                    IsEnabled="{Binding ListsReady}"
+                    Command="{Binding SaveCommand}"
+                    AutomationProperties.Name="Save trip"/>
+            <syncfusion:ButtonAdv x:Name="CancelButton"
+                    Label="Cancel"
+                    MinWidth="80"
+                    Height="35"
+                    Click="CancelButton_Click"
+                    AutomationProperties.Name="Cancel trip"/>
+        </StackPanel>
+    </Grid>
+</Window>

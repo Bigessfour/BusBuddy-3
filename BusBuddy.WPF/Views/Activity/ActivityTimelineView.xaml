@@ -69,7 +69,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Text="Date Range:" VerticalAlignment="Center" Grid.Column="0" Grid.Row="0" Margin="0,0,8,0"/>
-                <syncfusion:ComboBoxAdv Grid.Column="1" Grid.Row="0" SelectedItem="{Binding SelectedDateRange, Mode=TwoWay}"
+                <syncfusion:ComboBoxAdv Grid.Column="1" Grid.Row="0" SelectedItem="{Binding SelectedDateRange, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         ItemsSource="{Binding DateRanges}" Width="160" Margin="0,0,15,0"
                                         AutomationProperties.Name="Date range">
                     <syncfusion:ComboBoxAdv.ItemTemplate>
@@ -82,10 +82,10 @@
                 <StackPanel Grid.Column="2" Grid.Row="0" Orientation="Horizontal"
                             Visibility="{Binding IsCustomDateRange, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <syncfusion:SfDatePicker Value="{Binding StartDate, Mode=TwoWay}" Width="130" Margin="0,0,10,0"
+                    <syncfusion:SfDatePicker Value="{Binding StartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="130" Margin="0,0,10,0"
                                              AutomationProperties.Name="Timeline start date"/>
                     <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <syncfusion:SfDatePicker Value="{Binding EndDate, Mode=TwoWay}" Width="130"
+                    <syncfusion:SfDatePicker Value="{Binding EndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="130"
                                              AutomationProperties.Name="Timeline end date"/>
                 </StackPanel>
 
@@ -115,8 +115,12 @@
                                    ColumnSizer="Star">
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridTextColumn HeaderText="Subject" MappingName="Subject" Width="220"/>
-                    <syncfusion:GridDateTimeColumn HeaderText="Start" MappingName="StartTime" Width="160" Pattern="ShortDateTime"/>
-                    <syncfusion:GridDateTimeColumn HeaderText="End" MappingName="EndTime" Width="160" Pattern="ShortDateTime"/>
+                    <syncfusion:GridDateTimeColumn HeaderText="Start" MappingName="StartTime" Width="160"
+                                                   Pattern="CustomPattern" CustomPattern="MM/dd/yyyy h:mm tt"
+                                                   AllowNullValue="True"/>
+                    <syncfusion:GridDateTimeColumn HeaderText="End" MappingName="EndTime" Width="160"
+                                                   Pattern="CustomPattern" CustomPattern="MM/dd/yyyy h:mm tt"
+                                                   AllowNullValue="True"/>
                     <syncfusion:GridTextColumn HeaderText="Details" MappingName="Details"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>

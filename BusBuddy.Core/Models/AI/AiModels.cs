@@ -3,44 +3,41 @@ using System.Collections.Generic;
 
 namespace BusBuddy.Core.Models
 {
-    #region XAI API Models
-
-    public class XAIRequest
+    /// <summary>
+    /// OpenAI-compatible chat request used against local Ollama.
+    /// </summary>
+    public class ChatCompletionRequest
     {
         public string Model { get; set; } = string.Empty;
-        public XAIMessage[] Messages { get; set; } = Array.Empty<XAIMessage>();
+        public ChatCompletionMessage[] Messages { get; set; } = Array.Empty<ChatCompletionMessage>();
         public double Temperature { get; set; } = 0.7;
         public int MaxTokens { get; set; } = 4000;
     }
 
-    public class XAIMessage
+    public class ChatCompletionMessage
     {
         public string Role { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class XAIResponse
+    public class ChatCompletionResponse
     {
-        public XAIChoice[] Choices { get; set; } = Array.Empty<XAIChoice>();
-        public XAIUsage Usage { get; set; } = new();
+        public ChatCompletionChoice[] Choices { get; set; } = Array.Empty<ChatCompletionChoice>();
+        public ChatCompletionUsage Usage { get; set; } = new();
     }
 
-    public class XAIChoice
+    public class ChatCompletionChoice
     {
-        public XAIMessage Message { get; set; } = new();
+        public ChatCompletionMessage Message { get; set; } = new();
         public string FinishReason { get; set; } = string.Empty;
     }
 
-    public class XAIUsage
+    public class ChatCompletionUsage
     {
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
         public int TotalTokens { get; set; }
     }
-
-    #endregion
-
-    #region Request Models
 
     public class RouteOptimizationRequest
     {
@@ -53,6 +50,4 @@ namespace BusBuddy.Core.Models
         public double DistanceTraveled { get; set; }
         public TimeSpan AverageTime { get; set; }
     }
-
-    #endregion
 }

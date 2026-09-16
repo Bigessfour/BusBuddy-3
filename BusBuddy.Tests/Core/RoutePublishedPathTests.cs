@@ -35,6 +35,11 @@ public class RoutePublishedPathTests
         Assert.That(RouteSession.Infer("Draft-Wiley-cell-1-PM", false, "008 HomeToSchool PM"), Is.EqualTo(RouteSession.PM));
         Assert.That(RouteSession.Infer("Draft-Wiley-cell-1-PM", false, "008 Transfer PM"), Is.EqualTo(RouteSession.Transfer));
         Assert.That(RouteSession.Infer("Special Needs Route", true, null), Is.EqualTo(RouteSession.SpecialNeeds));
+        Assert.That(RouteSession.ToAssignmentSlot(new Route { RouteName = "Draft-Wiley-cell-1", Session = RouteSession.AM }), Is.EqualTo(RouteTimeSlot.AM));
+        Assert.That(RouteSession.ToAssignmentSlot(new Route { RouteName = "Draft-Wiley-cell-1-PM", Session = RouteSession.PM }), Is.EqualTo(RouteTimeSlot.PM));
+        Assert.That(
+            RouteSession.ToAssignmentSlot(new Route { RouteName = "SN-PM", Session = RouteSession.SpecialNeeds, IsSpecialNeedsRoute = true }),
+            Is.EqualTo(RouteTimeSlot.PM));
     }
 
     [Test]

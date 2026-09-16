@@ -30,6 +30,9 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     private readonly IDestinationService _destinations;
     private readonly BusBuddyDbContext? _context;
     private readonly Destination? _editingSchool;
+    private readonly SchoolFormMode _mode;
+    private readonly string _loadedAddressKey = string.Empty;
+    private bool _gpsTouched;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -47,27 +50,35 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     public event EventHandler<bool?>? RequestClose;
 
     public SchoolDestinationFormViewModel(IDestinationService destinations)
-        : this(destinations, editingSchool: null)
+        : this(destinations, SchoolFormMode.Add, editingSchool: null)
     {
     }
 
     /// <summary>
-    /// Opens the form on an existing campus so a clerk can correct its bell times. Only the times are
-    /// writable: <see cref="IDestinationService"/> exposes <c>UpdateSchoolTimesAsync</c> and no general
-    /// campus update, so name, address, and GPS stay read-only rather than silently discarding edits.
+    /// Opens the form on an existing campus so a clerk can correct its bell times only.
     /// </summary>
     public static SchoolDestinationFormViewModel ForSchoolTimes(
         IDestinationService destinations,
         Destination school) =>
-        new(destinations, school ?? throw new ArgumentNullException(nameof(school)));
+        new(destinations, SchoolFormMode.TimesOnly, school ?? throw new ArgumentNullException(nameof(school)));
 
-    private SchoolDestinationFormViewModel(IDestinationService destinations, Destination? editingSchool)
+    /// <summary>
+    /// Opens the form on an existing campus with every clerk field writable.
+    /// </summary>
+    public static SchoolDestinationFormViewModel ForEdit(
+        IDestinationService destinations,
+        Destination school) =>
+        new(destinations, SchoolFormMode.EditAll, school ?? throw new ArgumentNullException(nameof(school)));
+
+    private SchoolDestinationFormViewModel(
+        IDestinationService destinations,
+        SchoolFormMode mode,
+        Destination? editingSchool)
     {
         _destinations = destinations ?? throw new ArgumentNullException(nameof(destinations));
+        _mode = mode;
         _editingSchool = editingSchool;
         _context = TryCreateDbContextViaDi();
-        // Do NOT gate CanExecute — ButtonAdv often looks enabled while CanExecute=false → silent no-op.
-        // Validate inside SaveAsync and surface ValidationMessage instead.
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
@@ -90,22 +101,36 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         if (editingSchool is not null)
         {
             PrefillFrom(editingSchool);
+            _loadedAddressKey = AddressKey(editingSchool);
         }
     }
 
     /// <summary>True when the form was opened to correct an existing campus's bell times.</summary>
-    public bool IsTimesOnlyEdit => _editingSchool is not null;
+    public bool IsTimesOnlyEdit => _mode == SchoolFormMode.TimesOnly;
 
     /// <summary>False in times-only mode, where the campus identity and GPS are not editable.</summary>
     public bool CanEditSchoolDetails => !IsTimesOnlyEdit;
 
-    public string Title => IsTimesOnlyEdit ? "Edit school times" : "Add school";
+    public string Title => _mode switch
+    {
+        SchoolFormMode.TimesOnly => "Edit school times",
+        SchoolFormMode.EditAll => "Edit school",
+        _ => "Add school"
+    };
 
-    public string Headline => IsTimesOnlyEdit
-        ? $"Edit bell times for {_editingSchool!.Name}"
-        : "Add school (required before Generate Routes)";
+    public string Headline => _mode switch
+    {
+        SchoolFormMode.TimesOnly => $"Edit bell times for {_editingSchool!.Name}",
+        SchoolFormMode.EditAll => $"Edit {_editingSchool!.Name}",
+        _ => "Add school (required before Generate Routes)"
+    };
 
-    public string SaveButtonLabel => IsTimesOnlyEdit ? "Save times" : "Save school";
+    public string SaveButtonLabel => _mode switch
+    {
+        SchoolFormMode.TimesOnly => "Save times",
+        SchoolFormMode.EditAll => "Save school",
+        _ => "Save school"
+    };
 
     /// <summary>Start time stored by the last successful times-only save.</summary>
     public TimeSpan? SavedStartTime { get; private set; }
@@ -228,6 +253,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         _latitudeValue = Math.Round(latitude, 6);
         _longitudeValue = Math.Round(longitude, 6);
         HasMapPick = true;
+        _gpsTouched = true;
         OnPropertyChanged(nameof(LatitudeValue));
         OnPropertyChanged(nameof(LongitudeValue));
         RefreshMapMarker();
@@ -240,6 +266,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         _latitudeValue = 0;
         _longitudeValue = 0;
         HasMapPick = false;
+        _gpsTouched = true;
         MapMarkers.Clear();
         OnPropertyChanged(nameof(LatitudeValue));
         OnPropertyChanged(nameof(LongitudeValue));
@@ -281,7 +308,9 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             RefreshMapMarker();
         }
 
-        _mapHint = "Campus location is read-only here. Bell times drive Generate Routes stop times.";
+        _mapHint = _mode == SchoolFormMode.TimesOnly
+            ? "Campus location is read-only here. Bell times drive Generate Routes stop times."
+            : "Click the map or validate the address to update school GPS.";
     }
 
     private async Task SaveAsync()
@@ -319,30 +348,48 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             }
 
             var (lat, lon) = await ResolveSchoolGpsAsync().ConfigureAwait(true);
-            var school = await _destinations.AddSchoolAsync(
-                Name.Trim(),
-                Address.Trim(),
-                City.Trim(),
-                State.Trim(),
-                ZipCode.Trim(),
-                start,
-                dismissal,
-                lat,
-                lon).ConfigureAwait(true);
+            var school = _mode == SchoolFormMode.EditAll
+                ? await _destinations.UpdateSchoolAsync(
+                    _editingSchool!.DestinationId,
+                    Name.Trim(),
+                    Address.Trim(),
+                    City.Trim(),
+                    State.Trim(),
+                    ZipCode.Trim(),
+                    start,
+                    dismissal,
+                    lat,
+                    lon).ConfigureAwait(true)
+                : await _destinations.AddSchoolAsync(
+                    Name.Trim(),
+                    Address.Trim(),
+                    City.Trim(),
+                    State.Trim(),
+                    ZipCode.Trim(),
+                    start,
+                    dismissal,
+                    lat,
+                    lon).ConfigureAwait(true);
 
             SavedWithGps = school.Latitude.HasValue && school.Longitude.HasValue;
             SavedDestinationId = school.DestinationId;
             Logger.Information(
-                "School cataloged DestinationId={Id} Name={Name} HasGps={HasGps}",
-                school.DestinationId, school.Name, SavedWithGps);
+                "School cataloged DestinationId={Id} Name={Name} Mode={Mode} HasGps={HasGps}",
+                school.DestinationId, school.Name, _mode, SavedWithGps);
             StatusMessage = SavedWithGps
                 ? $"Saved {school.Name}"
                 : $"Saved {school.Name} without GPS; Generate Routes will not persist stop times";
+
+            if (_mode == SchoolFormMode.EditAll)
+            {
+                await TryRegenerateSchedulesAsync(school.DestinationId, start).ConfigureAwait(true);
+            }
+
             RequestClose?.Invoke(this, true);
         }
         catch (Exception ex)
         {
-            Logger.Warning(ex, "Add school failed");
+            Logger.Warning(ex, "Save school failed Mode={Mode}", _mode);
             ValidationMessage = DatabaseUserMessage.ForOperation(ex, "save the school");
         }
     }
@@ -388,18 +435,25 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         StatusMessage = "School times saved";
         Logger.Information("School times saved DestinationId={DestinationId}", school.DestinationId);
 
-        var planner = App.ServiceProvider?.GetService<IRouteDeterminationService>();
-        if (planner is not null && start.HasValue)
-        {
-            var regen = await planner
-                .RegenerateSchedulesForSchoolAsync(school.DestinationId)
-                .ConfigureAwait(true);
-            StatusMessage = regen.Success
-                ? $"School times saved; regenerated schedules on {regen.RoutesUpdated} route(s)"
-                : $"School times saved; schedule regen: {regen.Error}";
-        }
+        await TryRegenerateSchedulesAsync(school.DestinationId, start).ConfigureAwait(true);
 
         RequestClose?.Invoke(this, true);
+    }
+
+    private async Task TryRegenerateSchedulesAsync(int destinationId, TimeSpan? start)
+    {
+        var planner = App.ServiceProvider?.GetService<IRouteDeterminationService>();
+        if (planner is null || !start.HasValue)
+        {
+            return;
+        }
+
+        var regen = await planner
+            .RegenerateSchedulesForSchoolAsync(destinationId)
+            .ConfigureAwait(true);
+        StatusMessage = regen.Success
+            ? $"{StatusMessage}; regenerated schedules on {regen.RoutesUpdated} route(s)"
+            : $"{StatusMessage}; schedule regen: {regen.Error}";
     }
 
     /// <summary>An empty box means "no time recorded"; anything else must parse as HH:mm.</summary>
@@ -525,7 +579,11 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
     private async Task<(decimal? Lat, decimal? Lon)> ResolveSchoolGpsAsync()
     {
-        if (HasUsableGps())
+        var addressChanged = _mode == SchoolFormMode.EditAll
+            && !string.Equals(_loadedAddressKey, AddressKey(Address, City, State, ZipCode), StringComparison.Ordinal);
+        var useMapPick = HasUsableGps() && !(addressChanged && !_gpsTouched);
+
+        if (useMapPick)
         {
             return ((decimal)_latitudeValue, (decimal)_longitudeValue);
         }
@@ -556,5 +614,18 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     public void Dispose()
     {
         _context?.Dispose();
+    }
+
+    private static string AddressKey(Destination school) =>
+        AddressKey(school.Address, school.City, school.State, school.ZipCode);
+
+    private static string AddressKey(string? address, string? city, string? state, string? zip) =>
+        string.Join('\u001f', address?.Trim(), city?.Trim(), state?.Trim(), zip?.Trim());
+
+    private enum SchoolFormMode
+    {
+        Add,
+        EditAll,
+        TimesOnly
     }
 }

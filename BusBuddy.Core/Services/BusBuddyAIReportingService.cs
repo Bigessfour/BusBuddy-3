@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using BusBuddy.Core.Configuration;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -9,8 +10,8 @@ using Serilog;
 namespace BusBuddy.Core.Services
 {
     /// <summary>
-    /// Advanced AI Reporting Service for BusBuddy with caching, context awareness, and performance monitoring
-    /// Implements all expert recommendations from xAI API consultation
+    /// Advanced AI Reporting Service for BusBuddy with caching, context awareness, and performance monitoring.
+    /// Uses local Ollama (OpenAI-compatible chat completions).
     /// </summary>
     public class BusBuddyAIReportingService
     {
@@ -19,8 +20,8 @@ namespace BusBuddy.Core.Services
         private static readonly ILogger Logger = Log.ForContext<BusBuddyAIReportingService>();
         private readonly TransportationContext _transportationContext;
         private readonly ContextAwarePromptBuilder _promptBuilder;
-        private readonly string _apiKey;
-        private readonly string _apiUrl = "https://api.x.ai/v1/chat/completions";
+        private readonly OllamaOptions _options;
+        private readonly string _apiUrl;
 
         public BusBuddyAIReportingService(
             HttpClient httpClient,
@@ -39,7 +40,8 @@ namespace BusBuddy.Core.Services
             _cache = cache;
             _transportationContext = transportationContext;
             _promptBuilder = promptBuilder;
-            _apiKey = configuration["XAI:ApiKey"] ?? throw new ArgumentException("XAI:ApiKey configuration is required");
+            _options = OllamaOptions.Bind(configuration);
+            _apiUrl = $"{_options.BaseUrl.TrimEnd('/')}/chat/completions";
         }
 
         /// <summary>
@@ -88,7 +90,7 @@ namespace BusBuddy.Core.Services
             catch (HttpRequestException ex)
             {
                 var duration = DateTime.UtcNow - startTime;
-                Logger.Error(ex, "AI report generation failed due to HTTP error: {ReportType}, Duration: {Duration}ms, Operation: {OperationId}",
+                Logger.Warning(ex, "AI report generation failed due to HTTP error: {ReportType}, Duration: {Duration}ms, Operation: {OperationId}",
                     reportType, duration.TotalMilliseconds, operationId);
                 throw;
             }
@@ -126,16 +128,16 @@ namespace BusBuddy.Core.Services
                             new { role = "system", content = "You are Bus Buddy AI, an expert transportation management assistant. Provide detailed, actionable insights for school bus operations." },
                             new { role = "user", content = prompt }
                         },
-                        model = "grok-4-latest",
-                        temperature = 0.3,
-                        max_tokens = 2000
+                        model = string.IsNullOrWhiteSpace(_options.Model) ? "llama3.2" : _options.Model,
+                        temperature = _options.Temperature,
+                        max_tokens = _options.MaxTokens > 0 ? Math.Min(_options.MaxTokens, 2000) : 2000
                     };
 
                     var jsonContent = JsonSerializer.Serialize(requestPayload);
                     using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
                     _httpClient.DefaultRequestHeaders.Clear();
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+                    _httpClient.DefaultRequestHeaders.Add("User-Agent", "BusBuddy/1.0");
 
                     var response = await _httpClient.PostAsync(_apiUrl, content);
 

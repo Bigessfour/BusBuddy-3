@@ -120,6 +120,40 @@ namespace BusBuddy.WPF.ViewModels.Settings
             SyncfusionThemeManager.ApplyApplicationThemePreview(value);
         }
 
+        public void ApplyDepotAddress(PlaceAddressApplier.AppliedAddress applied)
+        {
+            ArgumentNullException.ThrowIfNull(applied);
+            if (!string.IsNullOrWhiteSpace(applied.FormattedAddress) || !string.IsNullOrWhiteSpace(applied.Street))
+            {
+                DepotAddress = applied.FormattedAddress ?? applied.Street ?? DepotAddress;
+            }
+
+            if (!string.IsNullOrWhiteSpace(applied.City))
+            {
+                DepotCity = applied.City;
+            }
+
+            if (!string.IsNullOrWhiteSpace(applied.State))
+            {
+                DepotState = applied.State;
+            }
+
+            if (!string.IsNullOrWhiteSpace(applied.Zip))
+            {
+                DepotZipCode = applied.Zip;
+            }
+
+            if (applied.Latitude.HasValue)
+            {
+                DepotLatitudeText = DistrictSettingsAccessor.FormatCoord(applied.Latitude);
+            }
+
+            if (applied.Longitude.HasValue)
+            {
+                DepotLongitudeText = DistrictSettingsAccessor.FormatCoord(applied.Longitude);
+            }
+        }
+
         private bool CanSave() => !IsBusy;
 
         private async Task LoadSettingsAsync()

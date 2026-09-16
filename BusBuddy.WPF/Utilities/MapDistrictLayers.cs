@@ -80,6 +80,13 @@ internal sealed class MapDistrictLayers
         return PlotPickups(await LoadPickupCatalogAsync(scope).ConfigureAwait(true));
     }
 
+    /// <summary>Active catalog stops keyed by id — no plotting.</summary>
+    public async Task<IReadOnlyDictionary<int, PickupStop>> LoadPickupIndexAsync()
+    {
+        using var scope = _scopes?.CreateScope();
+        return await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
+    }
+
     /// <summary>
     /// Published boarding points on the given routes (<c>RouteStop</c> rows with validated GPS). Generated
     /// routes carry stops here rather than in the catalog. Plotted as route-stop (WP) pins: a stop that lands

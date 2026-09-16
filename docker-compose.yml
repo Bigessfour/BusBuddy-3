@@ -33,7 +33,6 @@ services:
       - BUSBUDDY_CONNECTION=Host=postgres;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true
       - DatabaseProvider=Postgres
       # Pass keys from host (or use .env file + env_file)
-      # - XAI_API_KEY=${XAI_API_KEY}
       # - SYNCFUSION_LICENSE_KEY=${SYNCFUSION_LICENSE_KEY}
     # Note: bring postgres with --profile db when using --profile test for full DB integration tests.
     # Example: docker compose --profile db --profile test up -d busbuddy-test

@@ -30,6 +30,9 @@ public class ActivityOperationalSurfaceTests
         Assert.That(xaml, Does.Contain("Click=\"TripBoardButton_Click\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding TimelineEvents}\""));
+        Assert.That(xaml, Does.Not.Contain("ShortDateTime"));
+        Assert.That(xaml, Does.Contain("Pattern=\"CustomPattern\""));
+        Assert.That(xaml, Does.Contain("CustomPattern=\"MM/dd/yyyy h:mm tt\""));
     }
 
     [Test]
@@ -38,9 +41,33 @@ public class ActivityOperationalSurfaceTests
         var xaml = XamlViewFile.Read("Views/Activity/ActivityManagementView.xaml");
         Assert.That(xaml, Does.Contain("Command=\"{Binding ImportCsvCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding NewTripCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding EditTripCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ConfirmTripCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding CalculateDistanceCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding PrintTicketCommand}\""));
+        Assert.That(xaml, Does.Contain("SfScheduler"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Trips}\""));
         Assert.That(xaml, Does.Contain("MappingName=\"ExternalTicketNo\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"DisplayTripType\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"DriverHours\""));
+        Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedTrip, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Not.Contain("IsTrip"));
+        Assert.That(xaml, Does.Not.Contain("new ActivitySchedule"));
+
+        var dialog = XamlViewFile.Read("Views/Activity/TripEventEditDialog.xaml");
+        Assert.That(dialog, Does.Contain("IsEditable=\"True\""));
+        Assert.That(dialog, Does.Contain("Command=\"{Binding SaveCommand}\""));
+        Assert.That(dialog, Does.Contain("Command=\"{Binding RememberPurposeCommand}\""));
+        Assert.That(dialog, Does.Contain("Command=\"{Binding RememberSportCommand}\""));
+        Assert.That(dialog, Does.Contain("Text=\"{Binding Purpose, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\""));
+        Assert.That(dialog, Does.Contain("Text=\"{Binding SportKind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\""));
+        Assert.That(dialog, Does.Contain("Text=\"{Binding StatusDisplay, Mode=OneWay}\""));
+        Assert.That(dialog, Does.Contain("Text=\"{Binding PathMilesDisplay, Mode=OneWay}\""));
+        Assert.That(dialog, Does.Contain("Text=\"{Binding DriverHoursDisplay, Mode=OneWay}\""));
+        var dialogVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
+        Assert.That(dialogVm, Does.Contain("ITripReasonCatalog"));
+        Assert.That(dialogVm, Does.Contain("never sets RouteId"));
     }
 
     [Test]

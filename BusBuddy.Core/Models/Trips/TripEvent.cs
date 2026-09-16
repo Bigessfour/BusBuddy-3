@@ -325,6 +325,12 @@ namespace BusBuddy.Core.Models.Trips
         }
 
         /// <summary>
+        /// DOT pre-trip plus post-trip inspection pad applied to every trip's billed driver hours.
+        /// Dated PreTrip/PostTrip duty logs stay optional proof; this is not a duty-event insert.
+        /// </summary>
+        public const decimal PrePostTripInspectionHours = 1.5m;
+
+        /// <summary>
         /// Gets the start time for scheduling purposes
         /// </summary>
         [NotMapped]
@@ -335,6 +341,33 @@ namespace BusBuddy.Core.Models.Trips
         /// </summary>
         [NotMapped]
         public DateTime EndTime => ReturnTime ?? LeaveTime.AddHours(4);
+
+        /// <summary>
+        /// Scheduled wheel time plus the permanent 1.5 hour inspection pad. Does not change HomeRouteId.
+        /// </summary>
+        [NotMapped]
+        public decimal DriverHours
+        {
+            get
+            {
+                var duration = (decimal)(EndTime - StartTime).TotalHours;
+                if (duration < 0)
+                {
+                    duration = 0;
+                }
+
+                return Math.Round(duration + PrePostTripInspectionHours, 2);
+            }
+        }
+
+        /// <summary>Clerk purpose: Sports (any Athletic_*), Field Trip, or a custom catalog reason.</summary>
+        [NotMapped]
+        public string Purpose => Type switch
+        {
+            TripType.Field => "Field Trip",
+            TripType.Custom => string.IsNullOrWhiteSpace(CustomType) ? "Custom Trip" : CustomType,
+            _ => "Sports"
+        };
 
         /// <summary>
         /// Gets the subject/title for display

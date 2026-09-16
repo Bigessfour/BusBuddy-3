@@ -638,7 +638,7 @@
                                     Style="{StaticResource StudentFormActionButtonStyle}"
                                     SizeMode="Normal"
                                     Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                                    ToolTip="Use xAI Grok to suggest optimal routes based on address"
+                                    ToolTip="Use local Ollama to suggest routes based on address"
                                     AutomationProperties.Name="AI Suggest Routes"/>
                 <syncfusion:ButtonAdv Name="ViewOnMapButton"
                     Label="View on Map"

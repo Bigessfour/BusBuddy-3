@@ -263,7 +263,7 @@
                     Margin="0,15,0,0">
             <TextBlock Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}">
                 <Run Text="Last saved reconciliation: "/>
-                <Run Text="{Binding LastReconciliationDate, StringFormat=d, TargetNullValue=Never}"/>
+                <Run Text="{Binding LastReconciliationDate, Mode=OneWay, StringFormat=d, TargetNullValue=Never}"/>
             </TextBlock>
         </StackPanel>
     </Grid>

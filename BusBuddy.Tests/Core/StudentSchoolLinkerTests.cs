@@ -46,4 +46,15 @@ public class StudentSchoolLinkerTests
         student.DestinationId.Should().BeNull();
         student.School.Should().Be("Unknown School");
     }
+
+    [Test]
+    public void SyncDestinationFromSchoolName_KeepsFkWhenCampusMissingFromActiveCatalog()
+    {
+        var student = new Student { DestinationId = 99, School = "Retired Campus" };
+
+        StudentSchoolLinker.SyncDestinationFromSchoolName(student, Catalog);
+
+        student.DestinationId.Should().Be(99);
+        student.School.Should().Be("Retired Campus");
+    }
 }

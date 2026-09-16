@@ -1,6 +1,7 @@
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -61,11 +62,10 @@ public sealed class AssignFitnessEvaluator
         var timeSlot = slot == RouteTimeSlotKind.AM ? RouteTimeSlot.AM : RouteTimeSlot.PM;
         var capacity = await ResolveCapacityAsync(context, route, timeSlot, cancellationToken)
             .ConfigureAwait(false);
-        var assigned = timeSlot == RouteTimeSlot.AM
-            ? await context.Students.AsNoTracking().CountAsync(s => s.AMRoute == route.RouteName, cancellationToken)
-                .ConfigureAwait(false)
-            : await context.Students.AsNoTracking().CountAsync(s => s.PMRoute == route.RouteName, cancellationToken)
-                .ConfigureAwait(false);
+        var assigned = await context.Students.AsNoTracking()
+            .WhereOnSlot(route.RouteId, route.RouteName, timeSlot)
+            .CountAsync(cancellationToken)
+            .ConfigureAwait(false);
 
         var reasons = new List<string>();
         var severity = AssignFitnessSeverity.None;
@@ -141,25 +141,13 @@ public sealed class AssignFitnessEvaluator
                         "Assign fitness Warned Student={Id} Route={RouteId} Reasons={Reasons}",
                         studentId, routeId, reasons[^1]);
                 }
-
-                if (slot == RouteTimeSlotKind.AM && school.StartTime is TimeSpan start)
-                {
-                    // Backward estimate: leave home at StartTime - ride; warn if ride alone exceeds soft max already covered.
-                    // Arrival risk: if current time-of-day simulation N/A, flag when estimated minutes leave less than 5 min buffer before start from a nominal 7:00 depot — use MaxRideMinutes only.
-                    _ = start;
-                }
             }
 
             // Geo outlier vs existing assignees on this route/slot
-            var peers = timeSlot == RouteTimeSlot.AM
-                ? await context.Students.AsNoTracking()
-                    .Where(s => s.AMRoute == route.RouteName && s.StudentId != studentId &&
-                                s.Latitude != null && s.Longitude != null)
-                    .ToListAsync(cancellationToken).ConfigureAwait(false)
-                : await context.Students.AsNoTracking()
-                    .Where(s => s.PMRoute == route.RouteName && s.StudentId != studentId &&
-                                s.Latitude != null && s.Longitude != null)
-                    .ToListAsync(cancellationToken).ConfigureAwait(false);
+            var peers = await context.Students.AsNoTracking()
+                .WhereOnSlot(route.RouteId, route.RouteName, timeSlot)
+                .Where(s => s.StudentId != studentId && s.Latitude != null && s.Longitude != null)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             if (peers.Count > 0)
             {
@@ -189,7 +177,7 @@ public sealed class AssignFitnessEvaluator
         IReadOnlyList<int> suggested = Array.Empty<int>();
         if (!allowed || suggestNew)
         {
-            suggested = await SuggestAlternateRoutesAsync(context, student, routeId, timeSlot, capacity, cancellationToken)
+            suggested = await SuggestAlternateRoutesAsync(context, student, routeId, timeSlot, cancellationToken)
                 .ConfigureAwait(false);
             if (suggested.Count == 0 && !allowed)
             {
@@ -212,7 +200,6 @@ public sealed class AssignFitnessEvaluator
         Student student,
         int excludeRouteId,
         RouteTimeSlot timeSlot,
-        int neededCapacityHint,
         CancellationToken cancellationToken)
     {
         var routes = await context.Routes.AsNoTracking()
@@ -234,11 +221,10 @@ public sealed class AssignFitnessEvaluator
 
             var cap = await ResolveCapacityAsync(context, route, timeSlot, cancellationToken)
                 .ConfigureAwait(false);
-            var count = timeSlot == RouteTimeSlot.AM
-                ? await context.Students.AsNoTracking().CountAsync(s => s.AMRoute == route.RouteName, cancellationToken)
-                    .ConfigureAwait(false)
-                : await context.Students.AsNoTracking().CountAsync(s => s.PMRoute == route.RouteName, cancellationToken)
-                    .ConfigureAwait(false);
+            var count = await context.Students.AsNoTracking()
+                .WhereOnSlot(route.RouteId, route.RouteName, timeSlot)
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
             if (cap <= 0 || count + 1 <= cap)
             {
                 suggestions.Add(route.RouteId);
@@ -250,8 +236,6 @@ public sealed class AssignFitnessEvaluator
             }
         }
 
-        _ = student;
-        _ = neededCapacityHint;
         return suggestions;
     }
 

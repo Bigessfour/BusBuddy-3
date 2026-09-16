@@ -44,6 +44,18 @@ public class UiRuntimeLoggingTests
         Assert.That(UiSurfaceProbe.IsBusBuddySurface(typeof(string)), Is.False);
         Assert.That(UiSurfaceProbe.DescribeDataContext(null), Is.EqualTo("(null)"));
         Assert.That(UiSurfaceProbe.DescribeDataContext(new object()), Does.Contain("Object"));
+        Assert.That(
+            UiSurfaceProbe.ClassifyDataContextLevel(null, descendantHasDataContext: false, isWindow: false),
+            Is.EqualTo(Serilog.Events.LogEventLevel.Warning));
+        Assert.That(
+            UiSurfaceProbe.ClassifyDataContextLevel(null, descendantHasDataContext: true, isWindow: false),
+            Is.EqualTo(Serilog.Events.LogEventLevel.Information));
+        Assert.That(
+            UiSurfaceProbe.ClassifyDataContextLevel(null, descendantHasDataContext: false, isWindow: true),
+            Is.EqualTo(Serilog.Events.LogEventLevel.Information));
+        Assert.That(
+            UiSurfaceProbe.ClassifyDataContextLevel(new object(), descendantHasDataContext: false, isWindow: false),
+            Is.EqualTo(Serilog.Events.LogEventLevel.Information));
     }
 
     [Test]

@@ -9,9 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics; // Added for Stopwatch timing (basic instrumentation)
 
@@ -96,6 +94,32 @@ namespace BusBuddy.Core.Services
             return (ctx, shouldDispose);
         }
 
+        /// <summary>
+        /// Runs a multi-<c>SaveChanges</c> operation as one retriable unit, rolling back when the operation reports
+        /// failure so a rejected step cannot leave partial writes committed. Npgsql is configured with
+        /// <c>EnableRetryOnFailure</c>, and a retrying execution strategy rejects a transaction started outside it,
+        /// so the transaction must be opened inside the delegate.
+        /// https://learn.microsoft.com/ef/core/miscellaneous/connection-resiliency#execution-strategies-and-transactions
+        /// </summary>
+        private static Task<Result<T>> InTransactionAsync<T>(
+            BusBuddyDbContext context,
+            Func<Task<Result<T>>> operation)
+        {
+            return context.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+            {
+                await using var transaction = await context.Database.BeginTransactionAsync().ConfigureAwait(false);
+                var result = await operation().ConfigureAwait(false);
+                if (result.IsFailure)
+                {
+                    await transaction.RollbackAsync().ConfigureAwait(false);
+                    return result;
+                }
+
+                await transaction.CommitAsync().ConfigureAwait(false);
+                return result;
+            });
+        }
+
         #region Basic CRUD Operations
 
         public async Task<Result<IEnumerable<Route>>> GetAllActiveRoutesAsync()
@@ -108,9 +132,13 @@ namespace BusBuddy.Core.Services
                 {
                     var routes = await context.Routes
                         .Where(r => r.IsActive)
-                        .AsNoTracking() // Use AsNoTracking for better performance in read operations
+                        .Include(r => r.AMVehicle)
+                        .Include(r => r.PMVehicle)
+                        .AsNoTracking()
                         .OrderBy(r => r.RouteName)
                         .ToListAsync();
+
+                    await ApplyListMetricsAsync(context, routes);
 
                     Logger.Information("Retrieved {Count} active routes", routes.Count);
                     return Result.SuccessResult(routes.AsEnumerable());
@@ -139,9 +167,13 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     var routes = await context.Routes
-                        .AsNoTracking() // Use AsNoTracking for better performance in read operations
+                        .Include(r => r.AMVehicle)
+                        .Include(r => r.PMVehicle)
+                        .AsNoTracking()
                         .OrderBy(r => r.RouteName)
                         .ToListAsync();
+
+                    await ApplyListMetricsAsync(context, routes);
 
                     return Result.SuccessResult(routes.AsEnumerable());
                 }
@@ -167,11 +199,17 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetReadContext();
                 try
                 {
-                    var route = await context.Routes.FindAsync(id);
+                    var route = await context.Routes
+                        .Include(r => r.AMVehicle)
+                        .Include(r => r.PMVehicle)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(r => r.RouteId == id);
                     if (route == null)
                     {
                         return Result.FailureResult<Route>($"Route with ID {id} not found");
                     }
+
+                    await ApplyListMetricsAsync(context, new List<Route> { route });
 
                     return Result.SuccessResult(route);
                 }
@@ -240,10 +278,39 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    context.Entry(route).State = EntityState.Modified;
+                    var tracked = await context.Routes
+                        .AsTracking()
+                        .FirstOrDefaultAsync(r => r.RouteId == route.RouteId);
+                    if (tracked is null)
+                    {
+                        return Result.FailureResult<Route>($"Route with ID {route.RouteId} not found");
+                    }
+
+                    var previousName = tracked.RouteName;
+                    var previousDescription = tracked.Description;
+                    var previousSpecialNeeds = tracked.IsSpecialNeedsRoute;
+
+                    context.Entry(tracked).CurrentValues.SetValues(route);
+
+                    var renamed = !string.Equals(previousName, tracked.RouteName, StringComparison.Ordinal);
+                    var sessionInputsChanged = renamed
+                        || !string.Equals(previousDescription, tracked.Description, StringComparison.Ordinal)
+                        || previousSpecialNeeds != tracked.IsSpecialNeedsRoute;
+                    if (sessionInputsChanged
+                        || !RouteSession.IsKnown(tracked.Session)
+                        || tracked.Session == RouteSession.AM)
+                    {
+                        tracked.Session = RouteSession.Infer(tracked);
+                    }
+
+                    if (renamed)
+                    {
+                        await CascadeRouteRenameAsync(context, tracked.RouteId, previousName, tracked.RouteName);
+                    }
+
                     await context.SaveChangesAsync();
 
-                    return Result.SuccessResult(route);
+                    return Result.SuccessResult(tracked);
                 }
                 finally
                 {
@@ -260,6 +327,47 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        /// <summary>
+        /// Follows a route rename into the denormalised <see cref="Student.AMRoute"/> /
+        /// <see cref="Student.PMRoute"/> name strings. Riders are resolved by
+        /// <see cref="Student.AmRouteId"/> / <see cref="Student.PmRouteId"/>, so the rename follows the route's
+        /// identity and cannot be confused by another route that happens to share the old name.
+        /// </summary>
+        private static async Task CascadeRouteRenameAsync(
+            BusBuddyDbContext context,
+            int routeId,
+            string previousName,
+            string newName)
+        {
+            var riders = await context.Students
+                .AsTracking()
+                .Where(s => s.AmRouteId == routeId || s.PmRouteId == routeId)
+                .ToListAsync();
+
+            foreach (var rider in riders)
+            {
+                if (rider.AmRouteId == routeId)
+                {
+                    rider.AMRoute = newName;
+                }
+
+                if (rider.PmRouteId == routeId)
+                {
+                    rider.PMRoute = newName;
+                }
+            }
+
+            if (riders.Count > 0)
+            {
+                Logger.Information(
+                    "Route {RouteId} renamed from {PreviousName} to {NewName}; followed {RiderCount} rider assignments",
+                    routeId,
+                    previousName,
+                    newName,
+                    riders.Count);
+            }
+        }
+
         public async Task<Result<bool>> DeleteRouteAsync(int id)
         {
             try
@@ -267,16 +375,107 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var route = await context.Routes.FindAsync(id);
+                    context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == id);
                     if (route == null)
                     {
                         return Result.FailureResult<bool>($"Route with ID {id} not found");
                     }
 
+                    var routeName = route.RouteName;
+                    var assignmentIds = await context.RouteAssignments
+                        .Where(a => a.RouteId == id)
+                        .Select(a => a.RouteAssignmentId)
+                        .ToListAsync();
+
+                    // Riders are found by key first. The name match is kept as a fallback for rows the
+                    // AmRouteId/PmRouteId backfill could not resolve (a name that matched no route, or more
+                    // than one), so deleting a route still clears their stale name. It is case-insensitive to
+                    // match the OrdinalIgnoreCase clearing below — a case-sensitive match would skip riders
+                    // stored with different casing and leave them pointing at a deleted route.
+                    var routeNameLower = routeName.ToLowerInvariant();
+
+                    // CA1311/CA1862: ToLowerInvariant and StringComparison overloads have no SQL translation;
+                    // ToLower() is the form EF maps to the database LOWER() function, which is what runs here.
+#pragma warning disable CA1311, CA1862
+                    var assignedStudents = await context.Students
+                        .Where(s => s.AmRouteId == id
+                                 || s.PmRouteId == id
+                                 || (s.AMRoute != null && s.AMRoute.ToLower() == routeNameLower)
+                                 || (s.PMRoute != null && s.PMRoute.ToLower() == routeNameLower))
+                        .ToListAsync();
+#pragma warning restore CA1311, CA1862
+                    if (assignmentIds.Count > 0)
+                    {
+                        var linked = await context.Students
+                            .Where(s => s.RouteAssignmentId != null && assignmentIds.Contains(s.RouteAssignmentId.Value))
+                            .ToListAsync();
+                        assignedStudents = assignedStudents
+                            .Concat(linked)
+                            .DistinctBy(s => s.StudentId)
+                            .ToList();
+                    }
+
+                    foreach (var student in assignedStudents)
+                    {
+                        if (StudentRouteAssignment.Matches(student, route, RouteTimeSlot.AM))
+                        {
+                            StudentRouteAssignment.SetSlot(student, RouteTimeSlot.AM, route: null);
+                        }
+
+                        if (StudentRouteAssignment.Matches(student, route, RouteTimeSlot.PM))
+                        {
+                            StudentRouteAssignment.SetSlot(student, RouteTimeSlot.PM, route: null);
+                        }
+
+                        if (student.RouteAssignmentId is > 0
+                            && assignmentIds.Contains(student.RouteAssignmentId.Value))
+                        {
+                            student.RouteAssignmentId = null;
+                        }
+                    }
+
+                    var assignments = await context.RouteAssignments
+                        .Where(a => a.RouteId == id)
+                        .ToListAsync();
+                    if (assignments.Count > 0)
+                    {
+                        context.RouteAssignments.RemoveRange(assignments);
+                    }
+
+                    var schedules = await context.Schedules
+                        .Where(s => s.RouteId == id)
+                        .ToListAsync();
+                    if (schedules.Count > 0)
+                    {
+                        context.Schedules.RemoveRange(schedules);
+                    }
+
+                    var stops = await context.RouteStops
+                        .Where(s => s.RouteId == id)
+                        .ToListAsync();
+                    if (stops.Count > 0)
+                    {
+                        context.RouteStops.RemoveRange(stops);
+                    }
+
+                    var exceptions = await context.RouteRiderExceptions
+                        .Where(e => e.RouteId == id)
+                        .ToListAsync();
+                    if (exceptions.Count > 0)
+                    {
+                        context.RouteRiderExceptions.RemoveRange(exceptions);
+                    }
+
                     context.Routes.Remove(route);
                     await context.SaveChangesAsync();
 
-                    Logger.Information("Successfully deleted route {RouteId}", id);
+                    Logger.Information(
+                        "Successfully deleted route {RouteId} after unassigning {StudentCount} students, {ScheduleCount} schedules, {AssignmentCount} vehicle assignments",
+                        id,
+                        assignedStudents.Count,
+                        schedules.Count,
+                        assignments.Count);
                     return Result.SuccessResult(true);
                 }
                 finally
@@ -290,86 +489,16 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting route {RouteId}", id);
-                return Result.FailureResult<bool>($"Error deleting route: {ex.Message}");
-            }
-        }
-
-        public async Task<Result<IEnumerable<Route>>> SearchRoutesAsync(string searchTerm)
-        {
-            try
-            {
-                var (context, dispose) = GetReadContext();
-                try
+                var detail = DatabaseUserMessage.ForOperation(ex, "delete this route");
+                if (detail.Contains("related record", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("foreign key", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("FK_Schedules_Route", StringComparison.OrdinalIgnoreCase))
                 {
-                    var routes = await context.Routes
-                        .Where(r => r.RouteName.Contains(searchTerm) ||
-                                   (r.Description != null && r.Description.Contains(searchTerm)))
-                        .AsNoTracking() // Use AsNoTracking for better performance in read operations
-                        .OrderBy(r => r.RouteName)
-                        .ToListAsync();
-
-                    return Result.SuccessResult(routes.AsEnumerable());
+                    return Result.FailureResult<bool>(
+                        "Cannot delete this route while daily schedules or other records still reference it. Empty routes and routes whose students and daily schedules were cleared can be deleted.");
                 }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error searching routes with term: {SearchTerm}", searchTerm);
-                return Result.FailureResult<IEnumerable<Route>>($"Error searching routes: {ex.Message}");
-            }
-        }
 
-        public Task<Result<IEnumerable<Route>>> GetRoutesByBusIdAsync(int busId)
-        {
-            try
-            {
-                // Implementation would depend on how bus assignments are stored
-                // For now, return empty result as placeholder
-                var routes = new List<Route>();
-                return Task.FromResult(Result.SuccessResult(routes.AsEnumerable()));
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error getting routes for bus {BusId}", busId);
-                return Task.FromResult(Result.FailureResult<IEnumerable<Route>>($"Error getting routes for bus: {ex.Message}"));
-            }
-        }
-
-        public async Task<Result<bool>> IsRouteNumberUniqueAsync(string routeNumber, int? excludeId = null)
-        {
-            try
-            {
-                var (context, dispose) = GetReadContext();
-                try
-                {
-                    var query = context.Routes.Where(r => r.RouteName == routeNumber);
-
-                    if (excludeId.HasValue)
-                    {
-                        query = query.Where(r => r.RouteId != excludeId.Value);
-                    }
-
-                    var exists = await query.AnyAsync();
-                    return Result.SuccessResult(!exists);
-                }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error checking route number uniqueness: {RouteNumber}", routeNumber);
-                return Result.FailureResult<bool>($"Error checking route uniqueness: {ex.Message}");
+                return Result.FailureResult<bool>(detail);
             }
         }
 
@@ -389,13 +518,13 @@ namespace BusBuddy.Core.Services
                     return Result.FailureResult<Route>("Route name is required");
                 }
 
-                if (routeDate < DateTime.Today)
+                if (routeDate.Date < DateTime.UtcNow.Date)
                 {
                     return Result.FailureResult<Route>("Route date cannot be in the past");
                 }
 
                 // Check for duplicate route name on the same date
-                var (context, dispose) = GetReadContext();
+                var (context, dispose) = GetWriteContext();
                 try
                 {
                     var existingRoute = await context.Routes
@@ -462,7 +591,7 @@ namespace BusBuddy.Core.Services
                         validationResult.Issues.Add("Route name is required");
                     }
 
-                    if (route.Date < DateTime.Today)
+                    if (route.Date.Date < DateTime.UtcNow.Date)
                     {
                         validationResult.Issues.Add("Route date cannot be in the past");
                     }
@@ -618,31 +747,6 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public Task<Result<RouteStop>> AddRouteStopAsync(RouteStop routeStop)
-        {
-            return Task.FromResult(Result.FailureResult<RouteStop>("Not implemented yet"));
-        }
-
-        public Task<Result<RouteStop>> UpdateRouteStopAsync(RouteStop routeStop)
-        {
-            return Task.FromResult(Result.FailureResult<RouteStop>("Not implemented yet"));
-        }
-
-        public Task<Result<bool>> DeleteRouteStopAsync(int routeStopId)
-        {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
-        }
-
-        public Task<Result<decimal>> GetRouteTotalDistanceAsync(int routeId)
-        {
-            return Task.FromResult(Result.SuccessResult(0m));
-        }
-
-        public Task<Result<TimeSpan>> GetRouteEstimatedTimeAsync(int routeId)
-        {
-            return Task.FromResult(Result.SuccessResult(TimeSpan.Zero));
-        }
-
         public async Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds)
         {
             try
@@ -656,88 +760,91 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var stops = await context.RouteStops
-                        .Where(rs => rs.RouteId == routeId)
-                        .OrderBy(rs => rs.StopOrder)
-                        .ToListAsync();
-
-                    // Capture original ordering snapshot for diagnostics
-                    var originalOrder = stops.Select(s => new { s.RouteStopId, s.StopOrder }).ToList();
-                    Logger.Debug("ReorderRouteStops pre-state RouteId={RouteId} OpId={OpId} Original={Original}",
-                        routeId,
-                        opId,
-                        string.Join(",", originalOrder.Select(o => $"{o.RouteStopId}:{o.StopOrder}")));
-
-                    if (stops.Count != orderedStopIds.Count)
+                    return await InTransactionAsync(context, async () =>
                     {
-                        return Result.FailureResult<bool>("Ordered stop IDs count does not match existing stop count for route");
-                    }
+                        var stops = await context.RouteStops
+                            .Where(rs => rs.RouteId == routeId)
+                            .OrderBy(rs => rs.StopOrder)
+                            .ToListAsync();
 
-                    // Ensure all IDs exist
-                    var stopIdSet = stops.Select(s => s.RouteStopId).ToHashSet();
-                    if (orderedStopIds.Any(id => !stopIdSet.Contains(id)))
-                    {
-                        return Result.FailureResult<bool>("One or more stop IDs not found for route during reorder");
-                    }
+                        // Capture original ordering snapshot for diagnostics
+                        var originalOrder = stops.Select(s => new { s.RouteStopId, s.StopOrder }).ToList();
+                        Logger.Debug("ReorderRouteStops pre-state RouteId={RouteId} OpId={OpId} Original={Original}",
+                            routeId,
+                            opId,
+                            string.Join(",", originalOrder.Select(o => $"{o.RouteStopId}:{o.StopOrder}")));
 
-                    // Assign new order by position in orderedStopIds
-                    int order = 1;
-                    foreach (var id in orderedStopIds)
-                    {
-                        var s = stops.First(st => st.RouteStopId == id);
-                        if (s.StopOrder != order)
+                        if (stops.Count != orderedStopIds.Count)
                         {
-                            s.StopOrder = order;
-                            s.UpdatedDate = DateTime.UtcNow;
+                            return Result.FailureResult<bool>("Ordered stop IDs count does not match existing stop count for route");
                         }
-                        order++;
-                    }
 
-                    foreach (var s in stops)
-                    {
-                        context.Entry(s).Property(x => x.StopOrder).IsModified = true;
-                    }
+                        // Ensure all IDs exist
+                        var stopIdSet = stops.Select(s => s.RouteStopId).ToHashSet();
+                        if (orderedStopIds.Any(id => !stopIdSet.Contains(id)))
+                        {
+                            return Result.FailureResult<bool>("One or more stop IDs not found for route during reorder");
+                        }
 
-                    var routeEntity = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (routeEntity is not null)
-                    {
-                        var orderedStops = orderedStopIds
-                            .Select(id => stops.First(s => s.RouteStopId == id))
-                            .ToList();
-                        routeEntity.WaypointsJson = RouteWaypointSerializer.FromPairs(
-                            orderedStops
-                                .Where(s => RouteStop.IsValidatedCoordinate(s.Latitude, s.Longitude))
-                                .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
-                        context.Entry(routeEntity).Property(r => r.WaypointsJson).IsModified = true;
-                    }
+                        // Assign new order by position in orderedStopIds
+                        int order = 1;
+                        foreach (var id in orderedStopIds)
+                        {
+                            var s = stops.First(st => st.RouteStopId == id);
+                            if (s.StopOrder != order)
+                            {
+                                s.StopOrder = order;
+                                s.UpdatedDate = DateTime.UtcNow;
+                            }
+                            order++;
+                        }
 
-                    var affected = await context.SaveChangesAsync();
+                        foreach (var s in stops)
+                        {
+                            context.Entry(s).Property(x => x.StopOrder).IsModified = true;
+                        }
 
-                    // Reload to verify persistence
-                    var reloaded = await context.RouteStops
-                        .Where(rs => rs.RouteId == routeId)
-                        .OrderBy(rs => rs.StopOrder)
-                        .Select(rs => new { rs.RouteStopId, rs.StopOrder })
-                        .ToListAsync();
+                        var routeEntity = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                        if (routeEntity is not null)
+                        {
+                            var orderedStops = orderedStopIds
+                                .Select(id => stops.First(s => s.RouteStopId == id))
+                                .ToList();
+                            routeEntity.WaypointsJson = RouteWaypointSerializer.FromPairs(
+                                orderedStops
+                                    .Where(s => RouteStop.IsValidatedCoordinate(s.Latitude, s.Longitude))
+                                    .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
+                            context.Entry(routeEntity).Property(r => r.WaypointsJson).IsModified = true;
+                        }
 
-                    Logger.Debug("ReorderRouteStops post-state RouteId={RouteId} OpId={OpId} New={New}",
-                        routeId,
-                        opId,
-                        string.Join(",", reloaded.Select(o => $"{o.RouteStopId}:{o.StopOrder}")));
+                        var affected = await context.SaveChangesAsync();
 
-                    var changed = !originalOrder.SequenceEqual(reloaded.Select(r => new { r.RouteStopId, r.StopOrder }));
-                    if (!changed)
-                    {
-                        Logger.Warning("ReorderRouteStops detected no persisted change RouteId={RouteId} OpId={OpId} Affected={Affected}", routeId, opId, affected);
-                    }
-                    else
-                    {
-                        Logger.Information("Reordered {Count} stops for route {RouteId} OpId={OpId} Affected={Affected}", stops.Count, routeId, opId, affected);
-                    }
+                        // Reload to verify persistence
+                        var reloaded = await context.RouteStops
+                            .Where(rs => rs.RouteId == routeId)
+                            .OrderBy(rs => rs.StopOrder)
+                            .Select(rs => new { rs.RouteStopId, rs.StopOrder })
+                            .ToListAsync();
 
-                    EndOpOk("ReorderRouteStops", opId, sw, routeId, stops.Count);
-                    await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
-                    return Result.SuccessResult(changed);
+                        Logger.Debug("ReorderRouteStops post-state RouteId={RouteId} OpId={OpId} New={New}",
+                            routeId,
+                            opId,
+                            string.Join(",", reloaded.Select(o => $"{o.RouteStopId}:{o.StopOrder}")));
+
+                        var changed = !originalOrder.SequenceEqual(reloaded.Select(r => new { r.RouteStopId, r.StopOrder }));
+                        if (!changed)
+                        {
+                            Logger.Warning("ReorderRouteStops detected no persisted change RouteId={RouteId} OpId={OpId} Affected={Affected}", routeId, opId, affected);
+                        }
+                        else
+                        {
+                            Logger.Information("Reordered {Count} stops for route {RouteId} OpId={OpId} Affected={Affected}", stops.Count, routeId, opId, affected);
+                        }
+
+                        EndOpOk("ReorderRouteStops", opId, sw, routeId, stops.Count);
+                        await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        return Result.SuccessResult(changed);
+                    });
                 }
                 finally
                 {
@@ -884,14 +991,15 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Route with ID {routeId} not found");
                     }
 
-                    var currentSlotRoute = GetStudentRouteForSlot(student, timeSlot);
-                    if (!string.IsNullOrWhiteSpace(currentSlotRoute))
+                    if (StudentRouteAssignment.Matches(student, route, timeSlot))
                     {
-                        if (string.Equals(currentSlotRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return Result.SuccessResult(true);
-                        }
-                        return Result.FailureResult<bool>($"Student already has a {timeSlot} route assigned: {currentSlotRoute}");
+                        return Result.SuccessResult(true);
+                    }
+
+                    if (!StudentRouteAssignment.IsUnassigned(student, timeSlot))
+                    {
+                        var current = timeSlot == RouteTimeSlot.AM ? student.AMRoute : student.PMRoute;
+                        return Result.FailureResult<bool>($"Student already has a {timeSlot} route assigned: {current}");
                     }
 
                     // Fallback seating gate when evaluator not registered
@@ -905,7 +1013,7 @@ namespace BusBuddy.Core.Services
                         }
                     }
 
-                    SetStudentRouteForSlot(student, timeSlot, route.RouteName);
+                    StudentRouteAssignment.SetSlot(student, timeSlot, route);
 
                     context.Entry(student).State = EntityState.Modified;
                     await context.SaveChangesAsync();
@@ -980,13 +1088,12 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Route with ID {routeId} not found");
                     }
 
-                    var slotRoute = GetStudentRouteForSlot(student, timeSlot);
-                    if (!string.Equals(slotRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                    if (!StudentRouteAssignment.Matches(student, route, timeSlot))
                     {
                         return Result.FailureResult<bool>($"Student is not assigned to the specified route for {timeSlot}");
                     }
 
-                    SetStudentRouteForSlot(student, timeSlot, null);
+                    StudentRouteAssignment.SetSlot(student, timeSlot, route: null);
 
                     context.Entry(student).State = EntityState.Modified;
                     await context.SaveChangesAsync();
@@ -1025,63 +1132,66 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route is null)
+                    return await InTransactionAsync(context, async () =>
                     {
-                        return Result.FailureResult<RouteRiderException>($"Route with ID {routeId} not found");
-                    }
-
-                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
-                    if (student is null)
-                    {
-                        return Result.FailureResult<RouteRiderException>($"Student with ID {studentId} not found");
-                    }
-
-                    var assigned = string.Equals(student.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(student.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase);
-                    if (!assigned)
-                    {
-                        return Result.FailureResult<RouteRiderException>(
-                            "Student is not assigned to this route. Same-day not-riding does not unassign the year pairing.");
-                    }
-
-                    var existing = await context.RouteRiderExceptions.FirstOrDefaultAsync(e =>
-                        e.RouteId == routeId
-                        && e.StudentId == studentId
-                        && e.ExceptionDate == day);
-                    if (existing is not null)
-                    {
-                        if (!string.IsNullOrWhiteSpace(reason))
+                        var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                        if (route is null)
                         {
-                            existing.Reason = reason.Trim();
-                            await context.SaveChangesAsync();
+                            return Result.FailureResult<RouteRiderException>($"Route with ID {routeId} not found");
                         }
 
+                        var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
+                        if (student is null)
+                        {
+                            return Result.FailureResult<RouteRiderException>($"Student with ID {studentId} not found");
+                        }
+
+                        var assigned = StudentRouteAssignment.Matches(student, route, RouteTimeSlot.AM)
+                            || StudentRouteAssignment.Matches(student, route, RouteTimeSlot.PM);
+                        if (!assigned)
+                        {
+                            return Result.FailureResult<RouteRiderException>(
+                                "Student is not assigned to this route. Same-day not-riding does not unassign the year pairing.");
+                        }
+
+                        var existing = await context.RouteRiderExceptions.FirstOrDefaultAsync(e =>
+                            e.RouteId == routeId
+                            && e.StudentId == studentId
+                            && e.ExceptionDate == day);
+                        if (existing is not null)
+                        {
+                            if (!string.IsNullOrWhiteSpace(reason))
+                            {
+                                existing.Reason = reason.Trim();
+                                await context.SaveChangesAsync();
+                            }
+
+                            Logger.Information(
+                                "Rider exception already recorded RouteId={RouteId} StudentId={StudentId} Date={Date}",
+                                routeId,
+                                studentId,
+                                day);
+                            return Result.SuccessResult(existing);
+                        }
+
+                        var row = new RouteRiderException
+                        {
+                            RouteId = routeId,
+                            StudentId = studentId,
+                            ExceptionDate = day,
+                            Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
+                            CreatedDate = DateTime.UtcNow
+                        };
+                        await context.RouteRiderExceptions.AddAsync(row);
+                        await context.SaveChangesAsync();
+
                         Logger.Information(
-                            "Rider exception already recorded RouteId={RouteId} StudentId={StudentId} Date={Date}",
+                            "Recorded rider exception RouteId={RouteId} StudentId={StudentId} Date={Date} — published stops unchanged",
                             routeId,
                             studentId,
                             day);
-                        return Result.SuccessResult(existing);
-                    }
-
-                    var row = new RouteRiderException
-                    {
-                        RouteId = routeId,
-                        StudentId = studentId,
-                        ExceptionDate = day,
-                        Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
-                        CreatedDate = DateTime.UtcNow
-                    };
-                    await context.RouteRiderExceptions.AddAsync(row);
-                    await context.SaveChangesAsync();
-
-                    Logger.Information(
-                        "Recorded rider exception RouteId={RouteId} StudentId={StudentId} Date={Date} — published stops unchanged",
-                        routeId,
-                        studentId,
-                        day);
-                    return Result.SuccessResult(row);
+                        return Result.SuccessResult(row);
+                    });
                 }
                 finally
                 {
@@ -1111,7 +1221,9 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     var students = await context.Students
-                        .Where(s => (s.AMRoute == null || s.AMRoute == "") && (s.PMRoute == null || s.PMRoute == "") && s.Active)
+                        .Where(s => s.Active)
+                        .Where(StudentRouteAssignment.UnassignedAm())
+                        .Where(StudentRouteAssignment.UnassignedPm())
                         .OrderBy(s => s.StudentName)
                         .ToListAsync();
                     return Result.SuccessResult(students);
@@ -1143,14 +1255,11 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetReadContext();
                 try
                 {
-                    var students = timeSlot == RouteTimeSlot.AM
-                        ? await context.Students
-                            .Where(s => s.Active && (s.AMRoute == null || s.AMRoute == ""))
-                            .OrderBy(s => s.StudentName)
-                            .ThenBy(s => s.StudentId)
-                            .ToListAsync()
-                        : await context.Students
-                            .Where(s => s.Active && (s.PMRoute == null || s.PMRoute == ""))
+                    var query = context.Students.Where(s => s.Active);
+                    query = timeSlot == RouteTimeSlot.AM
+                        ? query.Where(StudentRouteAssignment.UnassignedAm())
+                        : query.Where(StudentRouteAssignment.UnassignedPm());
+                    var students = await query
                             .OrderBy(s => s.StudentName)
                             .ThenBy(s => s.StudentId)
                             .ToListAsync();
@@ -1194,13 +1303,8 @@ namespace BusBuddy.Core.Services
                         return Result.SuccessResult(new List<Student>());
                     }
 
-                    var students = timeSlot == RouteTimeSlot.AM
-                        ? await context.Students
-                            .Where(s => s.AMRoute == route.RouteName)
-                            .OrderBy(s => s.StudentName)
-                            .ToListAsync()
-                        : await context.Students
-                            .Where(s => s.PMRoute == route.RouteName)
+                    var students = await context.Students
+                            .WhereOnSlot(routeId, route.RouteName, timeSlot)
                             .OrderBy(s => s.StudentName)
                             .ToListAsync();
                     return Result.SuccessResult(students);
@@ -1243,16 +1347,15 @@ namespace BusBuddy.Core.Services
                 var assigned = new List<Student>();
                 foreach (var student in unassignedResult.Value)
                 {
-                    var canAssign = await CanAssignStudentToRouteAsync(student.StudentId, routeId, timeSlot);
-                    if (!canAssign.IsSuccess)
-                    {
-                        break;
-                    }
-
                     var assignResult = await AssignStudentToRouteAsync(student.StudentId, routeId, timeSlot);
                     if (!assignResult.IsSuccess)
                     {
-                        break;
+                        if (IsCapacityRejection(assignResult.Error))
+                        {
+                            break;
+                        }
+
+                        continue;
                     }
 
                     assigned.Add(student);
@@ -1280,7 +1383,7 @@ namespace BusBuddy.Core.Services
                     {
                         var capacity = await GetRouteCapacityAsync(context, route);
                         if (capacity <= 0) capacity = 30; // default capacity
-                        var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
+                        var assigned = await context.Students.WhereOnRoute(route).CountAsync();
                         if (assigned < capacity)
                         {
                             route.StudentCount = assigned;
@@ -1304,39 +1407,6 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public async Task<Result<bool>> ValidateRouteCapacityAsync(int routeId)
-        {
-            try
-            {
-                var (context, dispose) = GetReadContext();
-                try
-                {
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route is null)
-                    {
-                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
-                    }
-
-                    var capacity = await GetRouteCapacityAsync(context, route);
-                    if (capacity <= 0) capacity = 30;
-                    var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
-                    return Result.SuccessResult(assigned <= capacity);
-                }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error validating capacity for route {RouteId}", routeId);
-                return Result.FailureResult<bool>($"Error validating route capacity: {ex.Message}");
-            }
-        }
-
         public async Task<Result<RouteUtilizationStats>> GetRouteUtilizationStatsAsync()
         {
             try
@@ -1347,7 +1417,7 @@ namespace BusBuddy.Core.Services
                     var routes = await context.Routes.ToListAsync();
                     var totalRoutes = routes.Count;
                     var allStudents = await context.Students.ToListAsync();
-                    var totalAssigned = allStudents.Count(s => !string.IsNullOrWhiteSpace(s.AMRoute) || !string.IsNullOrWhiteSpace(s.PMRoute));
+                    var totalAssigned = allStudents.Count(StudentRouteAssignment.IsAssignedAny);
                     var totalUnassigned = allStudents.Count - totalAssigned;
 
                     int totalCapacity = 0;
@@ -1359,8 +1429,9 @@ namespace BusBuddy.Core.Services
                     {
                         var capacity = await GetRouteCapacityAsync(context, route);
                         if (capacity <= 0) capacity = 30;
-                        var assigned = allStudents.Count(s => string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase) ||
-                                                              string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase));
+                        var assigned = allStudents.Count(s =>
+                            StudentRouteAssignment.Matches(s, route, RouteTimeSlot.AM)
+                            || StudentRouteAssignment.Matches(s, route, RouteTimeSlot.PM));
                         totalCapacity += capacity;
                         var utilization = capacity > 0 ? (double)assigned / capacity : 0.0;
                         utilizationSum += utilization;
@@ -1445,92 +1516,56 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId)
-        {
-            return CanAssignStudentToRouteAsync(studentId, routeId, RouteTimeSlot.AM);
-        }
+        private static bool IsCapacityRejection(string? error) =>
+            !string.IsNullOrEmpty(error)
+            && error.Contains("capacity", StringComparison.OrdinalIgnoreCase);
 
-        public async Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot)
+        /// <summary>
+        /// Fills <see cref="Route.StudentCount"/> and <see cref="Route.StopCount"/> from identity keys
+        /// (name fallback only when the key is null). One query each — not an N+1 per route.
+        /// </summary>
+        private static async Task ApplyListMetricsAsync(BusBuddyDbContext context, List<Route> routes)
         {
-            try
+            if (routes.Count == 0)
             {
-                if (timeSlot == RouteTimeSlot.Both)
-                {
-                    return Result.FailureResult<bool>("Specify AM or PM time slot");
-                }
-
-                var (context, dispose) = GetReadContext();
-                try
-                {
-                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
-                    if (student is null)
-                    {
-                        return Result.FailureResult<bool>($"Student with ID {studentId} not found");
-                    }
-
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route is null)
-                    {
-                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
-                    }
-
-                    var currentSlotRoute = GetStudentRouteForSlot(student, timeSlot);
-                    if (!string.IsNullOrWhiteSpace(currentSlotRoute))
-                    {
-                        if (string.Equals(currentSlotRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return Result.SuccessResult(true);
-                        }
-                        return Result.FailureResult<bool>($"Student already has a {timeSlot} route assigned");
-                    }
-
-                    var capacity = await GetCapacityForSlotAsync(context, route, timeSlot);
-                    if (capacity <= 0) capacity = 30;
-                    var assigned = await GetAssignedCountForSlotAsync(context, route, timeSlot);
-                    if (assigned >= capacity)
-                    {
-                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at {timeSlot} capacity");
-                    }
-
-                    return Result.SuccessResult(true);
-                }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
+                return;
             }
-            catch (Exception ex)
+
+            var routeIds = routes.Select(r => r.RouteId).ToList();
+            var stopCounts = await context.RouteStops
+                .AsNoTracking()
+                .Where(s => routeIds.Contains(s.RouteId))
+                .GroupBy(s => s.RouteId)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+            var roster = await context.Students
+                .AsNoTracking()
+                .Select(s => new { s.AmRouteId, s.PmRouteId, s.AMRoute, s.PMRoute })
+                .ToListAsync();
+
+            foreach (var route in routes)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error validating assignment of student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
-                return Result.FailureResult<bool>($"Error validating assignment: {ex.Message}");
+                route.StopCount = stopCounts.GetValueOrDefault(route.RouteId);
+                var uniqueName = routes.Count(r =>
+                    string.Equals(r.RouteName, route.RouteName, StringComparison.OrdinalIgnoreCase)) == 1;
+                route.StudentCount = roster.Count(s =>
+                    s.AmRouteId == route.RouteId
+                    || s.PmRouteId == route.RouteId
+                    || (uniqueName && s.AmRouteId == null && NamesEqual(s.AMRoute, route.RouteName))
+                    || (uniqueName && s.PmRouteId == null && NamesEqual(s.PMRoute, route.RouteName)));
             }
         }
 
-        private static string? GetStudentRouteForSlot(Student student, RouteTimeSlot timeSlot)
-        {
-            return timeSlot == RouteTimeSlot.AM ? student.AMRoute : student.PMRoute;
-        }
-
-        private static void SetStudentRouteForSlot(Student student, RouteTimeSlot timeSlot, string? routeName)
-        {
-            if (timeSlot == RouteTimeSlot.AM)
-            {
-                student.AMRoute = routeName;
-            }
-            else
-            {
-                student.PMRoute = routeName;
-            }
-        }
+        private static bool NamesEqual(string? left, string? right) =>
+            !string.IsNullOrWhiteSpace(left)
+            && string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
         private static async Task<int> GetAssignedCountForSlotAsync(BusBuddyDbContext context, Route route, RouteTimeSlot timeSlot)
         {
-            return timeSlot == RouteTimeSlot.AM
-                ? await context.Students.CountAsync(s => s.AMRoute == route.RouteName)
-                : await context.Students.CountAsync(s => s.PMRoute == route.RouteName);
+            return await context.Students
+                .WhereOnSlot(route.RouteId, route.RouteName, timeSlot)
+                .CountAsync();
         }
 
         private static async Task<int> GetCapacityForSlotAsync(BusBuddyDbContext context, Route route, RouteTimeSlot timeSlot)
@@ -1713,47 +1748,52 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    // Ensure route exists
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route == null)
+                    return await InTransactionAsync(context, async () =>
                     {
-                        return Result.FailureResult<RouteStop>($"Route with ID {routeId} not found");
-                    }
+                        // Ensure route exists
+                        var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                        if (route == null)
+                        {
+                            return Result.FailureResult<RouteStop>($"Route with ID {routeId} not found");
+                        }
 
-                    if (!routeStop.HasValidatedCoordinates)
-                    {
-                        return Result.FailureResult<RouteStop>(
-                            "Stop requires a validated location (geocoded lat/lng). Unvalidated coordinates cannot be published waypoints.");
-                    }
+                        if (!routeStop.HasValidatedCoordinates)
+                        {
+                            return Result.FailureResult<RouteStop>(
+                                "Stop requires a validated location (geocoded lat/lng). Unvalidated coordinates cannot be published waypoints.");
+                        }
 
-                    // Normalize and prepare the RouteStop entity
-                    routeStop.RouteId = routeId; // enforce association
-                    if (routeStop.StopOrder <= 0)
-                    {
-                        // Determine next StopOrder
-                        var maxOrder = await context.RouteStops
-                            .Where(rs => rs.RouteId == routeId)
-                            .Select(rs => (int?)rs.StopOrder)
-                            .MaxAsync() ?? 0;
-                        routeStop.StopOrder = maxOrder + 1;
-                    }
+                        // Normalize and prepare the RouteStop entity
+                        routeStop.RouteId = routeId; // enforce association
+                        if (routeStop.StopOrder <= 0)
+                        {
+                            // Determine next StopOrder
+                            var maxOrder = await context.RouteStops
+                                .Where(rs => rs.RouteId == routeId)
+                                .Select(rs => (int?)rs.StopOrder)
+                                .MaxAsync() ?? 0;
+                            routeStop.StopOrder = maxOrder + 1;
+                        }
 
-                    // CreatedDate is required by the model — set explicitly
-                    if (routeStop.CreatedDate == default)
-                    {
-                        routeStop.CreatedDate = DateTime.UtcNow;
-                    }
+                        // CreatedDate is required by the model — set explicitly
+                        if (routeStop.CreatedDate == default)
+                        {
+                            routeStop.CreatedDate = DateTime.UtcNow;
+                        }
 
-                    // Add and save changes asynchronously (EF Core best practice)
-                    await context.RouteStops.AddAsync(routeStop);
-                    await context.SaveChangesAsync();
+                        NormalizeStopEstimates(routeStop);
 
-                    Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId} OpId={OpId}",
-                        routeStop.StopName, routeStop.RouteStopId, routeId, opId);
-                    await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
-                    EndOpOk("AddStop", opId, sw, routeId);
+                        // Add and save changes asynchronously (EF Core best practice)
+                        await context.RouteStops.AddAsync(routeStop);
+                        await context.SaveChangesAsync();
 
-                    return Result.SuccessResult(routeStop);
+                        Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId} OpId={OpId}",
+                            routeStop.StopName, routeStop.RouteStopId, routeId, opId);
+                        await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        EndOpOk("AddStop", opId, sw, routeId);
+
+                        return Result.SuccessResult(routeStop);
+                    });
                 }
                 finally
                 {
@@ -1784,33 +1824,36 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    // Ensure route exists
-                    var route = await context.Routes.FindAsync(routeId);
-                    if (route == null)
+                    return await InTransactionAsync(context, async () =>
                     {
-                        Logger.Error("RemoveStop failed — route {RouteId} not found", routeId);
-                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
-                    }
+                        // Ensure route exists
+                        var route = await context.Routes.FindAsync(routeId);
+                        if (route == null)
+                        {
+                            Logger.Error("RemoveStop failed — route {RouteId} not found", routeId);
+                            return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                        }
 
-                    // Find the stop scoped to this route
-                    var stop = await context.RouteStops
-                        .FirstOrDefaultAsync(rs => rs.RouteStopId == stopId && rs.RouteId == routeId);
+                        // Find the stop scoped to this route
+                        var stop = await context.RouteStops
+                            .FirstOrDefaultAsync(rs => rs.RouteStopId == stopId && rs.RouteId == routeId);
 
-                    if (stop == null)
-                    {
-                        Logger.Error("RemoveStop failed — stop {StopId} not found for route {RouteId}", stopId, routeId);
-                        return Result.FailureResult<bool>($"Stop with ID {stopId} not found for route {routeId}");
-                    }
+                        if (stop == null)
+                        {
+                            Logger.Error("RemoveStop failed — stop {StopId} not found for route {RouteId}", stopId, routeId);
+                            return Result.FailureResult<bool>($"Stop with ID {stopId} not found for route {routeId}");
+                        }
 
-                    context.RouteStops.Remove(stop);
+                        context.RouteStops.Remove(stop);
 
-                    // Persist changes asynchronously
-                    await context.SaveChangesAsync();
+                        // Persist changes asynchronously
+                        await context.SaveChangesAsync();
 
-                    Logger.Information("Removed stop {StopId} from route {RouteId} OpId={OpId}", stopId, routeId, opId);
-                    await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
-                    EndOpOk("RemoveStop", opId, sw, routeId);
-                    return Result.SuccessResult(true);
+                        Logger.Information("Removed stop {StopId} from route {RouteId} OpId={OpId}", stopId, routeId, opId);
+                        await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        EndOpOk("RemoveStop", opId, sw, routeId);
+                        return Result.SuccessResult(true);
+                    });
                 }
                 finally
                 {
@@ -1842,75 +1885,78 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var source = await context.Routes.AsNoTracking()
-                        .FirstOrDefaultAsync(r => r.RouteId == sourceRouteId);
-                    if (source is null)
+                    return await InTransactionAsync(context, async () =>
                     {
-                        return Result.FailureResult<Route>($"Route with ID {sourceRouteId} not found");
-                    }
-
-                    var stops = await context.RouteStops.AsNoTracking()
-                        .Where(s => s.RouteId == sourceRouteId)
-                        .OrderBy(s => s.StopOrder)
-                        .ToListAsync();
-
-                    var clone = new Route
-                    {
-                        Date = newDate == default ? DateTime.Today.AddDays(1) : newDate.Date,
-                        RouteName = string.IsNullOrWhiteSpace(newRouteName)
-                            ? $"Copy of {source.RouteName}"
-                            : newRouteName.Trim(),
-                        Description = source.Description,
-                        IsActive = false,
-                        School = source.School,
-                        Session = source.Session,
-                        IsSpecialNeedsRoute = source.IsSpecialNeedsRoute,
-                        RouteDescription = source.RouteDescription,
-                        Boundaries = source.Boundaries,
-                        Path = source.Path,
-                        WaypointsJson = source.WaypointsJson,
-                        Distance = source.Distance,
-                        EstimatedDuration = source.EstimatedDuration,
-                        StopCount = stops.Count,
-                        StudentCount = 0,
-                        DistrictBoundaryShapefilePath = source.DistrictBoundaryShapefilePath,
-                        TownBoundaryShapefilePath = source.TownBoundaryShapefilePath
-                    };
-
-                    await context.Routes.AddAsync(clone);
-                    await context.SaveChangesAsync();
-
-                    foreach (var stop in stops)
-                    {
-                        await context.RouteStops.AddAsync(new RouteStop
+                        var source = await context.Routes.AsNoTracking()
+                            .FirstOrDefaultAsync(r => r.RouteId == sourceRouteId);
+                        if (source is null)
                         {
-                            RouteId = clone.RouteId,
-                            StopName = stop.StopName,
-                            StopAddress = stop.StopAddress,
-                            Latitude = stop.Latitude,
-                            Longitude = stop.Longitude,
-                            StopOrder = stop.StopOrder,
-                            ScheduledArrival = stop.ScheduledArrival,
-                            ScheduledDeparture = stop.ScheduledDeparture,
-                            StopDuration = stop.StopDuration,
-                            Status = stop.Status,
-                            Notes = stop.Notes,
-                            CreatedDate = DateTime.UtcNow,
-                            EstimatedArrivalTime = stop.EstimatedArrivalTime,
-                            EstimatedDepartureTime = stop.EstimatedDepartureTime
-                        });
-                    }
+                            return Result.FailureResult<Route>($"Route with ID {sourceRouteId} not found");
+                        }
 
-                    if (stops.Count > 0)
-                    {
+                        var stops = await context.RouteStops.AsNoTracking()
+                            .Where(s => s.RouteId == sourceRouteId)
+                            .OrderBy(s => s.StopOrder)
+                            .ToListAsync();
+
+                        var clone = new Route
+                        {
+                            Date = newDate == default
+                                ? DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc)
+                                : newDate.Date,
+                            RouteName = string.IsNullOrWhiteSpace(newRouteName)
+                                ? $"Copy of {source.RouteName}"
+                                : newRouteName.Trim(),
+                            Description = source.Description,
+                            IsActive = false,
+                            School = source.School,
+                            Session = source.Session,
+                            IsSpecialNeedsRoute = source.IsSpecialNeedsRoute,
+                            RouteDescription = source.RouteDescription,
+                            Boundaries = source.Boundaries,
+                            Path = source.Path,
+                            WaypointsJson = source.WaypointsJson,
+                            Distance = source.Distance,
+                            EstimatedDuration = source.EstimatedDuration,
+                            StopCount = stops.Count,
+                            StudentCount = 0
+                        };
+
+                        await context.Routes.AddAsync(clone);
                         await context.SaveChangesAsync();
-                    }
 
-                    Logger.Information(
-                        "Cloned route {SourceId} to {CloneId} ({CloneName}) with {StopCount} stops OpId={OpId}",
-                        sourceRouteId, clone.RouteId, clone.RouteName, stops.Count, opId);
-                    EndOpOk("CloneRoute", opId, sw, clone.RouteId);
-                    return Result.SuccessResult(clone);
+                        foreach (var stop in stops)
+                        {
+                            await context.RouteStops.AddAsync(new RouteStop
+                            {
+                                RouteId = clone.RouteId,
+                                StopName = stop.StopName,
+                                StopAddress = stop.StopAddress,
+                                Latitude = stop.Latitude,
+                                Longitude = stop.Longitude,
+                                StopOrder = stop.StopOrder,
+                                ScheduledArrival = stop.ScheduledArrival,
+                                ScheduledDeparture = stop.ScheduledDeparture,
+                                StopDuration = stop.StopDuration,
+                                Status = stop.Status,
+                                Notes = stop.Notes,
+                                CreatedDate = DateTime.UtcNow,
+                                EstimatedArrivalTime = stop.EstimatedArrivalTime,
+                                EstimatedDepartureTime = stop.EstimatedDepartureTime
+                            });
+                        }
+
+                        if (stops.Count > 0)
+                        {
+                            await context.SaveChangesAsync();
+                        }
+
+                        Logger.Information(
+                            "Cloned route {SourceId} to {CloneId} ({CloneName}) with {StopCount} stops OpId={OpId}",
+                            sourceRouteId, clone.RouteId, clone.RouteName, stops.Count, opId);
+                        EndOpOk("CloneRoute", opId, sw, clone.RouteId);
+                        return Result.SuccessResult(clone);
+                    });
                 }
                 finally
                 {
@@ -1929,64 +1975,33 @@ namespace BusBuddy.Core.Services
 
         #endregion
 
-        #region Route Schedule Generation
+        #region Published path refresh
 
         /// <summary>
-        /// Generates route schedules, calculates times, and outputs to RouteSchedules/.
+        /// Fills the non-nullable estimate columns so an unset stop does not persist <see cref="DateTime.MinValue"/>.
+        /// These are published wall-clock face times at the stop (07:00 means 7am there), not UTC instants.
         /// </summary>
-        public async Task GenerateRouteSchedulesAsync(BusBuddyDbContext context, IStudentService studentService)
+        private static void NormalizeStopEstimates(RouteStop routeStop)
         {
-            var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "RouteSchedules");
-            Directory.CreateDirectory(outputDir);
+            var arrival = routeStop.ScheduledArrival == default
+                ? DefaultStopArrival
+                : routeStop.ScheduledArrival;
+            var departure = routeStop.ScheduledDeparture == default
+                ? arrival + PickupScheduleCalculator.DefaultDwell
+                : routeStop.ScheduledDeparture;
 
-            var routes = await context.Routes.Where(r => r.IsActive).ToListAsync();
-            foreach (var route in routes)
+            if (routeStop.EstimatedArrivalTime == default)
             {
-                try
-                {
-                    var students = await studentService.GetStudentsForRouteAsync(context, route.RouteId);
-                    var schedule = BuildRouteSchedule(route, students);
-                    var fileName = $"Route-{route.RouteName.Replace(" ", "")}-Schedule.txt";
-                    var filePath = Path.Combine(outputDir, fileName);
-                    await File.WriteAllTextAsync(filePath, schedule);
-                    Logger.Information("Generated schedule for {RouteName} at {FilePath}", route.RouteName, filePath);
-                }
-                catch (Exception ex)
-                {
-                    DatabaseUserMessage.LogFailure(Logger, ex, "Error generating schedule for route {RouteName}", route.RouteName);
-                    // Per Error-Handling.md: log, continue, and optionally notify
-                }
+                routeStop.EstimatedArrivalTime = DateTime.SpecifyKind(DateTime.UtcNow.Date.Add(arrival), DateTimeKind.Utc);
+            }
+
+            if (routeStop.EstimatedDepartureTime == default)
+            {
+                routeStop.EstimatedDepartureTime = DateTime.SpecifyKind(DateTime.UtcNow.Date.Add(departure), DateTimeKind.Utc);
             }
         }
 
-        private string BuildRouteSchedule(Route route, List<Student> students)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine($"Route: {route.RouteName}");
-            sb.AppendLine($"Description: {route.RouteDescription}");
-            sb.AppendLine($"Path: {route.Path}");
-            sb.AppendLine($"Date: {DateTime.Today:yyyy-MM-dd}");
-            sb.AppendLine($"Speed: 40-50 mph (rural)");
-            sb.AppendLine($"Stop Time: 5-10 min per stop");
-            sb.AppendLine();
-            sb.AppendLine("Student Assignments:");
-            foreach (var student in students)
-            {
-                sb.AppendLine($"- {student.StudentName} (Grade {student.Grade}) - Stop: {student.BusStop}");
-            }
-            sb.AppendLine();
-            sb.AppendLine("Estimated Times:");
-            // Example times based on route
-            int miles = route.RouteName.Contains("Truck Plaza") ? 35 : route.RouteName.Contains("Big Bend") ? 30 : 35;
-            int baseMinutes = route.RouteName.Contains("Truck Plaza") ? 50 : 45;
-            int stopMinutes = students.Count * 7; // avg 7 min per stop
-            int totalMinutes = baseMinutes + stopMinutes;
-            sb.AppendLine($"Total Distance: {miles} miles");
-            sb.AppendLine($"Base Drive Time: {baseMinutes} min");
-            sb.AppendLine($"Stop Time: {stopMinutes} min");
-            sb.AppendLine($"Estimated Total Time: {totalMinutes} min");
-            return sb.ToString();
-        }
+        private static readonly TimeSpan DefaultStopArrival = TimeSpan.FromHours(7);
 
         /// <summary>
         /// Rebuilds <see cref="Route.WaypointsJson"/> from ordered validated stops, then refreshes

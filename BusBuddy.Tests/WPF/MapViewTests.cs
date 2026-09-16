@@ -315,6 +315,17 @@ public class MapViewTests
         Assert.That(dialog, Does.Not.Contain("Regular Route"));
         Assert.That(dialog, Does.Contain("MissingInfo"));
 
+        var tripDialog = XamlViewFile.Read("Views/Activity/TripEventEditDialog.xaml");
+        Assert.That(tripDialog, Does.Contain("TripEvent"));
+        Assert.That(tripDialog, Does.Not.Contain("ActivitySchedule"));
+        Assert.That(tripDialog, Does.Not.Contain("Regular Route"));
+
+        var tripVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
+        Assert.That(tripVm, Does.Contain("TripEvent"));
+        Assert.That(tripVm, Does.Contain("never sets RouteId"));
+        Assert.That(tripVm, Does.Not.Contain("new ActivitySchedule"));
+        Assert.That(tripVm, Does.Not.Contain("IActivityScheduleService"));
+
         var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(mapVm, Does.Contain("TryPlotTrip"));
         Assert.That(mapVm, Does.Not.Contain("IsLiveTrackingEnabled"));

@@ -3,6 +3,7 @@ using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Settings;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -118,6 +119,28 @@ public class SettingsViewModelTests
 
         mapSync.Verify(m => m.ApplyDistrictGeographyAsync(It.IsAny<System.Threading.CancellationToken>()), Times.Never);
         vm.StatusMessage.Should().Be("Failed to save settings");
+    }
+
+    [Test]
+    public void ApplyDepotAddress_FillsCityStateZipAndCoordinates()
+    {
+        var vm = new SettingsViewModel(CreateSettingsMock().Object, new Mock<ISkinManagerService>().Object);
+        vm.ApplyDepotAddress(new PlaceAddressApplier.AppliedAddress(
+            Street: "210 West Pearl",
+            City: "Lamar",
+            State: "CO",
+            Zip: "81052",
+            Latitude: 38.0872,
+            Longitude: -102.6208,
+            FormattedAddress: "210 West Pearl, Lamar, CO 81052",
+            PlaceId: "test"));
+
+        vm.DepotAddress.Should().Contain("210 West Pearl");
+        vm.DepotCity.Should().Be("Lamar");
+        vm.DepotState.Should().Be("CO");
+        vm.DepotZipCode.Should().Be("81052");
+        vm.DepotLatitudeText.Should().Contain("38.0872");
+        vm.DepotLongitudeText.Should().Contain("-102.6208");
     }
 
     [Test]

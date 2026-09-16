@@ -89,8 +89,9 @@ resolve_ip() {
     [[ -n "${ip}" ]] && { print -r -- "${ip}"; return 0; }
   fi
   if [[ -f "${STATE_DIR}/last-ipv4" ]]; then
-    print -r -- "$(<"${STATE_DIR}/last-ipv4")"
-    return 0
+    local cached
+    cached="$(grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$' "${STATE_DIR}/last-ipv4" | head -1 || true)"
+    [[ -n "${cached}" ]] && { print -r -- "${cached}"; return 0; }
   fi
   return 1
 }

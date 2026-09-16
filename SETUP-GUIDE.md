@@ -63,28 +63,14 @@ bbHealth
 
 ### **Step 2.1: AI Configuration (Optional)**
 
-Configure xAI Grok-4 integration for route optimization and intelligent analysis:
+Local Ollama powers chat and route commentary. No cloud xAI key.
 
-```powershell
-# Set xAI API key (required for AI features)
-$env:XAI_API_KEY = "your-xai-api-key-here"
-[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
-
-# Load AI modules
-Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
-Import-Module ".\PowerShell\Modules\BusBuddy-GrokAssistant.psm1" -Force
-
-# Verify AI configuration
-$apiKey = Get-ApiKeySecurely
-Write-Host "✓ API Key Length: $($apiKey.Length)" -ForegroundColor Green  # Should be 84
-
-$config = grok-config
-Write-Host "✓ Model: $($config.DefaultModel)" -ForegroundColor Green     # Should be "grok-4-0709"
-
-# Test AI connection
-Test-GrokConnection -Verbose
-# Expected: "✅ Grok API connection successful."
+```bash
+ollama serve
+ollama pull llama3.2
 ```
+
+Confirm `Ollama:BaseUrl` in `appsettings.json` (default `http://localhost:11434/v1`). On a Windows VM talking to Ollama on the Mac, use the Mac host IP instead of `localhost`.
 
 **AI Features Available:**
 

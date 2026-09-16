@@ -30,16 +30,16 @@ Before architectural, auth, CI, or cross-cutting changes:
 
 ## CI/CD quick reference
 
-| Step                    | Action                                                      |
-| ----------------------- | ----------------------------------------------------------- |
-| Branch                  | `feature/<short-description>` from `master`                 |
-| Open PR                 | Target `master`; auto-merge enables automatically           |
-| Merge gates             | `Build & Test` must pass (repo is private — see note below) |
-| Merge                   | Squash auto-merge when gates pass (no reviewer required)    |
-| Direct push to `master` | Blocked by branch rules — use PRs                           |
-| Optional                | Run **Docker CI simulation** workflow manually              |
+| Step                    | Action                                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch                  | `feature/<short-description>` from `master`                                                                                                         |
+| Open PR                 | Target `master`; auto-merge enables automatically                                                                                                   |
+| Merge gates             | `Build & Test` must pass (repo is private — see note below)                                                                                         |
+| Merge                   | Squash auto-merge when gates pass (no reviewer required)                                                                                            |
+| Direct push to `master` | Blocked by branch rules — use PRs                                                                                                                   |
+| Optional                | Run **Docker CI simulation** workflow manually                                                                                                      |
 | Release                 | `gh workflow run ci.yml --ref master` publishes the WPF artifact (non-blocking job). Auto-merged squashes are bot-attributed and do not fire `push` |
-| Local pre-push          | `.github/scripts/validate-ci-local.sh`                      |
+| Local pre-push          | `.github/scripts/validate-ci-local.sh`                                                                                                              |
 
 **No CodeQL gate.** This repo is private, and GitHub code scanning on private repositories requires a paid GitHub Code Security license (available on Team/Enterprise only — not Free or Pro). `codeql-action/analyze` cannot upload its SARIF without one, so a `Security (CodeQL)` check would fail permanently and block every PR. The job was removed from `ci.yml` and from the required checks in the `Master solo-dev gates` ruleset. Do not re-add it while the repo is private.
 
@@ -49,15 +49,14 @@ Before architectural, auth, CI, or cross-cutting changes:
 
 Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 
-| Env var                                        | Purpose                                                                                                    |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `XAI_API_KEY` / `GROK_API_KEY`                 | Optional legacy xAI cloud key (`XAI:Provider=Xai` only). Default AI path is local Ollama — no key required |
-| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                             |
-| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                   |
-| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Places + Routes + Map Tiles) — optional; fail-open without key  |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Leave unset for API keys (see [GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md))    |
+| Env var                                        | Purpose                                                                                                   |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                            |
+| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                  |
+| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Places + Routes + Map Tiles) — optional; fail-open without key |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Leave unset for API keys (see [GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md))   |
 
-**Setup:** Store Passwords entries (Name = env var). Maps API key is optional (app degrades gracefully). There is no Earth Engine setup script.
+**Setup:** Store Passwords entries (Name = env var). Maps API key is optional (app degrades gracefully). There is no Earth Engine setup script. App AI is local Ollama — no `XAI_API_KEY`.
 
 ### Windows production
 
@@ -125,7 +124,7 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM), `./S
 | Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Places + Routes; not Earth Engine |
 | Geo (GCP inspect)     | `gcloud` + `.github/scripts/gcloud-maps-status.sh`; Cursor MCP `gcloud` in `.cursor/mcp.json`            |
 | Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                         |
-| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                             |
+| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`, `BusBuddy.Core/Services/OllamaAiService.cs`                |
 | CI workflow           | `.github/workflows/ci.yml`                                                                               |
 | WPF tests on UTM      | `./Scripts/utm-wpf-test.sh` (SSH → guest `dotnet test`; needs WindowsDesktop)                            |
 | Auto-merge            | `.github/workflows/auto-merge.yml`                                                                       |

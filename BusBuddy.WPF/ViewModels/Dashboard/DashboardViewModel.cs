@@ -114,7 +114,7 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                             RouteName = route.RouteName,
                             Description = route.Description ?? string.Empty,
                             MaxCapacity = route.MaxCapacity,
-                            AssignedCount = route.AssignedStudents?.Count ?? 0
+                            AssignedCount = route.StudentCount ?? 0
                         }));
                 }
                 else

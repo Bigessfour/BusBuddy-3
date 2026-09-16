@@ -9,6 +9,12 @@ public interface IDestinationService
 
     Task<IReadOnlyList<Destination>> GetActiveSchoolsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Active schools plus inactive campuses students still reference. Use this for roster combos so
+    /// a retire does not make <c>StudentSchoolLinker</c> see an unresolvable FK.
+    /// </summary>
+    Task<IReadOnlyList<Destination>> GetRosterSchoolsAsync(CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Destination>> GetActiveDestinationsAsync(
         string? destinationType = null,
         CancellationToken cancellationToken = default);
@@ -22,7 +28,7 @@ public interface IDestinationService
         CancellationToken cancellationToken = default);
 
     /// <summary>Catalog a school campus. Start and dismissal times are required for route generation.</summary>
-        Task<Destination> AddSchoolAsync(
+    Task<Destination> AddSchoolAsync(
         string name,
         string address,
         string city,
@@ -32,6 +38,31 @@ public interface IDestinationService
         TimeSpan dismissalTime,
         decimal? latitude = null,
         decimal? longitude = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates every clerk-facing school field (name, address, GPS, bell times).
+    /// specs/locations.md: Address Validation + geocoding remain the source of coordinates.
+    /// </summary>
+    Task<Destination> UpdateSchoolAsync(
+        int destinationId,
+        string name,
+        string address,
+        string city,
+        string state,
+        string zipCode,
+        TimeSpan startTime,
+        TimeSpan dismissalTime,
+        decimal? latitude = null,
+        decimal? longitude = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes an unused school, or retires it when students, transfers, activities, or trips still
+    /// reference it. specs/locations.md: "Soft-retire. Do not delete if routes/trips reference it."
+    /// </summary>
+    Task<SchoolDeleteResult> DeleteSchoolAsync(
+        int destinationId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

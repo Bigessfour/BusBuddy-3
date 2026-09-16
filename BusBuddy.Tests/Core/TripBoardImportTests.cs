@@ -378,6 +378,42 @@ public class TripBoardImportTests
     }
 
     [Test]
+    public async Task UpdateTrip_PreservesConfirmedWhenFieldsUnchanged_ThenTimeEditBecomesChanged()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        using (var db = factory.CreateWriteDbContext())
+        {
+            db.Destinations.Add(ValidatedDestination("Strasburg HS"));
+            await db.SaveChangesAsync();
+        }
+
+        var csv = $"""
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319098871,25,,338,Elby Sneller,25,,Sep 2026
+            """;
+
+        await service.ImportBoardCsvAsync(csv);
+        var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098871");
+        var confirmed = await service.ConfirmTripAsync(trip.TripEventId);
+        Assert.That(confirmed.IsSuccess, Is.True, confirmed.Error);
+
+        var stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored, Is.Not.Null);
+        await service.UpdateTripAsync(stored!);
+        stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored!.Status, Is.EqualTo(TripStatus.Confirmed));
+
+        stored.PickupTime = TimeSpan.FromHours(7);
+        await service.UpdateTripAsync(stored);
+        stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored!.Status, Is.EqualTo(TripStatus.Changed));
+        Assert.That(stored.PickupTime, Is.EqualTo(TimeSpan.FromHours(7)));
+    }
+
+    [Test]
     public async Task Import_ClearsDestinationLocationWhenCatalogNoLongerMatches()
     {
         var factory = new TestDbContextFactory(CreateOptions());
@@ -409,6 +445,52 @@ public class TripBoardImportTests
         Assert.That(trip.DestinationName, Is.EqualTo("Denver - See Trip Notes"));
         Assert.That(trip.DestinationLocationId, Is.Null);
         Assert.That(trip.Status, Is.EqualTo(TripStatus.MissingInfo));
+    }
+
+    [Test]
+    public void DriverHours_IncludesPermanentInspectionPad()
+    {
+        var trip = new TripEvent
+        {
+            LeaveTime = new DateTime(2026, 9, 8, 14, 30, 0),
+            ReturnTime = new DateTime(2026, 9, 8, 18, 30, 0)
+        };
+
+        Assert.That(TripEvent.PrePostTripInspectionHours, Is.EqualTo(1.5m));
+        Assert.That(trip.DriverHours, Is.EqualTo(5.5m));
+        Assert.That(trip.Purpose, Is.EqualTo("Field Trip"));
+        var sports = new TripEvent { Type = TripType.Athletic_Football };
+        Assert.That(sports.Purpose, Is.EqualTo("Sports"));
+    }
+
+    [Test]
+    public async Task AssignmentWarnings_PublishedHomeRouteDoesNotChangeRouteId()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+        int driverId;
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var driver = db.Drivers.First(d => d.DriverName == "Elby Sneller");
+            driver.Status = "Active";
+            driver.TrainingComplete = true;
+            driver.LicenseExpiryDate = DateTime.Today.AddYears(1);
+            db.Routes.Add(new Route
+            {
+                RouteName = "AM-5",
+                IsActive = true,
+                AMDriverId = driver.DriverId
+            });
+            await db.SaveChangesAsync();
+            driverId = driver.DriverId;
+        }
+
+        var start = new DateTime(2026, 9, 8, 8, 0, 0);
+        var end = start.AddHours(3);
+        var warnings = await service.GetAssignmentWarningsAsync(null, driverId, start, end);
+        Assert.That(warnings, Has.Some.Contain("published AM route"));
+        Assert.That(warnings, Has.None.Contain("HomeRouteId"));
     }
 
     [Test]

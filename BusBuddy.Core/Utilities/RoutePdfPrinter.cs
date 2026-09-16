@@ -84,10 +84,10 @@ namespace BusBuddy.Core.Utilities
                             .ToList();
                         Log.Debug("[RoutePdfPrinter] Loaded {StopCount} stops for route {RouteId} (OpId={OpId})", stops.Count, route.RouteId, opId);
 
-                        var students = ctx.Students.AsNoTracking()
-                            .Where(s => (slot == RouteTimeSlot.AM && s.AMRoute == route.RouteName) ||
-                                        (slot == RouteTimeSlot.PM && s.PMRoute == route.RouteName) ||
-                                        slot == RouteTimeSlot.Both)
+                        var studentQuery = ctx.Students.AsNoTracking();
+                        var students = (slot == RouteTimeSlot.Both
+                                ? studentQuery.WhereOnRoute(route)
+                                : studentQuery.WhereOnSlot(route.RouteId, route.RouteName, slot))
                             .OrderBy(s => s.StudentName)
                             .ToList();
                         Log.Debug("[RoutePdfPrinter] Loaded {StudentCount} students matched for slot {Slot} (OpId={OpId})", students.Count, slot, opId);
