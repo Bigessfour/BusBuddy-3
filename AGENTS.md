@@ -38,7 +38,7 @@ Before architectural, auth, CI, or cross-cutting changes:
 | Merge                   | Squash auto-merge when gates pass (no reviewer required)    |
 | Direct push to `master` | Blocked by branch rules — use PRs                           |
 | Optional                | Run **Docker CI simulation** workflow manually              |
-| Release                 | Push to `master` publishes WPF artifact (non-blocking job)  |
+| Release                 | `gh workflow run ci.yml --ref master` publishes the WPF artifact (non-blocking job). Auto-merged squashes are bot-attributed and do not fire `push` |
 | Local pre-push          | `.github/scripts/validate-ci-local.sh`                      |
 
 **No CodeQL gate.** This repo is private, and GitHub code scanning on private repositories requires a paid GitHub Code Security license (available on Team/Enterprise only — not Free or Pro). `codeql-action/analyze` cannot upload its SARIF without one, so a `Security (CodeQL)` check would fail permanently and block every PR. The job was removed from `ci.yml` and from the required checks in the `Master solo-dev gates` ruleset. Do not re-add it while the repo is private.
