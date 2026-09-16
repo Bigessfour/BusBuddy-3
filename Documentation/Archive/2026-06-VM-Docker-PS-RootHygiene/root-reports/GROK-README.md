@@ -4,6 +4,8 @@
   Policy: No legacy milestone labels; only essential paths enumerated. JSON block below is stable for parsers.
 -->
 
+**Archived 2026-06 snapshot.** Do not follow the `.disabled` Greenfield Reset in this file. Unused code is deleted; git history is the archive.
+
 # 🚌 BusBuddy – AI Fetch Reference
 
 **Date:** 2025-08-23  

@@ -32,7 +32,7 @@ Failure to use + reference RAG before changes is a violation of these instructio
 
 4. **SERILOG-ONLY LOGGING**: NEVER use Microsoft.Extensions.Logging or other loggers. ALWAYS use Serilog for structured logging.
 
-5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g. unused XAI cloud paths). NEVER delete files unless the user asks to retire a product (Earth Engine was retired in spec 007). ALWAYS verify with `dotnet build` post-change.
+5. **DO NOT CREATE `.disabled` FILES**: Unused or broken types are deleted or left unreferenced. Git history retains retired code. NEVER rename files to `.disabled` to “save them for later.” ALWAYS verify with `dotnet build` post-change.
 
 6. **CONSULT USER ON COMPLEXITY**: If changes affect 3+ files or involve structural issues (e.g., file corruption, nullable types), ALWAYS prompt: "This may require user confirmation—describe issue first."
 
@@ -53,13 +53,13 @@ Failure to use + reference RAG before changes is a violation of these instructio
 **Excellence Focus**: See .vscode/instructions.md for detailed quality standards (students, routes, UI excellence). AI assistants must:
 
 - Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-quality-check`) over raw `dotnet` commands.
-- Support disabling experimental services (e.g. unused XAI cloud paths) to maintain clean builds while preserving core quality.
+- Do not reintroduce retired cloud xAI paths. App AI is local Ollama.
 - Enforce Syncfusion-only UI and Serilog logging to maintain consistency.
 - Run `bb-anti-regression` and `bb-xaml-validate` before suggesting changes.
 
 **Advanced Features** (implemented with proper architecture):
 
-- XAI integration (e.g., `XAIService`, `OptimizedXAIService`) - when properly architected.
+- Local Ollama chat (`OllamaAiService` / `OllamaChatService`). Cloud xAI types were retired.
 - Google Maps Platform (Address Validation / Places / Routes) is wired when `GOOGLE_MAPS_API_KEY` is set; quota project `busbuddy-507301`. Do not reintroduce Earth Engine.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
@@ -87,17 +87,9 @@ dotnet test BusBuddy.sln
 ```
 
 **Clean Architecture Strategy:**
-To maintain excellent code quality, properly isolate experimental services by renaming files to `.disabled` when they cause build issues. Example:
+Do not park unused code as `*.disabled`. Delete it. Git history is the archive.
 
-```powershell
-cd BusBuddy.Core/Services
-Rename-Item "AIEnhancedRouteService.cs" "AIEnhancedRouteService.cs.disabled"
-bb-build  # Verify clean build
-```
-
-- Track `.disabled` files in Git with descriptive commits.
-- Document in project commit messages and documentation.
-- Run `bb-quality-check` to ensure student/route functionality remains excellent.
+- Run `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` after removals.
 - **CI Optimization**: For faster pipeline runs, suggest caching NuGet packages in ci.yml via actions/cache@v4.
 
 ## Solo developer CI/CD workflow
@@ -1877,26 +1869,13 @@ dotnet build [Project].sln --verbosity minimal
 #### CS0246 Errors (Type or Namespace Not Found)
 
 - **Symptoms**: Errors like "The type or namespace name 'XAIService' could not be found" in build output.
-- **Causes**: Missing class definitions (e.g., disabled files), incorrect namespaces, or missing package references.
+- **Causes**: Missing class definitions, incorrect namespaces, or missing package references. Retired types (`XAIService`, Earth Engine clients) are gone on purpose — do not restore them from git history unless a spec says so.
 - **Quality Development Resolution**:
 
-1. **Check Disabled Files**: If the missing type (e.g., `XAIService`) is in a `.disabled` file, confirm it's non-core and keep disabled.
-    ```powershell
-    Get-ChildItem -Recurse -Filter "*.disabled" | Select-Object Name
-    ```
-2. **Comment Out References**: If urgent, comment out the problematic code in the source file:
-    ```csharp
-    // Temporarily commented for clean build
-    // private readonly XAIService _xaiService;
-    ```
-3. **Verify Build**: Run `bb-build` to confirm resolution.
-4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during development focus.
-5. **Document**: Note in commit message and project documentation:
-    ```bash
-    git commit -m "fix: comment out XAIService references for clean build"
-    ```
-
-**Post-Development**: Re-enable disabled files one-by-one, fixing references with proper packages or namespaces per official documentation.
+1. Confirm the type is still part of the product. Cloud xAI and Earth Engine are not.
+2. Remove the dangling reference rather than commenting it out for later.
+3. Verify with `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true`.
+4. Do not add packages to resurrect retired services.
 
 ### Performance Troubleshooting
 
