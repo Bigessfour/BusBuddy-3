@@ -188,6 +188,45 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task GetStudentsByRouteAsync_SharedName_DoesNotMergeDatedRuns()
+        {
+            _dbContext.Routes.AddRange(
+                new Route
+                {
+                    RouteId = 10,
+                    RouteName = "North Elementary",
+                    Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                    IsActive = true,
+                    School = "T"
+                },
+                new Route
+                {
+                    RouteId = 11,
+                    RouteName = "North Elementary",
+                    Date = DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc),
+                    IsActive = true,
+                    School = "T"
+                });
+            _dbContext.Students.Add(new Student
+            {
+                StudentName = "Keyed North",
+                Grade = "1",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                AMRoute = "North Elementary",
+                AmRouteId = 10
+            });
+            await _dbContext.SaveChangesAsync();
+
+            var byName = await _studentService.GetStudentsByRouteAsync("North Elementary");
+            byName.Should().BeEmpty();
+
+            var byKey = await _studentService.GetStudentsByRouteAsync(10);
+            byKey.Select(s => s.StudentName).Should().Contain("Keyed North");
+        }
+
+        [Test]
         public async Task AssignStudentToRouteAsync_UpdatesAMandPM()
         {
             var s = new Student
@@ -210,6 +249,46 @@ namespace BusBuddy.Tests.Core
             updated.PMRoute.Should().Be("West Route");
             updated.AmRouteId.Should().Be(1);
             updated.PmRouteId.Should().Be(2);
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_SharedName_FailsClosedWithoutWriting()
+        {
+            _dbContext.Routes.AddRange(
+                new Route
+                {
+                    RouteId = 10,
+                    RouteName = "North Elementary",
+                    Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                    IsActive = true,
+                    School = "T"
+                },
+                new Route
+                {
+                    RouteId = 11,
+                    RouteName = "North Elementary",
+                    Date = DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc),
+                    IsActive = true,
+                    School = "T"
+                });
+            var s = new Student
+            {
+                StudentName = "Orphan",
+                Grade = "2",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555"
+            };
+            _dbContext.Students.Add(s);
+            await _dbContext.SaveChangesAsync();
+
+            var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "North Elementary", null);
+            ok.Should().BeFalse();
+
+            _dbContext.ChangeTracker.Clear();
+            var updated = await _dbContext.Students.FindAsync(s.StudentId);
+            updated!.AMRoute.Should().BeNull();
+            updated.AmRouteId.Should().BeNull();
         }
 
         [Test]
