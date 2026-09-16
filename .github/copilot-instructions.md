@@ -121,7 +121,7 @@ bb-build  # Verify clean build
 
 | Job                      | When                                | Notes                                     |
 | ------------------------ | ----------------------------------- | ----------------------------------------- | --- | -------------------------- |
-| **Release artifacts**    | Push to `master` after Build & Test | Publishes win-x64 WPF package as artifact |
+| **Release artifacts**    | `workflow_dispatch` on `master` (or a human push) after Build & Test; auto-merged squashes are bot-attributed and do not trigger it | Publishes win-x64 WPF package as artifact |
 | **Docker CI simulation** | Manual (`workflow_dispatch`)        | Postgres + container test parity          |
 | **CI with AI Analysis**  | Manual only                         | Deprecated as merge gate; experimental    |
 | Dependency vuln audit    | Inside Build & Test                 | Informational (`                          |     | true` in CI), not blocking |

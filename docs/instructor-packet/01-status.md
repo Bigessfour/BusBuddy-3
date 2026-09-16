@@ -68,7 +68,7 @@ These do not fail the checker but a reviewer will notice them.
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Required check | `Build & Test` (restore, build, `dotnet test` with `Category!=Integration&Category!=InMemoryFlaky`)                                                                            |
 | Merge policy   | Squash auto-merge when green; `master` protected, no force-push, no direct push                                                                                                |
-| Release job    | Non-blocking self-contained `win-x64` publish on `master` push. Failed with `NETSDK1152` (Core's `appsettings.json` flowed into the WPF publish set) until 2026-09-15; Core's copy is now `CopyToPublishDirectory=Never`. |
+| Release job    | Non-blocking self-contained `win-x64` publish, run by `workflow_dispatch` on `master`. Failed with `NETSDK1152` (Core's `appsettings.json` flowed into the WPF publish set) until 2026-09-15; Core's copy is now `CopyToPublishDirectory=Never`. The job also used to be `push`-only, which bot-attributed auto-merges never fire, so it had not run at all since 09-12. |
 | Dependabot     | 13 open alerts, all in `package-lock.json` for the Trunk lint launcher (`tar`, `yaml`). None are .NET app dependencies.                                                        |
 | Code scanning  | None. GitHub CodeQL requires a paid Code Security license on private repos.                                                                                                    |
 

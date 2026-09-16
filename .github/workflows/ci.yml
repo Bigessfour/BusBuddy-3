@@ -88,7 +88,12 @@ jobs:
     name: Release artifacts
     runs-on: windows-latest
     needs: build-and-test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    # Auto-merge is enabled with GITHUB_TOKEN, so the resulting squash merges are attributed to the
+    # Actions bot and never fire the `push` trigger. A manual `workflow_dispatch` on master is the
+    # reliable way to cut a release artifact: gh workflow run ci.yml --ref master
+    if: >
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

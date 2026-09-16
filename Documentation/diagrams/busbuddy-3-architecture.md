@@ -20,7 +20,7 @@ Optional editable Mermaid source: `busbuddy-3-architecture.mmd` in this folder i
 
 - **Mac hybrid dev**: Core/tests/Docker on Mac; full WPF in Windows VM (UTM/Parallels).
 - **Data**: Services → Repositories → DbContext → Postgres (Docker) or SQL Server (prod) or InMemory (tests).
-- **CI**: `feature/*` PR → Build & Test → auto-merge squash → Release artifacts on `master` push.
+- **CI**: `feature/*` PR → Build & Test → auto-merge squash → Release artifacts via `workflow_dispatch` on `master` (bot-attributed auto-merges do not fire `push`).
 - **Local gate**: `.github/scripts/validate-ci-local.sh` mirrors Docker + compile before push.
 
 ## 1. System architecture
@@ -214,7 +214,7 @@ sequenceDiagram
     CI-->>GH: Required checks pass
     GH->>AM: Enable squash auto-merge
     AM->>Master: Squash merge when gates green
-    Master->>CI: Push triggers Release artifacts
+    Dev->>CI: gh workflow run ci.yml --ref master (Release artifacts)
 ```
 
 ## 3. Directory quick reference
