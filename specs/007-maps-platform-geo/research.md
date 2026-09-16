@@ -37,9 +37,9 @@
 
 **Rationale**: Spec SC-002 forbids hash coordinates when mapping is unconfigured. Use a null-returning `UnconfiguredGeocodingService` or the Maps client that returns null without a key. Keep hasher for tests if useful.
 
-## Decision: Delete EE code rather than `.disabled`
+## Decision: Delete unused geo code rather than parking it
 
-**Rationale**: Constitution prefers `.disabled` for experimental breakage. EE client is **incorrect REST**, unused, and a false “configured” path. Deleting `GoogleEarthEngineService`, EE bootstrap, and Drive export is the smaller long-term surface. Git history retains the files.
+**Rationale**: Unused clients (incorrect REST, unwired, false “configured” paths) are deleted. Git history retains the files. Do not invent `*.disabled` copies.
 
 ## Decision: No new EF migration in this increment
 

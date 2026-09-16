@@ -20,6 +20,7 @@ public class StudentService : IStudentService
     private static readonly ILogger Logger = Log.ForContext<StudentService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IGeocodingService? _geocodingService; // optional geocoder
+    private readonly IRouteService _routeService;
 
     // Centralized, flexible US phone validation:
     // Accepts optional +1 country code, spaces/dots/dashes, optional parentheses around area code, and optional extensions.
@@ -70,10 +71,15 @@ public class StudentService : IStudentService
         return mode.Equals("warn", StringComparison.OrdinalIgnoreCase);
     }
 
-    public StudentService(IBusBuddyDbContextFactory contextFactory, IGeocodingService? geocodingService = null)
+    public StudentService(
+        IBusBuddyDbContextFactory contextFactory,
+        IGeocodingService? geocodingService = null,
+        IRouteService? routeService = null)
     {
         _contextFactory = contextFactory;
         _geocodingService = geocodingService; // may be null in tests without DI
+        // No null persist fallback: leftover name-assign always goes through RouteService.
+        _routeService = routeService ?? new RouteService(contextFactory);
     }
 
     // Context helpers: only dispose when using the concrete runtime factory
@@ -218,21 +224,29 @@ public class StudentService : IStudentService
         }
     }
 
-    public async Task<List<Student>> GetStudentsByRouteAsync(string routeName)
+    public async Task<List<Student>> GetStudentsByRouteAsync(int routeId)
     {
         try
         {
-            Logger.Information("Retrieving students on route: {RouteName}", routeName);
+            if (routeId <= 0)
+            {
+                return [];
+            }
+
+            Logger.Information("Retrieving students on route {RouteId}", routeId);
             var (context, dispose) = GetReadContext();
             try
             {
-                var routeIds = await context.Routes.AsNoTracking()
-                    .Where(r => r.RouteName == routeName)
-                    .Select(r => r.RouteId)
-                    .ToListAsync();
+                var route = await context.Routes.AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.RouteId == routeId);
+                if (route is null)
+                {
+                    return [];
+                }
+
                 return await context.Students
                     .AsNoTracking()
-                    .Where(StudentRouteAssignment.OnNamedRoutes(routeIds, routeName))
+                    .WhereOnRoute(route)
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
             }
@@ -243,6 +257,50 @@ public class StudentService : IStudentService
                     await context.DisposeAsync();
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students by route: {RouteId}", routeId);
+            throw;
+        }
+    }
+
+    public async Task<List<Student>> GetStudentsByRouteAsync(string routeName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(routeName))
+            {
+                return [];
+            }
+
+            Logger.Information("Retrieving students on route: {RouteName}", routeName);
+            int? uniqueId;
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                var catalog = await context.Routes.AsNoTracking()
+                    .Select(r => new { r.RouteId, r.RouteName })
+                    .ToListAsync();
+                uniqueId = StudentRouteAssignment.UniqueIdForName(
+                    catalog.Select(r => (r.RouteId, (string?)r.RouteName)),
+                    routeName);
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
+
+            // 0 or 2+ matches: a shared name is not a key (two dated "North Elementary" runs).
+            if (uniqueId is null)
+            {
+                return [];
+            }
+
+            return await GetStudentsByRouteAsync(uniqueId.Value);
         }
         catch (Exception ex)
         {
@@ -976,30 +1034,35 @@ public class StudentService : IStudentService
         {
             Logger.Information("Assigning student {StudentId} to routes - AM: {AMRoute}, PM: {PMRoute}",
                 studentId, amRoute, pmRoute);
-            var (context, dispose) = GetWriteContext();
-            bool success;
-            string? studentName = null;
+
+            int? amId = null;
+            int? pmId = null;
+            var (context, dispose) = GetReadContext();
             try
             {
-                var student = await context.Students.FindAsync(studentId);
-                if (student == null)
+                if (!string.IsNullOrWhiteSpace(amRoute))
                 {
-                    Logger.Warning("Student with ID {StudentId} not found", studentId);
-                    return false;
+                    amId = await ResolveRouteIdByNameAsync(context, amRoute);
+                    if (amId is null)
+                    {
+                        Logger.Warning(
+                            "AM route name {AMRoute} is missing or not unique — fail closed, no name-only write",
+                            amRoute);
+                        return false;
+                    }
                 }
 
-                studentName = student.StudentName;
-                student.AMRoute = amRoute;
-                student.PMRoute = pmRoute;
-                // Keep the identity keys in step with the names this overload is given. A name that
-                // matches no route, or more than one, leaves the key null rather than guessing.
-                student.AmRouteId = await ResolveRouteIdByNameAsync(context, amRoute);
-                student.PmRouteId = await ResolveRouteIdByNameAsync(context, pmRoute);
-                // Explicitly mark as modified to ensure changes are persisted even if detection is off
-                context.Entry(student).State = EntityState.Modified;
-
-                var result = await context.SaveChangesAsync();
-                success = result > 0;
+                if (!string.IsNullOrWhiteSpace(pmRoute))
+                {
+                    pmId = await ResolveRouteIdByNameAsync(context, pmRoute);
+                    if (pmId is null)
+                    {
+                        Logger.Warning(
+                            "PM route name {PMRoute} is missing or not unique — fail closed, no name-only write",
+                            pmRoute);
+                        return false;
+                    }
+                }
             }
             finally
             {
@@ -1009,12 +1072,33 @@ public class StudentService : IStudentService
                 }
             }
 
-            if (success)
+            if (amId is int amRouteId)
             {
-                Logger.Information("Successfully assigned routes for student: {StudentName}", studentName ?? "(unknown)");
+                var amResult = await _routeService.AssignStudentToRouteAsync(
+                    studentId, amRouteId, RouteTimeSlot.AM);
+                if (!amResult.IsSuccess)
+                {
+                    Logger.Warning(
+                        "RouteService AM assign failed for student {StudentId}: {Error}",
+                        studentId, amResult.Error);
+                    return false;
+                }
             }
 
-            return success;
+            if (pmId is int pmRouteId)
+            {
+                var pmResult = await _routeService.AssignStudentToRouteAsync(
+                    studentId, pmRouteId, RouteTimeSlot.PM);
+                if (!pmResult.IsSuccess)
+                {
+                    Logger.Warning(
+                        "RouteService PM assign failed for student {StudentId}: {Error}",
+                        studentId, pmResult.Error);
+                    return false;
+                }
+            }
+
+            return true;
         }
         catch (Exception ex)
         {

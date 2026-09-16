@@ -37,12 +37,12 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 Do in this order so parked work is not forgotten and is not started out of sequence.
 
-| Order | Item                                                           | Why this slot                                                                                                                                                  |
-| ----- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | District Map VM re-smoke, including **Move to selected route** | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                         |
-| 2     | `AMRoute` / `PMRoute` name-string drop                         | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop. |
-| —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                        |
-| —     | Split `RouteService` / `RouteAssignmentViewModel`              | File-size debt. Dedicated pass only. Do not casually split.                                                                                                    |
+| Order | Item                                                           | Why this slot                                                                                                                                                     |
+| ----- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | District Map VM re-smoke, including **Move to selected route** | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                            |
+| 2     | `AMRoute` / `PMRoute` name-string drop                         | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop.    |
+| —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                           |
+| —     | `StudentsBulkRouteCoordinator`                                 | Parked. Uses `SetSlot` + `UpdateStudentAsync`. Eventually call `IRouteService.AssignStudentToRouteAsync` so a shared name cannot null a known key. Not this pass. |
 
 - [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
 
@@ -88,7 +88,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [ ] Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
 - [x] Optional Hop 4 UI: Assign Vehicle/Driver — testhost `AssignVehicleCommand_UsesSelectedBusId` / `AssignDriverCommand_UsesSelectedDriverId` (same `RouteService.Assign*ToRouteAsync`). Live ribbon click still optional.
 - [x] Optional Hop 5 UI: Route Management Generate Schedule — testhost `GenerateScheduleCommand_PersistsScheduleRow` (same `IScheduleService.AddScheduleAsync`). Live ribbon click still optional.
-- [ ] Route FK follow-up — **phase 1 done, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` (nullable, `ON DELETE SET NULL`, indexed) added and backfilled by name in `20260916180546_StudentRouteForeignKeys`; rename cascade and delete-unassign now resolve riders by key; assignment paths mirror key + name; seed/`ensure-routes` dual-write unique names onto those keys. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
+- [ ] Route FK follow-up — **phase 1 done, leftover writers wrap RouteService, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` added and backfilled; `IStudentService.GetStudentsByRouteAsync(int)` is the keyed roster read (name overload unique-resolves or returns empty); name-assign and `IDriverService.AssignDriverToRouteAsync` call `RouteService.Assign*`. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
 
 ---
 
@@ -115,7 +115,28 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ### 2026-09-16 — Route Management path/print + hop 4/5 testhost
 
 - **Drive Path / Optimize / Print Schedule:** persist polyline through `IRouteService.RefreshDrivePathAsync` (published stops, not grid JSON). Optimize order is `RouteStopOrderPlanner` + `ReorderRouteStopsAsync`. Print Schedule loads inactive routes via `GetRouteByIdAsync`.
-- **Hop 4/5 commands:** UTM guest testhost 2026-09-16 **114 passed** (`RouteManagement*` + `MapView*` + path/optimize/report). Hop 4/5 optional boxes closed at command layer. **Still open:** live District Map Debug click in the UTM window (`BusBuddy.WPF` pid 11540 had an empty `MainWindowTitle` over SSH — click on the VM desktop).
+- **Hop 4/5 commands:** UTM guest testhost 2026-09-16 **114 passed** (`RouteManagement*` + `MapView*` + path/optimize/report). Hop 4/5 optional boxes closed at command layer.
+
+### 2026-09-16 — Split RouteService and RouteAssignmentViewModel
+
+- **Partial files only.** `IRouteService` is unchanged. No new types, no DI changes, no assign/stop behavior change.
+- **Core:** `RouteService.cs` hub (ctors, context helpers, list metrics) plus `RouteService.Crud.cs`, `RouteService.Assignments.cs`, `RouteService.Stops.cs`.
+- **WPF:** `RouteAssignmentViewModel.cs` hub plus existing `.Generation.cs`, new `.Commands.cs` and `.Loading.cs`. `MainWindow.xaml.cs` / `StudentsViewModel.cs` left alone.
+- **Invariant:** Route ≠ Trip; same-day not-riding stays `RecordRiderExceptionAsync`.
+
+### 2026-09-16 — Retired `*.disabled` source
+
+- Deleted the ten parked XAI / Azure / vehicle / config stubs. Git history is the archive. Do not create new `*.disabled` files.
+- Constitution v1.2.5 and copilot-instructions no longer tell agents to rename broken files to `.disabled`.
+
+### 2026-09-16 — Leftover assignment writers wrap RouteService
+
+- **No `IAssignmentService`.** Clerk-path winners stay on `RouteService.AssignStudentToRouteAsync` / `AssignDriverToRouteAsync` / `AssignVehicleToRouteAsync`.
+- **Roster read:** `IStudentService.GetStudentsByRouteAsync(int)` uses `WhereOnRoute` (key first). The name overload is `UniqueIdForName` only — 0 or 2+ matches (two dated "North Elementary" runs) returns empty.
+- **Kid assign leftover:** `IStudentService.AssignStudentToRouteAsync(names)` resolves unique ids then calls `RouteService`. Ambiguous names fail closed (no name-only orphan write). Dual-write of key + name stays in `StudentRouteAssignment.SetSlot`.
+- **Driver assign leftover:** `DriverService.AssignDriverToRouteAsync(bool)` keeps CDL/training/availability checks, then persists via `RouteService.AssignDriverToRouteAsync(RouteTimeSlot)`. Does not write `RouteAssignments`.
+- **Left parked:** `AMRoute`/`PMRoute` name-string drop; `StudentsBulkRouteCoordinator` still uses `SetSlot` + `UpdateStudentAsync`; leftover `AssignStudentsToRoutesAsync` still writes `RouteAssignments` (not clerk path).
+- **Evidence:** UTM guest testhost **25 passed, 0 failed** (`StudentServiceTests` + `DriverServiceTests` + `RouteServiceTests.Assign`). Shared-name roster is empty; ambiguous name-assign fails closed; driver wrap sets `AMDriverId` and leaves `RouteAssignments` empty.
 
 ### 2026-09-16 — Activity logs factory, route soft-retire, trip display binds
 

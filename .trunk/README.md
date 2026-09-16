@@ -77,7 +77,7 @@ trunk check --filter=psscriptanalyzer,yamllint
 - `**/TestResults/**` - Test outputs
 - `**/logs/**` - Log files
 - `**/artifacts/**` - Build artifacts
-- `**/*.disabled` - Disabled files for clean builds
+- `**/*.disabled` - leftover local copies; do not recreate
 - `**/Migrations/**` - EF auto-generated code
 
 ## 🔗 Integration
