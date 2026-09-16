@@ -61,8 +61,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      Copied to build output so DbPrep and BusBuddy.Tests (no appsettings of their own) get Core defaults.
+      Never published: BusBuddy.WPF ships its own appsettings.json and `dotnet publish` fails with
+      NETSDK1152 when both land at the same relative path.
+    -->
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
     <!-- No JSON data files included: seeding deprecated for greenfield reset -->
   </ItemGroup>

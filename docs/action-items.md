@@ -105,6 +105,12 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
 
+### 2026-09-15 — Release publish NETSDK1152
+
+- Cause: `BusBuddy.Core/appsettings.json` `CopyToOutputDirectory=Always` flows transitively into the WPF publish set; WPF ships its own file at the same relative path.
+- Fix: Core item gains `CopyToPublishDirectory=Never`. Build outputs unchanged (WPF/Tests bins still get WPF's copy; DbPrep gets Core's). `dotnet publish` with the CI flags (`win-x64`, self-contained, single-file) now succeeds and ships the WPF `appsettings.json`.
+- Follow-up (non-blocking): Core's copy is stale vs WPF (LocalDB, pre-Ollama xAI); reconcile or delete once DbPrep/Tests config is pinned.
+
 ### 2026-09-15 — Project-done code debt sweep
 
 - Deleted `BusService.GetAllRoutesAsync` / `GetSchedulesByRouteAsync` (`NotImplementedException`, not on `IBusService`, zero callers).
