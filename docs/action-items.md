@@ -33,7 +33,19 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 ## Now
 
-- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses.
+### Routes leftover queue (ordered)
+
+Do in this order so parked work is not forgotten and is not started out of sequence.
+
+| Order | Item                                                                  | Why this slot                                                                                                                                                  |
+| ----- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | District Map VM re-smoke, including **Move to selected route**        | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                         |
+| 2     | Unused `AddressValidationControl` + stale `specs/007-*` OSM narrative | Hygiene only. Do after map re-smoke.                                                                                                                           |
+| 3     | `AMRoute` / `PMRoute` name-string drop                                | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop. |
+| —     | `IRouteRepository`                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                        |
+| —     | Split `RouteService` / `RouteAssignmentViewModel`                     | File-size debt. Dedicated pass only. Do not casually split.                                                                                                    |
+
+- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
 
 Optional:
 
@@ -78,8 +90,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [ ] Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
 - [ ] Optional Hop 4 UI click on VM: Assign Vehicle/Driver on Route Assignments (same `RouteService.Assign*ToRouteAsync`)
 - [ ] Optional Hop 5 UI: Driver Schedule / Route Management persist schedule (same `IScheduleService.AddScheduleAsync`)
-- [ ] Route FK follow-up — **phase 1 done, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` (nullable, `ON DELETE SET NULL`, indexed) added and backfilled by name in `20260916180546_StudentRouteForeignKeys`; rename cascade and delete-unassign now resolve riders by key; assignment paths mirror key + name. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
-- [ ] Orphaned rider assignments: two `busbuddy_test` students carry `AMRoute`/`PMRoute` = "North Elementary" with no matching route row, so the backfill correctly left their keys NULL. Decide whether to reassign or clear them; they are invisible to key-based queries.
+- [ ] Route FK follow-up — **phase 1 done, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` (nullable, `ON DELETE SET NULL`, indexed) added and backfilled by name in `20260916180546_StudentRouteForeignKeys`; rename cascade and delete-unassign now resolve riders by key; assignment paths mirror key + name; seed/`ensure-routes` dual-write unique names onto those keys. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
 
 ---
 

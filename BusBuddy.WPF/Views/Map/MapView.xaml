@@ -340,10 +340,11 @@
                                                 BorderThickness="1"
                                                 Padding="4,1"
                                                 Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding Data.DisplayCaption}"
+                                            <!-- Always-dark on white chip over tiles. theme-compliance:allow HardcodedHexForeground -->
+                                            <TextBlock Foreground="#000000"
+                                                       Text="{Binding Data.DisplayCaption}"
                                                        FontSize="{Binding Data.LabelFontSize}"
                                                        FontWeight="SemiBold"
-                                                       Foreground="#000000"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxWidth="160"/>
                                         </Border>
@@ -368,9 +369,10 @@
                                                 BorderThickness="1"
                                                 Padding="3,0"
                                                 Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding Data.DisplayCaption}"
+                                            <!-- Always-dark on white chip over tiles. theme-compliance:allow HardcodedHexForeground -->
+                                            <TextBlock Foreground="#1F1F1F"
+                                                       Text="{Binding Data.DisplayCaption}"
                                                        FontSize="{Binding Data.LabelFontSize}"
-                                                       Foreground="#1F1F1F"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxWidth="140"/>
                                         </Border>
@@ -395,9 +397,10 @@
                                                 BorderThickness="1"
                                                 Padding="2,0"
                                                 Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding Data.DisplayCaption}"
+                                            <!-- Always-dark on white chip over tiles. theme-compliance:allow HardcodedHexForeground -->
+                                            <TextBlock Foreground="#1F1F1F"
+                                                       Text="{Binding Data.DisplayCaption}"
                                                        FontSize="{Binding Data.LabelFontSize}"
-                                                       Foreground="#1F1F1F"
                                                        TextTrimming="CharacterEllipsis"
                                                        MaxWidth="120"/>
                                         </Border>

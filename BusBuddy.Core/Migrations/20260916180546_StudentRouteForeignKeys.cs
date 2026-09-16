@@ -79,17 +79,17 @@ namespace BusBuddy.Core.Migrations
                         AND dup."RouteID" <> r."RouteID");
                 """);
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Source",
-                table: "AIInsights",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "Ollama",
-                oldClrType: typeof(string),
-                oldType: "character varying(50)",
-                oldMaxLength: 50,
-                oldDefaultValue: "Grok-4");
+            // Snapshot-drift cleanup bundled with this migration. Skip when the catalog never
+            // received AIInsights (truncated Docker histories still need the student FKs).
+            migrationBuilder.Sql("""
+                DO $migrate$
+                BEGIN
+                  IF to_regclass('public."AIInsights"') IS NOT NULL THEN
+                    ALTER TABLE "AIInsights" ALTER COLUMN "Source" SET DEFAULT 'Ollama';
+                  END IF;
+                END
+                $migrate$;
+                """);
         }
 
         /// <inheritdoc />
@@ -119,17 +119,15 @@ namespace BusBuddy.Core.Migrations
                 name: "PmRouteId",
                 table: "Students");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Source",
-                table: "AIInsights",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "Grok-4",
-                oldClrType: typeof(string),
-                oldType: "character varying(50)",
-                oldMaxLength: 50,
-                oldDefaultValue: "Ollama");
+            migrationBuilder.Sql("""
+                DO $migrate$
+                BEGIN
+                  IF to_regclass('public."AIInsights"') IS NOT NULL THEN
+                    ALTER TABLE "AIInsights" ALTER COLUMN "Source" SET DEFAULT 'Grok-4';
+                  END IF;
+                END
+                $migrate$;
+                """);
         }
     }
 }
