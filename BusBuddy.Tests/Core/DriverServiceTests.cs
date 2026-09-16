@@ -25,7 +25,12 @@ namespace BusBuddy.Tests.Core
             private readonly DbContextOptions<BusBuddyDbContext> _options;
             public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
             public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
-            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
+            public BusBuddyDbContext CreateWriteDbContext()
+            {
+                var ctx = new BusBuddyDbContext(_options);
+                ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+                return ctx;
+            }
         }
 
         [SetUp]
@@ -127,6 +132,7 @@ namespace BusBuddy.Tests.Core
             _dbContext.ChangeTracker.Clear();
             var route = await _dbContext.Routes.FindAsync(1);
             route!.AMDriverId.Should().Be(1);
+            _dbContext.RouteAssignments.Should().BeEmpty();
         }
 
         [Test]

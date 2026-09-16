@@ -1719,6 +1719,9 @@ namespace BusBuddy.Core.Services
                             return Result.FailureResult<bool>("Unsupported time slot");
                     }
 
+                    // BusBuddyDbContext defaults to NoTracking; test factories often forget TrackAll
+                    // on write. Mark modified so leftover DriverService wrap persists either way.
+                    context.Entry(route).State = EntityState.Modified;
                     await context.SaveChangesAsync();
                     Logger.Information("Assigned driver {DriverId} to route {RouteId} for {TimeSlot} OpId={OpId}", driverId, routeId, timeSlot, opId);
                     EndOpOk("AssignDriver", opId, sw, routeId);

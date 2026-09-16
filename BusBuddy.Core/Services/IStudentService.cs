@@ -31,10 +31,16 @@ public interface IStudentService
     Task<List<Student>> GetStudentsByGradeAsync(string grade);
 
     /// <summary>
-    /// Gets students assigned to a specific route
+    /// Gets students assigned to a specific route by identity key.
+    /// Key first; name fallback only when <c>AmRouteId</c>/<c>PmRouteId</c> is null.
     /// </summary>
-    /// <param name="routeName">Route name to filter by</param>
-    /// <returns>List of students on the specified route</returns>
+    Task<List<Student>> GetStudentsByRouteAsync(int routeId);
+
+    /// <summary>
+    /// Unique-name wrapper around <see cref="GetStudentsByRouteAsync(int)"/>.
+    /// A name that matches no route, or more than one (two dated "North Elementary" runs),
+    /// returns an empty list — a shared name is not a key.
+    /// </summary>
     Task<List<Student>> GetStudentsByRouteAsync(string routeName);
 
     /// <summary>
@@ -118,12 +124,10 @@ public interface IStudentService
     Task<Dictionary<string, int>> GetStudentStatisticsAsync();
 
     /// <summary>
-    /// Assigns a student to a route
+    /// Name-based leftover. Resolves each unique route name to a key and calls
+    /// <c>IRouteService.AssignStudentToRouteAsync</c>. Ambiguous or unknown names fail closed.
+    /// Empty/null slot is a no-op. Dual-write of key + name stays inside RouteService.
     /// </summary>
-    /// <param name="studentId">Student ID</param>
-    /// <param name="amRoute">AM route name</param>
-    /// <param name="pmRoute">PM route name</param>
-    /// <returns>True if successful</returns>
     Task<bool> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute);
 
     /// <summary>

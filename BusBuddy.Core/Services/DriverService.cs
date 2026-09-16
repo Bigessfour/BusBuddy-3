@@ -17,16 +17,22 @@ namespace BusBuddy.Core.Services
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private static readonly ILogger Logger = Log.ForContext<DriverService>();
         private readonly IEnhancedCachingService _cachingService;
+        private readonly IRouteService _routeService;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
         private static bool _nullValuesFixed;
 
-        public DriverService(IBusBuddyDbContextFactory contextFactory, IEnhancedCachingService cachingService)
+        public DriverService(
+            IBusBuddyDbContextFactory contextFactory,
+            IEnhancedCachingService cachingService,
+            IRouteService? routeService = null)
         {
             ArgumentNullException.ThrowIfNull(contextFactory);
             ArgumentNullException.ThrowIfNull(cachingService);
 
             _contextFactory = contextFactory;
             _cachingService = cachingService;
+            // No null persist fallback: leftover bool-assign always goes through RouteService.
+            _routeService = routeService ?? new RouteService(contextFactory);
         }
 
         // Context helpers: factories create short-lived contexts — always dispose.
@@ -522,71 +528,60 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Assigning driver {DriverId} to route {RouteId}, AM: {IsAMRoute}",
                     driverId, routeId, isAMRoute);
 
-                var (context, dispose) = GetWriteContext();
-
-                // Check driver exists and is qualified
-                var driver = await context.Drivers.FindAsync(driverId);
-                if (driver == null)
+                DateTime routeDate;
+                var (context, dispose) = GetReadContext();
+                try
                 {
-                    Logger.Warning("Driver with ID {DriverId} not found", driverId);
+                    var driver = await context.Drivers.FindAsync(driverId);
+                    if (driver == null)
+                    {
+                        Logger.Warning("Driver with ID {DriverId} not found", driverId);
+                        return false;
+                    }
+
+                    if (driver.Status != "Active" || !driver.TrainingComplete || driver.LicenseStatus == "Expired")
+                    {
+                        Logger.Warning("Driver {DriverId} is not qualified for assignment", driverId);
+                        throw new InvalidOperationException("Driver is not qualified for assignment: " +
+                            (driver.Status != "Active" ? "inactive status" :
+                             !driver.TrainingComplete ? "training incomplete" :
+                             "expired license"));
+                    }
+
+                    var route = await context.Routes.FindAsync(routeId);
+                    if (route == null)
+                    {
+                        Logger.Warning("Route with ID {RouteId} not found", routeId);
+                        return false;
+                    }
+
+                    routeDate = route.Date;
+                }
+                finally
+                {
                     if (dispose)
                     {
                         await context.DisposeAsync();
                     }
-                    return false;
                 }
 
-                if (driver.Status != "Active" || !driver.TrainingComplete || driver.LicenseStatus == "Expired")
-                {
-                    Logger.Warning("Driver {DriverId} is not qualified for assignment", driverId);
-                    throw new InvalidOperationException("Driver is not qualified for assignment: " +
-                        (driver.Status != "Active" ? "inactive status" :
-                         !driver.TrainingComplete ? "training incomplete" :
-                         "expired license"));
-                }
-
-                // Check route exists
-                var route = await context.Routes.FindAsync(routeId);
-                if (route == null)
-                {
-                    Logger.Warning("Route with ID {RouteId} not found", routeId);
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                    return false;
-                }
-
-                // Check driver is available
-                if (!await IsDriverAvailableForRouteAsync(driverId, route.Date, isAMRoute))
+                if (!await IsDriverAvailableForRouteAsync(driverId, routeDate, isAMRoute))
                 {
                     Logger.Warning("Driver {DriverId} is already assigned to another route on {Date}",
-                        driverId, route.Date.ToShortDateString());
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
+                        driverId, routeDate.ToShortDateString());
                     throw new InvalidOperationException("Driver is already assigned to another route at this time");
                 }
 
-                // Update route with driver assignment
-                if (isAMRoute)
+                var slot = isAMRoute ? RouteTimeSlot.AM : RouteTimeSlot.PM;
+                var result = await _routeService.AssignDriverToRouteAsync(routeId, driverId, slot);
+                if (!result.IsSuccess)
                 {
-                    route.AMDriverId = driverId;
-                    route.DriverName = driver.DriverName; // For convenience in some queries
+                    Logger.Warning(
+                        "RouteService.AssignDriverToRouteAsync failed for driver {DriverId} route {RouteId}: {Error}",
+                        driverId, routeId, result.Error);
+                    return false;
                 }
-                else
-                {
-                    route.PMDriverId = driverId;
-                    route.DriverName = driver.DriverName; // For convenience in some queries
-                }
-                // Ensure changes are persisted even when tracking behavior is NoTracking
-                context.Routes.Update(route);
-                await context.SaveChangesAsync();
-                if (dispose)
-                {
-                    await context.DisposeAsync();
-                }
+
                 Logger.Information("Successfully assigned driver {DriverId} to route {RouteId}", driverId, routeId);
                 return true;
             }
