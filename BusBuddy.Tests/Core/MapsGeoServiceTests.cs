@@ -137,6 +137,21 @@ public class RouteDrivePathRefresherTests
     }
 
     [Test]
+    public void ApplyPathMetrics_SetsMilesMinutesAndCaption()
+    {
+        var route = new Route();
+        RouteDrivePathRefresher.ApplyPathMetrics(route, new DrivePathResult
+        {
+            DistanceMeters = 1609,
+            Duration = "180s"
+        });
+
+        route.Distance.Should().Be(1.00m);
+        route.EstimatedDuration.Should().Be(3);
+        route.Path.Should().Be("1.0 mi · 180s");
+    }
+
+    [Test]
     public async Task TryRefresh_LegacyDensePoints_AreNotSentAsIntermediates()
     {
         var json = """

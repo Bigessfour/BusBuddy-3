@@ -65,6 +65,7 @@ public static class RouteDrivePathRefresher
                 route.WaypointsJson = RouteWaypointSerializer.FromEncodedPolyline(
                     path.EncodedPolyline!,
                     stops);
+                ApplyPathMetrics(route, path);
 
                 Logger.Information(
                     "Drive path computed RouteId={RouteId} Stops={StopCount} Intermediates={Intermediates} DistanceMeters={DistanceMeters} Duration={Duration} ViaService={ViaService}",
@@ -116,6 +117,32 @@ public static class RouteDrivePathRefresher
         }
 
         return sampled;
+    }
+
+    /// <summary>Miles, minutes, and the grid Path caption from a Routes API result.</summary>
+    public static void ApplyPathMetrics(Route route, DrivePathResult path)
+    {
+        ArgumentNullException.ThrowIfNull(route);
+        ArgumentNullException.ThrowIfNull(path);
+
+        if (path.DistanceMeters is int meters && meters > 0)
+        {
+            route.Distance = decimal.Round(meters / 1609.344m, 2);
+        }
+
+        if (!string.IsNullOrWhiteSpace(path.Duration)
+            && path.Duration.EndsWith("s", StringComparison.OrdinalIgnoreCase)
+            && double.TryParse(path.Duration.TrimEnd('s', 'S'), out var seconds))
+        {
+            route.EstimatedDuration = Math.Max(1, (int)Math.Round(seconds / 60.0));
+        }
+
+        if (route.Distance is decimal miles)
+        {
+            route.Path = string.IsNullOrWhiteSpace(path.Duration)
+                ? $"{miles:0.0} mi"
+                : $"{miles:0.0} mi · {path.Duration}";
+        }
     }
 }
 

@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.GoogleMaps;
 using Microsoft.Extensions.Options;
+using Moq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core;
@@ -84,6 +87,33 @@ public class GoogleRouteOptimizationServiceTests
             ]);
 
         Assert.That(merged, Is.EqualTo(new[] { "start", "b", "a", "end" }));
+    }
+
+    [Test]
+    public async Task ComputePinnedOrder_ReturnsPinnedStartEndWithSolverMiddle()
+    {
+        var stops = new List<RouteStop>
+        {
+            new() { RouteStopId = 10, StopOrder = 1, Latitude = 38.07m, Longitude = -102.61m },
+            new() { RouteStopId = 11, StopOrder = 2, Latitude = 38.08m, Longitude = -102.62m },
+            new() { RouteStopId = 12, StopOrder = 3, Latitude = 38.09m, Longitude = -102.63m },
+        };
+        var optimization = new Mock<IRouteOptimizationService>();
+        optimization.Setup(s => s.IsConfigured).Returns(true);
+        optimization.Setup(s => s.OptimizeToursAsync(It.IsAny<OptimizeToursProblem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OptimizeToursResult.Ok(new[]
+            {
+                new OptimizedVisit { ShipmentLabel = "11", IsPickup = true }
+            }));
+
+        var result = await RouteStopOrderPlanner.ComputePinnedOrderAsync(
+            stops,
+            optimization.Object,
+            seatingCapacity: 48,
+            DateTime.UtcNow);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.EqualTo(new[] { 10, 11, 12 }));
     }
 
     [Test]

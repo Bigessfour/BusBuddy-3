@@ -86,8 +86,8 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [ ] Optional Hop 1 UI click on VM: Students → Add School (same `DestinationService.AddSchoolAsync` as DbPrep) — only if you want ribbon confirmation beyond Core+Postgres. Pull `logs/ui-diagnostics-*.log` after the session.
 - [ ] Optional Hop 2 UI click on VM: Students → Add Student with school + Maps validate (same `IStudentService.AddStudentAsync` as DbPrep)
 - [ ] Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
-- [ ] Optional Hop 4 UI click on VM: Assign Vehicle/Driver on Route Assignments (same `RouteService.Assign*ToRouteAsync`)
-- [ ] Optional Hop 5 UI: Driver Schedule / Route Management persist schedule (same `IScheduleService.AddScheduleAsync`)
+- [x] Optional Hop 4 UI: Assign Vehicle/Driver — testhost `AssignVehicleCommand_UsesSelectedBusId` / `AssignDriverCommand_UsesSelectedDriverId` (same `RouteService.Assign*ToRouteAsync`). Live ribbon click still optional.
+- [x] Optional Hop 5 UI: Route Management Generate Schedule — testhost `GenerateScheduleCommand_PersistsScheduleRow` (same `IScheduleService.AddScheduleAsync`). Live ribbon click still optional.
 - [ ] Route FK follow-up — **phase 1 done, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` (nullable, `ON DELETE SET NULL`, indexed) added and backfilled by name in `20260916180546_StudentRouteForeignKeys`; rename cascade and delete-unassign now resolve riders by key; assignment paths mirror key + name; seed/`ensure-routes` dual-write unique names onto those keys. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
 
 ---
@@ -111,6 +111,11 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-09-16 — Route Management path/print + hop 4/5 testhost
+
+- **Drive Path / Optimize / Print Schedule:** persist polyline through `IRouteService.RefreshDrivePathAsync` (published stops, not grid JSON). Optimize order is `RouteStopOrderPlanner` + `ReorderRouteStopsAsync`. Print Schedule loads inactive routes via `GetRouteByIdAsync`.
+- **Hop 4/5 commands:** UTM guest testhost 2026-09-16 **114 passed** (`RouteManagement*` + `MapView*` + path/optimize/report). Hop 4/5 optional boxes closed at command layer. **Still open:** live District Map Debug click in the UTM window (`BusBuddy.WPF` pid 11540 had an empty `MainWindowTitle` over SSH — click on the VM desktop).
 
 ### 2026-09-16 — Activity logs factory, route soft-retire, trip display binds
 

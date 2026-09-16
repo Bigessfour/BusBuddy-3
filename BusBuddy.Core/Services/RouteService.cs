@@ -2012,16 +2012,51 @@ namespace BusBuddy.Core.Services
 
         private static readonly TimeSpan DefaultStopArrival = TimeSpan.FromHours(7);
 
+        public async Task<Result<DrivePathRefreshResult>> RefreshDrivePathAsync(int routeId)
+        {
+            if (routeId <= 0)
+            {
+                return Result.FailureResult<DrivePathRefreshResult>("Invalid routeId");
+            }
+
+            try
+            {
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var refresh = await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                    if (refresh is null)
+                    {
+                        return Result.FailureResult<DrivePathRefreshResult>($"Route with ID {routeId} not found");
+                    }
+
+                    return Result.SuccessResult(refresh);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error refreshing drive path for RouteId={RouteId}", routeId);
+                return Result.FailureResult<DrivePathRefreshResult>($"Error refreshing drive path: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Rebuilds <see cref="Route.WaypointsJson"/> from ordered validated stops, then refreshes
         /// the Google drive path. Fail-open when routing is unavailable.
         /// </summary>
-        private async Task RefreshPublishedPathAsync(BusBuddyDbContext context, int routeId)
+        private async Task<DrivePathRefreshResult?> RefreshPublishedPathAsync(BusBuddyDbContext context, int routeId)
         {
             var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId).ConfigureAwait(false);
             if (route is null)
             {
-                return;
+                return null;
             }
 
             var coords = await context.RouteStops
@@ -2035,26 +2070,26 @@ namespace BusBuddy.Core.Services
                 .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
                 .ToList();
             route.WaypointsJson = RouteWaypointSerializer.FromPairs(validated);
-            if (validated.Count == 0)
+            if (validated.Count < 2)
             {
                 await context.SaveChangesAsync().ConfigureAwait(false);
-                return;
+                return DrivePathRefreshResult.Skip(
+                    "Need at least two geocoded stops. Open Manage Route and add validated stops first.");
             }
-            if (validated.Count >= 2 && _routingService is not null)
+
+            var refresh = await RouteDrivePathRefresher
+                .TryRefreshAsync(_routingService, route)
+                .ConfigureAwait(false);
+            if (!refresh.Success && !refresh.Skipped)
             {
-                var refresh = await RouteDrivePathRefresher
-                    .TryRefreshAsync(_routingService, route)
-                    .ConfigureAwait(false);
-                if (!refresh.Success && !refresh.Skipped)
-                {
-                    Logger.Warning(
-                        "Drive path refresh after stop change skipped RouteId={RouteId}: {Message}",
-                        routeId,
-                        refresh.Message);
-                }
+                Logger.Warning(
+                    "Drive path refresh after stop change skipped RouteId={RouteId}: {Message}",
+                    routeId,
+                    refresh.Message);
             }
 
             await context.SaveChangesAsync().ConfigureAwait(false);
+            return refresh;
         }
 
         #endregion

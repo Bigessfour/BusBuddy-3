@@ -118,6 +118,27 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task GenerateAsync_InactiveRouteId_LoadsViaGetRouteById()
+        {
+            _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
+                Result.SuccessResult<IEnumerable<Route>>(Array.Empty<Route>()));
+            _routes.Setup(r => r.GetRouteByIdAsync(4)).ReturnsAsync(
+                Result.SuccessResult(new Route { RouteId = 4, RouteName = "SN AM", IsActive = false }));
+            _routes.Setup(r => r.GetRouteStopsAsync(4)).ReturnsAsync(
+                Result.SuccessResult<IEnumerable<RouteStop>>(Array.Empty<RouteStop>()));
+
+            var result = await _service.GenerateAsync(new OperationalReportRequest
+            {
+                Kind = OperationalReportKind.PrintSchedules,
+                RouteId = 4,
+                OutputDirectory = _dir
+            });
+
+            Assert.That(result.Status, Does.Contain("SN AM"));
+            Assert.That(result.FileBytes[0], Is.EqualTo((byte)'%'));
+        }
+
+        [Test]
         public async Task GenerateAsync_RouteSummaryWithoutRouteId_UsesAllRoutesTable()
         {
             _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
