@@ -15,7 +15,6 @@ using CommunityToolkit.Mvvm.Input;
 using System.Threading;
 using System.IO;
 using Serilog.Context;
-using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
@@ -44,7 +43,6 @@ namespace BusBuddy.WPF.ViewModels.Route
         // Entity Framework context for data access
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IRouteService _routeService;
-        private readonly IRoutingService? _routingService;
         private readonly IRouteOptimizationService? _routeOptimization;
         private readonly IRouteDeterminationService? _routeDetermination;
         private readonly IDestinationService? _destinations;
@@ -331,32 +329,22 @@ namespace BusBuddy.WPF.ViewModels.Route
             IRouteService routeService,
             IRouteDeterminationService? routeDetermination,
             IDestinationService? destinations = null,
-            IRoutingService? routingService = null,
             IRouteOptimizationService? routeOptimization = null,
-            MapViewModel? map = null)
+            MapViewModel? map = null,
+            IScheduleService? scheduleService = null,
+            RouteExportService? exportService = null,
+            IOperationalReportService? reportService = null)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
-            _routingService = routingService;
             _routeOptimization = routeOptimization;
             _routeDetermination = routeDetermination;
             _destinations = destinations;
             _map = map;
-            ResolveOptionalServices();
+            _scheduleService = scheduleService;
+            _exportService = exportService;
+            _reportService = reportService;
             InitializeViewModel();
-        }
-
-        private void ResolveOptionalServices()
-        {
-            var sp = App.ServiceProvider;
-            if (sp is null)
-            {
-                return;
-            }
-
-            _scheduleService = sp.GetService<IScheduleService>();
-            _exportService = sp.GetService<RouteExportService>();
-            _reportService = sp.GetService<IOperationalReportService>();
         }
 
         private void InitializeViewModel()
@@ -587,161 +575,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsBusy = false;
-            }
-        }
-
-        private async Task RefreshDrivePathAsync()
-        {
-            if (SelectedRoute is null || IsBusy)
-            {
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                StatusMessage = $"Refreshing drive path for '{SelectedRoute.RouteName}'...";
-                var refresh = await RouteDrivePathRefresher
-                    .TryRefreshAsync(_routingService, SelectedRoute)
-                    .ConfigureAwait(true);
-
-                if (refresh.Success)
-                {
-                    var update = await _routeService.UpdateRouteAsync(SelectedRoute).ConfigureAwait(true);
-                    StatusMessage = update.IsSuccess
-                        ? $"Drive path updated ({refresh.Path?.DistanceMeters} m, {refresh.Path?.Duration})"
-                        : $"Drive path computed but save failed: {update.Error}";
-                    return;
-                }
-
-                StatusMessage = refresh.Message ?? "Drive path refresh skipped.";
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed refreshing drive path");
-                StatusMessage = $"Error refreshing drive path: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task OptimizeStopOrderAsync()
-        {
-            if (SelectedRoute is null || IsBusy)
-            {
-                return;
-            }
-
-            try
-            {
-                IsBusy = true;
-                if (_routeOptimization is not { IsConfigured: true })
-                {
-                    StatusMessage = "Route Optimization is not configured. Drive Path still uses Google Routes.";
-                    return;
-                }
-
-                var stopsResult = await _routeService.GetRouteStopsAsync(SelectedRoute.RouteId).ConfigureAwait(true);
-                if (!stopsResult.IsSuccess || stopsResult.Value is null)
-                {
-                    StatusMessage = stopsResult.Error ?? "Could not load stops.";
-                    return;
-                }
-
-                var stops = stopsResult.Value
-                    .Where(s => s.HasValidatedCoordinates)
-                    .OrderBy(s => s.StopOrder)
-                    .ToList();
-                if (stops.Count < 3)
-                {
-                    StatusMessage = "Need at least three geocoded stops to optimize order. Use Drive Path for two-stop runs.";
-                    return;
-                }
-
-                var labeled = stops.Select(s => new RouteOptimizationStop
-                {
-                    Label = s.RouteStopId.ToString(),
-                    Latitude = (double)s.Latitude!.Value,
-                    Longitude = (double)s.Longitude!.Value,
-                }).ToList();
-
-                var problem = RouteOptimizationVisitOrder.ForPinnedEnds(
-                    labeled,
-                    seatingCapacity: Math.Max(1, SelectedRoute.MaxCapacity > 0 ? SelectedRoute.MaxCapacity : 70),
-                    DateTime.UtcNow);
-                var result = await _routeOptimization.OptimizeToursAsync(problem).ConfigureAwait(true);
-                if (!result.Succeeded)
-                {
-                    StatusMessage = result.Error ?? "Route Optimization failed.";
-                    return;
-                }
-
-                var merged = RouteOptimizationVisitOrder.MergePinnedOrder(
-                    labeled.Select(s => s.Label).ToList(),
-                    result.Visits);
-                var orderedIds = merged.Select(int.Parse).ToList();
-                var reorder = await _routeService.ReorderRouteStopsAsync(SelectedRoute.RouteId, orderedIds)
-                    .ConfigureAwait(true);
-                if (!reorder.IsSuccess)
-                {
-                    StatusMessage = reorder.Error ?? "Could not save stop order.";
-                    return;
-                }
-
-                var refresh = await RouteDrivePathRefresher
-                    .TryRefreshAsync(_routingService, SelectedRoute)
-                    .ConfigureAwait(true);
-                if (refresh.Success)
-                {
-                    await _routeService.UpdateRouteAsync(SelectedRoute).ConfigureAwait(true);
-                }
-
-                StatusMessage =
-                    "Stop order optimized (start/end pinned). Drive path refreshed. Regenerate the schedule if published times should follow the new sequence.";
-                Logger.Information("Optimize stop order RouteId={RouteId} Stops={Count}", SelectedRoute.RouteId, orderedIds.Count);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed optimizing stop order");
-                StatusMessage = $"Error optimizing stop order: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task CopyRouteAsync()
-        {
-            if (SelectedRoute is null)
-            {
-                return;
-            }
-
-            try
-            {
-                var sourceName = SelectedRoute.RouteName;
-                Logger.Information("Copying route {RouteId}:{RouteName}", SelectedRoute.RouteId, sourceName);
-                var result = await _routeService.CloneRouteAsync(
-                    SelectedRoute.RouteId,
-                    DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc),
-                    $"Copy of {sourceName}");
-                if (!result.IsSuccess)
-                {
-                    StatusMessage = $"Copy failed: {result.Error}";
-                    Logger.Warning("CloneRouteAsync failed for {RouteName}: {Error}", sourceName, result.Error);
-                    return;
-                }
-
-                await LoadRoutesAsync();
-                StatusMessage = $"Copied route '{sourceName}'";
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to copy route");
-                StatusMessage = $"Error copying route: {ex.Message}";
             }
         }
 

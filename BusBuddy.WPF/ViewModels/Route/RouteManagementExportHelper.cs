@@ -89,23 +89,35 @@ internal static class RouteManagementExportHelper
         Directory.CreateDirectory(exportDir);
 
         string path;
-        if (reportService is not null)
+        try
         {
-            var generated = await reportService.GenerateAsync(new OperationalReportRequest
+            if (reportService is not null)
             {
-                Kind = printAfter ? OperationalReportKind.PrintSchedules : OperationalReportKind.DailySchedule,
-                RouteId = route.RouteId,
-                OutputDirectory = exportDir
-            }).ConfigureAwait(true);
-            path = generated.FilePath;
+                var generated = await reportService.GenerateAsync(new OperationalReportRequest
+                {
+                    Kind = printAfter ? OperationalReportKind.PrintSchedules : OperationalReportKind.DailySchedule,
+                    RouteId = route.RouteId,
+                    OutputDirectory = exportDir
+                }).ConfigureAwait(true);
+                path = generated.FilePath;
+            }
+            else
+            {
+                path = RoutePdfPrinter.GenerateRoutePdf(
+                    contextFactory,
+                    route.RouteId,
+                    exportDir,
+                    RouteSession.ToAssignmentSlot(route));
+            }
         }
-        else
+        catch (Exception ex)
         {
+            Serilog.Log.Warning(ex, "Schedule report failed; writing RoutePdfPrinter fallback RouteId={RouteId}", route.RouteId);
             path = RoutePdfPrinter.GenerateRoutePdf(
                 contextFactory,
                 route.RouteId,
                 exportDir,
-                RouteTimeSlot.Both);
+                RouteSession.ToAssignmentSlot(route));
         }
 
         RevealOrOpen(path, print: printAfter);

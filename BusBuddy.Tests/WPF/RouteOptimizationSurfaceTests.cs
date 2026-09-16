@@ -14,10 +14,14 @@ public class RouteOptimizationSurfaceTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding OptimizeStopOrderCommand}\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Optimize stop order\""));
 
-        var vm = XamlViewFile.Read("ViewModels/Route/RouteManagementViewModel.cs");
+        var vm = XamlViewFile.ReadFolder("ViewModels/Route");
         Assert.That(vm, Does.Contain("IRouteOptimizationService"));
         Assert.That(vm, Does.Contain("OptimizeStopOrderAsync"));
-        Assert.That(vm, Does.Contain("ForPinnedEnds"));
+        Assert.That(vm, Does.Contain("RouteStopOrderPlanner"));
+
+        var planner = CoreSourceFile.Read("Services/GoogleMaps/RouteStopOrderPlanner.cs");
+        Assert.That(planner, Does.Contain("ForPinnedEnds"));
+        Assert.That(planner, Does.Contain("ReorderRouteStopsAsync"));
     }
 
     [Test]

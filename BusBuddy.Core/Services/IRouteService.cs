@@ -60,5 +60,9 @@ namespace BusBuddy.Core.Services
         Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null);
         // Persist updated stop timing (arrival/departure)
         Task<Result<bool>> UpdateRouteStopsTimingAsync(int routeId, IEnumerable<RouteStop> stops);
+        /// <summary>
+        /// Rebuilds waypoints from published <see cref="RouteStop"/> rows and refreshes the Google drive path.
+        /// </summary>
+        Task<Result<BusBuddy.Core.Services.GoogleMaps.DrivePathRefreshResult>> RefreshDrivePathAsync(int routeId);
     }
 }

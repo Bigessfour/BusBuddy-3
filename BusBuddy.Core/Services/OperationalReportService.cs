@@ -60,10 +60,28 @@ namespace BusBuddy.Core.Services
             var routes = routesResult.IsSuccess && routesResult.Value is not null
                 ? routesResult.Value.ToList()
                 : new List<Route>();
-            var route = SelectRoute(routes, request.RouteId);
-            if (request.RouteId.HasValue && route is null)
+            Route? route = null;
+            if (request.RouteId is int requestedRouteId)
             {
-                throw new InvalidOperationException($"No active route with RouteId {request.RouteId.Value}.");
+                route = SelectRoute(routes, requestedRouteId);
+                if (route is null)
+                {
+                    var byId = await _routes.GetRouteByIdAsync(requestedRouteId).ConfigureAwait(false);
+                    if (byId is { IsSuccess: true, Value: not null })
+                    {
+                        route = byId.Value;
+                        routes.Add(route);
+                    }
+                }
+
+                if (route is null)
+                {
+                    throw new InvalidOperationException($"No route with RouteId {requestedRouteId}.");
+                }
+            }
+            else
+            {
+                route = SelectRoute(routes, routeId: null);
             }
 
             var drivers = _drivers is null ? new List<Driver>() : await _drivers.GetAllDriversAsync().ConfigureAwait(false) ?? new List<Driver>();

@@ -520,9 +520,11 @@ namespace BusBuddy.WPF
                         sp.GetRequiredService<IRouteService>(),
                         sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
                         sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>(),
-                        sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
                         sp.GetService<BusBuddy.Core.Services.GoogleMaps.IRouteOptimizationService>(),
-                        sp.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>()));
+                        sp.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>(),
+                        sp.GetService<IScheduleService>(),
+                        sp.GetService<BusBuddy.WPF.Services.RouteExportService>(),
+                        sp.GetService<IOperationalReportService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured

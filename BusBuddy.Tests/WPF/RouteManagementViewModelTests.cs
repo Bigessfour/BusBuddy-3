@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Route;
@@ -101,6 +103,7 @@ public class RouteManagementViewModelTests
         vm.GenerateScheduleCommand.CanExecute(null).Should().BeTrue();
         vm.PrintScheduleCommand.CanExecute(null).Should().BeTrue();
         vm.RefreshDrivePathCommand.CanExecute(null).Should().BeTrue();
+        vm.OptimizeStopOrderCommand.CanExecute(null).Should().BeTrue();
     }
 
     [Test]
@@ -176,6 +179,58 @@ public class RouteManagementViewModelTests
         routeService.Verify(s => s.AssignDriverToRouteAsync(1, 9, RouteTimeSlot.AM), Times.Once);
         vm.StatusMessage.Should().Contain("Assigned Pat Driver");
         vm.SelectedDriverId.Should().Be(9);
+    }
+
+    [Test]
+    public async Task GenerateScheduleCommand_PersistsScheduleRow()
+    {
+        var route = new Route
+        {
+            RouteId = 1,
+            RouteName = "Alpha",
+            IsActive = true,
+            School = "Wiley School",
+            AMVehicleId = 7,
+            AMDriverId = 9,
+            AMBeginTime = TimeSpan.FromHours(7),
+            EstimatedDuration = 40
+        };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { route }));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
+
+        var schedule = new Mock<IScheduleService>();
+        schedule.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
+            .Returns(Task.CompletedTask);
+
+        var report = new Mock<IOperationalReportService>();
+        report.Setup(s => s.GenerateAsync(It.IsAny<OperationalReportRequest>()))
+            .ReturnsAsync(new OperationalReportResult
+            {
+                FilePath = Path.Combine(Path.GetTempPath(), "busbuddy-hop5-missing.pdf")
+            });
+
+        var vm = new RouteManagementViewModel(
+            new Mock<IBusBuddyDbContextFactory>().Object,
+            routeService.Object,
+            null,
+            scheduleService: schedule.Object,
+            reportService: report.Object);
+        await vm.InitializeAsync();
+        vm.SelectedRoute = vm.Routes[0];
+
+        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)vm.GenerateScheduleCommand).ExecuteAsync(null);
+
+        schedule.Verify(s => s.AddScheduleAsync(It.Is<Schedule>(row =>
+            row.RouteId == 1 && row.BusId == 7 && row.DriverId == 9)), Times.Once);
+        report.Verify(s => s.GenerateAsync(It.Is<OperationalReportRequest>(r =>
+            r.Kind == OperationalReportKind.DailySchedule && r.RouteId == 1)), Times.Once);
+        vm.StatusMessage.Should().Contain("Schedule saved");
     }
 
     [Test]
@@ -274,5 +329,110 @@ public class RouteManagementViewModelTests
         await vm.InitializeAsync();
 
         vm.AvailableSchools.Should().ContainSingle(s => s.Name == "Wiley School");
+    }
+
+    [Test]
+    public async Task RefreshDrivePath_CallsServiceThenReloadsRoute()
+    {
+        var route = new Route { RouteId = 4, RouteName = "AM Special Needs Bus 5", IsActive = true };
+        var refreshed = new Route
+        {
+            RouteId = 4,
+            RouteName = "AM Special Needs Bus 5",
+            IsActive = true,
+            Distance = 1.00m,
+            EstimatedDuration = 3,
+            Path = "1.0 mi · 180s",
+            WaypointsJson = "{\"encodedPolyline\":\"encoded\"}"
+        };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { route }));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
+        routeService.Setup(s => s.RefreshDrivePathAsync(4))
+            .ReturnsAsync(Result.SuccessResult(DrivePathRefreshResult.Succeeded(new DrivePathResult
+            {
+                EncodedPolyline = "encoded",
+                Points = new[] { (38.07, -102.61), (38.08, -102.62) },
+                DistanceMeters = 1609,
+                Duration = "180s"
+            })));
+        routeService.Setup(s => s.GetRouteByIdAsync(4))
+            .ReturnsAsync(Result.SuccessResult(refreshed));
+
+        var vm = new RouteManagementViewModel(
+            new Mock<IBusBuddyDbContextFactory>().Object,
+            routeService.Object,
+            null);
+        await vm.InitializeAsync();
+        vm.SelectedRoute = vm.Routes[0];
+
+        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)vm.RefreshDrivePathCommand).ExecuteAsync(null);
+
+        routeService.Verify(s => s.RefreshDrivePathAsync(4), Times.Once);
+        routeService.Verify(s => s.GetRouteByIdAsync(4), Times.Once);
+        vm.SelectedRoute!.Distance.Should().Be(1.00m);
+        vm.StatusMessage.Should().Contain("Drive path updated");
+    }
+
+    [Test]
+    public async Task OptimizeStopOrder_ReloadsRouteInsteadOfStalePolyline()
+    {
+        var route = new Route { RouteId = 4, RouteName = "SN", IsActive = true, WaypointsJson = "[]" };
+        var stops = new List<RouteStop>
+        {
+            new() { RouteStopId = 10, RouteId = 4, StopOrder = 1, Latitude = 38.07m, Longitude = -102.61m },
+            new() { RouteStopId = 11, RouteId = 4, StopOrder = 2, Latitude = 38.08m, Longitude = -102.62m },
+            new() { RouteStopId = 12, RouteId = 4, StopOrder = 3, Latitude = 38.09m, Longitude = -102.63m },
+        };
+        var reloaded = new Route
+        {
+            RouteId = 4,
+            RouteName = "SN",
+            IsActive = true,
+            WaypointsJson = "{\"encodedPolyline\":\"abc\",\"stops\":[]}",
+            StopCount = 3
+        };
+
+        var optimizer = new Mock<IRouteOptimizationService>();
+        optimizer.Setup(s => s.IsConfigured).Returns(true);
+        optimizer.Setup(s => s.OptimizeToursAsync(It.IsAny<OptimizeToursProblem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OptimizeToursResult.Ok(new[]
+            {
+                new OptimizedVisit { ShipmentLabel = "11", IsPickup = true }
+            }));
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route> { route }));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
+        routeService.Setup(s => s.GetRouteStopsAsync(4))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routeService.Setup(s => s.ReorderRouteStopsAsync(4, It.Is<List<int>>(ids => ids.SequenceEqual(new[] { 10, 11, 12 }))))
+            .ReturnsAsync(Result.SuccessResult(true));
+        routeService.Setup(s => s.GetRouteByIdAsync(4))
+            .ReturnsAsync(Result.SuccessResult(reloaded));
+
+        var vm = new RouteManagementViewModel(
+            new Mock<IBusBuddyDbContextFactory>().Object,
+            routeService.Object,
+            null,
+            routeOptimization: optimizer.Object);
+        await vm.InitializeAsync();
+        vm.SelectedRoute = vm.Routes[0];
+
+        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)vm.OptimizeStopOrderCommand).ExecuteAsync(null);
+
+        routeService.Verify(s => s.UpdateRouteAsync(It.IsAny<Route>()), Times.Never);
+        routeService.Verify(s => s.GetRouteByIdAsync(4), Times.Once);
+        vm.SelectedRoute!.WaypointsJson.Should().Contain("encodedPolyline");
+        vm.StatusMessage.Should().Contain("Stop order optimized");
     }
 }

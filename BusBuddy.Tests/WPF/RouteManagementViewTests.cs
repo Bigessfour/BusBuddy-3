@@ -31,6 +31,7 @@ public class RouteManagementViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding OpenRouteAssignmentCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshDrivePathCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding OptimizeStopOrderCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding PrintScheduleCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateScheduleCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateRoutesCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateTransferRoutesCommand}\""));

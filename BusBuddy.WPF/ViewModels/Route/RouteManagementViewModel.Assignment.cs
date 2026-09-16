@@ -221,6 +221,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 existing.PMDriverId = updated.PMDriverId;
                 existing.StudentCount = updated.StudentCount;
                 existing.StopCount = updated.StopCount;
+                existing.WaypointsJson = updated.WaypointsJson;
+                existing.Distance = updated.Distance;
+                existing.EstimatedDuration = updated.EstimatedDuration;
+                existing.Path = updated.Path;
                 OnPropertyChanged(nameof(SelectedRoute));
                 SyncAssignmentFromSelectedRoute();
             }
