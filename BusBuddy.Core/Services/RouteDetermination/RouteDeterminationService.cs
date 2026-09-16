@@ -284,7 +284,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             fromRouteId = StudentRouteAssignment.CurrentRouteId(
                 student,
                 timeSlot,
-                catalog.Select(r => (r.RouteId, r.RouteName)));
+                catalog.Select(r => (r.RouteId, (string?)r.RouteName)));
         }
 
         var mode = StudentRideModeHelper.FromStudent(student);
