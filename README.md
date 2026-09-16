@@ -469,7 +469,6 @@ dotnet ef migrations add NewMigrationName
 | Variable                                       | Purpose                                                             |
 | ---------------------------------------------- | ------------------------------------------------------------------- |
 | `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF license (required for UI)                            |
-| `XAI_API_KEY` / `GROK_API_KEY`                 | Grok / xAI route optimization                                       |
 | `GOOGLE_MAPS_API_KEY`                          | Maps Platform (Address Validation + Places + Routes + Map Tiles)    |
 | `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Leave unset for API keys (forces `X-Goog-User-Project` → often 403) |
 | `ConnectionStrings__DefaultConnection`         | Database connection                                                 |
@@ -477,85 +476,19 @@ dotnet ef migrations add NewMigrationName
 
 **Windows production:** Set `GOOGLE_MAPS_API_KEY` as a machine/user env var (key created under `busbuddy-507301`). Do **not** set `GCP_BILLING_PROJECT` for API-key auth.
 
-**Deprecated / invalid:** Earth Engine (`GEE_*`, `GoogleEarthEngineService`, project `ee-bigessfour` as an app dependency), project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows.
+**Deprecated / invalid:** Earth Engine (`GEE_*`, `GoogleEarthEngineService`, project `ee-bigessfour` as an app dependency), project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows, cloud `XAI_API_KEY` / `GROK_API_KEY`.
 
-### **🔐 Secure API Key Management**
+### **Local AI (Ollama)**
 
-BusBuddy uses **Microsoft SecretManagement** for secure API key storage, following enterprise security best practices:
+BusBuddy uses **local Ollama** for chat and route commentary. No cloud xAI key is loaded or required. Configure `Ollama` in `appsettings.json` (`BaseUrl` default `http://localhost:11434/v1`, model `llama3.2`).
 
-#### **Setup Secure API Key Storage**
-
-```powershell
-# Install required modules (if not already installed)
-Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser
-Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser
-
-# Method 1: Set machine environment variable (recommended for development)
-$env:XAI_API_KEY = "your-xai-api-key-here"
-[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
-
-# Method 2: Update secure vault directly
-Import-Module ".\PowerShell\Modules\BusBuddy-SecureConfig.psm1"
-Set-Secret -Name "XAI_API_KEY" -Secret "your-xai-api-key-here" -Vault GlobalApiSecrets
-
-# Verify configuration
-Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
-Get-ApiKeySecurely | Measure-Object -Character  # Should show length 84
-Test-GrokConnection -Verbose  # Should show success with grok-4-0709
+```bash
+# On the machine that runs WPF (Windows VM or Windows workstation)
+ollama serve
+ollama pull llama3.2
 ```
 
-#### **Key Benefits**
-
-- ✅ **No plain text exposure**: API keys never visible in environment variables or process lists
-- ✅ **Encrypted storage**: Keys stored using .NET cryptographic APIs with user-specific encryption
-- ✅ **Access control**: Keys only accessible to the current user account
-- ✅ **Automatic cleanup**: Removes insecure environment variables after migration
-- ✅ **Fallback support**: Legacy environment variable support for migration
-
-#### **Available Commands**
-
-```powershell
-# API key retrieval and configuration
-Get-ApiKeySecurely            # Retrieve API key from secure vault or environment
-grok-config                   # Show current Grok configuration (model: grok-4-0709)
-Test-GrokConnection -Verbose  # Test API connection with detailed output
-
-# Secure vault management
-Set-Secret -Name "XAI_API_KEY" -Secret "key" -Vault GlobalApiSecrets  # Store in vault
-Get-SecretInfo -Vault GlobalApiSecrets  # List stored secrets
-Initialize-SecureGrokConfig   # Setup secure vault (auto-runs on import)
-
-# Legacy support (environment variables are still supported)
-$env:XAI_API_KEY             # Machine environment variable (preferred for development)
-$env:GROK_API_KEY            # Alternative environment variable name
-```
-
-#### **xAI Grok Model Configuration**
-
-BusBuddy uses **Grok-4** (xAI's flagship reasoning model) for AI-powered features:
-
-```powershell
-# Current model configuration (August 2025)
-DefaultModel = "grok-4-0709"  # Exact model ID required by xAI API
-BaseUrl = "https://api.x.ai/v1"
-Context = 256000  # tokens (256K context window)
-Features = "text + vision, function calling, real-time search"
-```
-
-**Important Notes:**
-
-- ✅ **Use exact model ID**: `"grok-4-0709"` (not `"grok-4"` or `"grok-4-latest"`)
-- ✅ **API compatibility**: OpenAI-compatible /chat/completions endpoint
-- ✅ **Released**: July 9, 2025 with enhanced reasoning capabilities
-- ❌ **Don't use**: Generic names like `"grok-4"` will return 400 Bad Request errors
-
-#### **Security Features**
-
-- **Vault-based storage**: Uses Microsoft.PowerShell.SecretStore with AES encryption
-- **No environment exposure**: API keys removed from `$env:` variables and process environment
-- **SecureString handling**: Keys handled as SecureString objects in memory
-- **Automatic cleanup**: Memory cleared after API usage to prevent exposure
-- **Audit logging**: Security events logged for compliance
+If WPF runs in a Windows VM and Ollama is on the Mac host, set `Ollama:BaseUrl` to the Mac LAN IP (same idea as Postgres from the VM), not `localhost`. When Ollama is not running, the app keeps working and logs a **Warning** with mock/offline fallback — not an actionable Error.
 
 ### **Syncfusion License Setup**
 

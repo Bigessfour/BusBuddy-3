@@ -45,6 +45,12 @@ public static class MapDefaults
     /// </summary>
     public const int DetailLabelZoomLevel = 12;
 
+    /// <summary>
+    /// Student / home captions are the densest layer (one per household). They wait two more zoom
+    /// steps than schools and stops so a town view is not a wall of overlapping names.
+    /// </summary>
+    public const int HomeLabelZoomLevel = 14;
+
     /// <summary>Viewport assumed when the view has not reported its pixel size yet.</summary>
     public const double DefaultViewportWidth = 1024;
 
@@ -107,6 +113,9 @@ public static class MapDefaults
 
     /// <summary>True when home/pickup/waypoint captions should render at this zoom.</summary>
     public static bool ShowsDetailLabels(int zoomLevel) => zoomLevel >= DetailLabelZoomLevel;
+
+    /// <summary>True when per-household (home / student) captions should render at this zoom.</summary>
+    public static bool ShowsHomeLabels(int zoomLevel) => zoomLevel >= HomeLabelZoomLevel;
 
     /// <summary>
     /// Inverse of <see cref="ZoomForBounds(double,double,double,double,double,double)"/>: the geographic

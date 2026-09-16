@@ -21,6 +21,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PlotPickupStopsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ApplyClerkOverrideCommand}\""));
+        Assert.That(xaml, Does.Contain("Label=\"Move to selected route\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding CenterOnFleetCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshMapCommand}\""));
         // Sidebar ButtonAdv: Label + Command only — no local Background (stomps Fluent pressed chrome).
@@ -92,14 +94,19 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("MaxZoom=\"19\""));
         Assert.That(xaml, Does.Contain("SizeChanged=\"GeoMap_SizeChanged\""));
         Assert.That(xaml, Does.Contain("ShowCaption"));
-        Assert.That(xaml, Does.Contain("Text=\"{Binding Data.Caption}\""));
+        Assert.That(xaml, Does.Contain("Text=\"{Binding Data.DisplayCaption}\""));
+        Assert.That(xaml, Does.Not.Contain("Text=\"{Binding Data.Caption}\""), "one caption per spot: DisplayCaption folds the route-stop tag in");
+        Assert.That(xaml, Does.Contain("Fill=\"{Binding Data.FillBrush}\""));
+        Assert.That(xaml, Does.Contain("Stroke=\"{Binding Data.StrokeBrush}\""));
+        Assert.That(xaml, Does.Not.Contain("Fill=\"#E85D4C\""), "pin colours come from MapMarkerLabels, not per-template literals");
+        Assert.That(xaml, Does.Not.Contain("Fill=\"#5B8DEF\""));
         Assert.That(xaml, Does.Contain("Width=\"{Binding Data.MarkerSize}\""));
         Assert.That(xaml, Does.Contain("FontSize=\"{Binding Data.LabelFontSize}\""));
         Assert.That(xaml, Does.Contain("Data.ShowCaption"));
         Assert.That(xaml, Does.Not.Contain("DataContext.ShowDetailLabels"));
         Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("ScaledMarkerSize"));
         Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("CaptionFrom"));
-        Assert.That(XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs"), Does.Contain("Binding Data.Caption"));
+        Assert.That(XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs"), Does.Contain("Binding Data.DisplayCaption"));
         Assert.That(XamlViewFile.Read("Utilities/DistrictSfMap.cs"), Does.Contain("OnMouseMove"));
         Assert.That(XamlViewFile.Read("Utilities/DistrictSfMap.cs"), Does.Contain("NullReferenceException"));
         Assert.That(bootstrap, Does.Contain("Host={Host} Outcome="));
@@ -129,7 +136,49 @@ public class MapViewTests
         var source = XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs");
         Assert.That(source, Does.Contain("CustomDataSymbol symbol => symbol.Data as MapMarker"));
         Assert.That(source, Does.Contain("Unwrap(item)"));
-        Assert.That(source, Does.Contain("Binding Data.Caption"));
+        Assert.That(source, Does.Contain("Binding Data.DisplayCaption"));
+    }
+
+    [Test]
+    public void MapView_OverlayToolbarOwnsItsTemplate_AndActiveBusesCardIsGone()
+    {
+        var xaml = XamlViewFile.Read("Views/Map/MapView.xaml");
+
+        // Zoom In / Zoom Out vanished after a click because the Fluent ButtonAdv theme repainted the focused/pressed
+        // chrome over the tiles. The overlay style now carries its own ControlTemplate and literal brushes.
+        var overlayStyle = xaml[xaml.IndexOf("x:Key=\"MapOverlayButtonStyle\"", StringComparison.Ordinal)..];
+        overlayStyle = overlayStyle[..overlayStyle.IndexOf("</Style>", StringComparison.Ordinal)];
+        Assert.That(overlayStyle, Does.Contain("<ControlTemplate TargetType=\"syncfusion:ButtonAdv\">"));
+        Assert.That(overlayStyle, Does.Contain("Text=\"{TemplateBinding Label}\""));
+        Assert.That(overlayStyle, Does.Contain("Background=\"{TemplateBinding Background}\""));
+        Assert.That(overlayStyle, Does.Not.Contain("DynamicResource ButtonBackgroundBrush"), "that key never resolved");
+        Assert.That(overlayStyle, Does.Not.Contain("DynamicResource ButtonForegroundBrush"));
+        Assert.That(overlayStyle, Does.Contain("<Trigger Property=\"IsPressed\" Value=\"True\">"));
+        Assert.That(xaml, Does.Contain("Panel.ZIndex=\"10\""));
+        Assert.That(xaml, Does.Contain("ClipToBounds=\"True\""));
+
+        // Active Buses grid told the clerk nothing (fleet GPS is deferred) — replaced by the pin legend.
+        Assert.That(xaml, Does.Not.Contain("Active Buses"));
+        Assert.That(xaml, Does.Not.Contain("BusListGrid"));
+        Assert.That(xaml, Does.Not.Contain("ActiveBuses"));
+        Assert.That(xaml, Does.Not.Contain("SelectedBus"));
+        Assert.That(xaml, Does.Contain("Pin Legend"));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding MarkerLegend}\""));
+        Assert.That(xaml, Does.Contain("Fill=\"{Binding FillHex}\""));
+
+        var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(vm, Does.Not.Contain("ActiveBuses"));
+        Assert.That(vm, Does.Not.Contain("IBusService"));
+        Assert.That(vm, Does.Contain("MarkerLegend"));
+        Assert.That(vm, Does.Contain("ClearMarkersExcept(MapMarkerLabels.Kind.School)"));
+        Assert.That(vm, Does.Contain("PlotRouteStopsAsync"));
+        Assert.That(vm, Does.Contain("TryTagRouteStop"));
+        Assert.That(vm, Does.Contain("ApplyClerkOverrideFromMapAsync"));
+        Assert.That(vm, Does.Contain("SelectMapMarker"));
+
+        // Tooltips describe the fixed behaviours (no "Enable in Settings").
+        Assert.That(xaml, Does.Not.Contain("Enable in Settings"));
+        Assert.That(xaml, Does.Contain("Schools only"));
     }
 
     [Test]
@@ -269,6 +318,17 @@ public class MapViewTests
         var dialog = XamlViewFile.Read("Views/Activity/ActivityScheduleEditDialog.xaml.cs");
         Assert.That(dialog, Does.Not.Contain("Regular Route"));
         Assert.That(dialog, Does.Contain("MissingInfo"));
+
+        var tripDialog = XamlViewFile.Read("Views/Activity/TripEventEditDialog.xaml");
+        Assert.That(tripDialog, Does.Contain("TripEvent"));
+        Assert.That(tripDialog, Does.Not.Contain("ActivitySchedule"));
+        Assert.That(tripDialog, Does.Not.Contain("Regular Route"));
+
+        var tripVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
+        Assert.That(tripVm, Does.Contain("TripEvent"));
+        Assert.That(tripVm, Does.Contain("never sets RouteId"));
+        Assert.That(tripVm, Does.Not.Contain("new ActivitySchedule"));
+        Assert.That(tripVm, Does.Not.Contain("IActivityScheduleService"));
 
         var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(mapVm, Does.Contain("TryPlotTrip"));

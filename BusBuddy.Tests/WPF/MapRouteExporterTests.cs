@@ -94,19 +94,25 @@ public class MapRouteExporterTests
     }
 
     [Test]
-    public async Task ExportSelectedAsync_WhenDisabled_DoesNotCallGeoService()
+    public async Task ExportSelectedAsync_WithoutRoute_TellsClerkToSelectOne()
     {
-        var settings = new Mock<IUserSettingsService>();
-        settings.SetupGet(s => s.EnableRouteGeoExport).Returns(false);
+        // No Settings gate any more — the button always answers. Missing selection is the only pre-check.
         var geo = new Mock<IGeoDataService>();
 
-        var result = await MapRouteExporter.ExportSelectedAsync(
-            settings.Object,
-            geo.Object,
-            new Route { RouteId = 1, RouteName = "AM-1" });
+        var result = await MapRouteExporter.ExportSelectedAsync(geo.Object, selected: null);
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Message, Does.Contain("Settings"));
+        Assert.That(result.Cancelled, Is.False);
+        Assert.That(result.Message, Does.Contain("Select a route"));
         geo.Verify(g => g.GetRouteGeoDataAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Test]
+    public void MapRouteExporter_HasNoSettingsGate()
+    {
+        var source = XamlViewFile.Read("Utilities/MapRouteExporter.cs");
+        Assert.That(source, Does.Not.Contain("IUserSettingsService"));
+        Assert.That(source, Does.Not.Contain("EnableRouteGeoExport"));
+        Assert.That(source, Does.Contain("Cancelled: true"));
     }
 }

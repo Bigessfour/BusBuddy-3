@@ -31,6 +31,10 @@ public class RouteOptimizationSurfaceTests
         var vm = XamlViewFile.Read("ViewModels/Activity/ActivityManagementViewModel.cs");
         Assert.That(vm, Does.Contain("SuggestSameDayFleetAsync"));
         Assert.That(vm, Does.Contain("Route != Trip"));
+        Assert.That(vm, Does.Contain("GenerateTripTicket"));
+        Assert.That(vm, Does.Contain("RefreshPathMilesAsync"));
+        Assert.That(vm, Does.Not.Contain("new ActivitySchedule"));
+        Assert.That(vm, Does.Not.Contain("IActivityScheduleService"));
     }
 
     [Test]

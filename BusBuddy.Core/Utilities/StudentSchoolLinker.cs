@@ -42,9 +42,9 @@ public static class StudentSchoolLinker
                 return;
             }
 
-            // FK points at a destination that is not in the catalog we were handed — drop it rather
-            // than leave the record claiming a school that cannot be resolved.
-            student.DestinationId = null;
+            // Catalog is often active-schools-only. A retired campus is still a valid assignment
+            // (specs/locations.md: soft-retire because students still reference it). Leave the FK.
+            return;
         }
 
         if (!string.IsNullOrWhiteSpace(student.School))

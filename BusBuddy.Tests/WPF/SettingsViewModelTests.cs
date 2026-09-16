@@ -3,6 +3,7 @@ using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Settings;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -30,8 +31,6 @@ public class SettingsViewModelTests
             .ReturnsAsync(true);
         settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, It.IsAny<bool>()))
             .ReturnsAsync(true);
-        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, It.IsAny<bool>()))
-            .ReturnsAsync(false);
         settings.Setup(s => s.SaveSettingsAsync()).ReturnsAsync(true);
 
         var skin = new Mock<ISkinManagerService>();
@@ -41,14 +40,12 @@ public class SettingsViewModelTests
         vm.SelectedTheme = "FluentLight";
         vm.EnableActivityLogging = false;
         vm.ShowDashboardOnStartup = false;
-        vm.EnableRouteGeoExport = true;
 
         await vm.SaveCommand.ExecuteAsync(null);
 
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.Theme, "FluentLight"), Times.Once);
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.EnableActivityLogging, false), Times.Once);
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, false), Times.Once);
-        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, true), Times.Once);
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLatitude, It.IsAny<string>()), Times.Once);
         settings.Verify(s => s.SaveSettingsAsync(), Times.Once);
         skin.Verify(s => s.ApplyTheme("FluentLight"), Times.Once);
@@ -125,6 +122,28 @@ public class SettingsViewModelTests
     }
 
     [Test]
+    public void ApplyDepotAddress_FillsCityStateZipAndCoordinates()
+    {
+        var vm = new SettingsViewModel(CreateSettingsMock().Object, new Mock<ISkinManagerService>().Object);
+        vm.ApplyDepotAddress(new PlaceAddressApplier.AppliedAddress(
+            Street: "210 West Pearl",
+            City: "Lamar",
+            State: "CO",
+            Zip: "81052",
+            Latitude: 38.0872,
+            Longitude: -102.6208,
+            FormattedAddress: "210 West Pearl, Lamar, CO 81052",
+            PlaceId: "test"));
+
+        vm.DepotAddress.Should().Contain("210 West Pearl");
+        vm.DepotCity.Should().Be("Lamar");
+        vm.DepotState.Should().Be("CO");
+        vm.DepotZipCode.Should().Be("81052");
+        vm.DepotLatitudeText.Should().Contain("38.0872");
+        vm.DepotLongitudeText.Should().Contain("-102.6208");
+    }
+
+    [Test]
     public async Task ResetSettingsAsync_ReloadsDefaults()
     {
         var settings = new Mock<IUserSettingsService>();
@@ -138,8 +157,6 @@ public class SettingsViewModelTests
             .ReturnsAsync(true);
         settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, It.IsAny<bool>()))
             .ReturnsAsync(true);
-        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, It.IsAny<bool>()))
-            .ReturnsAsync(false);
         settings.Setup(s => s.ResetSettingsAsync()).ReturnsAsync(true);
 
         var vm = new SettingsViewModel(settings.Object, new Mock<ISkinManagerService>().Object);
@@ -165,8 +182,6 @@ public class SettingsViewModelTests
             .ReturnsAsync(true);
         settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, It.IsAny<bool>()))
             .ReturnsAsync(true);
-        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, It.IsAny<bool>()))
-            .ReturnsAsync(false);
         return settings;
     }
 }

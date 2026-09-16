@@ -42,6 +42,24 @@ public static class UiSurfaceProbe
         return dataContext is null ? "(null)" : dataContext.GetType().FullName ?? dataContext.GetType().Name;
     }
 
+    /// <summary>
+    /// Chrome hosts (VehicleForm → VehiclesView → VehicleManagementView) and document windows
+    /// (PdfPreviewWindow) load with a null DataContext by design. Warn only when a feature
+    /// UserControl has neither its own nor a descendant view-model.
+    /// </summary>
+    public static LogEventLevel ClassifyDataContextLevel(
+        object? dataContext,
+        bool descendantHasDataContext,
+        bool isWindow)
+    {
+        if (dataContext is not null || descendantHasDataContext || isWindow)
+        {
+            return LogEventLevel.Information;
+        }
+
+        return LogEventLevel.Warning;
+    }
+
     /// <summary>Register class handlers once during startup.</summary>
     public static void Register()
     {
@@ -107,7 +125,10 @@ public static class UiSurfaceProbe
     private static void LogSurface(FrameworkElement root, string phase)
     {
         var dc = DescribeDataContext(root.DataContext);
-        var level = root.DataContext is null ? LogEventLevel.Warning : LogEventLevel.Information;
+        var level = ClassifyDataContextLevel(
+            root.DataContext,
+            HasDescendantDataContext(root),
+            root is Window);
         UiDiagnosticsLog.Write(
             Logger,
             level,
@@ -117,6 +138,26 @@ public static class UiSurfaceProbe
             dc,
             root.ActualWidth,
             root.ActualHeight);
+    }
+
+    private static bool HasDescendantDataContext(DependencyObject root)
+    {
+        var count = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is FrameworkElement fe && fe.DataContext is not null)
+            {
+                return true;
+            }
+
+            if (HasDescendantDataContext(child))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal static IReadOnlyList<string> InspectBindingsAndSources(FrameworkElement root)

@@ -1,3 +1,5 @@
+using System.Windows;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
@@ -84,6 +86,124 @@ public sealed class StudentsDialogCoordinator
             DatabaseUserMessage.LogFailure(Logger, ex, "Error executing add school command");
             return new StudentsDialogOutcome($"Error adding school: {ex.Message}");
         }
+    }
+
+    /// <summary>Picks a cataloged school and opens the full campus editor.</summary>
+    public async Task<StudentsDialogOutcome> EditSchoolAsync()
+    {
+        try
+        {
+            var dest = App.ServiceProvider?.GetService<IDestinationService>();
+            if (dest is null)
+            {
+                return new StudentsDialogOutcome("Destination service is not available.");
+            }
+
+            var school = await PickSchoolAsync(dest, "Select the school to edit.").ConfigureAwait(true);
+            if (school is null)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            using var vm = SchoolDestinationFormViewModel.ForEdit(dest, school);
+            var form = new BusBuddy.WPF.Views.Student.SchoolDestinationForm(vm);
+            DialogOwner.Assign(form);
+            if (form.ShowDialog() != true)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            var status = string.IsNullOrWhiteSpace(vm.StatusMessage)
+                ? $"Saved {school.Name}"
+                : vm.StatusMessage;
+            return new StudentsDialogOutcome(
+                status,
+                ReloadReferenceData: true,
+                SchoolCatalogChanged: true,
+                SavedCatalogId: vm.SavedDestinationId);
+        }
+        catch (Exception ex)
+        {
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error executing edit school command");
+            return new StudentsDialogOutcome($"Error editing school: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes an unused school, or retires it when students or trips still reference it.
+    /// </summary>
+    public async Task<StudentsDialogOutcome> DeleteSchoolAsync()
+    {
+        try
+        {
+            var dest = App.ServiceProvider?.GetService<IDestinationService>();
+            if (dest is null)
+            {
+                return new StudentsDialogOutcome("Destination service is not available.");
+            }
+
+            var school = await PickSchoolAsync(dest, "Select the school to delete or retire.").ConfigureAwait(true);
+            if (school is null)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            var confirm = MessageBox.Show(
+                $"{school.Name} will be removed from the catalog if nothing uses it. " +
+                "If students, transfers, activities, or trips still point here, the campus is retired instead of deleted.",
+                "Delete school?",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            var result = await dest.DeleteSchoolAsync(school.DestinationId).ConfigureAwait(true);
+            return result switch
+            {
+                SchoolDeleteResult.Deleted => new StudentsDialogOutcome(
+                    $"{school.Name} deleted.",
+                    ReloadReferenceData: true,
+                    SchoolCatalogChanged: true,
+                    SavedCatalogId: school.DestinationId),
+                SchoolDeleteResult.Retired => new StudentsDialogOutcome(
+                    $"{school.Name} is still in use, so it was retired (hidden from new assignments).",
+                    ReloadReferenceData: true,
+                    SchoolCatalogChanged: true,
+                    SavedCatalogId: school.DestinationId),
+                _ => new StudentsDialogOutcome("School was not found.")
+            };
+        }
+        catch (Exception ex)
+        {
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error executing delete school command");
+            return new StudentsDialogOutcome($"Error deleting school: {ex.Message}");
+        }
+    }
+
+    private static async Task<Destination?> PickSchoolAsync(IDestinationService dest, string prompt)
+    {
+        var schools = await dest.GetActiveSchoolsAsync().ConfigureAwait(true);
+        if (schools.Count == 0)
+        {
+            MessageBox.Show(
+                "Add a school first.",
+                "No schools",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return null;
+        }
+
+        if (schools.Count == 1)
+        {
+            return schools[0];
+        }
+
+        var vm = new SchoolCatalogPickerDialogViewModel(schools, prompt);
+        var picker = new BusBuddy.WPF.Views.Student.SchoolCatalogPickerDialog(vm);
+        DialogOwner.Assign(picker);
+        return picker.ShowDialog() == true ? vm.SelectedSchool : null;
     }
 
     /// <summary>Opens the catalog pickup stop form (in-town shared boarding point).</summary>

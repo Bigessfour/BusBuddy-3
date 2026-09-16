@@ -36,6 +36,25 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 
 Parent notification of “where the student is picked up” uses the published stop and time from `specs/routes.md`, optionally illustrated by this map. It does not use a moving vehicle.
 
+### Pin colors and captions
+
+Every pin kind has one fixed color so the clerk can read a mixed overlay at a glance. The legend card on the District Map is generated from `MapMarkerLabels.Legend`; do not hand-paint a second legend.
+
+| Kind         | Fill             | Caption visible from                  |
+| ------------ | ---------------- | ------------------------------------- |
+| School       | Black `#000000`  | zoom ≥ `DetailLabelZoomLevel` (12)    |
+| Pickup stop  | Orange `#F28C28` | zoom ≥ 12                             |
+| Route stop   | Gold `#D4A017`   | zoom ≥ 12 (`Stop n` sequence caption) |
+| Depot / barn | Purple `#7B3FE4` | zoom ≥ 12                             |
+| Student home | Blue `#5B8DEF`   | zoom ≥ `HomeLabelZoomLevel` (14)      |
+| Student      | Green `#2E9E5B`  | zoom ≥ 14                             |
+
+Source of truth is the `*FillHex` constants in `MapMarkerLabels`; this table mirrors them.
+
+- Captions are rendered by the Syncfusion `ImageryLayer.MarkerTemplate` (`MapMarker.DisplayCaption`), not by Google. Google only draws tiles; caption visibility, color, and overlap are BusBuddy's responsibility.
+- When a published route stop lands on an existing pin (school, home, catalog stop), the existing pin is **tagged** (`RouteStopLabel`, gold stroke, caption `Name (Stop n)`) instead of stacking a second pin and a second caption at the same coordinate.
+- Household captions wait for zoom 14 so a town-level view does not become a wall of names.
+
 ## Relationships
 
 - Map view **displays** locations, routes, and trips. It does not own them.
@@ -64,6 +83,19 @@ The map does not need its own table of pins. Persist facts on Location and Route
 - Substitute driver sees the same published path and times as the home driver.
 - Print/PDF may embed the current snapshot. Caption it as the published route, not “live.”
 - Live-tracking controls, if still in XAML, stay disabled or clearly deferred. Do not wire a timer that fakes GPS.
+- No “Active Buses” list on the District Map. Without live GPS it carries no clerk-usable information; the side card is the pin legend.
+
+### District Map toolbar contract
+
+| Button                 | Behavior                                                                                                                                                                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zoom In / Out          | Step zoom around the current center. Buttons use an explicit `ButtonAdv` template with literal brushes (no theme `DynamicResource`) and sit above the map (`Panel.ZIndex`, clipped container) so they never vanish after a zoom. |
+| Home / Refresh         | Recenter to the configured depot; Refresh reloads the **full** district overlay (schools + catalog stops + depots + route homes) and undoes any filter.                                                                          |
+| Show Schools           | **Schools-only** view: clears every non-school pin, plots schools, centers on them. Refresh restores everything.                                                                                                                 |
+| Plot Pickup Stops      | Plots catalog pickup stops **and** the published stops of every route. Toast when there is nothing to plot; never a silent no-op.                                                                                                |
+| Move to selected route | Clerk override (spec 008): select a student/home pin, pick a route in the list, then move the rider onto that AM or PM row. Seating may be exceeded; reason is logged as `District Map`.                                         |
+| Export Route           | Always enabled. No route selected → toast “select a route”; otherwise GeoJSON of the selected route via `IGeoDataService`. No hidden Settings gate.                                                                              |
+| Print                  | Snapshot of the current view for the route PDF.                                                                                                                                                                                  |
 
 ## Efficiency metrics
 
@@ -79,18 +111,22 @@ Distance and duration from Google Routes on the current published waypoint list 
 
 ## Code anchors
 
-| Spec term              | Existing code                                     |
-| ---------------------- | ------------------------------------------------- |
-| View                   | `MapView.xaml`, `MapView.xaml.cs`                 |
-| View model             | `MapViewModel`                                    |
-| Tiles                  | `GoogleMapTilesImageryLayer`, `MapTileBootstrap`  |
-| Geo facade             | `IMapsGeoService`, `IGeoDataService`              |
-| Address                | `IGeocodingService`, Google Address Validation    |
-| Path                   | `IRoutingService`, `RouteDrivePathRefresher`      |
-| Visit order            | `IRouteOptimizationService` (`optimizeTours`)     |
-| Depot                  | `DistrictDepot`                                   |
-| Object mapping         | `MappingService` (AutoMapper — **not** this spec) |
-| Feature branch context | `feature/map-route-display` / PR #59              |
+| Spec term              | Existing code                                       |
+| ---------------------- | --------------------------------------------------- |
+| View                   | `MapView.xaml`, `MapView.xaml.cs`                   |
+| View model             | `MapViewModel`                                      |
+| Pin kinds / colors     | `MapMarkerLabels` (`Kind`, `FillHex`, `Legend`)     |
+| Pin state              | `MapMarker` (`DisplayCaption`, `FillBrush`)         |
+| District layers        | `MapDistrictLayers` (schools, pickups, route stops) |
+| GeoJSON export         | `MapRouteExporter`                                  |
+| Tiles                  | `GoogleMapTilesImageryLayer`, `MapTileBootstrap`    |
+| Geo facade             | `IMapsGeoService`, `IGeoDataService`                |
+| Address                | `IGeocodingService`, Google Address Validation      |
+| Path                   | `IRoutingService`, `RouteDrivePathRefresher`        |
+| Visit order            | `IRouteOptimizationService` (`optimizeTours`)       |
+| Depot                  | `DistrictDepot`                                     |
+| Object mapping         | `MappingService` (AutoMapper — **not** this spec)   |
+| Feature branch context | `feature/map-route-display` / PR #59                |
 
 ## Worked examples
 

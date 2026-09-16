@@ -16,7 +16,8 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app that runs on a Windows machine
 - MUST treat a transfer (school A → school B during the day) as a second assignment on a transfer route, not a second student.
 - MUST validate home and stop addresses with Google Address Validation and persist lat/lng from geocoding. Clerks do not type coordinates as the source of truth.
 - MUST NOT commit student PII (name, address, guardian, medical notes, roster spreadsheets) to GitHub. Load via clerk forms. Paper/Excel rosters stay in local clerk workflow only.
-- MUST NOT delete a student to end service. Archive or set inactive so history and route versions remain.
+- MAY delete a student when the clerk chooses a required reason: **Mistake** (row entered in error), **Moved** (left the district), or **Not attending** (otherwise no longer at this school). The app MUST ask for that reason before the row is removed and MUST write an operational deletion log (student id, student number, reason, optional brief note, related-assignment counts). Do not put names, addresses, or guardian data in that log.
+- MUST NOT delete a student by accident. There is no default reason; the clerk must pick one and confirm. Archive (`Active=false`) remains the path when the child may return and the record should stay on the roster.
 - MUST NOT invent a parallel student model. Extend `IStudentService` / existing Core student types.
 - Default: assignment is stable for the school year.
 - Exception: mid-year move, school change, eligibility change, or same-day “not riding” (that last one is a rider exception on the route, not a new student type).
@@ -33,25 +34,25 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app that runs on a Windows machine
 
 ## Data the app must store
 
-| Field                | Type                    | Required           | Notes                                                              |
-| -------------------- | ----------------------- | ------------------ | ------------------------------------------------------------------ |
-| StudentId            | existing key            | yes                | Use current Core identity; do not create a second key.             |
-| DisplayName          | string                  | yes                | PII. Clerk-only. Never commit.                                     |
-| SchoolYear           | string/year             | yes                | e.g. 2026-2027.                                                    |
-| AssignedSchoolId     | location/school id      | yes                | Destination for daily delivery.                                    |
-| PickupMode           | enum: Home, CatalogStop | yes                | Rural default is often Home; in-town default is often CatalogStop. |
-| HomeAddress          | string                  | when Home          | Validate with Google Address Validation.                           |
-| HomeLat, HomeLng     | decimal                 | after validate     | Written by geocoder, not by hand.                                  |
-| CatalogStopId        | pickup-stop id          | when CatalogStop   | From `IPickupStopService`.                                         |
-| RidesAm              | bool                    | yes                | Independent of PM.                                                 |
-| RidesPm              | bool                    | yes                | Independent of AM.                                                 |
-| IsSpecialNeeds       | bool                    | yes                | Home pickup + special route/bus/aide.                              |
-| RequiresAide         | bool                    | when special needs | Default true for special-needs runs.                               |
-| TransferRequired     | bool                    | yes                | In-day school-to-school.                                           |
-| TransferRouteId      | route id                | when transfer      | Separate from AM/PM home-to-school routes.                         |
-| Active               | bool                    | yes                | False archives service; do not delete.                             |
-| GuardianName / Phone | string                  | recommended        | PII. For clerk/dispatcher contact.                                 |
-| Notes                | string                  | no                 | Medical/operational. PII. Do not put in git.                       |
+| Field                | Type                    | Required           | Notes                                                                         |
+| -------------------- | ----------------------- | ------------------ | ----------------------------------------------------------------------------- |
+| StudentId            | existing key            | yes                | Use current Core identity; do not create a second key.                        |
+| DisplayName          | string                  | yes                | PII. Clerk-only. Never commit.                                                |
+| SchoolYear           | string/year             | yes                | e.g. 2026-2027.                                                               |
+| AssignedSchoolId     | location/school id      | yes                | Destination for daily delivery.                                               |
+| PickupMode           | enum: Home, CatalogStop | yes                | Rural default is often Home; in-town default is often CatalogStop.            |
+| HomeAddress          | string                  | when Home          | Validate with Google Address Validation.                                      |
+| HomeLat, HomeLng     | decimal                 | after validate     | Written by geocoder, not by hand.                                             |
+| CatalogStopId        | pickup-stop id          | when CatalogStop   | From `IPickupStopService`.                                                    |
+| RidesAm              | bool                    | yes                | Independent of PM.                                                            |
+| RidesPm              | bool                    | yes                | Independent of AM.                                                            |
+| IsSpecialNeeds       | bool                    | yes                | Home pickup + special route/bus/aide.                                         |
+| RequiresAide         | bool                    | when special needs | Default true for special-needs runs.                                          |
+| TransferRequired     | bool                    | yes                | In-day school-to-school.                                                      |
+| TransferRouteId      | route id                | when transfer      | Separate from AM/PM home-to-school routes.                                    |
+| Active               | bool                    | yes                | False archives a student who may return. Delete is a separate, logged action. |
+| GuardianName / Phone | string                  | recommended        | PII. For clerk/dispatcher contact.                                            |
+| Notes                | string                  | no                 | Medical/operational. PII. Do not put in git.                                  |
 
 Same-day absence, sports opt-out, or “not riding this afternoon” are **not** columns on the student. They are rider exceptions on that date’s route/trip.
 
@@ -64,6 +65,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 - Special-needs students appear on the special-needs route (example: AM Bus #5), not on a general in-town catalog-stop route, unless a clerk explicitly reassigns them.
 - Transfer assignments show as a separate in-day movement, not as a duplicate child.
 - Parent/guardian notification of pickup place and time comes from the **published route**, not from live GPS (live GPS is out of scope).
+- Clerk deletes a student only after choosing Mistake, Moved, or Not attending (optional brief note). Published routes stay; the student's assignment and exception rows are removed with the record and counted in the deletion log.
 
 ## Out of scope
 
@@ -78,6 +80,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 | Spec term                           | Existing code                                                              |
 | ----------------------------------- | -------------------------------------------------------------------------- |
 | Student persistence / forms         | `IStudentService` and Core student model                                   |
+| Logged deletion                     | `IStudentService.DeleteStudentAsync` + `StudentDeletionLog`                |
 | Assigned school                     | `IDestinationService`                                                      |
 | In-town gathering point             | `IPickupStopService`                                                       |
 | Map plot of homes / schools / stops | `IGeoDataService`, `IMapsGeoService`, `MapViewModel`                       |
@@ -95,13 +98,18 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 
 ## Mid-year change
 
-When a student moves or changes school:
+When a student moves or changes school **inside the district**:
 
 1. Keep the same StudentId.
 2. Enter the new address or school.
 3. Validate + geocode.
 4. Clerk reassigns pickup mode, stop, and AM/PM routes.
 5. Old assignment is ended with an effective date. Do not silently rewrite history.
+
+When a student **leaves** (moved out of district, no longer attending, or the row was a data-entry mistake):
+
+1. Prefer **Archive** if the child may return later this year.
+2. **Delete** only after the clerk picks Mistake, Moved, or Not attending and confirms. That writes the deletion log and removes the roster row.
 
 ## Worked examples (Wiley / Lamar area)
 

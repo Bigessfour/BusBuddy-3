@@ -33,7 +33,8 @@ namespace BusBuddy.Core.Services
         /// <summary>
         /// Repairs student-to-route linkage so every assigned <c>AMRoute</c>/<c>PMRoute</c> resolves:
         /// route names that differ from an existing route only by word order are rewritten to the
-        /// existing spelling, and any name with no route row at all gets one created.
+        /// existing spelling, any name with no route row at all gets one created, and unique names
+        /// dual-write <c>AmRouteId</c>/<c>PmRouteId</c>.
         /// <para>
         /// Needed because <c>StudentService.ValidateStudentAsync</c> matches <c>Routes.RouteName</c>
         /// exactly, so a student assigned to a route that does not exist cannot be saved — or even

@@ -9,26 +9,23 @@ namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Fills active routes from unassigned students (AM then PM), then asks
-    /// <see cref="GrokGlobalAPI"/> for commentary. Ollama is the default AI path;
-    /// a mock result is used when the model is unavailable (spec 004).
-    /// Drive-path / Maps routing is intentionally not required — seat assignment must
-    /// succeed even when <see cref="Interfaces.IRoutingService"/> is missing or fails.
+    /// <see cref="OllamaAiService"/> for commentary. A mock result is used when
+    /// Ollama is unavailable (spec 004).
+    /// Seat assignment is deliberately independent of Maps routing: the drive path belongs to the
+    /// map UI, so no routing service is taken here and a Routes API outage cannot block assignment.
     /// </summary>
     public sealed class StudentRouteOptimizer : IStudentRouteOptimizer
     {
         private static readonly ILogger Logger = Log.ForContext<StudentRouteOptimizer>();
         private readonly IRouteService _routeService;
-        private readonly GrokGlobalAPI? _grok;
-        private readonly Interfaces.IRoutingService? _routingService;
+        private readonly OllamaAiService? _ollama;
 
         public StudentRouteOptimizer(
             IRouteService routeService,
-            GrokGlobalAPI? grok = null,
-            Interfaces.IRoutingService? routingService = null)
+            OllamaAiService? ollama = null)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
-            _grok = grok;
-            _routingService = routingService;
+            _ollama = ollama;
         }
 
         public async Task<StudentRouteOptimizeResult> OptimizeUnassignedAsync()
@@ -58,31 +55,17 @@ namespace BusBuddy.Core.Services
             Logger.Information("Optimize loaded ActiveRoutes={RouteCount} UnassignedBefore={Unassigned}", routes.Count, before);
             if (before == 0)
             {
-                Logger.Information("Optimize skipped — all active students already have AM and PM routes");
+                Logger.Information("Optimize skipped — every active student has both an AM and a PM route");
                 return new StudentRouteOptimizeResult
                 {
-                    Status = "All active students already have AM and PM routes."
+                    Status = "All active students already have both an AM and a PM route."
                 };
             }
 
             var assigned = 0;
             foreach (var route in routes.OrderBy(r => r.RouteName, StringComparer.OrdinalIgnoreCase))
             {
-                assigned += await AutoAssignSlotAsync(route.RouteId, RouteTimeSlot.AM);
-                assigned += await AutoAssignSlotAsync(route.RouteId, RouteTimeSlot.PM);
-            }
-
-            // Fail-open: never block assignment results on Routes API errors.
-            try
-            {
-                if (_routingService is not null)
-                {
-                    Logger.Debug("Optional routing service present; drive-path refresh is owned by map UI");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Routing side-effect skipped after optimize — assignments kept");
+                assigned += await AutoAssignSlotAsync(route.RouteId, RouteSession.ToAssignmentSlot(route));
             }
 
             var remaining = await CountUnassignedAsync();
@@ -124,10 +107,28 @@ namespace BusBuddy.Core.Services
             return result.Value.Count;
         }
 
+        /// <summary>
+        /// Students still short at least one slot. The parameterless
+        /// <see cref="IRouteService.GetUnassignedStudentsAsync()"/> only returns children missing
+        /// <em>both</em> runs, so a child with an AM route and no PM route looked done and the whole
+        /// optimize pass exited early reporting nothing left to do.
+        /// </summary>
         private async Task<int> CountUnassignedAsync()
         {
-            var result = await _routeService.GetUnassignedStudentsAsync();
-            return result.IsSuccess && result.Value is not null ? result.Value.Count : 0;
+            var am = await _routeService.GetUnassignedStudentsAsync(RouteTimeSlot.AM);
+            var pm = await _routeService.GetUnassignedStudentsAsync(RouteTimeSlot.PM);
+            if (!am.IsSuccess || am.Value is null || !pm.IsSuccess || pm.Value is null)
+            {
+                Logger.Warning(
+                    "Unassigned count unavailable AM={AmError} PM={PmError}",
+                    am.Error ?? "ok",
+                    pm.Error ?? "ok");
+                return 0;
+            }
+
+            return am.Value.Select(s => s.StudentId)
+                .Union(pm.Value.Select(s => s.StudentId))
+                .Count();
         }
 
         private async Task<(string? Summary, bool UsedMock)> TryGetAiCommentaryAsync(
@@ -135,14 +136,14 @@ namespace BusBuddy.Core.Services
             int remaining,
             IReadOnlyList<Route> routes)
         {
-            if (_grok is null)
+            if (_ollama is null)
             {
                 return (null, false);
             }
 
             try
             {
-                var result = await _grok.OptimizeRoutesAsync(new RouteOptimizationRequest
+                var result = await _ollama.OptimizeRoutesAsync(new RouteOptimizationRequest
                 {
                     RouteId = "fleet",
                     StudentsServed = assigned,

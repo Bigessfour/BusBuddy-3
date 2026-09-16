@@ -1,5 +1,7 @@
 using System.Windows;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Utilities;
+using BusBuddy.WPF.Utilities;
 using Serilog;
 using Serilog.Context;
 using StudentModel = BusBuddy.Core.Models.Student;
@@ -7,9 +9,8 @@ using StudentModel = BusBuddy.Core.Models.Student;
 namespace BusBuddy.WPF.ViewModels.Student;
 
 /// <summary>
-/// Archive/restore for the students grid. specs/students.md: "MUST NOT delete a student to end
-/// service. Archive or set inactive so history and route versions remain." There is deliberately no
-/// delete path here — the row stays in the collection and is distinguished by the Active column.
+/// Archive/restore and logged delete for the students grid. specs/students.md: Archive when the
+/// child may return; delete after the clerk picks Mistake, Moved, or Not attending.
 /// </summary>
 public sealed class StudentsArchiveCoordinator
 {
@@ -26,7 +27,7 @@ public sealed class StudentsArchiveCoordinator
     public static bool Confirm(StudentModel student, bool archiving)
     {
         var prompt = archiving
-            ? $"Archive {student.StudentName}? The record and its history are kept; the student stops riding."
+            ? $"Archive {student.StudentName}? The record is kept; restore if they return."
             : $"Restore {student.StudentName} to active service?";
 
         var confirm = MessageBox.Show(
@@ -35,6 +36,64 @@ public sealed class StudentsArchiveCoordinator
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
         return confirm == MessageBoxResult.Yes;
+    }
+
+    /// <summary>
+    /// Opens the reason dialog. Returns null when the clerk cancels. There is no default reason.
+    /// </summary>
+    public static StudentDeletionRequest? PromptDeletionReason(StudentModel student)
+    {
+        var vm = new StudentDeletionReasonDialogViewModel(student);
+        var dialog = new BusBuddy.WPF.Views.Student.StudentDeletionReasonDialog(vm);
+        DialogOwner.Assign(dialog);
+        return dialog.ShowDialog() == true ? vm.Result : null;
+    }
+
+    /// <summary>
+    /// Permanently removes the student after a clerk-chosen reason. Returns true when the grid
+    /// should drop the row.
+    /// </summary>
+    public async Task<bool> ApplyDeleteAsync(StudentModel student, StudentDeletionRequest request)
+    {
+        using (LogContext.PushProperty("Operation", "DeleteStudent"))
+        using (LogContext.PushProperty("StudentId", student.StudentId))
+        using (LogContext.PushProperty("Reason", request.Reason))
+        {
+            try
+            {
+                Logger.Warning(
+                    "Deleting student record StudentId={StudentId} Reason={Reason}",
+                    student.StudentId,
+                    request.Reason);
+
+                var removed = await _list.DeleteStudentAsync(
+                    student,
+                    request.Reason,
+                    request.Notes).ConfigureAwait(true);
+                if (removed)
+                {
+                    return true;
+                }
+
+                MessageBox.Show(
+                    "Could not delete the student — no row was removed.",
+                    "Delete failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(
+                    Logger, ex, "Error deleting StudentId={StudentId}", student.StudentId);
+                MessageBox.Show(
+                    $"Could not delete the student: {ex.Message}",
+                    "Delete failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+                return false;
+            }
+        }
     }
 
     /// <summary>

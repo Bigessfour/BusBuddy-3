@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-             xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
              xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
              Background="{DynamicResource ContentBackgroundBrush}">
 
@@ -11,6 +10,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/BusBuddyInputStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style x:Key="SettingsToolbarButton" TargetType="syncfusion:ButtonAdv">
@@ -37,6 +37,13 @@
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Margin" Value="0,0,0,8"/>
+            </Style>
+
+            <Style x:Key="SettingsFieldLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Margin" Value="0,0,0,6"/>
             </Style>
 
             <Style x:Key="SettingsHelpText" TargetType="TextBlock">
@@ -83,84 +90,107 @@
                 <TextBlock Text="Appearance" Style="{StaticResource SettingsSectionHeader}"/>
                 <TextBlock Text="Choose the Fluent theme applied across BusBuddy windows."
                            Style="{StaticResource SettingsHelpText}"/>
-                <TextBlock Text="Theme" FontWeight="Medium" Margin="0,0,0,6"
-                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <TextBlock x:Name="ThemeLabel" Text="Theme" Style="{StaticResource SettingsFieldLabel}"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableThemes}"
-                                        SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
+                                        SelectedItem="{Binding SelectedTheme, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         IsEditable="False"
-                                        Width="240"
-                                        AutomationProperties.Name="Application theme"/>
+                                        HorizontalAlignment="Stretch"
+                                        Height="42"
+                                        AutomationProperties.Name="Application theme"
+                                        AutomationProperties.LabeledBy="{Binding ElementName=ThemeLabel}"/>
 
                 <TextBlock Text="Startup &amp; logging" Style="{StaticResource SettingsSectionHeader}" Margin="0,16,0,8"/>
                 <TextBlock Text="Control whether the dashboard opens when the app starts and whether user actions are written to the activity log."
                            Style="{StaticResource SettingsHelpText}"/>
 
-                <syncfusiontools:ToggleButtonExt Content="Enable activity logging"
-                                                 IsChecked="{Binding EnableActivityLogging, Mode=TwoWay}"
-                                                 Margin="0,0,0,10"
-                                                 AutomationProperties.Name="Enable activity logging"/>
-                <syncfusiontools:ToggleButtonExt Content="Show dashboard on startup"
-                                                 IsChecked="{Binding ShowDashboardOnStartup, Mode=TwoWay}"
-                                                 Margin="0,0,0,20"
-                                                 AutomationProperties.Name="Show dashboard on startup"/>
-
-                <TextBlock Text="District Map" Style="{StaticResource SettingsSectionHeader}" Margin="0,8,0,8"/>
-                <TextBlock Text="When on, District Map can save the selected route's waypoints as GeoJSON (stop coordinates, not student names). Leave off if clerks should not write route files."
-                           Style="{StaticResource SettingsHelpText}"/>
-                <syncfusiontools:ToggleButtonExt Content="Enable route GeoJSON export"
-                                                 IsChecked="{Binding EnableRouteGeoExport, Mode=TwoWay}"
-                                                 Margin="0,0,0,20"
-                                                 AutomationProperties.Name="Enable route GeoJSON export"/>
+                <CheckBox Content="Enable activity logging"
+                          IsChecked="{Binding EnableActivityLogging, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,0,0,10"
+                          FontSize="14"
+                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                          VerticalContentAlignment="Center"
+                          AutomationProperties.Name="Enable activity logging"/>
+                <CheckBox Content="Show dashboard on startup"
+                          IsChecked="{Binding ShowDashboardOnStartup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,0,0,20"
+                          FontSize="14"
+                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                          VerticalContentAlignment="Center"
+                          AutomationProperties.Name="Show dashboard on startup"/>
 
                 <TextBlock Text="This district (map &amp; routing)" Style="{StaticResource SettingsSectionHeader}"/>
                 <TextBlock Text="Leave blank to ship this app to another rural district. Maps follow the first school with GPS, then the bus barn, then the bounding box. Unconfigured maps show a US overview until you add a school or pin the barn."
                            Style="{StaticResource SettingsHelpText}"/>
 
-                <TextBlock Text="Bus barn name" FontWeight="Medium" Margin="0,0,0,6"
-                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <TextBlock x:Name="DepotNameLabel" Text="Bus barn name" Style="{StaticResource SettingsFieldLabel}"/>
                 <syncfusion:SfTextBoxExt Text="{Binding DepotName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Watermark="Transportation Office"
                                          Style="{StaticResource SettingsFieldInput}"
-                                         AutomationProperties.Name="Bus barn name"/>
-                <TextBlock Text="Bus barn address" FontWeight="Medium" Margin="0,0,0,6"
-                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                         AutomationProperties.Name="Bus barn name"
+                                         AutomationProperties.LabeledBy="{Binding ElementName=DepotNameLabel}"/>
+                <TextBlock x:Name="DepotAddressLabel" Text="Bus barn address" Style="{StaticResource SettingsFieldLabel}"/>
                 <controls:PlacesAddressBox AddressText="{Binding DepotAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            FieldAutomationName="Bus barn address"
                                            AddressApplied="DepotAddress_Applied"
                                            Margin="0,0,0,10"/>
-                <Grid Margin="0,0,0,0">
+
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="80"/>
                         <ColumnDefinition Width="100"/>
                     </Grid.ColumnDefinitions>
-                    <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,8,10"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="DepotCityLabel" Grid.Row="0" Grid.Column="0" Text="City" Style="{StaticResource SettingsFieldLabel}"/>
+                    <TextBlock x:Name="DepotStateLabel" Grid.Row="0" Grid.Column="1" Text="State" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,8,6"/>
+                    <TextBlock x:Name="DepotZipLabel" Grid.Row="0" Grid.Column="2" Text="ZIP" Style="{StaticResource SettingsFieldLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
                                              Text="{Binding DepotCity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="City"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="Bus barn city"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,8,10"
+                                             AutomationProperties.Name="Bus barn city"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=DepotCityLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1" Margin="0,0,8,10"
                                              Text="{Binding DepotState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="ST"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="Bus barn state"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="2" Margin="0,0,0,10"
+                                             AutomationProperties.Name="Bus barn state"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=DepotStateLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="2" Margin="0,0,0,10"
                                              Text="{Binding DepotZipCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="ZIP"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="Bus barn ZIP"/>
+                                             AutomationProperties.Name="Bus barn ZIP"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=DepotZipLabel}"/>
                 </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,8,10"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="DepotLatLabel" Grid.Row="0" Grid.Column="0" Text="Latitude" Style="{StaticResource SettingsFieldLabel}"/>
+                    <TextBlock x:Name="DepotLonLabel" Grid.Row="0" Grid.Column="1" Text="Longitude" Style="{StaticResource SettingsFieldLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
                                              Text="{Binding DepotLatitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="e.g. 38.0872"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="Bus barn latitude"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,0,10"
+                                             AutomationProperties.Name="Bus barn latitude"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=DepotLatLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
                                              Text="{Binding DepotLongitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="e.g. -102.6208"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="Bus barn longitude"/>
+                                             AutomationProperties.Name="Bus barn longitude"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=DepotLonLabel}"/>
                 </Grid>
-                <TextBlock Text="Optional bounding box (south, west, north, east) used by route density. Must include every school GPS pin."
+                <TextBlock Text="Optional bounding box used by route density. Must include every school GPS pin."
                            Style="{StaticResource SettingsHelpText}"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -169,25 +199,43 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,6,10"
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="BBoxSouthLabel" Grid.Row="0" Grid.Column="0" Text="South" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,6,6"/>
+                    <TextBlock x:Name="BBoxWestLabel" Grid.Row="0" Grid.Column="1" Text="West" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,6,6"/>
+                    <TextBlock x:Name="BBoxNorthLabel" Grid.Row="0" Grid.Column="2" Text="North" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,6,6"/>
+                    <TextBlock x:Name="BBoxEastLabel" Grid.Row="0" Grid.Column="3" Text="East" Style="{StaticResource SettingsFieldLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="0" Margin="0,0,6,10"
                                              Text="{Binding BoundingBoxMinLatText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="South lat"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="District bounding box minimum latitude"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,6,10"
+                                             AutomationProperties.Name="District bounding box south latitude"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=BBoxSouthLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1" Margin="0,0,6,10"
                                              Text="{Binding BoundingBoxMinLonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="West lon"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="District bounding box minimum longitude"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="2" Margin="0,0,6,10"
+                                             AutomationProperties.Name="District bounding box west longitude"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=BBoxWestLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="2" Margin="0,0,6,10"
                                              Text="{Binding BoundingBoxMaxLatText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="North lat"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="District bounding box maximum latitude"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="3" Margin="0,0,0,10"
+                                             AutomationProperties.Name="District bounding box north latitude"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=BBoxNorthLabel}"/>
+                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="3" Margin="0,0,0,10"
                                              Text="{Binding BoundingBoxMaxLonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="East lon"
                                              Height="40" Padding="8,5"
-                                             AutomationProperties.Name="District bounding box maximum longitude"/>
+                                             AutomationProperties.Name="District bounding box east longitude"
+                                             AutomationProperties.LabeledBy="{Binding ElementName=BBoxEastLabel}"/>
                 </Grid>
 
                 <TextBlock Text="Google Maps" Style="{StaticResource SettingsSectionHeader}" Margin="0,16,0,8"/>
+                <TextBlock Text="The Maps API key is not entered here. On Windows it is a user or machine environment variable; the Mac host loads it from Passwords. Address fields above use Places + Address Validation when the key is present."
+                           Style="{StaticResource SettingsHelpText}"/>
                 <TextBlock Style="{StaticResource SettingsHelpText}">
                     <Run Text="BusBuddy includes Google Maps features. Use of those features is subject to the"/>
                     <Hyperlink NavigateUri="https://maps.google.com/help/terms_maps/"

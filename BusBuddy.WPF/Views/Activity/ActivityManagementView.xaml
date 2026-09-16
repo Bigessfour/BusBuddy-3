@@ -11,6 +11,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -19,6 +20,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -29,48 +31,100 @@
                    Margin="20,10,20,0"
                    Foreground="{DynamicResource PrimaryTextBrush}"/>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="20,8">
+        <WrapPanel Grid.Row="1" Margin="20,8">
+            <syncfusion:ButtonAdv Label="New Trip"
+                                  Command="{Binding NewTripCommand}"
+                                  SizeMode="Normal"
+                                  Margin="0,0,8,4"
+                                  AutomationProperties.Name="New trip"/>
+            <syncfusion:ButtonAdv Label="Edit"
+                                  Command="{Binding EditTripCommand}"
+                                  SizeMode="Normal"
+                                  Margin="0,0,8,4"
+                                  AutomationProperties.Name="Edit trip"/>
+            <syncfusion:ButtonAdv Label="Confirm"
+                                  Command="{Binding ConfirmTripCommand}"
+                                  SizeMode="Normal"
+                                  Margin="0,0,8,4"
+                                  AutomationProperties.Name="Confirm trip"
+                                  AutomationProperties.HelpText="Confirmed requires a validated destination, times, driver, and bus."/>
+            <syncfusion:ButtonAdv Label="Calculate Distance"
+                                  Command="{Binding CalculateDistanceCommand}"
+                                  SizeMode="Normal"
+                                  Margin="0,0,8,4"
+                                  AutomationProperties.Name="Calculate trip distance"/>
+            <syncfusion:ButtonAdv Label="Print Ticket"
+                                  Command="{Binding PrintTicketCommand}"
+                                  SizeMode="Normal"
+                                  Margin="0,0,8,4"
+                                  AutomationProperties.Name="Print trip ticket"/>
             <syncfusion:ButtonAdv Label="Import CSV"
                                   Command="{Binding ImportCsvCommand}"
                                   SizeMode="Normal"
-                                  Margin="0,0,8,0"
+                                  Margin="0,0,8,4"
                                   AutomationProperties.Name="Import trip board CSV"/>
             <syncfusion:ButtonAdv Label="Refresh"
                                   Command="{Binding RefreshCommand}"
                                   SizeMode="Normal"
-                                  Margin="0,0,8,0"
+                                  Margin="0,0,8,4"
                                   AutomationProperties.Name="Refresh trip board"/>
             <syncfusion:ButtonAdv Label="Optimize Day"
                                   Command="{Binding OptimizeDayCommand}"
                                   SizeMode="Normal"
-                                  Margin="0,0,12,0"
+                                  Margin="0,0,12,4"
                                   AutomationProperties.Name="Optimize today's trips"
                                   AutomationProperties.HelpText="Suggest bus assignments for the selected date via Google Route Optimization. Does not change pickup times. Route is not a trip."/>
             <TextBlock Text="{Binding StatusMessage}"
                        VerticalAlignment="Center"
                        Foreground="{DynamicResource PrimaryTextBrush}"/>
-        </StackPanel>
+        </WrapPanel>
 
-        <syncfusion:SfDataGrid Grid.Row="2"
+        <syncfusion:SfScheduler Grid.Row="2"
+                                x:Name="TripScheduler"
+                                ViewType="Week"
+                                ItemsSource="{Binding Appointments}"
+                                FirstDayOfWeek="Monday"
+                                AppointmentEditFlag="None"
+                                AppointmentTapped="TripScheduler_AppointmentTapped"
+                                Margin="20,0,20,8"
+                                AutomationProperties.Name="Trip scheduler">
+            <syncfusion:SfScheduler.AppointmentMapping>
+                <syncfusion:AppointmentMapping
+                    Subject="Subject"
+                    StartTime="StartTime"
+                    EndTime="EndTime"
+                    Location="Location"
+                    Notes="Notes"/>
+            </syncfusion:SfScheduler.AppointmentMapping>
+        </syncfusion:SfScheduler>
+
+        <syncfusion:SfDataGrid Grid.Row="3"
                                ItemsSource="{Binding Trips}"
                                SelectedItem="{Binding SelectedTrip, Mode=TwoWay}"
                                AutoGenerateColumns="False"
                                AllowEditing="False"
                                AllowSorting="True"
                                AllowFiltering="True"
-                               Margin="20"
+                               Margin="20,0,20,20"
                                Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridDateTimeColumn HeaderText="Date" MappingName="TripDate" Width="110" Pattern="ShortDate"/>
+                <syncfusion:GridTextColumn HeaderText="Purpose" MappingName="Purpose" Width="100"/>
+                <syncfusion:GridTextColumn HeaderText="Type" MappingName="DisplayTripType" Width="120"/>
                 <syncfusion:GridTextColumn HeaderText="School" MappingName="RequestingSchool" Width="70"/>
-                <syncfusion:GridTextColumn HeaderText="Team / School" MappingName="GroupOrActivity" Width="200"/>
+                <syncfusion:GridTextColumn HeaderText="Team / School" MappingName="GroupOrActivity" Width="180"/>
+                <syncfusion:GridTextColumn HeaderText="Origin" MappingName="OriginName" Width="140"/>
                 <syncfusion:GridTextColumn HeaderText="Location" MappingName="DestinationName" Width="160"/>
+                <syncfusion:GridTextColumn HeaderText="Leave" MappingName="PickupTime" Width="80"/>
+                <syncfusion:GridTextColumn HeaderText="Return" MappingName="ReturnClockTime" Width="80"/>
                 <syncfusion:GridTextColumn HeaderText="Ticket #" MappingName="ExternalTicketNo" Width="110"/>
                 <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="110"/>
                 <syncfusion:GridTextColumn HeaderText="PAX" MappingName="PlannedHeadcount" Width="60"/>
                 <syncfusion:GridTextColumn HeaderText="Rode" MappingName="ActualHeadcount" Width="60"/>
                 <syncfusion:GridTextColumn HeaderText="Driver" MappingName="Driver.DriverName" Width="140"/>
                 <syncfusion:GridTextColumn HeaderText="Bus #" MappingName="AssignedBusNumber" Width="80"/>
+                <syncfusion:GridTextColumn HeaderText="Miles" MappingName="PathMiles" Width="70"/>
+                <syncfusion:GridTextColumn HeaderText="Driver hrs" MappingName="DriverHours" Width="80"/>
                 <syncfusion:GridTextColumn HeaderText="Notes" MappingName="TripNotes" Width="200"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>

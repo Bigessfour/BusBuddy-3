@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Media;
 using BusBuddy.Core.Mapping;
 using BusBuddy.WPF.Utilities;
 
@@ -9,18 +11,22 @@ namespace BusBuddy.WPF.ViewModels.Map;
 
 /// <summary>
 /// Syncfusion ImageryLayer marker model. Template DataContext is <c>CustomDataSymbol</c>;
-/// bind UI as <c>{Binding Data.Caption}</c> / <c>Data.MarkerSize</c> / etc.
+/// bind UI as <c>{Binding Data.DisplayCaption}</c> / <c>Data.MarkerSize</c> / <c>Data.FillBrush</c>.
 /// </summary>
 public sealed class MapMarker : INotifyPropertyChanged
 {
+    private static readonly ConcurrentDictionary<string, SolidColorBrush> BrushCache = new(StringComparer.OrdinalIgnoreCase);
+
     private string? _label;
+    private string? _routeStopLabel;
+    private MapMarkerLabels.Kind _kind = MapMarkerLabels.Kind.Student;
     private double _markerSize = MapMarkerLabels.PrimaryMarkerSize;
     private double _labelFontSize = MapMarkerLabels.PrimaryLabelFontSize;
     private bool _showCaption = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>Internal caption with kind prefix (merge / diagnostics). UI binds <see cref="Caption"/>.</summary>
+    /// <summary>Internal caption with kind prefix (merge / diagnostics). UI binds <see cref="DisplayCaption"/>.</summary>
     public string? Label
     {
         get => _label;
@@ -29,14 +35,45 @@ public sealed class MapMarker : INotifyPropertyChanged
             if (!string.Equals(_label, value, StringComparison.Ordinal))
             {
                 _label = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Caption)));
+                Raise(nameof(Label));
+                Raise(nameof(Caption));
+                Raise(nameof(DisplayCaption));
             }
         }
     }
 
     /// <summary>Clean name for Syncfusion MarkerTemplate (no SCH/PK/HOME prefixes).</summary>
     public string Caption => MapMarkerLabels.CaptionFrom(Label);
+
+    /// <summary>
+    /// Sequence tag ("Start", "Stop 7", "End") when the selected route stops at this pin. Set instead of
+    /// stacking a second WP marker on the same spot — that is what produced captions like "Lamar Stop 7 chool".
+    /// </summary>
+    public string? RouteStopLabel
+    {
+        get => _routeStopLabel;
+        set
+        {
+            var clean = string.IsNullOrWhiteSpace(value) ? null : MapMarkerLabels.CaptionFrom(value);
+            if (!string.Equals(_routeStopLabel, clean, StringComparison.Ordinal))
+            {
+                _routeStopLabel = clean;
+                Raise(nameof(RouteStopLabel));
+                Raise(nameof(DisplayCaption));
+                Raise(nameof(StrokeBrush));
+            }
+        }
+    }
+
+    /// <summary>Caption as drawn: "Lamar High School (Stop 7)" when the route stops here, else <see cref="Caption"/>.</summary>
+    public string DisplayCaption => MapMarkerLabels.DisplayCaption(Caption, RouteStopLabel);
+
+    /// <summary>Pin fill by kind (schools black, stops orange, homes blue, …). Frozen, shared per colour.</summary>
+    public SolidColorBrush FillBrush => BrushFor(MapMarkerLabels.FillHex(Kind));
+
+    /// <summary>Pin outline; switches to route gold when the selected route stops at this pin.</summary>
+    public SolidColorBrush StrokeBrush =>
+        BrushFor(RouteStopLabel is null ? MapMarkerLabels.StrokeHex(Kind) : MapMarkerLabels.WaypointFillHex);
 
     public double MarkerSize
     {
@@ -78,7 +115,20 @@ public sealed class MapMarker : INotifyPropertyChanged
         }
     }
 
-    public MapMarkerLabels.Kind Kind { get; set; } = MapMarkerLabels.Kind.Student;
+    public MapMarkerLabels.Kind Kind
+    {
+        get => _kind;
+        set
+        {
+            if (_kind != value)
+            {
+                _kind = value;
+                Raise(nameof(Kind));
+                Raise(nameof(FillBrush));
+                Raise(nameof(StrokeBrush));
+            }
+        }
+    }
 
     /// <summary>Syncfusion ImageryLayer marker latitude (official N/S string).</summary>
     public string Latitude { get; set; } = "0.0000N";
@@ -92,13 +142,27 @@ public sealed class MapMarker : INotifyPropertyChanged
 
     public List<string> StudentNames { get; } = new();
 
+    /// <summary>Roster keys at this pin so the clerk override can call Core without matching names.</summary>
+    public List<int> StudentIds { get; } = new();
+
     public void ApplyZoomVisuals(int zoomLevel)
     {
         MarkerSize = MapMarkerLabels.ScaledMarkerSize(Kind, zoomLevel);
         LabelFontSize = MapMarkerLabels.ScaledLabelFontSize(Kind, zoomLevel);
         ShowCaption = MapMarkerLabels.ShowsCaption(Kind, zoomLevel)
-            && !string.IsNullOrWhiteSpace(Caption);
+            && !string.IsNullOrWhiteSpace(DisplayCaption);
     }
+
+    private void Raise(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+    private static SolidColorBrush BrushFor(string hex) =>
+        BrushCache.GetOrAdd(hex, static h =>
+        {
+            var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(h));
+            brush.Freeze();
+            return brush;
+        });
 
     public static MapMarker FromDegrees(
         double latitude,
@@ -125,8 +189,13 @@ public sealed class MapMarker : INotifyPropertyChanged
     /// Adds a student name to this marker. Only unlabeled <see cref="MapMarkerLabels.Kind.Student"/>
     /// markers rewrite <see cref="Label"/> for aggregation; typed kinds keep their prefix label.
     /// </summary>
-    public void AddStudent(string name)
+    public void AddStudent(string name, int? studentId = null)
     {
+        if (studentId is > 0 && !StudentIds.Contains(studentId.Value))
+        {
+            StudentIds.Add(studentId.Value);
+        }
+
         if (string.IsNullOrWhiteSpace(name))
         {
             return;

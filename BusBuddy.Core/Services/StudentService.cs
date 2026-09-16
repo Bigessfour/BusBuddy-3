@@ -226,9 +226,13 @@ public class StudentService : IStudentService
             var (context, dispose) = GetReadContext();
             try
             {
+                var routeIds = await context.Routes.AsNoTracking()
+                    .Where(r => r.RouteName == routeName)
+                    .Select(r => r.RouteId)
+                    .ToListAsync();
                 return await context.Students
                     .AsNoTracking()
-                    .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
+                    .Where(StudentRouteAssignment.OnNamedRoutes(routeIds, routeName))
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
             }
@@ -380,31 +384,6 @@ public class StudentService : IStudentService
         }
     }
 
-    public async Task<List<Student>> GetStudentsForRouteAsync(BusBuddyDbContext context, int routeId)
-    {
-        try
-        {
-            Logger.Information("Retrieving students for route ID: {RouteId}", routeId);
-            // Find route name for the given routeId
-            var route = await context.Routes.FindAsync(routeId);
-            if (route == null || string.IsNullOrEmpty(route.RouteName))
-            {
-                return new List<Student>();
-            }
-
-            var routeName = route.RouteName;
-            return await context.Students
-                .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students for route ID: {RouteId}", routeId);
-            return new List<Student>();
-        }
-    }
-
     #endregion
 
     #region Write Operations
@@ -452,6 +431,8 @@ public class StudentService : IStudentService
             try
             {
                 context.Students.Add(student);
+                student.AmRouteId = await ResolveRouteIdByNameAsync(context, student.AMRoute);
+                student.PmRouteId = await ResolveRouteIdByNameAsync(context, student.PMRoute);
                 await context.SaveChangesAsync();
             }
             finally
@@ -510,6 +491,8 @@ public class StudentService : IStudentService
             try
             {
                 context.Students.Update(student);
+                student.AmRouteId = await ResolveRouteIdByNameAsync(context, student.AMRoute);
+                student.PmRouteId = await ResolveRouteIdByNameAsync(context, student.PMRoute);
                 result = await context.SaveChangesAsync();
             }
             finally
@@ -587,8 +570,7 @@ public class StudentService : IStudentService
     }
 
     /// <summary>
-    /// Archives a student — the spec-sanctioned way to end service. specs/students.md: "MUST NOT
-    /// delete a student to end service. Archive or set inactive so history and route versions remain."
+    /// Archives a student who may return. The row stays on the roster with Active=false.
     /// </summary>
     public Task<bool> ArchiveStudentAsync(int studentId) =>
         UpdateStudentActiveStatusAsync(studentId, isActive: false);
@@ -598,20 +580,15 @@ public class StudentService : IStudentService
         UpdateStudentActiveStatusAsync(studentId, isActive: true);
 
     /// <summary>
-    /// Permanently removes a student row. Not part of the clerk flow — ending service is
-    /// <see cref="ArchiveStudentAsync"/>. This exists only for data-entry mistakes (a row created in
-    /// error that has no history) and refuses to run for anything else.
+    /// Permanently removes a student after a clerk-chosen reason. specs/students.md: Mistake, Moved,
+    /// or Not attending. Related assignment rows are removed explicitly (FKs stay Restrict). The
+    /// deletion log and Serilog entry do not include name, address, or guardian data.
     /// </summary>
-    /// <param name="studentId">Student to purge.</param>
-    /// <param name="reason">Operator-supplied justification; recorded in the log. Required.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when the student is still active, or has schedule/transfer history. Archive instead.
-    /// </exception>
-    public async Task<bool> PurgeStudentRecordAsync(int studentId, string reason)
+    public async Task<bool> DeleteStudentAsync(int studentId, StudentDeletionReason reason, string? notes = null)
     {
-        if (string.IsNullOrWhiteSpace(reason))
+        if (!Enum.IsDefined(reason))
         {
-            throw new ArgumentException("A purge reason is required.", nameof(reason));
+            throw new ArgumentOutOfRangeException(nameof(reason), reason, "A deletion reason is required.");
         }
 
         try
@@ -622,33 +599,46 @@ public class StudentService : IStudentService
                 var student = await context.Students.FindAsync(studentId);
                 if (student == null)
                 {
-                    Logger.Warning("Student with ID {StudentId} not found for purge", studentId);
+                    Logger.Warning("Student with ID {StudentId} not found for deletion", studentId);
                     return false;
                 }
 
-                // Gate 1: an active student is in service. Ending service is an archive, never a delete.
-                if (student.Active)
+                var schedules = await context.StudentSchedules
+                    .Where(x => x.StudentId == studentId)
+                    .ToListAsync();
+                var transfers = await context.StudentSchoolTransfers
+                    .Where(x => x.StudentId == studentId)
+                    .ToListAsync();
+                var exceptions = await context.RouteRiderExceptions
+                    .Where(x => x.StudentId == studentId)
+                    .ToListAsync();
+
+                var log = new StudentDeletionLog
                 {
-                    throw new InvalidOperationException(
-                        $"Student {studentId} is active. Archive the student instead of deleting the record.");
-                }
+                    StudentId = student.StudentId,
+                    StudentNumber = student.StudentNumber,
+                    SchoolYear = student.SchoolYear,
+                    Reason = reason.ToString(),
+                    Notes = TruncateDeletionNotes(notes),
+                    WasActive = student.Active,
+                    ScheduleCount = schedules.Count,
+                    TransferCount = transfers.Count,
+                    RiderExceptionCount = exceptions.Count,
+                    DeletedUtc = DateTime.UtcNow,
+                };
 
-                // Gate 2: history must outlive the row. specs/students.md requires history and route
-                // versions to remain, so a student that has any is not purgeable.
-                var scheduleCount = await context.StudentSchedules.CountAsync(x => x.StudentId == studentId);
-                var transferCount = await context.StudentSchoolTransfers.CountAsync(x => x.StudentId == studentId);
-                if (scheduleCount > 0 || transferCount > 0)
-                {
-                    throw new InvalidOperationException(
-                        $"Student {studentId} has {scheduleCount} schedule and {transferCount} transfer history rows. " +
-                        "Archived students with history cannot be purged.");
-                }
-
-                Logger.Warning(
-                    "Purging student record {StudentId} — reason: {Reason}", studentId, reason);
-
+                context.StudentSchedules.RemoveRange(schedules);
+                context.StudentSchoolTransfers.RemoveRange(transfers);
+                context.RouteRiderExceptions.RemoveRange(exceptions);
+                context.StudentDeletionLogs.Add(log);
                 context.Students.Remove(student);
+
                 var result = await context.SaveChangesAsync();
+                if (result > 0)
+                {
+                    WriteStudentDeletionLog(log);
+                }
+
                 return result > 0;
             }
             finally
@@ -659,15 +649,40 @@ public class StudentService : IStudentService
                 }
             }
         }
-        catch (InvalidOperationException)
-        {
-            throw;
-        }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error purging student record {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student record {StudentId}", studentId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Structured deletion log. StudentId and StudentNumber only — no name, address, or guardian.
+    /// </summary>
+    internal static void WriteStudentDeletionLog(StudentDeletionLog entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        Logger.Warning(
+            "Student deleted StudentId={StudentId} StudentNumber={StudentNumber} Reason={Reason} Notes={Notes} WasActive={WasActive} Schedules={ScheduleCount} Transfers={TransferCount} RiderExceptions={RiderExceptionCount}",
+            entry.StudentId,
+            entry.StudentNumber,
+            entry.Reason,
+            entry.Notes,
+            entry.WasActive,
+            entry.ScheduleCount,
+            entry.TransferCount,
+            entry.RiderExceptionCount);
+    }
+
+    private static string? TruncateDeletionNotes(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return null;
+        }
+
+        var trimmed = notes.Trim();
+        return trimmed.Length <= 200 ? trimmed : trimmed[..200];
     }
 
     #endregion
@@ -927,6 +942,34 @@ public class StudentService : IStudentService
 
     #region Route Assignment
 
+    /// <summary>
+    /// Resolves a route name to its id for <see cref="Student.AmRouteId"/> / <see cref="Student.PmRouteId"/>.
+    /// Returns null when the name is blank, matches no route, or matches more than one — the caller stores
+    /// the name either way, so an unresolved key degrades to the pre-key behaviour rather than mis-assigning
+    /// the rider.
+    /// </summary>
+    private static async Task<int?> ResolveRouteIdByNameAsync(BusBuddyDbContext context, string? routeName)
+    {
+        if (string.IsNullOrWhiteSpace(routeName))
+        {
+            return null;
+        }
+
+        var nameLower = routeName.Trim().ToLowerInvariant();
+
+        // CA1311/CA1862: ToLowerInvariant and StringComparison overloads have no SQL translation;
+        // ToLower() is the form EF maps to the database LOWER() function, which is what runs here.
+#pragma warning disable CA1311, CA1862
+        var matches = await context.Routes
+            .Where(r => r.RouteName.ToLower() == nameLower)
+            .Select(r => r.RouteId)
+            .Take(2)
+            .ToListAsync();
+#pragma warning restore CA1311, CA1862
+
+        return matches.Count == 1 ? matches[0] : null;
+    }
+
     public async Task<bool> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute)
     {
         try
@@ -948,6 +991,10 @@ public class StudentService : IStudentService
                 studentName = student.StudentName;
                 student.AMRoute = amRoute;
                 student.PMRoute = pmRoute;
+                // Keep the identity keys in step with the names this overload is given. A name that
+                // matches no route, or more than one, leaves the key null rather than guessing.
+                student.AmRouteId = await ResolveRouteIdByNameAsync(context, amRoute);
+                student.PmRouteId = await ResolveRouteIdByNameAsync(context, pmRoute);
                 // Explicitly mark as modified to ensure changes are persisted even if detection is off
                 context.Entry(student).State = EntityState.Modified;
 

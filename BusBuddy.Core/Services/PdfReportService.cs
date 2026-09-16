@@ -1,5 +1,6 @@
 using System.IO;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Models.Trips;
 using Serilog;
 using System.Text;
 using Syncfusion.Pdf;
@@ -193,6 +194,141 @@ namespace BusBuddy.Core.Services
                 Logger.Error(ex, "Error generating PDF activity report");
                 // Fallback to text-based report if PDF generation fails
                 return GenerateTextReport(new List<Activity> { activity }, DateTime.Now, DateTime.Now, "Activity Report");
+            }
+        }
+
+        /// <summary>
+        /// Driver trip ticket for a sports or field trip. Paper blanks are not persisted columns.
+        /// Includes the permanent 1.5 hour pre/post-trip inspection pad on billed hours.
+        /// </summary>
+        public byte[] GenerateTripTicket(TripEvent trip, byte[]? mapImagePng = null)
+        {
+            ArgumentNullException.ThrowIfNull(trip);
+
+            try
+            {
+                Logger.Information("Generating trip ticket PDF for {TripId}", trip.TripEventId);
+
+                using var document = new PdfDocument();
+                var page = document.Pages.Add();
+                var graphics = page.Graphics;
+
+                var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 18, PdfFontStyle.Bold);
+                var headerFont = new PdfStandardFont(PdfFontFamily.Helvetica, 13, PdfFontStyle.Bold);
+                var bodyFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10);
+                var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10, PdfFontStyle.Bold);
+                var accentColor = new PdfColor(11, 126, 200);
+                var textColor = new PdfColor(33, 37, 41);
+                var textBrush = new PdfSolidBrush(textColor);
+                var accentBrush = new PdfSolidBrush(accentColor);
+
+                var pageWidth = page.GetClientSize().Width;
+                graphics.DrawRectangle(accentBrush, new RectangleF(0, 0, pageWidth, 56));
+                graphics.DrawString("Bus Buddy — Trip Ticket", titleFont, PdfBrushes.White, new PointF(20, 10));
+                var ticketNo = string.IsNullOrWhiteSpace(trip.ExternalTicketNo)
+                    ? trip.TripEventId.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : trip.ExternalTicketNo;
+                graphics.DrawString($"Ticket #: {ticketNo}", headerFont, PdfBrushes.White, new PointF(20, 34));
+
+                var currentY = 70f;
+                if (mapImagePng != null && mapImagePng.Length > 0)
+                {
+                    try
+                    {
+                        using var imgStream = new MemoryStream(mapImagePng);
+                        using var pdfBitmap = new PdfBitmap(imgStream);
+                        const float targetWidth = 200f;
+                        var imgHeight = pdfBitmap.Height > 0
+                            ? (pdfBitmap.Height / (float)pdfBitmap.Width) * targetWidth
+                            : 140f;
+                        var imgRect = new RectangleF(pageWidth - targetWidth - 16f, 64f, targetWidth, imgHeight);
+                        graphics.DrawRectangle(new PdfSolidBrush(new PdfColor(240, 240, 240)), imgRect);
+                        graphics.DrawImage(pdfBitmap, imgRect);
+                    }
+                    catch (Exception imgEx)
+                    {
+                        Logger.Warning(imgEx, "Failed embedding map image into trip ticket");
+                    }
+                }
+
+                graphics.DrawString("Trip details", headerFont, textBrush, new PointF(20, currentY));
+                currentY += 22f;
+
+                var origin = !string.IsNullOrWhiteSpace(trip.OriginName)
+                    ? trip.OriginName
+                    : trip.OriginLocation?.Name ?? "Not specified";
+                var destination = !string.IsNullOrWhiteSpace(trip.DestinationName)
+                    ? trip.DestinationName
+                    : trip.Destination ?? "Not specified";
+                var pickup = origin;
+                var pax = trip.PlannedHeadcount ?? trip.StudentCount;
+                var details = new[]
+                {
+                    ("Date:", trip.TripDate == default ? trip.LeaveTime.ToString("MMMM dd, yyyy", System.Globalization.CultureInfo.InvariantCulture) : trip.TripDate.ToString("MMMM dd, yyyy", System.Globalization.CultureInfo.InvariantCulture)),
+                    ("Purpose:", trip.Purpose),
+                    ("Group:", trip.GroupOrActivity ?? "Not specified"),
+                    ("School:", trip.RequestingSchool ?? "Not specified"),
+                    ("Origin:", origin),
+                    ("Pickup point:", pickup),
+                    ("Destination:", destination),
+                    ("Leave time:", trip.StartTime.ToString("h:mm tt", System.Globalization.CultureInfo.InvariantCulture)),
+                    ("Return time:", trip.EndTime.ToString("h:mm tt", System.Globalization.CultureInfo.InvariantCulture)),
+                    ("Planned miles:", trip.PlannedMiles?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ?? "Not specified"),
+                    ("Path miles:", trip.PathMiles?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) ?? "Not calculated"),
+                    ("Bus #:", trip.Vehicle?.BusNumber ?? trip.AssignedBusNumber ?? "Not assigned"),
+                    ("Driver:", trip.Driver?.DriverName ?? "Not assigned"),
+                    ("Estimated travelers:", pax.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                    ("Driver hours:", $"{trip.DriverHours:0.00} (includes {TripEvent.PrePostTripInspectionHours:0.0}h pre/post-trip inspection)")
+                };
+
+                foreach (var (label, value) in details)
+                {
+                    graphics.DrawString(label, labelFont, textBrush, new PointF(24, currentY));
+                    graphics.DrawString(value, bodyFont, textBrush, new PointF(150, currentY));
+                    currentY += 16f;
+                }
+
+                currentY += 10f;
+                graphics.DrawString("Driver report (fill in by hand)", headerFont, textBrush, new PointF(20, currentY));
+                currentY += 20f;
+                var blanks = new[]
+                {
+                    "Beginning mileage: ____________________",
+                    "Ending mileage: ______________________",
+                    "Total mileage: ________________________",
+                    "Fuel entered: ________________________",
+                    "Time departed: ________________________",
+                    "Time arrived back at bus barn: ______"
+                };
+                foreach (var line in blanks)
+                {
+                    graphics.DrawString(line, bodyFont, textBrush, new PointF(24, currentY));
+                    currentY += 18f;
+                }
+
+                if (!string.IsNullOrWhiteSpace(trip.TripNotes))
+                {
+                    currentY += 8f;
+                    graphics.DrawString("Notes", headerFont, textBrush, new PointF(20, currentY));
+                    currentY += 16f;
+                    graphics.DrawString(trip.TripNotes, bodyFont, textBrush, new PointF(24, currentY));
+                }
+
+                var footerY = page.GetClientSize().Height - 28f;
+                graphics.DrawString(
+                    $"Generated {DateTime.Now:MMM dd, yyyy HH:mm} — Route is not a trip.",
+                    bodyFont,
+                    textBrush,
+                    new PointF(20, footerY));
+
+                using var stream = new MemoryStream();
+                document.Save(stream);
+                return stream.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error generating trip ticket PDF");
+                throw;
             }
         }
 

@@ -6,7 +6,6 @@ public static class UserSettingsKeys
     public const string Theme = "Theme";
     public const string EnableActivityLogging = "EnableActivityLogging";
     public const string ShowDashboardOnStartup = "ShowDashboardOnStartup";
-    public const string EnableRouteGeoExport = "EnableRouteGeoExport";
 
     public const string DistrictDepotName = "DistrictDepotName";
     public const string DistrictDepotAddress = "DistrictDepotAddress";
@@ -22,6 +21,12 @@ public static class UserSettingsKeys
 
     /// <summary>Clerk-maintained fuel vendor/location names (yearly bid list).</summary>
     public const string FuelLocations = "Fuel.Locations";
+
+    /// <summary>Clerk-maintained trip purposes (Sports, Field Trip, Band, …).</summary>
+    public const string TripPurposes = "Trip.Purposes";
+
+    /// <summary>Clerk-maintained sports / trip reasons under Sports.</summary>
+    public const string TripSports = "Trip.Sports";
 
     /// <summary>UTC timestamp of last successful fuel reconciliation export / save.</summary>
     public const string FuelLastReconciliationUtc = "Fuel.LastReconciliationUtc";

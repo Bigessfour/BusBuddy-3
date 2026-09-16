@@ -147,12 +147,11 @@ public sealed class StudentFormMapCoordinator
 
     private static void ShowMap(StudentModel student, IReadOnlyList<StudentPlotPoint> pins)
     {
-        var studentLabel = student.StudentName ?? "Student";
         MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
         {
             MapStudentPlot.Draw(
-                (lat, lon, names, label) => vm.PlotStop(lat, lon, names, label),
-                studentLabel,
+                (lat, lon, names, label, ids) => vm.PlotStop(lat, lon, names, label, studentIds: ids),
+                student,
                 pins);
             if (pins.Count > 0)
             {

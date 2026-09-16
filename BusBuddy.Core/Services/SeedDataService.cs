@@ -1101,34 +1101,72 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                 .Where(name => !canonicalByKey.ContainsKey(RouteNameKey(name)))
                 .ToList();
 
-            if (missing.Count == 0)
+            var createdRoutes = new List<Route>();
+            if (missing.Count > 0)
             {
-                return 0;
-            }
-
-            var todayUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
-            foreach (var name in missing)
-            {
-                var isSpecialNeeds = StudentSpecialNeedsHelper.IsSpecialNeedsRoute(name, false);
-                context.Routes.Add(new Route
+                var todayUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+                foreach (var name in missing)
                 {
-                    RouteName = name,
-                    Description = "Created from roster import so assigned students validate.",
-                    Date = todayUtc,
-                    IsActive = true,
-                    IsSpecialNeedsRoute = isSpecialNeeds,
-                    Session = RouteSession.Infer(name, isSpecialNeeds, null)
-                });
+                    var isSpecialNeeds = StudentSpecialNeedsHelper.IsSpecialNeedsRoute(name, false);
+                    var route = new Route
+                    {
+                        RouteName = name,
+                        Description = "Created from roster import so assigned students validate.",
+                        Date = todayUtc,
+                        IsActive = true,
+                        IsSpecialNeedsRoute = isSpecialNeeds,
+                        Session = RouteSession.Infer(name, isSpecialNeeds, null)
+                    };
+                    context.Routes.Add(route);
+                    createdRoutes.Add(route);
 
-                Logger.Information(
-                    "Created route {RouteName} from roster import Session={Session} SpecialNeeds={SpecialNeeds}",
-                    name,
-                    RouteSession.Infer(name, isSpecialNeeds, null),
-                    isSpecialNeeds);
+                    Logger.Information(
+                        "Created route {RouteName} from roster import Session={Session} SpecialNeeds={SpecialNeeds}",
+                        name,
+                        RouteSession.Infer(name, isSpecialNeeds, null),
+                        isSpecialNeeds);
+                }
+
+                await context.SaveChangesAsync();
+                existingRoutes.AddRange(createdRoutes);
             }
 
-            await context.SaveChangesAsync();
-            return missing.Count;
+            DualWriteUniqueRouteKeys(students, existingRoutes);
+            return createdRoutes.Count;
+        }
+
+        /// <summary>
+        /// Dual-write <see cref="Student.AmRouteId"/> / <see cref="Student.PmRouteId"/> when the
+        /// mirrored name resolves to exactly one route. Name-only rows stay name-only when the
+        /// name is missing or ambiguous (same rule as <c>20260916180546_StudentRouteForeignKeys</c>).
+        /// </summary>
+        private static void DualWriteUniqueRouteKeys(IEnumerable<Student> students, IReadOnlyList<Route> routes)
+        {
+            var catalog = routes
+                .Select(r => (r.RouteId, (string?)r.RouteName))
+                .ToList();
+            var byId = routes.ToDictionary(r => r.RouteId);
+
+            foreach (var student in students)
+            {
+                if (student.AmRouteId is null)
+                {
+                    var amId = StudentRouteAssignment.UniqueIdForName(catalog, student.AMRoute);
+                    if (amId is > 0 && byId.TryGetValue(amId.Value, out var amRoute))
+                    {
+                        StudentRouteAssignment.SetSlot(student, RouteTimeSlot.AM, amRoute);
+                    }
+                }
+
+                if (student.PmRouteId is null)
+                {
+                    var pmId = StudentRouteAssignment.UniqueIdForName(catalog, student.PMRoute);
+                    if (pmId is > 0 && byId.TryGetValue(pmId.Value, out var pmRoute))
+                    {
+                        StudentRouteAssignment.SetSlot(student, RouteTimeSlot.PM, pmRoute);
+                    }
+                }
+            }
         }
 
         /// <inheritdoc />
@@ -1574,8 +1612,6 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                         RequiresSeatBelt = true,
                         HasMedicalNeeds = spec.Wheelchair,
                         TransportationNotes = spec.Notes,
-                        AMRoute = routeName,
-                        PMRoute = routeName,
                         // Assigned to both runs, so state eligibility for both — the model no longer
                         // assumes it and the grid/scheduler read these flags, not the route strings.
                         RidesAm = true,
@@ -1586,6 +1622,8 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                         CreatedDate = DateTime.UtcNow,
                         CreatedBy = "SeedDataService"
                     };
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, route);
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, route);
                     StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(existing);
                     context.Students.Add(existing);
                     snCount++;
@@ -1600,8 +1638,8 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                     existing.School = schoolName;
                     existing.Latitude ??= spec.Lat;
                     existing.Longitude ??= spec.Lon;
-                    existing.AMRoute = routeName;
-                    existing.PMRoute = routeName;
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, route);
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, route);
                     existing.RidesAm = true;
                     existing.RidesPm = true;
                     existing.TransportationNotes = spec.Notes;
@@ -1642,8 +1680,6 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                         CellPhone = "555-0200",
                         School = schoolName,
                         DestinationId = school.DestinationId,
-                        AMRoute = regularRouteName,
-                        PMRoute = regularRouteName,
                         RidesAm = true,
                         RidesPm = true,
                         SchoolYear = StudentRecordNormalizer.CurrentSchoolYear(),
@@ -1652,6 +1688,8 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                         CreatedDate = DateTime.UtcNow,
                         CreatedBy = "SeedDataService"
                     };
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, regularRoute);
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, regularRoute);
                     context.Students.Add(existing);
                     regCount++;
                 }
@@ -1665,15 +1703,8 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                     existing.School = schoolName;
                     existing.Latitude ??= spec.Lat;
                     existing.Longitude ??= spec.Lon;
-                    if (string.IsNullOrWhiteSpace(existing.AMRoute))
-                    {
-                        existing.AMRoute = regularRouteName;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(existing.PMRoute))
-                    {
-                        existing.PMRoute = regularRouteName;
-                    }
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, regularRoute);
+                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, regularRoute);
 
                     // Assigned to both runs on this seed, so both are stated.
                     existing.RidesAm = true;
@@ -1685,8 +1716,7 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
             await context.SaveChangesAsync();
             messages.Add($"Prepared {regCount} regular student(s) for contrast routing");
 
-            route.StudentCount = await context.Students.CountAsync(s =>
-                s.AMRoute == routeName || s.PMRoute == routeName);
+            route.StudentCount = await context.Students.WhereOnRoute(route).CountAsync();
             await context.SaveChangesAsync();
 
             Logger.Information(

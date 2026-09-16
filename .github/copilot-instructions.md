@@ -8,7 +8,7 @@ Before **ANY** code change, edit, refactor, new feature, bug fix, or architectur
 - Retrieve at least top_k=6-10 relevant chunks.
 - In your reasoning (and in the final response), **explicitly quote and cite** the most relevant retrieved chunks (file:line ranges + key excerpts).
 - Only after consulting and referencing this fresh RAG context may you propose changes.
-- If results are insufficient, call the tool again with a refined query (e.g. "Postgres DbContext + BUSBUDDY_CONNECTION injection in docker-compose" or "GrokGlobalAPI + RouteService integration points").
+- If results are insufficient, call the tool again with a refined query (e.g. "Postgres DbContext + BUSBUDDY_CONNECTION injection in docker-compose" or "OllamaAiService + RouteService integration points").
 - This rule exists because the repo has a long history of iterations; RAG guarantees you have the current clean baseline (Postgres/Docker focus, archived legacy removed, functional services only) instead of hallucinating from partial memory.
 - Spec-Kit sources are part of that baseline: always treat `.specify/memory/constitution.md` and `specs/**` as authoritative when present. After changing them (or other always-include docs), re-run `python -m rag.index`. Project DNA: constitution first, then this file and `AGENTS.md` for tactical detail.
 
@@ -119,13 +119,13 @@ bb-build  # Verify clean build
 
 ### Non-blocking / optional
 
-| Job                      | When                                | Notes                                     |
-| ------------------------ | ----------------------------------- | ----------------------------------------- | --- | -------------------------- |
+| Job                      | When                                                                                                                                | Notes                                     |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --- | -------------------------- |
 | **Release artifacts**    | `workflow_dispatch` on `master` (or a human push) after Build & Test; auto-merged squashes are bot-attributed and do not trigger it | Publishes win-x64 WPF package as artifact |
-| **Docker CI simulation** | Manual (`workflow_dispatch`)        | Postgres + container test parity          |
-| **CI with AI Analysis**  | Manual only                         | Deprecated as merge gate; experimental    |
-| Dependency vuln audit    | Inside Build & Test                 | Informational (`                          |     | true` in CI), not blocking |
-| Code coverage            | Local / future                      | Not gated until flaky tests stabilized    |
+| **Docker CI simulation** | Manual (`workflow_dispatch`)                                                                                                        | Postgres + container test parity          |
+| **CI with AI Analysis**  | Manual only                                                                                                                         | Deprecated as merge gate; experimental    |
+| Dependency vuln audit    | Inside Build & Test                                                                                                                 | Informational (`                          |     | true` in CI), not blocking |
+| Code coverage            | Local / future                                                                                                                      | Not gated until flaky tests stabilized    |
 
 ### Local pre-PR commands
 
@@ -174,7 +174,7 @@ The project [`.cursor/mcp.json`](.cursor/mcp.json) includes these tools:
     - Tool name in MCP calls: `search_repo_context`
     - Example queries that give excellent results:
         - "Postgres DbContext configuration, BUSBUDDY_CONNECTION injection, and how it relates to SeedDataService + Docker profiles"
-        - "GrokGlobalAPI route optimization flow and where it is called from RouteService"
+        - "OllamaAiService route optimization flow and where it is called from RouteService"
         - "current state of hybrid Mac Docker + UTM VM development setup after final hygiene"
         - "BusBuddy constitution Spec-Kit Syncfusion Serilog RAG hybrid Ollama"
     - The tool returns file:line-anchored chunks with high semantic relevance. Quote them.
@@ -2729,7 +2729,7 @@ When creating temporary files:
 ## Logging and APIs
 
 - Logging: Use Serilog with console and file sinks.
-- APIs: Integrate xAI Grok API (model: grok-4) for optimizations; OpenAI for fallbacks.
+- APIs: Local Ollama for chat and route commentary; Google Maps Platform for geo.
 - External: Use Polly for resilience; AutoMapper for DTO mappings.
 
 ## Testing

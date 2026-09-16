@@ -419,12 +419,52 @@ namespace BusBuddy.Tests.Core
             var created = await service.EnsureRoutesForStudentAssignmentsAsync();
 
             Assert.That(created, Is.EqualTo(1));
-            var route = context.Routes.Single();
+            await using var verify = new BusBuddyDbContext(options);
+            var route = verify.Routes.Single();
             Assert.That(route.RouteName, Is.EqualTo("AM TEST_SN Bus 5"));
             Assert.That(route.IsSpecialNeedsRoute, Is.False, "TEST_SN is not the 'special needs' token");
+            var assigned = verify.Students.Single();
+            Assert.That(assigned.AmRouteId, Is.EqualTo(route.RouteId));
+            Assert.That(assigned.AMRoute, Is.EqualTo(route.RouteName));
 
             // Second run is a no-op — the route now exists.
             Assert.That(await service.EnsureRoutesForStudentAssignmentsAsync(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task EnsureRoutesForStudentAssignmentsAsync_DualWritesKeysWhenNameIsUnique()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RouteRepairKeys_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            context.Routes.Add(new Route
+            {
+                RouteName = "North Elementary",
+                Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                IsActive = true
+            });
+            context.Students.Add(new Student
+            {
+                StudentName = "TEST_STUDENT_REG_ORPHAN",
+                HomeAddress = "400 Test St",
+                AMRoute = "North Elementary",
+                PMRoute = "North Elementary",
+                RidesAm = true,
+                RidesPm = true,
+                Active = true
+            });
+            await context.SaveChangesAsync();
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            Assert.That(await service.EnsureRoutesForStudentAssignmentsAsync(), Is.EqualTo(0));
+
+            await using var verify = new BusBuddyDbContext(options);
+            var route = await verify.Routes.SingleAsync();
+            var student = await verify.Students.SingleAsync();
+            Assert.That(student.AmRouteId, Is.EqualTo(route.RouteId));
+            Assert.That(student.PmRouteId, Is.EqualTo(route.RouteId));
         }
 
         [Test]
@@ -456,10 +496,12 @@ namespace BusBuddy.Tests.Core
             Assert.That(await service.EnsureRoutesForStudentAssignmentsAsync(), Is.EqualTo(0), "no new route needed");
 
             await using var verify = new BusBuddyDbContext(options);
+            var student = verify.Students.Single();
             Assert.That(
-                verify.Students.Single().AMRoute,
+                student.AMRoute,
                 Is.EqualTo("AM Special Needs Bus 5"),
                 "the student row is corrected to the canonical spelling so route validation passes");
+            Assert.That(student.AmRouteId, Is.EqualTo(verify.Routes.Single().RouteId));
             Assert.That(verify.Routes.Count(), Is.EqualTo(1));
         }
 
@@ -562,6 +604,30 @@ namespace BusBuddy.Tests.Core
             Assert.That(route.AMVehicleId, Is.EqualTo(userBus.BusId));
             Assert.That(route.PMVehicleId, Is.EqualTo(userBus.BusId));
             Assert.That(route.BusNumber, Is.EqualTo("Bus-5"));
+        }
+
+        [Test]
+        public async Task SeedSpecialNeedsTransportPrep_DualWritesRegularStudentRouteKeys()
+        {
+            BusBuddyDbContext.SkipGlobalSeedData = true;
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"SnPrepRouteKeys_{Guid.NewGuid()}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+            await using var setup = new BusBuddyDbContext(options);
+            await setup.Database.EnsureCreatedAsync();
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            await service.SeedSpecialNeedsTransportPrepAsync();
+
+            await using var verify = new BusBuddyDbContext(options);
+            var regularRoute = await verify.Routes.SingleAsync(r => r.RouteName == "North Elementary");
+            var regular = await verify.Students
+                .Where(s => s.StudentName == "TEST_STUDENT_REG_01" || s.StudentName == "TEST_STUDENT_REG_02")
+                .ToListAsync();
+            Assert.That(regular, Has.Count.EqualTo(2));
+            Assert.That(regular.Select(s => s.AmRouteId).Distinct().Single(), Is.EqualTo(regularRoute.RouteId));
+            Assert.That(regular.Select(s => s.PmRouteId).Distinct().Single(), Is.EqualTo(regularRoute.RouteId));
         }
 
         /// <summary>

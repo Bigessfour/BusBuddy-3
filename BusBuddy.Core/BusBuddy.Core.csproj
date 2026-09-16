@@ -47,7 +47,7 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.Identity.Client" Version="$(MicrosoftIdentityClientVersion)" /> <!-- resolved hardcode (was 4.74.1) -->
 
-    <!-- xAI Grok API Integration (OpenAI-compatible) -->
+    <!-- Local Ollama (OpenAI-compatible HTTP) -->
     <PackageReference Include="OpenAI" Version="$(OpenAIVersion)" />
 
     <!-- Resilience and HTTP -->

@@ -6,14 +6,14 @@ _As of `master` 2026-09-15. Two judges apply: **ship-ready** (the clerk can do h
 
 Definition (from `docs/action-items.md`): clerk hops 1–6 proved end to end on Postgres, and the WPF app runs on a Windows VM with the District Map and Settings smoke-tested.
 
-| Criterion                                          | Evidence                                                                                                                                                                                              |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hops 1–6 write the intended rows                   | `BusBuddy.DbPrep` harness against Docker Postgres, one hop per session, row IDs and Serilog lines recorded in the Done log (2026-09-09)                                                               |
-| Canonical write chosen where two tables overlapped | Bus/driver on a route = `Routes.AMVehicleId / AMDriverId`; `RouteAssignments` kept in schema, not written (Hop 4b)                                                                                    |
-| WPF runs on Windows                                | UTM guest test host: Students suites 27/27; Fuel/Maintenance/RouteManagement 15 passed; RouteManagement + CI-blocker filters 19 passed (2026-09-09 to 09-11)                                          |
-| District Map live                                  | Google Map Tiles session, pan/zoom/center/reset, HOME/PK captions, depot and bounding box from Settings (2026-09-10)                                                                                  |
-| Runtime error log worked down                      | VM `runtime-errors.log` cascades fixed: `SfMap.OnMouseMove` NRE, `TransformToVisual` during marker template inflation, `Circle`→`Ellipse` XAML, bus/driver soft-retire on FK conflicts (PRs #69, #74) |
-| CI                                                 | `Build & Test` required on `master`; last four PRs (#71, #73, #74, #75) merged green                                                                                                                  |
+| Criterion                                          | Evidence                                                                                                                                                                                                                                                                               |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hops 1–6 write the intended rows                   | `BusBuddy.DbPrep` harness against Docker Postgres, one hop per session, row IDs and Serilog lines recorded in the Done log (2026-09-09)                                                                                                                                                |
+| Canonical write chosen where two tables overlapped | Bus/driver on a route = `Routes.AMVehicleId / AMDriverId`; `RouteAssignments` kept in schema, not written (Hop 4b)                                                                                                                                                                     |
+| WPF runs on Windows                                | UTM guest test host: Students suites 27/27; Fuel/Maintenance/RouteManagement 15 passed; RouteManagement + CI-blocker filters 19 passed (2026-09-09 to 09-11)                                                                                                                           |
+| District Map live                                  | Google Map Tiles session, pan/zoom/center/reset, depot and bounding box from Settings (2026-09-10); per-kind pin colors + legend, route-stop tagging on shared pins, schools-only filter, pickup/route-stop plotting, always-on GeoJSON export, Active Buses card removed (2026-09-15) |
+| Runtime error log worked down                      | VM `runtime-errors.log` cascades fixed: `SfMap.OnMouseMove` NRE, `TransformToVisual` during marker template inflation, `Circle`→`Ellipse` XAML, bus/driver soft-retire on FK conflicts (PRs #69, #74)                                                                                  |
+| CI                                                 | `Build & Test` required on `master`; last four PRs (#71, #73, #74, #75) merged green                                                                                                                                                                                                   |
 
 ## Project-done: no
 
@@ -46,7 +46,7 @@ Listed in `docs/done-catalog.json` with a reason each:
 - `IFamilyService` / `IGuardianService` not in DI — Families/Guardians tables exist but have no clerk surface yet.
 - `SchoolCalendar` and `AIInsight` DbSets unused — schema kept, no UI.
 - `RouteAssignments` table retained but not written by Assign Vehicle/Driver — Hop 4b decision.
-- Unused shapefile path columns on `Route`; unused `AddressValidationControl`; historical OSM narrative in spec 007.
+- Unused `AddressValidationControl`; historical OSM narrative in spec 007.
 - `SyncfusionCultureFix` / `StartupOptimizationService` deleted as zero-caller; restore only if needed.
 
 ## Known design debts (self-reported)
@@ -64,19 +64,19 @@ These do not fail the checker but a reviewer will notice them.
 
 ## CI health
 
-| Item           | State                                                                                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Required check | `Build & Test` (restore, build, `dotnet test` with `Category!=Integration&Category!=InMemoryFlaky`)                                                                            |
-| Merge policy   | Squash auto-merge when green; `master` protected, no force-push, no direct push                                                                                                |
+| Item           | State                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Required check | `Build & Test` (restore, build, `dotnet test` with `Category!=Integration&Category!=InMemoryFlaky`)                                                                                                                                                                                                                                                                      |
+| Merge policy   | Squash auto-merge when green; `master` protected, no force-push, no direct push                                                                                                                                                                                                                                                                                          |
 | Release job    | Non-blocking self-contained `win-x64` publish, run by `workflow_dispatch` on `master`. Failed with `NETSDK1152` (Core's `appsettings.json` flowed into the WPF publish set) until 2026-09-15; Core's copy is now `CopyToPublishDirectory=Never`. The job also used to be `push`-only, which bot-attributed auto-merges never fire, so it had not run at all since 09-12. |
-| Dependabot     | 13 open alerts, all in `package-lock.json` for the Trunk lint launcher (`tar`, `yaml`). None are .NET app dependencies.                                                        |
-| Code scanning  | None. GitHub CodeQL requires a paid Code Security license on private repos.                                                                                                    |
+| Dependabot     | 13 open alerts, all in `package-lock.json` for the Trunk lint launcher (`tar`, `yaml`). None are .NET app dependencies.                                                                                                                                                                                                                                                  |
+| Code scanning  | None. GitHub CodeQL requires a paid Code Security license on private repos.                                                                                                                                                                                                                                                                                              |
 
 ## What is next
 
 1. One Windows VM session: District Map re-smoke and hops 1–5 ribbon clicks, pull `ui-diagnostics-*.log`, check the boxes. This is the only thing standing between the checker and exit 0.
 2. Nullable `AmRouteId`/`PmRouteId` FK backfill (parked; the string pair is canonical today).
-3. Reconcile `BusBuddy.Core/appsettings.json` with the WPF copy (it still carries LocalDB and the pre-Ollama xAI section; only DbPrep and the test host read it, and both take connection strings from the environment first).
+3. Reconcile `BusBuddy.Core/appsettings.json` with the WPF copy (it still carries LocalDB; only DbPrep and the test host read it, and both take connection strings from the environment first).
 
 ## Out of scope by decision
 

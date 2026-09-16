@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using CommunityToolkit.Mvvm.Input;
@@ -19,14 +20,61 @@ public class DriverScheduleAppointment
 public class DriverScheduleViewModel : BaseViewModel
 {
     private static readonly new ILogger Logger = Log.ForContext<DriverScheduleViewModel>();
-    private readonly IScheduleService _scheduleService;
+    private readonly IScheduleService? _scheduleService;
+    private readonly bool _publishedStopsOnly;
 
     public DriverScheduleViewModel(IScheduleService scheduleService)
     {
-        _scheduleService = scheduleService;
+        _scheduleService = scheduleService ?? throw new ArgumentNullException(nameof(scheduleService));
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         Logger.Information("DriverScheduleViewModel constructed — loading SfScheduler appointments");
         _ = LoadAsync();
+    }
+
+    /// <summary>
+    /// Published stop times for one route row. Refresh does not swap in the district-wide driver calendar.
+    /// </summary>
+    public DriverScheduleViewModel(IReadOnlyList<DriverScheduleAppointment> publishedStops, string statusMessage)
+    {
+        _publishedStopsOnly = true;
+        RefreshCommand = new AsyncRelayCommand(LoadAsync);
+        foreach (var appointment in publishedStops)
+        {
+            Appointments.Add(appointment);
+        }
+
+        StatusMessage = statusMessage;
+    }
+
+    public static List<DriverScheduleAppointment> FromPublishedStops(
+        BusBuddy.Core.Models.Route route,
+        IEnumerable<RouteStop> stops)
+    {
+        ArgumentNullException.ThrowIfNull(route);
+        ArgumentNullException.ThrowIfNull(stops);
+
+        var day = route.Date.Date;
+        return stops
+            .OrderBy(s => s.StopOrder)
+            .Select(stop =>
+            {
+                var start = DateTime.SpecifyKind(day.Add(stop.ScheduledArrival), DateTimeKind.Unspecified);
+                var end = DateTime.SpecifyKind(day.Add(stop.ScheduledDeparture), DateTimeKind.Unspecified);
+                if (end <= start)
+                {
+                    end = start.AddMinutes(Math.Max(1, stop.StopDuration));
+                }
+
+                return new DriverScheduleAppointment
+                {
+                    StartTime = start,
+                    EndTime = end,
+                    Subject = $"{stop.StopOrder}. {stop.StopName}",
+                    Location = stop.StopAddress,
+                    Notes = route.RouteName
+                };
+            })
+            .ToList();
     }
 
     public ObservableCollection<DriverScheduleAppointment> Appointments { get; } = new();
@@ -35,9 +83,20 @@ public class DriverScheduleViewModel : BaseViewModel
 
     private async Task LoadAsync()
     {
+        if (_publishedStopsOnly)
+        {
+            return;
+        }
+
         var stopwatch = Stopwatch.StartNew();
         try
         {
+            if (_scheduleService is null)
+            {
+                StatusMessage = "Schedule service is not available.";
+                return;
+            }
+
             StatusMessage = "Loading driver schedules...";
             Logger.Information("Loading driver schedules for SfScheduler");
             var schedules = (await _scheduleService.GetSchedulesAsync()).ToList();

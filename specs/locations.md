@@ -52,6 +52,7 @@ Do not store student names on a location. Homes point _from_ the student record.
 ## Behaviors / UI
 
 - Clerk records a place on a location form. Save is incomplete until Address Validation + geocode succeed.
+- Clerk can add, edit, or remove a school campus from Student Management. Edit covers name, address, GPS, and bell times. Unused campuses may be deleted; campuses still referenced by students, transfers, activities, or trips are retired (`Active=false`) instead of deleted.
 - Failed validation stays editable and is not plotted.
 - District Map plots schools, catalog stops, and geocoded student homes. Depots may plot as operational markers.
 - Route builder adds locations as ordered stops; those stops become Google Routes waypoints.

@@ -38,7 +38,7 @@ public sealed class StudentsBulkRouteCoordinator
         List<StudentModel> candidates = selectedStudent is not null
             ? [selectedStudent]
             : visibleStudents
-                .Where(s => string.IsNullOrWhiteSpace(s.AMRoute) || string.IsNullOrWhiteSpace(s.PMRoute))
+                .Where(s => StudentRouteAssignment.IsUnassignedAm(s) || StudentRouteAssignment.IsUnassignedPm(s))
                 .ToList();
 
         if (candidates.Count > MaxBatch)
@@ -85,18 +85,18 @@ public sealed class StudentsBulkRouteCoordinator
         {
             if (selectedStudent is not null
                 && student.StudentId == selectedStudent.StudentId
-                && !string.IsNullOrWhiteSpace(student.AMRoute)
-                && !string.IsNullOrWhiteSpace(student.PMRoute))
+                && !StudentRouteAssignment.IsUnassignedAm(student)
+                && !StudentRouteAssignment.IsUnassignedPm(student))
             {
-                student.AMRoute = targetRoute.RouteName;
+                StudentRouteAssignment.SetSlot(student, RouteTimeSlot.AM, targetRoute);
             }
-            else if (string.IsNullOrWhiteSpace(student.AMRoute))
+            else if (StudentRouteAssignment.IsUnassignedAm(student))
             {
-                student.AMRoute = targetRoute.RouteName;
+                StudentRouteAssignment.SetSlot(student, RouteTimeSlot.AM, targetRoute);
             }
-            else if (string.IsNullOrWhiteSpace(student.PMRoute))
+            else if (StudentRouteAssignment.IsUnassignedPm(student))
             {
-                student.PMRoute = targetRoute.RouteName;
+                StudentRouteAssignment.SetSlot(student, RouteTimeSlot.PM, targetRoute);
             }
             else
             {
@@ -155,8 +155,12 @@ public sealed class StudentsBulkRouteCoordinator
             }
 
             var routeName = routeEntity.RouteName;
-            routeEntity.StudentCount = await context.Students.CountAsync(
-                s => s.AMRoute == routeName || s.PMRoute == routeName).ConfigureAwait(true);
+            routeEntity.StudentCount = await context.Students
+                .WhereOnSlot(routeEntity.RouteId, routeName, RouteTimeSlot.AM)
+                .Select(s => s.StudentId)
+                .Union(context.Students.WhereOnSlot(routeEntity.RouteId, routeName, RouteTimeSlot.PM).Select(s => s.StudentId))
+                .CountAsync()
+                .ConfigureAwait(true);
             await context.SaveChangesAsync().ConfigureAwait(true);
             Logger.Information(
                 "Route.StudentCount recomputed — RouteId={RouteId}, StudentCount={StudentCount}",

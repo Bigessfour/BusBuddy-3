@@ -97,10 +97,7 @@ public sealed class TripEventService : ITripEventService
         tripEvent.RouteId = null;
         tripEvent.POCName ??= string.Empty;
         ApplyLeaveReturn(tripEvent);
-        if (string.IsNullOrWhiteSpace(tripEvent.Status))
-        {
-            tripEvent.Status = TripEvent.InferBoardStatus(tripEvent);
-        }
+        ApplyBoardStatus(tripEvent, previousStatus: null, previousBoard: null, isNew: true);
 
         using var context = _contextFactory.CreateWriteDbContext();
         context.TripEvents.Add(tripEvent);
@@ -115,6 +112,14 @@ public sealed class TripEventService : ITripEventService
         tripEvent.UpdatedDate = DateTime.UtcNow;
 
         using var context = _contextFactory.CreateWriteDbContext();
+        var previous = await context.TripEvents.AsNoTracking()
+            .FirstOrDefaultAsync(t => t.TripEventId == tripEvent.TripEventId)
+            .ConfigureAwait(false);
+        ApplyBoardStatus(
+            tripEvent,
+            previous?.Status,
+            previous is null ? null : Snapshot(previous),
+            isNew: previous is null);
         context.TripEvents.Update(tripEvent);
         await context.SaveChangesAsync();
     }
@@ -167,6 +172,90 @@ public sealed class TripEventService : ITripEventService
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<string>> GetAssignmentWarningsAsync(
+        int? vehicleId,
+        int? driverId,
+        DateTime startTime,
+        DateTime endTime,
+        int? excludeTripId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var warnings = new List<string>();
+        using var context = _contextFactory.CreateDbContext();
+
+        if (driverId.HasValue)
+        {
+            var driver = await context.Drivers.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DriverId == driverId.Value, cancellationToken)
+                .ConfigureAwait(false);
+            if (driver is not null && !driver.IsAvailable)
+            {
+                warnings.Add($"Driver {driver.DriverName} is not available (inactive, training, or license).");
+            }
+        }
+
+        if (vehicleId.HasValue)
+        {
+            var bus = await context.Buses.AsNoTracking()
+                .FirstOrDefaultAsync(b => b.BusId == vehicleId.Value, cancellationToken)
+                .ConfigureAwait(false);
+            if (bus is not null && !bus.IsAvailable)
+            {
+                warnings.Add($"Bus {bus.BusNumber} is not available (Out of Service).");
+            }
+        }
+
+        var tripConflicts = new List<TripEvent>();
+        if (vehicleId.HasValue)
+        {
+            tripConflicts.AddRange(
+                await GetConflictingTripsAsync(vehicleId, null, startTime, endTime).ConfigureAwait(false));
+        }
+
+        if (driverId.HasValue)
+        {
+            tripConflicts.AddRange(
+                await GetConflictingTripsAsync(null, driverId, startTime, endTime).ConfigureAwait(false));
+        }
+
+        if (tripConflicts.Any(t => !excludeTripId.HasValue || t.TripEventId != excludeTripId.Value))
+        {
+            warnings.Add("Overlaps another trip assignment. Home-route assignment is unchanged.");
+        }
+
+        var isMorning = startTime.TimeOfDay < TimeSpan.FromHours(12);
+        var routes = await context.Routes.AsNoTracking()
+            .Where(r => r.IsActive)
+            .Where(r =>
+                (driverId.HasValue && (r.AMDriverId == driverId || r.PMDriverId == driverId))
+                || (vehicleId.HasValue && (r.AMVehicleId == vehicleId || r.PMVehicleId == vehicleId)))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (var route in routes)
+        {
+            var session = isMorning ? "AM" : "PM";
+            var driverOnSession = isMorning
+                ? driverId.HasValue && route.AMDriverId == driverId
+                : driverId.HasValue && route.PMDriverId == driverId;
+            var busOnSession = isMorning
+                ? vehicleId.HasValue && route.AMVehicleId == vehicleId
+                : vehicleId.HasValue && route.PMVehicleId == vehicleId;
+            if (!driverOnSession && !busOnSession)
+            {
+                continue;
+            }
+
+            var who = driverOnSession && busOnSession
+                ? "Driver and bus"
+                : driverOnSession ? "Driver" : "Bus";
+            warnings.Add(
+                $"{who} assigned to published {session} route {route.RouteName}. Home assignment is unchanged; cover that session or pick another asset.");
+        }
+
+        return warnings;
+    }
+
     public async Task<TripBoardImportResult> ImportBoardCsvAsync(string csv, CancellationToken cancellationToken = default)
     {
         var parsed = TripBoardCsvParser.Parse(csv);
@@ -209,30 +298,7 @@ public sealed class TripEventService : ITripEventService
             ApplyRow(trip, row, buses, drivers, oos, warnings);
             trip.RouteId = null;
             await AttachValidatedTripPlaceAsync(context, trip, cancellationToken);
-
-            var inferred = TripEvent.InferBoardStatus(trip);
-            if (IsTerminal(previousStatus))
-            {
-                trip.Status = previousStatus;
-            }
-            else if (inferred == TripStatus.MissingInfo)
-            {
-                trip.Status = TripStatus.MissingInfo;
-            }
-            else if (IsConfirmedFamily(previousStatus)
-                && previousBoard is BoardSnapshot before
-                && HasMaterialChange(before, trip))
-            {
-                trip.Status = TripStatus.Changed;
-            }
-            else if (IsConfirmedFamily(previousStatus))
-            {
-                trip.Status = previousStatus;
-            }
-            else
-            {
-                trip.Status = inferred;
-            }
+            ApplyBoardStatus(trip, previousStatus, previousBoard, isNew);
 
             if (trip.Status == TripStatus.MissingInfo)
             {
@@ -827,6 +893,42 @@ public sealed class TripEventService : ITripEventService
         }
 
         return TripType.Custom;
+    }
+
+    private static void ApplyBoardStatus(
+        TripEvent trip,
+        string? previousStatus,
+        BoardSnapshot? previousBoard,
+        bool isNew)
+    {
+        var inferred = TripEvent.InferBoardStatus(trip);
+        if (!isNew && IsTerminal(previousStatus))
+        {
+            trip.Status = previousStatus!;
+            return;
+        }
+
+        if (inferred == TripStatus.MissingInfo)
+        {
+            trip.Status = TripStatus.MissingInfo;
+            return;
+        }
+
+        if (!isNew && IsConfirmedFamily(previousStatus)
+            && previousBoard is BoardSnapshot before
+            && HasMaterialChange(before, trip))
+        {
+            trip.Status = TripStatus.Changed;
+            return;
+        }
+
+        if (!isNew && IsConfirmedFamily(previousStatus))
+        {
+            trip.Status = previousStatus!;
+            return;
+        }
+
+        trip.Status = inferred;
     }
 
     private static bool IsTerminal(string? status) =>

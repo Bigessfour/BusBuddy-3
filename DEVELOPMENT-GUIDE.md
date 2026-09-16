@@ -396,70 +396,28 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 ```
 
-### **AI Configuration (xAI Grok-4)**
+### **AI Configuration (local Ollama)**
 
-BusBuddy integrates with xAI Grok-4 for route optimization and intelligent analysis:
+BusBuddy uses local Ollama for chat and route commentary. No cloud xAI key is required.
 
-#### **API Key Setup**
-
-```powershell
-# Set machine environment variable (required for development)
-$env:XAI_API_KEY = "your-xai-api-key-here"
-[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
-
-# Verify configuration
-Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
-$apiKey = Get-ApiKeySecurely
-Write-Information "API Key Length: $($apiKey.Length)"  # Should be 84
+```bash
+ollama serve
+ollama pull llama3.2
 ```
 
-#### **Model Configuration**
+Default settings in `appsettings.json`:
 
-```powershell
-# Current production settings (August 2025)
-$GrokConfig = @{
-    DefaultModel = "grok-4-0709"       # Exact model ID required
-    BaseUrl = "https://api.x.ai/v1"    # xAI API endpoint
-    MaxTokens = 4000                   # Response token limit
-    Temperature = 0.3                  # Balanced creativity/consistency
-    TimeoutSeconds = 60                # Request timeout
+```json
+"Ollama": {
+  "BaseUrl": "http://localhost:11434/v1",
+  "NativeBaseUrl": "http://localhost:11434",
+  "Model": "llama3.2",
+  "TimeoutSeconds": 60,
+  "Enabled": true
 }
 ```
 
-#### **Testing AI Integration**
-
-```powershell
-# Test API connectivity
-Test-GrokConnection -Verbose
-# Expected: "✅ Grok API connection successful."
-
-# Test route analysis
-grok-route-analysis -RouteData $routeData -OptimizationGoal "minimize-time"
-
-# Test maintenance predictions
-grok-maintenance-forecast -VehicleData $vehicleData -PredictionWindow "30-days"
-```
-
-#### **Troubleshooting AI Issues**
-
-```powershell
-# Diagnostic check for common issues
-$apiKey = Get-ApiKeySecurely
-if ($apiKey.Length -ne 84) {
-    Write-Warning "API key length incorrect: $($apiKey.Length). Expected: 84"
-}
-
-$config = grok-config
-if ($config.DefaultModel -ne "grok-4-0709") {
-    Write-Warning "Incorrect model: $($config.DefaultModel). Expected: grok-4-0709"
-}
-
-# Fix common vault sync issues
-if ($env:XAI_API_KEY -ne $apiKey) {
-    Set-Secret -Name "XAI_API_KEY" -Secret $env:XAI_API_KEY -Vault GlobalApiSecrets
-    Write-Information "✅ Vault updated with environment key"
-}
-```
+On a Windows VM, `localhost:11434` is the guest. If Ollama runs on the Mac host, point `Ollama:BaseUrl` at the Mac LAN IP. When Ollama is down, the app logs a Warning and uses mock/offline text — that is expected, not an actionable Error.
 
 ## 🔧 **Performance Optimization**
 

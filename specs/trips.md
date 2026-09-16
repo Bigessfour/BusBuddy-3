@@ -17,6 +17,9 @@ The current office trip board is the clerk spreadsheet **Activity Schedule - Tri
 - MUST treat “All buses and SPED” as multi-asset (`IsMultiAsset`). Do not smash that into one `BusId`.
 - MUST link Day 1 / Day 2 or “both teams ride together” with `LinkedTripId`. Do not merge those rows into a Route.
 - MUST plot a selected trip on the map only when coordinates exist. No 0,0 or US-centroid fallback pins.
+- MUST print a trip ticket from Core `TripEvent` (not `Activity` / `Schedule`). Paper blanks for beginning/ending/total mileage, fuel entered, time departed, and time arrived back at the barn are **not** persisted columns.
+- MUST persist clerk-edited trip purposes and sports/reasons in user settings (`ITripReasonCatalog`). Do not require a code change to add Track, Band, or a field-trip purpose.
+- MUST add 1.5 hours (`TripEvent.PrePostTripInspectionHours`) to billed driver hours for every trip (`DriverHours` = wheel time + 1.5). Do not auto-insert PreTrip/PostTrip duty events. Do not change `HomeRouteId`.
 - MUST NOT invent a second calendar or clone Route. Extend Core `TripEvent` if it exists.
 - MUST NOT treat `MappingService.cs` as a map service. Live GPS stays off.
 - Default: commuting distance inside normal operations (another school, field, event in the region).
@@ -98,6 +101,9 @@ MissingInfo → Draft (Scheduled) → Assigned → Confirmed → Completed
 | Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination`                     |
 | Bus / driver loan     | `IBusService`, driver services                                                                      |
 | Path                  | `IRoutingService`, `IMapsGeoService`                                                                |
+| Trip ticket PDF       | `PdfReportService.GenerateTripTicket` + `PdfPreviewWindow`                                          |
+| Driver hours          | `TripEvent.DriverHours` (duration + `PrePostTripInspectionHours`)                                   |
+| Clerk purpose catalog | `ITripReasonCatalog` (`user-settings.json` keys `Trip.Purposes` / `Trip.Sports`)                    |
 | Same-day fleet        | `IRouteOptimizationService` + `ITripEventService.SuggestSameDayFleetAsync` (does not set `RouteId`) |
 | Map                   | `MapViewModel` when a trip is selected                                                              |
 | AutoMapper (not maps) | `MappingService`                                                                                    |

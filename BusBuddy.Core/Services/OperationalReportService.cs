@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using Serilog;
 
 namespace BusBuddy.Core.Services
@@ -24,7 +25,7 @@ namespace BusBuddy.Core.Services
         private readonly IBusService? _buses;
         private readonly IFuelService? _fuel;
         private readonly IMaintenanceService? _maintenance;
-        private readonly GrokGlobalAPI? _grok;
+        private readonly OllamaAiService? _ollama;
 
         public OperationalReportService(
             PdfReportService pdf,
@@ -34,7 +35,7 @@ namespace BusBuddy.Core.Services
             IBusService? buses = null,
             IFuelService? fuel = null,
             IMaintenanceService? maintenance = null,
-            GrokGlobalAPI? grok = null)
+            OllamaAiService? ollama = null)
         {
             _pdf = pdf ?? throw new ArgumentNullException(nameof(pdf));
             _students = students ?? throw new ArgumentNullException(nameof(students));
@@ -43,7 +44,7 @@ namespace BusBuddy.Core.Services
             _buses = buses;
             _fuel = fuel;
             _maintenance = maintenance;
-            _grok = grok;
+            _ollama = ollama;
         }
 
         public Task<OperationalReportResult> GenerateAsync(OperationalReportKind kind, string? outputDirectory = null) =>
@@ -109,9 +110,7 @@ namespace BusBuddy.Core.Services
                     ? BuildRouteSummaryPdf(route!, students, buses, drivers, ai.Text, stops)
                     : _pdf.GenerateTabularReport(title, headers, rows, ai.Text);
             var reportedRows = writeSingleRoutePdf
-                ? students.Count(s =>
-                    string.Equals(s.AMRoute, route!.RouteName, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                ? students.Count(s => StudentRouteAssignment.MatchesEither(s, route!))
                 : rows.Count;
 
             var path = ResolveOutputPath(request, kind, isCsv);
@@ -173,8 +172,7 @@ namespace BusBuddy.Core.Services
             IReadOnlyList<RouteStop>? stops = null)
         {
             var assigned = students
-                .Where(s => string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                .Where(s => StudentRouteAssignment.MatchesEither(s, route))
                 .ToList();
             var bus = route.AMVehicleId.HasValue
                 ? buses.FirstOrDefault(b => b.BusId == route.AMVehicleId.Value)
@@ -211,7 +209,7 @@ namespace BusBuddy.Core.Services
             IReadOnlyList<Maintenance> maintenance)
         {
             var unassigned = students.Where(s =>
-                string.IsNullOrWhiteSpace(s.AMRoute) && string.IsNullOrWhiteSpace(s.PMRoute)).ToList();
+                StudentRouteAssignment.IsUnassignedAm(s) && StudentRouteAssignment.IsUnassignedPm(s)).ToList();
 
             return kind switch
             {
@@ -256,9 +254,9 @@ namespace BusBuddy.Core.Services
                     {
                         r.RouteName ?? "",
                         r.School ?? "",
-                        students.Count(s => string.Equals(s.AMRoute, r.RouteName, StringComparison.OrdinalIgnoreCase))
+                        students.Count(s => StudentRouteAssignment.Matches(s, r, RouteTimeSlot.AM))
                             .ToString(CultureInfo.InvariantCulture),
-                        students.Count(s => string.Equals(s.PMRoute, r.RouteName, StringComparison.OrdinalIgnoreCase))
+                        students.Count(s => StudentRouteAssignment.Matches(s, r, RouteTimeSlot.PM))
                             .ToString(CultureInfo.InvariantCulture)
                     }).ToList(),
                     $"{routes.Count} active routes"),
@@ -277,9 +275,7 @@ namespace BusBuddy.Core.Services
                     new[] { "Route", "Assigned", "Notes" },
                     routes.Select(r =>
                     {
-                        var count = students.Count(s =>
-                            string.Equals(s.AMRoute, r.RouteName, StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(s.PMRoute, r.RouteName, StringComparison.OrdinalIgnoreCase));
+                        var count = students.Count(s => StudentRouteAssignment.MatchesEither(s, r));
                         return (IReadOnlyList<string>)new[]
                         {
                             r.RouteName ?? "",
@@ -421,14 +417,14 @@ namespace BusBuddy.Core.Services
 
         private async Task<(string Text, bool Mock)> TryCommentaryAsync(string topic, string facts)
         {
-            if (_grok is null)
+            if (_ollama is null)
             {
                 return ($"{topic}: {facts}", true);
             }
 
             try
             {
-                var text = await _grok.GetShortCommentaryAsync(topic, facts).ConfigureAwait(false);
+                var text = await _ollama.GetShortCommentaryAsync(topic, facts).ConfigureAwait(false);
                 var mock = text.StartsWith("Mock insight", StringComparison.OrdinalIgnoreCase);
                 return (text, mock);
             }

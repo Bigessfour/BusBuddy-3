@@ -2,6 +2,7 @@ using System.IO;
 using System.Text;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Serilog;
 
 namespace BusBuddy.WPF.Services
@@ -22,9 +23,13 @@ namespace BusBuddy.WPF.Services
         }
 
         /// <summary>
-        /// Export route schedules to CSV format
+        /// Export route schedules to CSV format.
         /// </summary>
-        public async Task<string> ExportRoutesToCsvAsync()
+        /// <param name="outputPath">
+        /// Destination file. Callers that already asked the clerk where to save must pass it: the rows
+        /// carry student names, so defaulting to the Desktop would leave an unrequested roster there.
+        /// </param>
+        public async Task<string> ExportRoutesToCsvAsync(string outputPath)
         {
             try
             {
@@ -40,8 +45,7 @@ namespace BusBuddy.WPF.Services
 
                 var routes = routesResult.Value ?? Enumerable.Empty<Route>();
 
-                var fileName = $"BusBuddy_Routes_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
+                var filePath = ResolveOutputPath(outputPath);
 
                 var csv = new StringBuilder();
 
@@ -51,8 +55,8 @@ namespace BusBuddy.WPF.Services
                 // Data rows
                 foreach (var route in routes)
                 {
-                    var amStudents = students.Where(s => s.AMRoute == route.RouteName).ToList();
-                    var pmStudents = students.Where(s => s.PMRoute == route.RouteName).ToList();
+                    var amStudents = students.Where(s => StudentRouteAssignment.Matches(s, route, RouteTimeSlot.AM)).ToList();
+                    var pmStudents = students.Where(s => StudentRouteAssignment.Matches(s, route, RouteTimeSlot.PM)).ToList();
                     var amStudentNames = string.Join("; ", amStudents.Select(s => s.StudentName));
                     var pmStudentNames = string.Join("; ", pmStudents.Select(s => s.StudentName));
 
@@ -73,9 +77,10 @@ namespace BusBuddy.WPF.Services
         }
 
         /// <summary>
-        /// Generate detailed text report of routes and student assignments
+        /// Generate detailed text report of routes and student assignments.
         /// </summary>
-        public async Task<string> GenerateRouteReportAsync()
+        /// <param name="outputPath">Destination file; see <see cref="ExportRoutesToCsvAsync"/>.</param>
+        public async Task<string> GenerateRouteReportAsync(string outputPath)
         {
             try
             {
@@ -91,8 +96,7 @@ namespace BusBuddy.WPF.Services
 
                 var routes = routesResult.Value ?? Enumerable.Empty<Route>();
 
-                var fileName = $"BusBuddy_Report_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
-                var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
+                var filePath = ResolveOutputPath(outputPath);
 
                 var report = new StringBuilder();
 
@@ -107,10 +111,10 @@ namespace BusBuddy.WPF.Services
                 report.AppendLine("-".PadRight(30, '-'));
                 report.AppendLine($"Total Routes: {routes.Count()}");
                 report.AppendLine($"Total Students: {students.Count}");
-                report.AppendLine($"AM Assigned Students: {students.Count(s => !string.IsNullOrEmpty(s.AMRoute))}");
-                report.AppendLine($"PM Assigned Students: {students.Count(s => !string.IsNullOrEmpty(s.PMRoute))}");
-                report.AppendLine($"Unassigned Students (AM): {students.Count(s => string.IsNullOrEmpty(s.AMRoute))}");
-                report.AppendLine($"Unassigned Students (PM): {students.Count(s => string.IsNullOrEmpty(s.PMRoute))}");
+                report.AppendLine($"AM Assigned Students: {students.Count(s => !StudentRouteAssignment.IsUnassignedAm(s))}");
+                report.AppendLine($"PM Assigned Students: {students.Count(s => !StudentRouteAssignment.IsUnassignedPm(s))}");
+                report.AppendLine($"Unassigned Students (AM): {students.Count(s => StudentRouteAssignment.IsUnassignedAm(s))}");
+                report.AppendLine($"Unassigned Students (PM): {students.Count(s => StudentRouteAssignment.IsUnassignedPm(s))}");
                 report.AppendLine();
 
                 // Route details
@@ -119,8 +123,8 @@ namespace BusBuddy.WPF.Services
 
                 foreach (var route in routes.OrderBy(r => r.RouteName))
                 {
-                    var amStudents = students.Where(s => s.AMRoute == route.RouteName).OrderBy(s => s.StudentName).ToList();
-                    var pmStudents = students.Where(s => s.PMRoute == route.RouteName).OrderBy(s => s.StudentName).ToList();
+                    var amStudents = students.Where(s => StudentRouteAssignment.Matches(s, route, RouteTimeSlot.AM)).OrderBy(s => s.StudentName).ToList();
+                    var pmStudents = students.Where(s => StudentRouteAssignment.Matches(s, route, RouteTimeSlot.PM)).OrderBy(s => s.StudentName).ToList();
 
                     report.AppendLine($"Route: {route.RouteName}");
                     report.AppendLine($"  School: {route.School}");
@@ -140,8 +144,8 @@ namespace BusBuddy.WPF.Services
                 }
 
                 // Unassigned students
-                var unassignedAM = students.Where(s => string.IsNullOrEmpty(s.AMRoute)).OrderBy(s => s.StudentName).ToList();
-                var unassignedPM = students.Where(s => string.IsNullOrEmpty(s.PMRoute)).OrderBy(s => s.StudentName).ToList();
+                var unassignedAM = students.Where(StudentRouteAssignment.IsUnassignedAm).OrderBy(s => s.StudentName).ToList();
+                var unassignedPM = students.Where(StudentRouteAssignment.IsUnassignedPm).OrderBy(s => s.StudentName).ToList();
 
                 if (unassignedAM.Any())
                 {
@@ -175,6 +179,24 @@ namespace BusBuddy.WPF.Services
                 Logger.Error(ex, "Error generating route report");
                 throw;
             }
+        }
+
+        private static string ResolveOutputPath(string? outputPath)
+        {
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                throw new ArgumentException(
+                    "Export path is required. Do not write an unrequested student roster to the Desktop.",
+                    nameof(outputPath));
+            }
+
+            var directory = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            return outputPath;
         }
     }
 }

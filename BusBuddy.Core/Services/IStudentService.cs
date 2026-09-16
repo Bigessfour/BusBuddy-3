@@ -79,8 +79,7 @@ public interface IStudentService
     Task<bool> UpdateHomeGeocodeAsync(int studentId, decimal? latitude, decimal? longitude, string? placeId);
 
     /// <summary>
-    /// Ends service for a student by archiving them. specs/students.md: "MUST NOT delete a student to
-    /// end service. Archive or set inactive so history and route versions remain."
+    /// Archives a student who may return. The row stays on the roster with Active=false.
     /// </summary>
     /// <param name="studentId">ID of the student to archive</param>
     /// <returns>True if successful, false otherwise</returns>
@@ -94,14 +93,16 @@ public interface IStudentService
     Task<bool> RestoreStudentAsync(int studentId);
 
     /// <summary>
-    /// Permanently removes a student row. NOT the way to end service — use
-    /// <see cref="ArchiveStudentAsync"/>. Intended only for a row created in error, and refuses to run
-    /// for an active student or one that has schedule/transfer history.
+    /// Permanently removes a student row after a clerk-chosen reason. specs/students.md: Mistake,
+    /// Moved, or Not attending. Writes <see cref="StudentDeletionLog"/> and a Serilog entry. Related
+    /// assignment and rider-exception rows are removed with the student; published routes remain.
+    /// Prefer <see cref="ArchiveStudentAsync"/> when the child may return.
     /// </summary>
-    /// <param name="studentId">ID of the student record to purge</param>
-    /// <param name="reason">Operator justification, recorded in the log. Required.</param>
+    /// <param name="studentId">ID of the student record to delete</param>
+    /// <param name="reason">Required closed-set reason</param>
+    /// <param name="notes">Optional brief clerk note (max 200 characters)</param>
     /// <returns>True if a row was removed</returns>
-    Task<bool> PurgeStudentRecordAsync(int studentId, string reason);
+    Task<bool> DeleteStudentAsync(int studentId, StudentDeletionReason reason, string? notes = null);
 
     /// <summary>
     /// Validates student data before save
@@ -157,14 +158,6 @@ public interface IStudentService
     /// <param name="zip">ZIP code</param>
     /// <returns>True if successful</returns>
     Task<bool> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip);
-
-    /// <summary>
-    /// Gets students assigned to a specific route by route ID and context
-    /// </summary>
-    /// <param name="context">Database context</param>
-    /// <param name="routeId">Route ID</param>
-    /// <returns>List of students assigned to the route</returns>
-    Task<List<Student>> GetStudentsForRouteAsync(BusBuddyDbContext context, int routeId);
 
 #if DEBUG
     /// <summary>

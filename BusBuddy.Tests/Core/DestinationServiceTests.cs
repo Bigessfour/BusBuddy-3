@@ -83,6 +83,190 @@ public class DestinationServiceTests
     }
 
     [Test]
+    public async Task UpdateSchool_PersistsNameAddressGpsAndTimes()
+    {
+        var factory = CreateFactory();
+        var sut = new DestinationService(factory);
+        var school = await sut.AddSchoolAsync(
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(15));
+
+        var updated = await sut.UpdateSchoolAsync(
+            school.DestinationId,
+            "Oakridge Elementary",
+            "200 Park",
+            "Wiley",
+            "co",
+            "81092",
+            TimeSpan.FromHours(7.5),
+            TimeSpan.FromHours(16),
+            latitude: 38.0872m,
+            longitude: -102.6208m);
+
+        Assert.That(updated.Name, Is.EqualTo("Oakridge Elementary"));
+        Assert.That(updated.Address, Is.EqualTo("200 Park"));
+        Assert.That(updated.City, Is.EqualTo("Wiley"));
+        Assert.That(updated.State, Is.EqualTo("CO"));
+        Assert.That(updated.ZipCode, Is.EqualTo("81092"));
+        Assert.That(updated.StartTime, Is.EqualTo(TimeSpan.FromHours(7.5)));
+        Assert.That(updated.DismissalTime, Is.EqualTo(TimeSpan.FromHours(16)));
+        Assert.That(updated.Latitude, Is.EqualTo(38.0872m));
+        Assert.That(updated.Longitude, Is.EqualTo(-102.6208m));
+    }
+
+    [Test]
+    public async Task UpdateSchool_AllowsKeepingTheSameName()
+    {
+        var sut = new DestinationService(CreateFactory());
+        var school = await sut.AddSchoolAsync(
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(15));
+
+        var updated = await sut.UpdateSchoolAsync(
+            school.DestinationId,
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(16));
+
+        Assert.That(updated.DismissalTime, Is.EqualTo(TimeSpan.FromHours(16)));
+    }
+
+    [Test]
+    public async Task DeleteSchool_RemovesUnusedCampus()
+    {
+        var sut = new DestinationService(CreateFactory());
+        var school = await sut.AddSchoolAsync(
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(15));
+
+        var result = await sut.DeleteSchoolAsync(school.DestinationId);
+
+        Assert.That(result, Is.EqualTo(SchoolDeleteResult.Deleted));
+        Assert.That(await sut.GetByIdAsync(school.DestinationId), Is.Null);
+        Assert.That(await sut.GetActiveSchoolsAsync(), Is.Empty);
+    }
+
+    [Test]
+    public async Task DeleteSchool_RetiresWhenStudentsStillAssigned()
+    {
+        var factory = CreateFactory();
+        var sut = new DestinationService(factory);
+        var school = await sut.AddSchoolAsync(
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(15));
+
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            ctx.Students.Add(new Student
+            {
+                StudentName = "TEST_STUDENT_01",
+                StudentNumber = "TEST-0001",
+                DestinationId = school.DestinationId,
+                SchoolYear = "2026-2027",
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        var result = await sut.DeleteSchoolAsync(school.DestinationId);
+
+        Assert.That(result, Is.EqualTo(SchoolDeleteResult.Retired));
+        var loaded = await sut.GetByIdAsync(school.DestinationId);
+        Assert.That(loaded, Is.Not.Null);
+        Assert.That(loaded!.IsActive, Is.False);
+        Assert.That(await sut.GetActiveSchoolsAsync(), Is.Empty);
+    }
+
+    [Test]
+    public async Task DeleteSchool_RetiresWhenPublishedRouteStillNamesCampus()
+    {
+        var factory = CreateFactory();
+        var sut = new DestinationService(factory);
+        var school = await sut.AddSchoolAsync(
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(15));
+
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            ctx.Routes.Add(new Route
+            {
+                RouteName = "Oakridge AM",
+                School = school.Name,
+                Date = DateTime.UtcNow.Date,
+                IsActive = true
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        var result = await sut.DeleteSchoolAsync(school.DestinationId);
+
+        Assert.That(result, Is.EqualTo(SchoolDeleteResult.Retired));
+        var loaded = await sut.GetByIdAsync(school.DestinationId);
+        Assert.That(loaded, Is.Not.Null);
+        Assert.That(loaded!.IsActive, Is.False);
+    }
+
+    [Test]
+    public async Task GetRosterSchools_IncludesInactiveCampusStudentsStillReference()
+    {
+        var factory = CreateFactory();
+        var sut = new DestinationService(factory);
+        var school = await sut.AddSchoolAsync(
+            "Oakridge School",
+            "100 Main",
+            "Oakridge",
+            "CO",
+            "80000",
+            TimeSpan.FromHours(8),
+            TimeSpan.FromHours(15));
+
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            ctx.Students.Add(new Student
+            {
+                StudentName = "TEST_STUDENT_02",
+                StudentNumber = "TEST-0002",
+                DestinationId = school.DestinationId,
+                SchoolYear = "2026-2027",
+            });
+            await ctx.SaveChangesAsync();
+        }
+
+        await sut.DeleteSchoolAsync(school.DestinationId);
+        var roster = await sut.GetRosterSchoolsAsync();
+        Assert.That(roster.Select(s => s.DestinationId), Does.Contain(school.DestinationId));
+        Assert.That(await sut.GetActiveSchoolsAsync(), Is.Empty);
+    }
+
+    [Test]
     public async Task AddSchool_PersistsCatalogRowWithBellTimes()
     {
         var factory = CreateFactory();

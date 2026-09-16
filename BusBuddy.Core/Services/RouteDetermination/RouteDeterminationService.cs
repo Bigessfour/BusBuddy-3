@@ -3,6 +3,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.GoogleMaps;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -274,6 +275,18 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             return new ClerkOverrideResult { Success = false, Error = $"Student {studentId} not found" };
         }
 
+        if (fromRouteId <= 0)
+        {
+            var catalog = await context.Routes.AsNoTracking()
+                .Select(r => new { r.RouteId, r.RouteName })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            fromRouteId = StudentRouteAssignment.CurrentRouteId(
+                student,
+                timeSlot,
+                catalog.Select(r => (r.RouteId, (string?)r.RouteName)));
+        }
+
         var mode = StudentRideModeHelper.FromStudent(student);
         var remove = await _routeService.RemoveStudentFromRouteAsync(studentId, fromRouteId, timeSlot)
             .ConfigureAwait(false);
@@ -282,7 +295,11 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             Logger.Warning("Override remove soft-fail Student={Id}: {Error}", studentId, remove.Error);
         }
 
-        var assign = await _routeService.AssignStudentToRouteAsync(studentId, toRouteId, timeSlot)
+        var assign = await _routeService.AssignStudentToRouteAsync(
+                studentId,
+                toRouteId,
+                timeSlot,
+                overrideSeating: true)
             .ConfigureAwait(false);
         if (!assign.IsSuccess)
         {
@@ -681,7 +698,9 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         var create = await _routeService.CreateRouteAsync(new Route
         {
             RouteName = routeName,
-            Date = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified),
+            // Same UTC calendar day as DistrictWallClock stamps on the stop ETAs; DateTime.Today is the
+            // local day, so an evening generation run dated the route one day off its own stops.
+            Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
             Description = $"008 {fleetKind} {slot} cell {pack.CellId}",
             IsActive = true,
             School = schoolDisplayName,
@@ -1041,36 +1060,21 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
     }
 
     /// <summary>
-    /// District wall-clock time for stop ETA display (<c>HH:mm</c>).
-    /// Converts Wiley/CO local face time to UTC so Npgsql <c>timestamptz</c> + legacy
-    /// Local readback still formats as the clerk-facing clock (07:00 stays 07:00 MT, not 01:00).
+    /// District wall-clock time for stop ETA display (<c>HH:mm</c>). A stop ETA is a face time —
+    /// 07:00 means seven in the morning at the stop — so the time of day is stored as-is.
+    /// <para>
+    /// This deliberately no longer converts Mountain time to UTC. That conversion existed only to
+    /// cancel out the old <c>Npgsql.EnableLegacyTimestampBehavior</c> readback, which returned
+    /// <c>timestamptz</c> values as Local and turned an unconverted 07:00 into 01:00. With that switch
+    /// gone, values read back exactly as written, so converting here would store 07:00 as 13:00 and
+    /// display it that way. The UTC label satisfies Npgsql's <c>timestamptz</c> requirement and matches
+    /// the Kind converters in <c>BusBuddyDbContext</c>.
+    /// </para>
     /// </summary>
     private static DateTime DistrictWallClock(TimeSpan timeOfDay)
     {
-        var localUnspecified = DateTime.SpecifyKind(DateTime.Today.Add(timeOfDay), DateTimeKind.Unspecified);
-        return TimeZoneInfo.ConvertTimeToUtc(localUnspecified, DistrictTimeZone);
-    }
-
-    private static readonly TimeZoneInfo DistrictTimeZone = ResolveDistrictTimeZone();
-
-    private static TimeZoneInfo ResolveDistrictTimeZone()
-    {
-        foreach (var id in new[] { "America/Denver", "Mountain Standard Time" })
-        {
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                // try next id (IANA on macOS/Linux, Windows registry id on Win)
-            }
-            catch (InvalidTimeZoneException)
-            {
-            }
-        }
-
-        return TimeZoneInfo.Local;
+        // UTC calendar day to match Route.Date, which normalises on DateTime.UtcNow.Date.
+        return DateTime.SpecifyKind(DateTime.UtcNow.Date.Add(timeOfDay), DateTimeKind.Utc);
     }
 
     private static async Task<int> ResolveDefaultSeatingAsync(

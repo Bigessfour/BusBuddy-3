@@ -32,4 +32,10 @@ public partial class DriverScheduleView : UserControl
             Logger.Error(ex, "Failed to initialize DriverScheduleViewModel");
         }
     }
+
+    public DriverScheduleView(DriverScheduleViewModel viewModel)
+    {
+        InitializeComponent();
+        DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+    }
 }

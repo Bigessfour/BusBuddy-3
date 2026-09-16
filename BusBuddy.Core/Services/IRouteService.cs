@@ -16,17 +16,9 @@ namespace BusBuddy.Core.Services
         Task<Result<Route>> CreateRouteAsync(Route route);
         Task<Result<Route>> UpdateRouteAsync(Route route);
         Task<Result<bool>> DeleteRouteAsync(int id);
-        Task<Result<IEnumerable<Route>>> SearchRoutesAsync(string searchTerm);
-        Task<Result<IEnumerable<Route>>> GetRoutesByBusIdAsync(int busId);
-        Task<Result<bool>> IsRouteNumberUniqueAsync(string routeNumber, int? excludeId = null);
 
         // Route Stop Management
         Task<Result<IEnumerable<RouteStop>>> GetRouteStopsAsync(int routeId);
-        Task<Result<RouteStop>> AddRouteStopAsync(RouteStop routeStop);
-        Task<Result<RouteStop>> UpdateRouteStopAsync(RouteStop routeStop);
-        Task<Result<bool>> DeleteRouteStopAsync(int routeStopId);
-        Task<Result<decimal>> GetRouteTotalDistanceAsync(int routeId);
-        Task<Result<TimeSpan>> GetRouteEstimatedTimeAsync(int routeId);
 
         // Advanced Route Assignment Features
         Task<Result<List<Bus>>> GetAvailableBusesAsync();
@@ -44,17 +36,16 @@ namespace BusBuddy.Core.Services
             int studentId,
             DateTime exceptionDate,
             string? reason = null);
+        /// <summary>Active students with neither AM nor PM assigned. Prefer the slot overload for fill work.</summary>
         Task<Result<List<Student>>> GetUnassignedStudentsAsync();
+        /// <summary>Active students missing that slot. AM-assigned/PM-empty children are returned for PM, and vice versa.</summary>
         Task<Result<List<Student>>> GetUnassignedStudentsAsync(RouteTimeSlot timeSlot);
         Task<Result<List<Student>>> GetStudentsForRouteAsync(int routeId, RouteTimeSlot timeSlot);
         Task<Result<List<Student>>> AutoAssignStudentsAsync(int routeId, RouteTimeSlot timeSlot);
         Task<Result<List<Route>>> GetRoutesWithCapacityAsync();
 
         // Route Validation and Analysis
-        Task<Result<bool>> ValidateRouteCapacityAsync(int routeId);
         Task<Result<RouteUtilizationStats>> GetRouteUtilizationStatsAsync();
-        Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId);
-        Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
 
         // Route Building Methods
         Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);

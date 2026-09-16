@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace BusBuddy.Core.Models;
 
 /// <summary>
-/// Entity for storing AI analysis results and insights from Grok API
+/// Entity for storing AI analysis results and insights from local Ollama.
 /// Supports maintenance predictions, route optimizations, and operational insights
 /// </summary>
 [Table("AIInsights")]
@@ -33,7 +33,7 @@ public class AIInsight
     public string? EntityReference { get; set; }
 
     /// <summary>
-    /// JSON-formatted insight details from Grok analysis
+    /// JSON-formatted insight details from Ollama analysis
     /// </summary>
     [Column(TypeName = "nvarchar(max)")]
     public string InsightDetails { get; set; } = string.Empty;
@@ -60,7 +60,7 @@ public class AIInsight
     /// Source system that generated the insight
     /// </summary>
     [MaxLength(50)]
-    public string Source { get; set; } = "Grok-4";
+    public string Source { get; set; } = "Ollama";
 
     /// <summary>
     /// Status: New, Reviewed, InProgress, Resolved, Dismissed

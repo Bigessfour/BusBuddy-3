@@ -62,8 +62,8 @@ public sealed class StudentsListCoordinator
     }
 
     /// <summary>
-    /// Ends service for a student by archiving. specs/students.md: "MUST NOT delete a student to end
-    /// service. Archive or set inactive so history and route versions remain."
+    /// Archives a student who may return. specs/students.md: Archive when the child may come back;
+    /// delete (with a logged reason) when they have left or the row was a mistake.
     /// </summary>
     public async Task<bool> ArchiveStudentAsync(StudentModel student, bool archive = true)
     {
@@ -113,6 +113,28 @@ public sealed class StudentsListCoordinator
         await writeContext.SaveChangesAsync().ConfigureAwait(true);
         student.Active = !archive;
         return true;
+    }
+
+    /// <summary>
+    /// Permanently removes a student after a clerk-chosen reason. specs/students.md: Mistake, Moved,
+    /// or Not attending. The service writes the deletion log.
+    /// </summary>
+    public async Task<bool> DeleteStudentAsync(StudentModel student, StudentDeletionReason reason, string? notes)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+
+        var studentService = _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
+        if (studentService is null)
+        {
+            Logger.Warning("IStudentService unavailable — cannot delete StudentId={StudentId}", student.StudentId);
+            return false;
+        }
+
+        Logger.Information(
+            "Deleting student record StudentId={StudentId} Reason={Reason}",
+            student.StudentId,
+            reason);
+        return await studentService.DeleteStudentAsync(student.StudentId, reason, notes).ConfigureAwait(true);
     }
 
     public async Task<(int Saved, IReadOnlyList<string> Errors)> SaveInlineGridEditsAsync(

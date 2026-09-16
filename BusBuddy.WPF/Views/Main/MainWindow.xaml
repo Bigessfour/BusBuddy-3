@@ -51,12 +51,12 @@
                     <syncfusion:ButtonAdv Label="Student Map PDF" Margin="0,0,18,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="PDF of students in the system who have map coordinates"
+                                          ToolTip="Generate a PDF of students with map coordinates and open it"
                                           AutomationProperties.Name="Generate Student Map PDF"/>
                     <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Print the last generated student map PDF"
+                                          ToolTip="Reopen the last student map PDF to print"
                                           AutomationProperties.Name="Print Student Map PDF"/>
                     <syncfusion:ButtonAdv Label="Dashboard" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
@@ -129,32 +129,6 @@
                             <syncfusion:ComboBoxItemAdv Content="FluentDark"/>
                             <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
                         </syncfusion:ComboBoxAdv>
-                        <syncfusion:ButtonAdv Label="Dark"
-                                              MinWidth="64"
-                                              Margin="8,0,0,0"
-                                              Padding="10,4"
-                                              SizeMode="Normal"
-                                              IconWidth="0"
-                                              IconHeight="0"
-                                              SmallIcon="{x:Null}"
-                                              ToolTip="Switch to FluentDark"
-                                              AutomationProperties.Name="Switch to FluentDark"
-                                              Click="DarkThemeButton_Click"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
-                        <syncfusion:ButtonAdv Label="Light"
-                                              MinWidth="64"
-                                              Margin="4,0,0,0"
-                                              Padding="10,4"
-                                              SizeMode="Normal"
-                                              IconWidth="0"
-                                              IconHeight="0"
-                                              SmallIcon="{x:Null}"
-                                              ToolTip="Switch to FluentLight"
-                                              AutomationProperties.Name="Switch to FluentLight"
-                                              Click="LightThemeButton_Click"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>

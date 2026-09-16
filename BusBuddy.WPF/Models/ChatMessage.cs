@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace BusBuddy.WPF.Models
 {
     /// <summary>
-    /// Represents a chat message in the XAI chat interface
+    /// Represents a chat message in the local AI chat interface
     /// </summary>
     public class ChatMessage : INotifyPropertyChanged
     {

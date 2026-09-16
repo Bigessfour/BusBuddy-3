@@ -69,6 +69,7 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<Fuel> FuelRecords { get; set; } = null!;
     public virtual DbSet<Maintenance> MaintenanceRecords { get; set; } = null!;
     public virtual DbSet<Student> Students { get; set; } = null!;
+    public virtual DbSet<StudentDeletionLog> StudentDeletionLogs { get; set; } = null!;
     public virtual DbSet<Family> Families { get; set; } = null!;
     public virtual DbSet<Guardian> Guardians { get; set; } = null!;
     public virtual DbSet<Schedule> Schedules { get; set; } = null!;
@@ -498,8 +499,35 @@ public class BusBuddyDbContext : DbContext
 
             // Geo metadata — encoded polyline + stops; do not cap at 4000 (road paths exceed that)
             entity.Property(e => e.WaypointsJson);
-            entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
-            entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
+        });
+
+        // Vehicle-to-route assignment. Delete behavior previously came only from the
+        // initial migration; stated here so the cascade is visible next to the other
+        // Route children.
+        modelBuilder.Entity<RouteAssignment>(entity =>
+        {
+            entity.ToTable("RouteAssignments");
+            entity.HasKey(e => e.RouteAssignmentId);
+
+            entity.HasOne(e => e.Route)
+                  .WithMany()
+                  .HasForeignKey(e => e.RouteId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .IsRequired();
+
+            entity.HasOne(e => e.Vehicle)
+                  .WithMany()
+                  .HasForeignKey(e => e.VehicleId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .IsRequired();
+
+            entity.HasOne(e => e.Guardian)
+                  .WithMany()
+                  .HasForeignKey(e => e.GuardianId);
+
+            entity.HasIndex(e => e.RouteId);
+            entity.HasIndex(e => e.VehicleId);
+            entity.HasIndex(e => e.GuardianId);
         });
 
         // Configure Activity entity with comprehensive indexing
@@ -667,11 +695,30 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.School).HasDatabaseName("IX_Students_School");
             entity.HasIndex(e => e.Active).HasDatabaseName("IX_Students_Active");
 
-            // AMRoute/PMRoute are still route *names* with no FK (see specs/routes.md follow-up).
-            // Index them so roster-by-route reads and rename audits stop table-scanning.
+            // AMRoute/PMRoute are the denormalised route *names*, kept in step with AmRouteId/PmRouteId
+            // below until the name columns are dropped. Index them so roster-by-route reads and rename
+            // audits stop table-scanning.
             entity.HasIndex(e => e.AMRoute).HasDatabaseName("IX_Students_AMRoute");
             entity.HasIndex(e => e.PMRoute).HasDatabaseName("IX_Students_PMRoute");
             entity.HasIndex(e => e.SchoolYear).HasDatabaseName("IX_Students_SchoolYear");
+
+            // Rider assignment by identity. A Route is the run published for the school year
+            // (specs/routes.md) — the daily instance is a Schedule — so one key per session is the whole
+            // assignment. No navigation property: `AMRoute` (string) and an `AmRoute` navigation would
+            // differ only by case and read as a bug. Deleting a route clears the assignment rather than
+            // blocking the delete or removing the student.
+            entity.HasIndex(e => e.AmRouteId).HasDatabaseName("IX_Students_AmRouteId");
+            entity.HasIndex(e => e.PmRouteId).HasDatabaseName("IX_Students_PmRouteId");
+
+            entity.HasOne<Route>()
+                .WithMany()
+                .HasForeignKey(e => e.AmRouteId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne<Route>()
+                .WithMany()
+                .HasForeignKey(e => e.PmRouteId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(e => e.Destination)
                 .WithMany()
@@ -682,6 +729,19 @@ public class BusBuddyDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.PickupStopId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Operational deletion log. No FK to Students — the roster row is already gone.
+        modelBuilder.Entity<StudentDeletionLog>(entity =>
+        {
+            entity.ToTable("StudentDeletionLogs");
+            entity.HasKey(e => e.StudentDeletionLogId);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(32);
+            entity.Property(e => e.Notes).HasMaxLength(200);
+            entity.Property(e => e.StudentNumber).HasMaxLength(20);
+            entity.Property(e => e.SchoolYear).HasMaxLength(9);
+            entity.HasIndex(e => e.StudentId).HasDatabaseName("IX_StudentDeletionLogs_StudentId");
+            entity.HasIndex(e => e.DeletedUtc).HasDatabaseName("IX_StudentDeletionLogs_DeletedUtc");
         });
 
         modelBuilder.Entity<PickupStop>(entity =>
@@ -726,8 +786,8 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.PickupAddress).HasMaxLength(300);
             entity.Property(e => e.DropoffAddress).HasMaxLength(300);
             entity.Property(e => e.Notes).HasMaxLength(1000);
-            // Restrict: a transfer is assignment history. specs/students.md requires history to survive
-            // end-of-service, so it must not be cascade-deleted with the student row.
+            // Restrict: a transfer is not cascade-deleted with the student. DeleteStudentAsync removes
+            // related rows explicitly so an accidental EF cascade cannot wipe assignment history.
             entity.HasOne(e => e.Student)
                 .WithMany()
                 .HasForeignKey(e => e.StudentId)
@@ -777,8 +837,8 @@ public class BusBuddyDbContext : DbContext
                   .HasConstraintName("FK_Guardians_Family");
 
             // Relationships - One Family has many Students.
-            // Restrict, not Cascade: specs/students.md forbids deleting a student to end service, so a
-            // family delete must not be able to wipe its students (and cascade on to their schedules).
+            // Restrict, not Cascade: deleting a family must not wipe its students. Student deletion
+            // is an explicit clerk action on IStudentService.DeleteStudentAsync.
             entity.HasMany(f => f.Students)
                   .WithOne(s => s.Family)
                   .HasForeignKey(s => s.FamilyId)
@@ -853,8 +913,8 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
 
             // Relationships
-            // specs/students.md: history must survive a student row removal, so a schedule assignment
-            // blocks the delete instead of vanishing with it. Purge clears history explicitly first.
+            // Restrict at the FK so an accidental cascade cannot wipe assignments. DeleteStudentAsync
+            // removes these rows explicitly, then writes their count to StudentDeletionLogs.
             entity.HasOne(ss => ss.Student)
                   .WithMany(s => s.StudentSchedules)
                   .HasForeignKey(ss => ss.StudentId)
@@ -1066,7 +1126,7 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.ScheduledDriverId).HasDatabaseName("IX_ActivitySchedule_DriverId");
         });
 
-        // Configure AIInsight entity for Grok analysis results
+        // Configure AIInsight entity for Ollama analysis results
         modelBuilder.Entity<AIInsight>(entity =>
         {
             entity.ToTable("AIInsights");
@@ -1080,7 +1140,7 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.Summary).IsRequired().HasMaxLength(500);
             entity.Property(e => e.RecommendedActions).HasMaxLength(1000);
             entity.Property(e => e.ConfidenceScore).HasColumnType("decimal(4,3)");
-            entity.Property(e => e.Source).HasMaxLength(50).HasDefaultValue("Grok-4");
+            entity.Property(e => e.Source).HasMaxLength(50).HasDefaultValue("Ollama");
             entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("New");
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -1148,12 +1208,6 @@ public class BusBuddyDbContext : DbContext
                 .HasDefaultValue("Standard");
         });
 
-        modelBuilder.Entity<Route>(entity =>
-        {
-            entity.Property(e => e.RouteName)
-                .HasDefaultValue("Route");
-        });
-
         modelBuilder.Entity<Bus>(entity =>
         {
             entity.Property(e => e.Make)
@@ -1196,13 +1250,39 @@ public class BusBuddyDbContext : DbContext
                     }
                 }
 
-                // Handle DateTime properties that might be NULL
-                if (property.ClrType == typeof(DateTime) && property.IsNullable)
+                // Every timestamp column in this database is `timestamp with time zone`. Npgsql refuses to
+                // write a DateTime whose Kind is Local or Unspecified to that type, and nearly every value
+                // this app produces is one of those (DateTime.Today and DateTime.Now are Local, a bare
+                // `new DateTime(...)` is Unspecified). These converters label the value UTC rather than
+                // shifting it, so a 07:00 pickup stays 07:00 and a route date stays midnight on its own
+                // calendar day. Values already produced by DateTime.UtcNow pass through untouched.
+                //
+                // Note this is deliberately not ToUniversalTime(): these are wall-clock face times for a
+                // single district, and shifting them by the machine offset is what previously made
+                // Routes.Date read back as the *previous* day at 18:00.
+                //
+                // ClrType is DateTime? for an optional property, so nullable columns need their own
+                // converter rather than a ClrType == typeof(DateTime) + IsNullable check.
+                if (property.ClrType == typeof(DateTime))
                 {
-                    // Add a value converter to handle invalid dates
-                    property.SetValueConverter(new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>(
-                        v => v.HasValue && v.Value != DateTime.MinValue ? v : null,
-                        v => v ?? DateTime.MinValue));
+                    property.SetValueConverter(
+                        new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+                            v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+                            v => DateTime.SpecifyKind(v, DateTimeKind.Utc)));
+                }
+                else if (property.ClrType == typeof(DateTime?))
+                {
+                    // Preserves the original intent of treating DateTime.MinValue as "no value".
+                    property.SetValueConverter(
+                        new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime?, DateTime?>(
+                            v => !v.HasValue || v.Value == DateTime.MinValue
+                                ? null
+                                : (v.Value.Kind == DateTimeKind.Utc
+                                    ? v.Value
+                                    : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc)),
+                            v => v.HasValue
+                                ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc)
+                                : DateTime.MinValue));
                 }
             }
         }

@@ -31,8 +31,12 @@
             <TextBlock Text="Address" Margin="0,0,0,4"/>
             <controls:PlacesAddressBox x:Name="StopAddressBox"
                                         UseFormattedAddress="True"
-                                        FieldAutomationName="Stop address"/>
+                                        FieldAutomationName="Stop address"
+                                        AddressApplied="StopAddressBox_AddressApplied"/>
         </StackPanel>
+        <TextBlock x:Name="CoordinateStatusText" Grid.Row="2" TextWrapping="Wrap"
+                   VerticalAlignment="Top"
+                   AutomationProperties.Name="Stop coordinate status"/>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="40" Margin="0,0,8,0"
                                   Click="Save_Click" AutomationProperties.Name="Save stop"/>

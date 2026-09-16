@@ -33,12 +33,24 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 ## Now
 
-- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry)
+### Routes leftover queue (ordered)
+
+Do in this order so parked work is not forgotten and is not started out of sequence.
+
+| Order | Item                                                                  | Why this slot                                                                                                                                                  |
+| ----- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | District Map VM re-smoke, including **Move to selected route**        | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                         |
+| 2     | Unused `AddressValidationControl` + stale `specs/007-*` OSM narrative | Hygiene only. Do after map re-smoke.                                                                                                                           |
+| 3     | `AMRoute` / `PMRoute` name-string drop                                | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop. |
+| —     | `IRouteRepository`                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                        |
+| —     | Split `RouteService` / `RouteAssignmentViewModel`                     | File-size debt. Dedicated pass only. Do not casually split.                                                                                                    |
+
+- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
 
 Optional:
 
 - [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
-- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
+- [ ] Parked (not ship-blocking): unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
@@ -78,7 +90,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [ ] Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
 - [ ] Optional Hop 4 UI click on VM: Assign Vehicle/Driver on Route Assignments (same `RouteService.Assign*ToRouteAsync`)
 - [ ] Optional Hop 5 UI: Driver Schedule / Route Management persist schedule (same `IScheduleService.AddScheduleAsync`)
-- [ ] Route FK follow-up: nullable `AmRouteId` / `PmRouteId`, backfill by name, mirror then drop `AMRoute` / `PMRoute` strings
+- [ ] Route FK follow-up — **phase 1 done, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` (nullable, `ON DELETE SET NULL`, indexed) added and backfilled by name in `20260916180546_StudentRouteForeignKeys`; rename cascade and delete-unassign now resolve riders by key; assignment paths mirror key + name; seed/`ensure-routes` dual-write unique names onto those keys. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
 
 ---
 
@@ -90,7 +102,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
 - [x] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes (see Done log)
-- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
+- [ ] Parked (not ship-blocking): unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 ---
 
@@ -103,13 +115,83 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-09-16 — Shapefile columns dropped; District Map clerk override
+
+- **Shapefile paths:** `DistrictBoundaryShapefilePath` / `TownBoundaryShapefilePath` removed from `Route`, fluent config, and snapshot. `20260916200000_DropRouteShapefilePaths` actually drops the columns (the 20250814 migration was empty). Maps stay Google tiles only; `ImageryLayer.SubShapeFileLayers` remains the Syncfusion polyline host, not a `.shp` file.
+- **Clerk override:** District Map **Move to selected route** calls `ApplyClerkOverrideAsync`. Pins now carry `StudentIds`; click selects the pin; the destination is the combo `SelectedRoute`; AM/PM comes from `RouteSession.ToAssignmentSlot`.
+- **Left parked:** `AMRoute`/`PMRoute` name strings (phased drop); unused `AddressValidationControl`; historical OSM narrative in spec 007.
+- **Evidence:** UTM guest `MapViewModelTests` + `MapViewTests` + `RouteDeterminationServiceTests` **67 passed, 0 failed**.
+
+### 2026-09-16 — Npgsql timestamp resolution + Student→Route foreign key
+
+**The timestamp mismatch was one line, and it was also a live bug — not just a migration blocker.**
+
+- **Root cause:** `AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true)` in `EntityFrameworkPostgresExtensions`. Every timestamp column in the database is `timestamp with time zone` and the model snapshot already declared 79 of them that way, but the switch forces Npgsql's default CLR mapping to `timestamp without time zone`. Only the _runtime model_ disagreed, which is why `has-pending-model-changes` wanted a ~1,400-line migration rewriting every DateTime column, with a data-loss warning — blocking every feature migration.
+- **It was also corrupting reads.** Measured against the live `busbuddy_test` rows: with the switch on, a 07:00 stop read back as **01:00 Local** and `Routes.Date` for Sept 2 read back as **Sept 1 18:00** — a six-hour skew that lands calendar dates on the previous day. With the switch removed the same rows read back as `07:00` and `Sept 2 00:00`. Removing it fixed the skew rather than causing one.
+- **Why a converter, not a call-site audit:** verified directly against Postgres that with the switch off, EF writing a `DateTime` with `Kind=Local` or `Kind=Unspecified` to `timestamptz` throws `ArgumentException: ... only UTC is supported`. `DateTime.Today` and `DateTime.Now` are both Local, so essentially every write site would throw. `BusBuddyDbContext` now labels every `DateTime`/`DateTime?` property `Kind=Utc` on write and read **without shifting the clock**, so a 07:00 pickup stays 07:00 and a route date stays midnight on its own day. Confirmed end to end: all three Kinds write and round-trip with the wall clock intact, and the converters add zero schema churn.
+- **Removed the compensating hack:** `RouteDeterminationService.DistrictWallClock` converted Mountain time to UTC purely to cancel out the legacy Local readback (its own comment said so). With the skew gone that conversion would store a 7am stop as 13:00, so it is now a plain face time. This is the source of the `13:00+00` / `01:00+00` outlier rows in `busbuddy_test`.
+- **Also fixed:** the hand-written `20260916010000_StudentDeletionLogs` migration had no `.Designer.cs`, which is why `dotnet ef migrations remove` previously emptied the model snapshot. Reconstructed it, and verified `migrations remove` now reverts the snapshot cleanly.
+- **Student→Route FK:** `AmRouteId` / `PmRouteId` added (nullable, indexed, `ON DELETE SET NULL`) in `20260916180546_StudentRouteForeignKeys`, backfilled from the name strings case-insensitively and **only where a name resolves to exactly one route**. A `Route` is the run published for the school year (`specs/routes.md`; the daily instance is a `Schedule`), so one key per session is the whole assignment. The rename cascade and delete-unassign now resolve riders by key, which removes the ambiguity guard that previously skipped riders whenever a name was shared across dates.
+- **Evidence:** `has-pending-model-changes` reports **no changes**; migration applied cleanly to a clone of `busbuddy_test` and backfilled 12 of 14 students (the 2 skipped are the "North Elementary" orphans above); `dotnet build BusBuddy.sln` 0 errors.
+
+### 2026-09-16 — Routes vertical sweep (spec, dead code, remaining blockers)
+
+- **Map / assignment:** plotting a route no longer wipes the always-on school and catalog-stop overlay (clears only per-household pins); selection is pushed into `MapViewModel.SelectedRoute` so the path draws. `TimeRouteStops` is `async Task` and writes `ScheduledArrival`/`ScheduledDeparture` so the printed PDF is not stale. Special-needs mismatch no longer offers a seating override that `AssignStudentToRouteAsync` would reject anyway.
+- **Exports / optimizer:** `RouteExportService` writes only to the clerk-chosen path (no leftover Desktop CSV of student names). `StudentRouteOptimizer` counts AM-or-PM missing, not both-empty, so a child with AM and no PM is still filled.
+- **Dead:** deleted `RoutePopulationScaffold` / `IRoutePopulationScaffold`; stripped unused `IRouteRepository` query methods (CRUD stays for `IUnitOfWork`); removed unused `AMBusId`/`PMBusId` aliases, `NewRouteDate`/`TimeSlots`/`IsRouteSelected`, and a no-op in `AssignFitnessEvaluator`.
+- **Auto-assign:** `AutoAssignStudentsAsync` `continue`s on a per-student rejection (special-needs mismatch) and only `break`s when the route is at capacity. Covered by `AutoAssignStudentsAsync_SkipsIneligibleAndContinues`.
+- **Dates:** `Route.NormalizeRouteDate` no longer calls `ToUniversalTime()` (SfDatePicker Local values kept their calendar day). `DistrictWallClock` / stop-estimate fallbacks / clone default date use `DateTime.UtcNow.Date`.
+- **Clerk override:** `ApplyClerkOverrideAsync` now passes `overrideSeating: true` so a clerk override onto a full bus is not blocked by the check it exists to bypass. Reason is still log-only until an override table exists. District Map **Move to selected route** is the production caller.
+- **Evidence:** `dotnet build` 0 errors; `has-pending-model-changes` reports no changes; UTM guest gate **609 passed, 0 failed**.
+
+### 2026-09-16 — Routes vertical production hardening
+
+- **No more fake roster data:** `LoadMockData` and every call site are gone from `RouteAssignmentViewModel`, including the `catch` that replaced real routes with "Mock Elementary School" after a transient DB error. `IRouteService` is now a required constructor dependency, so the `_routeService == null` branches that mutated in-memory collections and reported success are gone too. When DI can't supply it, `RouteAssignmentView` leaves `DataContext` null, logs an error, and shows a red banner instead of a working-looking screen.
+- **Add Stop works end to end:** `RouteStopEditDialog` now captures Places lat/lng via `AddressApplied`, shows the located coordinates, and blocks save until the address is picked from the suggestion list; the VM passes them through, so `AddStopToRouteAsync` no longer rejects the stop for missing coordinates. Locked in by `PlacesAddressSurfaceTests`.
+- **Write correctness:** `CreateNewRouteAsync` uses `GetWriteContext()` (was writing on a `NoTracking` read context); `UpdateRouteAsync` loads the tracked row and copies via `CurrentValues.SetValues`, so unchanged columns stay out of the `UPDATE`; `Session` re-infers only when an inference input changed, so a deliberately-set session isn't stomped.
+- **Transactions:** `CloneRouteAsync`, `ReorderRouteStopsAsync`, `AddStopToRouteAsync`, `RemoveStopFromRouteAsync`, `RecordRiderExceptionAsync` run through one `InTransactionAsync` helper that opens the transaction _inside_ `CreateExecutionStrategy().ExecuteAsync(...)` — the documented shape, and the reason this does not repeat the Hop 4 `BeginTransactionAsync` incompatibility. It rolls back on a failure `Result`, not just on exception.
+- **Dead code removed:** 12 stub/dead members off `IRouteService` + `RouteService` (three "not implemented" stop methods, hardcoded distance/time, `SearchRoutesAsync`, `IsRouteNumberUniqueAsync`, `ValidateRouteCapacityAsync`, `GenerateRouteSchedulesAsync` which wrote a `.txt` into the working directory, and the unused `CanAssignStudentToRouteAsync` overload), the comments-only `RouteServiceExtensions.cs`, the orphaned `IStudentService.GetStudentsForRouteAsync(context, routeId)`, and the `AssignStudentsCommand` / `PrintRouteMapsCommand` aliases that were bound to nothing and pointed at unrelated work.
+- **EF:** explicit `RouteAssignment` fluent config (cascade matching the initial migration), new `IX_Routes_IsActive`, and the duplicate `Route` block whose `RouteName` default disagreed with the snapshot is gone.
+- **Bugbot finding (fixed):** `DeleteRouteAsync` selected riders with a case-sensitive `AMRoute == routeName` but cleared them with `OrdinalIgnoreCase`, so a rider stored as `"route a"` was never loaded and kept pointing at a deleted route. The query now lowers both sides like `CascadeRouteRenameAsync` does. Covered by `DeleteRouteAsync_UnassignsRidersStoredWithDifferentCasing`, which was confirmed to fail against the old query.
+- **Evidence:** `dotnet build BusBuddy.sln` 0 errors (2 pre-existing warnings in untouched files); UTM guest gate `Category!=Integration&Category!=InMemoryFlaky` **597 passed, 0 failed**. Removed a stale `DriverStatusPersistProbeTests.cs` from the guest that exists in neither the tree nor git history and was failing every run.
+- **Closed by the timestamp + FK entries above.** Rename cascade is now key-based; the legacy timestamp switch is gone.
+
+### 2026-09-16 — Routes vertical closeout (canvas)
+
+- **Spec:** `specs/routes.md` now matches Core. Date + `IsActive` (not `SchoolYear`/`Published`); two AM/PM rows; stops denormalize validated lat/lng (no `LocationId`/`StopKind`); no `RouteVersion` table; leftover `AM*`/`PM*` columns remain year-default pairings.
+- **Dead code:** in-memory `TryAddStudent` / `AssignedStudents` / building-status helpers; unused `DateFormatted` / `TotalMiles` / `SafeRouteName`; unused WPF `RouteViewModel` AutoMapper maps; clone no longer copies unused shapefile path columns.
+- **Roster counts:** `GetAllRoutesAsync` / `GetAllActiveRoutesAsync` / `GetRouteByIdAsync` populate `StudentCount` and `StopCount` from `AmRouteId`/`PmRouteId`. Dashboard Assigned uses `StudentCount` (was always 0 via empty `AssignedStudents`).
+- **Schedule button:** Assignment **Schedule** opens published stop times for the selected route row, not the district-wide driver calendar.
+- **DI:** `RouteManagementViewModel` takes routing, optimization, and the map VM from the constructor instead of `App.ServiceProvider` for those three.
+
+### 2026-09-16 — Trip Board clerk surface (TripEvent)
+
+- Trip Board (`ActivityManagementView`) now has SfScheduler, New/Edit/Confirm, Calculate Distance, Print Ticket. Editor is `TripEventEditDialog` bound to Core `TripEvent` — does not write `ActivitySchedule` or `Schedule`, never sets `RouteId`.
+- Purpose and sports/reasons are clerk-editable (`ITripReasonCatalog` in `%AppData%/BusBuddy/user-settings.json`). New names persist without a code change.
+- Distance/path: `RefreshPathMilesAsync` + `MapViewModel.TryPlotTrip` polyline via `IRoutingService`.
+- Assignment: `IRouteService` available lists + `HasConflictsAsync` + published AM/PM warnings (`GetAssignmentWarningsAsync`). Home assignment unchanged.
+- Trip ticket: `PdfReportService.GenerateTripTicket` with paper mileage/fuel/time blanks and `DriverHours` = duration + 1.5h inspection pad (`TripEvent.PrePostTripInspectionHours`).
+- Spec: `specs/trips.md` ticket + inspection-hours invariants.
+
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
+
+### 2026-09-15 — District Map toolbar, pins, and legend (clerk VM feedback)
+
+- Diagnosis: none of the reported symptoms were Google's. Tiles were fine; captions, colors, and the toolbar are BusBuddy XAML/VM (Syncfusion `ImageryLayer.MarkerTemplate` + `ButtonAdv`).
+- Labels: a route stop on an existing pin now **tags** that pin (`MapMarker.RouteStopLabel`, gold stroke, `Name (Stop n)`) instead of stacking a `WP` pin + second caption at the same coordinate. Household captions (home/student) wait for `MapDefaults.HomeLabelZoomLevel` (14); place captions keep 12.
+- Colors: one fixed fill per `MapMarkerLabels.Kind` (school black, pickup orange, route stop gold, depot purple, home blue, student green) bound via `MapMarker.FillBrush` / `StrokeBrush`; legend card generated from `MapMarkerLabels.Legend`.
+- Zoom In/Out vanishing: overlay `ButtonAdv` now owns an explicit `ControlTemplate` with literal brushes (theme `DynamicResource` lookups were dropping to transparent after the map re-rendered); toolbar `Panel.ZIndex=10`; map container `ClipToBounds`.
+- Export Route: `EnableRouteGeoExport` Settings gate removed everywhere (keys, service, Settings VM/XAML, exporter). Button always enabled; no selection → toast asking for a route; success/failure toasts.
+- Show Schools: schools-only view (`ClearMarkersExcept(School)`), center on schools, toast; Refresh restores the full district overlay.
+- Plot Pickup Stops: catalog pickups **plus** published route stops of every route (`MapDistrictLayers.PlotRouteStopsAsync`); toast when nothing to plot.
+- Active Buses card + `ActiveBuses` / `SelectedBus` / `IBusService` removed from `MapViewModel`.
+- Evidence: Release build green; UTM guest `--full` filter 574 passed / 2 pre-existing failures also failing on `master` (`DirectContext_StatusUpdate_Persists`, `IsDriverAvailableForRouteAsync_ReturnsFalseWhenAlreadyAssigned` — InMemory driver suite, VM-only). Spec: `specs/maps.md` § Pin colors and captions / District Map toolbar contract.
 
 ### 2026-09-15 — Release publish NETSDK1152
 
 - Cause: `BusBuddy.Core/appsettings.json` `CopyToOutputDirectory=Always` flows transitively into the WPF publish set; WPF ships its own file at the same relative path.
 - Fix: Core item gains `CopyToPublishDirectory=Never`. Build outputs unchanged (WPF/Tests bins still get WPF's copy; DbPrep gets Core's). `dotnet publish` with the CI flags (`win-x64`, self-contained, single-file) now succeeds and ships the WPF `appsettings.json`.
-- Follow-up (non-blocking): Core's copy is stale vs WPF (LocalDB, pre-Ollama xAI); reconcile or delete once DbPrep/Tests config is pinned.
+- Follow-up (non-blocking): Core's copy is stale vs WPF (LocalDB); reconcile or delete once DbPrep/Tests config is pinned.
 
 ### 2026-09-15 — Project-done code debt sweep
 
@@ -222,6 +304,7 @@ Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibi
 
 - **Bugbot high:** storing face clock as UTC (`UtcClockTime`) made Local `HH:mm` shift (07:00 → 01:00 under MT). Now `DistrictWallClock` (America/Denver / `Mountain Standard Time` → UTC). `UseBusBuddyPostgres` calls `ConfigureNpgsqlAppContext()` so DbPrep/tests get legacy timestamp behavior. PDF schedule prefers `ScheduledArrival`/`ScheduledDeparture` TimeSpans.
 - **Proof:** insert stop ETA face=07:00 → DB readback `EstimatedArrivalTime=07:00` Kind=Local; `ScheduledArrival=07:00:00`.
+- **Superseded 2026-09-16** (see the timestamp entry at the top of this log): the legacy timestamp switch is gone, `ConfigureNpgsqlAppContext()` is now a no-op, and `DistrictWallClock` no longer converts Mountain→UTC. A 07:00 ETA now reads back as `07:00` Kind=**Utc**. Do not reintroduce the conversion — it only ever existed to cancel out the legacy Local readback.
 - **Hop 6 acceptance:** `FuelService` + `MaintenanceService` create rows with `VehicleId` = Hop 4 bus.
 - **Harness:** `dotnet run --project BusBuddy.DbPrep -- hop6-fuel-maintenance [BusId]` (alias `fuel-maintenance`).
 - **Evidence:** `BusId=2` (`BusNumber=5`), `FuelId=2` VehicleId=2, `MaintenanceId=2` VehicleId=2 on `busbuddy_test`.

@@ -155,7 +155,7 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("SelectedTheme"));
         Assert.That(xaml, Does.Contain("EnableActivityLogging"));
         Assert.That(xaml, Does.Contain("ShowDashboardOnStartup"));
-        Assert.That(xaml, Does.Contain("EnableRouteGeoExport"));
+        Assert.That(xaml, Does.Not.Contain("EnableRouteGeoExport"), "Export Route is always on; no Settings gate");
         Assert.That(xaml, Does.Contain("DepotLatitudeText"));
         Assert.That(xaml, Does.Contain("BoundingBoxMinLatText"));
         Assert.That(xaml, Does.Contain("This district"));
@@ -164,13 +164,21 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("IsEditable=\"False\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Enable activity logging\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Show dashboard on startup\""));
-        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Enable route GeoJSON export\""));
+        Assert.That(xaml, Does.Contain("Watermark=\"City\""));
+        Assert.That(xaml, Does.Contain("Text=\"Latitude\""));
+        Assert.That(xaml, Does.Contain("Text=\"South\""));
+        Assert.That(xaml, Does.Contain("Text=\"West\""));
+        Assert.That(xaml, Does.Contain("Text=\"North\""));
+        Assert.That(xaml, Does.Contain("Text=\"East\""));
+        Assert.That(xaml, Does.Contain("CheckBox"));
+        Assert.That(xaml, Does.Not.Contain("ToggleButtonExt"));
         Assert.That(xaml, Does.Contain("SettingsPrimaryButton"));
 
         var vm = XamlViewFile.Read("ViewModels/Settings/SettingsViewModel.cs");
         Assert.That(vm, Does.Contain("UserSettingsKeys"));
-        Assert.That(vm, Does.Contain("EnableRouteGeoExport"));
+        Assert.That(vm, Does.Not.Contain("EnableRouteGeoExport"));
         Assert.That(vm, Does.Contain("DistrictSettingsAccessor.WriteToUserAsync"));
+        Assert.That(vm, Does.Contain("ApplyDepotAddress"));
         Assert.That(vm, Does.Contain("Log.ForContext<SettingsViewModel>"));
 
         var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");

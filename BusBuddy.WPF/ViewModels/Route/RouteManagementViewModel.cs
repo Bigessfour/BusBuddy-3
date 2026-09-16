@@ -9,7 +9,6 @@ using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Utilities;
 using Serilog;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -21,6 +20,7 @@ using BusBuddy.WPF;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Logging;
+using BusBuddy.WPF.ViewModels.Map;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -48,11 +48,10 @@ namespace BusBuddy.WPF.ViewModels.Route
         private readonly IRouteOptimizationService? _routeOptimization;
         private readonly IRouteDeterminationService? _routeDetermination;
         private readonly IDestinationService? _destinations;
-        private IStudentService? _studentService;
+        private readonly MapViewModel? _map;
         private IScheduleService? _scheduleService;
         private RouteExportService? _exportService;
         private IOperationalReportService? _reportService;
-        private IRoutePopulationScaffold? _routePopulation;
 
         private IAsyncRelayCommand _openAssignmentRelay = null!;
         private IAsyncRelayCommand _addRouteRelay = null!;
@@ -246,6 +245,16 @@ namespace BusBuddy.WPF.ViewModels.Route
             set
             {
                 _selectedRoute = value;
+                if (value != null)
+                {
+                    var slot = RouteSession.ToAssignmentSlot(value);
+                    if (_selectedTimeSlot != slot)
+                    {
+                        _selectedTimeSlot = slot;
+                        OnPropertyChanged(nameof(SelectedTimeSlot));
+                    }
+                }
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsRouteSelected));
                 SyncAssignmentFromSelectedRoute();
@@ -307,66 +316,32 @@ namespace BusBuddy.WPF.ViewModels.Route
         public ICommand GenerateRoutesCommand { get; private set; } = null!;
         public ICommand GenerateTransferRoutesCommand { get; private set; } = null!;
         public ICommand OpenRouteAssignmentCommand { get; private set; } = null!;
-        /// <summary>Alias for <see cref="OpenRouteAssignmentCommand"/> (legacy binding name).</summary>
-        public ICommand AssignStudentsCommand { get; private set; } = null!;
         public ICommand AssignVehicleCommand { get; private set; } = null!;
         public ICommand AssignDriverCommand { get; private set; } = null!;
         public ICommand ExportCsvCommand { get; private set; } = null!;
         public ICommand ExportReportCommand { get; private set; } = null!;
         public ICommand PrintScheduleCommand { get; private set; } = null!;
-        public ICommand PrintRouteMapsCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
         public ICommand RefreshDrivePathCommand { get; private set; } = null!;
         public ICommand OptimizeStopOrderCommand { get; private set; } = null!;
         public ICommand CopyRouteCommand { get; private set; } = null!;
 
-        public RouteManagementViewModel()
-        {
-            var dependencies = ResolveDependencies();
-            _contextFactory = dependencies.ContextFactory;
-            _routeService = dependencies.RouteService ?? new RouteService(_contextFactory);
-            _routingService = dependencies.RoutingService ?? App.ServiceProvider?.GetService<IRoutingService>();
-            _routeOptimization = App.ServiceProvider?.GetService<IRouteOptimizationService>();
-            _routeDetermination = dependencies.RouteDetermination;
-            _destinations = dependencies.Destinations ?? App.ServiceProvider?.GetService<IDestinationService>();
-            ResolveOptionalServices();
-            InitializeViewModel();
-        }
-
-        private static (
-            IBusBuddyDbContextFactory ContextFactory,
-            IRouteService? RouteService,
-            IRoutingService? RoutingService,
-            IRouteDeterminationService? RouteDetermination,
-            IDestinationService? Destinations) ResolveDependencies()
-        {
-            var sp = App.ServiceProvider;
-            if (sp is not null)
-            {
-                return (
-                    sp.GetRequiredService<IBusBuddyDbContextFactory>(),
-                    sp.GetService<IRouteService>(),
-                    sp.GetService<IRoutingService>(),
-                    sp.GetService<IRouteDeterminationService>(),
-                    sp.GetService<IDestinationService>());
-            }
-
-            return (new BusBuddyDbContextFactory(), null, null, null, null);
-        }
-
         public RouteManagementViewModel(
             IBusBuddyDbContextFactory contextFactory,
-            IRouteService? routeService,
+            IRouteService routeService,
             IRouteDeterminationService? routeDetermination,
             IDestinationService? destinations = null,
-            IRoutingService? routingService = null)
+            IRoutingService? routingService = null,
+            IRouteOptimizationService? routeOptimization = null,
+            MapViewModel? map = null)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-            _routeService = routeService ?? new RouteService(_contextFactory);
-            _routingService = routingService ?? App.ServiceProvider?.GetService<IRoutingService>();
-            _routeOptimization = App.ServiceProvider?.GetService<IRouteOptimizationService>();
+            _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
+            _routingService = routingService;
+            _routeOptimization = routeOptimization;
             _routeDetermination = routeDetermination;
-            _destinations = destinations ?? App.ServiceProvider?.GetService<IDestinationService>();
+            _destinations = destinations;
+            _map = map;
             ResolveOptionalServices();
             InitializeViewModel();
         }
@@ -379,11 +354,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
-            _studentService = sp.GetService<IStudentService>();
             _scheduleService = sp.GetService<IScheduleService>();
             _exportService = sp.GetService<RouteExportService>();
             _reportService = sp.GetService<IOperationalReportService>();
-            _routePopulation = sp.GetService<IRoutePopulationScaffold>();
         }
 
         private void InitializeViewModel()
@@ -393,8 +366,6 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             _openAssignmentRelay = new AsyncRelayCommand(OpenRouteAssignmentAsync, () => IsRouteSelected && !IsBusy);
             OpenRouteAssignmentCommand = _openAssignmentRelay;
-            AssignStudentsCommand = _openAssignmentRelay;
-            PrintRouteMapsCommand = _openAssignmentRelay;
 
             _addRouteRelay = new AsyncRelayCommand(AddRouteAsync, () => !IsBusy);
             AddRouteCommand = _addRouteRelay;
@@ -521,7 +492,6 @@ namespace BusBuddy.WPF.ViewModels.Route
                     }
 
                     var routes = result.Value?.OrderBy(r => r.RouteName).ToList() ?? [];
-                    await EnrichRouteCountsAsync(routes).ConfigureAwait(true);
                     Routes.Clear();
                     foreach (var r in routes)
                     {
@@ -832,7 +802,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 var confirm = System.Windows.MessageBox.Show(
-                    $"Delete route '{routeToDelete.RouteName}'? This cannot be undone.",
+                    $"Delete route '{routeToDelete.RouteName}'?\n\nStudents on this route will be unassigned and daily schedules for the route will be removed. This cannot be undone.",
                     "Confirm Delete",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
@@ -854,6 +824,11 @@ namespace BusBuddy.WPF.ViewModels.Route
                             ? "Error deleting route"
                             : result.Error;
                         Logger.Warning("DeleteRouteAsync failed for {RouteId}: {Error}", routeToDelete.RouteId, result.Error);
+                        System.Windows.MessageBox.Show(
+                            StatusMessage,
+                            "Delete Failed",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Warning);
                         return;
                     }
 
@@ -950,10 +925,6 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
 
                 await LoadRoutesAsync().ConfigureAwait(true);
-                if (_routePopulation is not null)
-                {
-                    await _routePopulation.PopulateRoutesAsync().ConfigureAwait(true);
-                }
 
                 var draft = Routes.FirstOrDefault(r =>
                     r.RouteName.StartsWith("Draft-", StringComparison.OrdinalIgnoreCase));
@@ -962,8 +933,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     SelectedRoute = draft;
                 }
 
-                var mapVm = App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
-                mapVm?.ApplyGenerationResult(outcome.Result);
+                _map?.ApplyGenerationResult(outcome.Result);
             }
             catch (Exception ex)
             {

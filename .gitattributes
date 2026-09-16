@@ -1,5 +1,8 @@
 # Set default behavior to automatically normalize line endings.
 * text=auto
+# git-diff-check (Trunk Problems panel) treats CR as trailing whitespace by default.
+# Allow CR at EOL so CRLF docs/json are not flagged; real spaces/tabs at EOL still error.
+* whitespace=blank-at-eol,space-before-tab,blank-at-eof,cr-at-eol
 
 # Force CRLF for all text files that should have it for this Windows-based .NET project.
 *.{cs,xaml,xml,ps1,psm1,psd1,json,ruleset,md,sln,csproj,config,targets,props,cmd,bat} text eol=crlf

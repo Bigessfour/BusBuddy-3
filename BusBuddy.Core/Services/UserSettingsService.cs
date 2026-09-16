@@ -11,7 +11,6 @@ namespace BusBuddy.Core.Services
     {
         bool EnableActivityLogging { get; }
         bool ShowDashboardOnStartup { get; }
-        bool EnableRouteGeoExport { get; }
         string CachedTheme { get; }
 
         Task<T> GetSettingAsync<T>(string key, T defaultValue = default!);
@@ -64,7 +63,6 @@ namespace BusBuddy.Core.Services
 
         public bool EnableActivityLogging { get; private set; } = true;
         public bool ShowDashboardOnStartup { get; private set; } = true;
-        public bool EnableRouteGeoExport { get; private set; }
         public string CachedTheme { get; private set; } = "FluentDark";
 
         public Task<T> GetSettingAsync<T>(string key, T defaultValue = default!)
@@ -238,7 +236,6 @@ namespace BusBuddy.Core.Services
         {
             EnableActivityLogging = GetSettingAsync(UserSettingsKeys.EnableActivityLogging, true).GetAwaiter().GetResult();
             ShowDashboardOnStartup = GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, true).GetAwaiter().GetResult();
-            EnableRouteGeoExport = GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, false).GetAwaiter().GetResult();
             CachedTheme = GetSettingAsync(UserSettingsKeys.Theme, "FluentDark").GetAwaiter().GetResult();
         }
     }

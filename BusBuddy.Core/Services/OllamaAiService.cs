@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -12,81 +13,44 @@ using Serilog;
 namespace BusBuddy.Core.Services
 {
     /// <summary>
-    /// Global xAI Grok API service for route optimization and AI analysis
-    /// Based on official xAI API documentation: https://docs.x.ai
+    /// Local Ollama chat completions for route commentary and optimization notes.
+    /// When Ollama is not reachable, callers receive mock text — that is expected, not an actionable error.
     /// </summary>
-    public class GrokGlobalAPI
+    public class OllamaAiService
     {
-        private static readonly ILogger Logger = Log.ForContext<GrokGlobalAPI>();
+        private static readonly ILogger Logger = Log.ForContext<OllamaAiService>();
+        public static readonly string ChatCompletionsEndpoint = "/chat/completions";
+        public static readonly string DefaultModel = "llama3.2";
+
         private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
-        private readonly string _apiKey;
-        private readonly string _baseUrl;
+        private readonly OllamaOptions _options;
         private readonly bool _isConfigured;
 
-        // xAI API Constants (per official docs)
-        public static readonly string CHAT_COMPLETIONS_ENDPOINT = "/chat/completions";
-        public static readonly string DEFAULT_MODEL = "grok-4-latest";
-        public static readonly string API_BASE_URL = "https://api.x.ai/v1";
-
-        public GrokGlobalAPI(HttpClient httpClient, IConfiguration configuration)
+        public OllamaAiService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            ArgumentNullException.ThrowIfNull(configuration);
+            _options = OllamaOptions.Bind(configuration);
 
-            // Provider: Ollama (default, local) | Xai (cloud) | Disabled.
-            // On macOS, App startup may load XAI_API_KEY from Passwords for legacy Xai mode.
-            var provider = _configuration["XAI:Provider"] ?? "Ollama";
-            var useLiveAPIString = _configuration["XAI:UseLiveAPI"] ?? "true";
-            var useLiveAPI = bool.TryParse(useLiveAPIString, out var parsed) ? parsed : true;
-            var isOllama = string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase);
-            var isDisabled = string.Equals(provider, "Disabled", StringComparison.OrdinalIgnoreCase);
-
-            _apiKey = _configuration["XAI:ApiKey"] ?? Environment.GetEnvironmentVariable("XAI_API_KEY") ?? string.Empty;
-            _baseUrl = isOllama
-                ? (_configuration["XAI:OllamaBaseUrl"] ?? "http://localhost:11434/v1")
-                : (_configuration["XAI:BaseUrl"] ?? API_BASE_URL);
-
-            if (isDisabled || !useLiveAPI)
+            if (!_options.Enabled)
             {
                 _isConfigured = false;
-                Logger.Warning("GrokGlobalAPI disabled via XAI:Provider/UseLiveAPI. Using mock optimization.");
+                Logger.Information("OllamaAiService disabled via Ollama:Enabled. Using mock optimization.");
+                return;
             }
-            else if (isOllama)
-            {
-                // Local Ollama OpenAI-compatible API — no cloud API key required.
-                _isConfigured = true;
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("User-Agent", "BusBuddy/1.0");
-                var timeoutString = _configuration["XAI:TimeoutSeconds"] ?? "60";
-                var timeoutSeconds = int.TryParse(timeoutString, out var parsedTimeout) ? parsedTimeout : 60;
-                _httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
-                Logger.Information("GrokGlobalAPI configured with local Ollama endpoint: {BaseUrl}", _baseUrl);
-            }
-            else
-            {
-                _isConfigured = !string.IsNullOrEmpty(_apiKey) && !_apiKey.Contains("${XAI_API_KEY}");
-                if (_isConfigured)
-                {
-                    _httpClient.DefaultRequestHeaders.Clear();
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
-                    _httpClient.DefaultRequestHeaders.Add("User-Agent", "BusBuddy/1.0");
-                    var timeoutString = _configuration["XAI:TimeoutSeconds"] ?? "60";
-                    var timeoutSeconds = int.TryParse(timeoutString, out var parsedTimeout) ? parsedTimeout : 60;
-                    _httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
-                    Logger.Information("GrokGlobalAPI configured with xAI endpoint: {BaseUrl}", _baseUrl);
-                }
-                else
-                {
-                    Logger.Warning("GrokGlobalAPI not configured. Set XAI_API_KEY for Xai provider, or use Provider=Ollama.");
-                }
-            }
+
+            _isConfigured = true;
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "BusBuddy/1.0");
+            _httpClient.Timeout = TimeSpan.FromSeconds(Math.Clamp(_options.TimeoutSeconds, 1, 300));
+            Logger.Information("OllamaAiService configured with local endpoint: {BaseUrl} model {Model}",
+                _options.BaseUrl, _options.Model);
         }
 
         public bool IsConfigured => _isConfigured;
 
         /// <summary>
-        /// Short operator-facing commentary for reports. Uses Ollama when configured; otherwise a mock line.
+        /// Short operator-facing commentary for reports. Uses Ollama when reachable; otherwise a mock line.
         /// </summary>
         public async Task<string> GetShortCommentaryAsync(string topic, string facts)
         {
@@ -103,22 +67,17 @@ namespace BusBuddy.Core.Services
 
             try
             {
-                var provider = _configuration["XAI:Provider"] ?? "Ollama";
-                var isOllama = string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase);
-                var model = isOllama
-                    ? (_configuration["XAI:OllamaModel"] ?? "llama3.2")
-                    : (_configuration["XAI:DefaultModel"] ?? DEFAULT_MODEL);
-                var request = new XAIRequest
+                var request = new ChatCompletionRequest
                 {
-                    Model = model,
+                    Model = string.IsNullOrWhiteSpace(_options.Model) ? DefaultModel : _options.Model,
                     Messages = new[]
                     {
-                        new XAIMessage
+                        new ChatCompletionMessage
                         {
                             Role = "system",
                             Content = "You are a school transportation coordinator assistant. Reply in one or two short sentences."
                         },
-                        new XAIMessage
+                        new ChatCompletionMessage
                         {
                             Role = "user",
                             Content = $"Topic: {topic}\nFacts: {facts}"
@@ -128,7 +87,7 @@ namespace BusBuddy.Core.Services
                     MaxTokens = 120
                 };
 
-                var response = await CallGrokAPI(CHAT_COMPLETIONS_ENDPOINT, request).ConfigureAwait(false);
+                var response = await CallOllamaAsync(ChatCompletionsEndpoint, request).ConfigureAwait(false);
                 if (IsFailedApiResponse(response))
                 {
                     return $"Mock insight for {topic}: {facts}";
@@ -145,8 +104,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Call bb-routes for optimization using xAI Grok intelligence
-        /// This is the main method requested in the user requirements
+        /// Route optimization notes via local Ollama. Falls back to mock text when Ollama is offline.
         /// </summary>
         public async Task<RouteOptimizationResult> OptimizeRoutesAsync(RouteOptimizationRequest request)
         {
@@ -154,7 +112,7 @@ namespace BusBuddy.Core.Services
 
             try
             {
-                Logger.Information("Starting Grok route optimization for route {RouteId}", request.RouteId);
+                Logger.Information("Starting Ollama route optimization for route {RouteId}", request.RouteId);
 
                 if (!_isConfigured)
                 {
@@ -162,54 +120,46 @@ namespace BusBuddy.Core.Services
                 }
 
                 var prompt = BuildRouteOptimizationPrompt(request);
-                var provider = _configuration["XAI:Provider"] ?? "Ollama";
-                var isOllama = string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase);
-                var model = isOllama
-                    ? (_configuration["XAI:OllamaModel"] ?? "llama3.2")
-                    : (_configuration["XAI:DefaultModel"] ?? DEFAULT_MODEL);
-                var maxTokensDefault = isOllama ? 2048 : 4000;
-                var grokRequest = new XAIRequest
+                var model = string.IsNullOrWhiteSpace(_options.Model) ? DefaultModel : _options.Model;
+                var ollamaRequest = new ChatCompletionRequest
                 {
                     Model = model,
                     Messages = new[]
                     {
-                        new XAIMessage
+                        new ChatCompletionMessage
                         {
                             Role = "system",
                             Content = GetRouteOptimizationSystemPrompt()
                         },
-                        new XAIMessage
+                        new ChatCompletionMessage
                         {
                             Role = "user",
                             Content = prompt
                         }
                     },
-                    Temperature = double.TryParse(_configuration["XAI:Temperature"], out var temp) ? temp : 0.3,
-                    MaxTokens = int.TryParse(_configuration["XAI:MaxTokens"], out var maxTokens) ? maxTokens : maxTokensDefault
+                    Temperature = _options.Temperature,
+                    MaxTokens = _options.MaxTokens > 0 ? _options.MaxTokens : 2048
                 };
 
-                var response = await CallGrokAPI(CHAT_COMPLETIONS_ENDPOINT, grokRequest);
+                var response = await CallOllamaAsync(ChatCompletionsEndpoint, ollamaRequest);
                 if (IsFailedApiResponse(response))
                 {
                     Logger.Warning(
-                        "Live AI optimization unavailable for route {RouteId}; using mock fallback",
+                        "Live Ollama optimization unavailable for route {RouteId}; using mock fallback",
                         request.RouteId);
                     return await GenerateMockOptimization(request);
                 }
 
-                return ParseOptimizationResponse(response, request);
+                return ParseOptimizationResponse(response, request, model);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error in Grok route optimization for route {RouteId}", request.RouteId);
+                Logger.Warning(ex, "Ollama route optimization fell back to mock for route {RouteId}", request.RouteId);
                 return await GenerateMockOptimization(request);
             }
         }
 
-        /// <summary>
-        /// Generic Grok API call method following xAI documentation standards
-        /// </summary>
-        private async Task<XAIResponse> CallGrokAPI(string endpoint, XAIRequest request)
+        private async Task<ChatCompletionResponse> CallOllamaAsync(string endpoint, ChatCompletionRequest request)
         {
             try
             {
@@ -222,59 +172,49 @@ namespace BusBuddy.Core.Services
                 var jsonRequest = JsonSerializer.Serialize(request, jsonOptions);
                 using var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
 
-                Logger.Debug("Calling xAI API endpoint: {Endpoint}", endpoint);
-                var httpResponse = await _httpClient.PostAsync(_baseUrl + endpoint, content);
+                Logger.Debug("Calling Ollama endpoint: {BaseUrl}{Endpoint}", _options.BaseUrl, endpoint);
+                var httpResponse = await _httpClient.PostAsync(_options.BaseUrl + endpoint, content);
 
                 if (!httpResponse.IsSuccessStatusCode)
                 {
                     var errorContent = await httpResponse.Content.ReadAsStringAsync();
-                    Logger.Error("xAI API call failed with status {StatusCode}: {ErrorContent}",
+                    Logger.Warning("Ollama call failed with status {StatusCode}: {ErrorContent}",
                         httpResponse.StatusCode, errorContent);
 
-                    return new XAIResponse
-                    {
-                        Choices = new[]
-                        {
-                            new XAIChoice
-                            {
-                                Message = new XAIMessage
-                                {
-                                    Content = $"API Error: {httpResponse.StatusCode} - {errorContent}"
-                                }
-                            }
-                        }
-                    };
+                    return FailedResponse($"API Error: {httpResponse.StatusCode} - {errorContent}");
                 }
 
                 var jsonResponse = await httpResponse.Content.ReadAsStringAsync();
-                var response = JsonSerializer.Deserialize<XAIResponse>(jsonResponse, jsonOptions);
+                var response = JsonSerializer.Deserialize<ChatCompletionResponse>(jsonResponse, jsonOptions);
 
-                Logger.Debug("xAI API response received successfully");
-                return response ?? new XAIResponse { Choices = Array.Empty<XAIChoice>() };
+                Logger.Debug("Ollama response received successfully");
+                return response ?? new ChatCompletionResponse { Choices = Array.Empty<ChatCompletionChoice>() };
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "HTTP request to xAI API failed");
-                return new XAIResponse
-                {
-                    Choices = new[]
-                    {
-                        new XAIChoice
-                        {
-                            Message = new XAIMessage
-                            {
-                                Content = $"Network Error: {ex.Message}"
-                            }
-                        }
-                    }
-                };
+                Logger.Warning(ex,
+                    "Ollama is not reachable at {BaseUrl}. Using offline fallback. Start Ollama locally (default http://localhost:11434) to enable live AI.",
+                    _options.BaseUrl);
+                return FailedResponse($"Network Error: {ex.Message}");
             }
         }
 
+        private static ChatCompletionResponse FailedResponse(string content) =>
+            new()
+            {
+                Choices = new[]
+                {
+                    new ChatCompletionChoice
+                    {
+                        Message = new ChatCompletionMessage { Content = content }
+                    }
+                }
+            };
+
         /// <summary>
-        /// True when <see cref="CallGrokAPI"/> returned a synthetic error payload instead of model output.
+        /// True when <see cref="CallOllamaAsync"/> returned a synthetic error payload instead of model output.
         /// </summary>
-        private static bool IsFailedApiResponse(XAIResponse? response)
+        private static bool IsFailedApiResponse(ChatCompletionResponse? response)
         {
             if (response?.Choices == null || response.Choices.Length == 0)
             {
@@ -291,10 +231,7 @@ namespace BusBuddy.Core.Services
                    || content.StartsWith("Network Error:", StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Build route optimization prompt for Grok
-        /// </summary>
-        private string BuildRouteOptimizationPrompt(RouteOptimizationRequest request)
+        private static string BuildRouteOptimizationPrompt(RouteOptimizationRequest request)
         {
             var prompt = new StringBuilder();
             prompt.AppendLine("Analyze and optimize the following school bus route:");
@@ -322,10 +259,7 @@ namespace BusBuddy.Core.Services
             return prompt.ToString();
         }
 
-        /// <summary>
-        /// System prompt for route optimization
-        /// </summary>
-        private string GetRouteOptimizationSystemPrompt()
+        private static string GetRouteOptimizationSystemPrompt()
         {
             return @"You are an expert transportation logistics AI specializing in school bus route optimization.
 You have deep knowledge of:
@@ -341,10 +275,10 @@ Provide actionable, practical recommendations that can be implemented by transpo
 Focus on measurable improvements and safety compliance.";
         }
 
-        /// <summary>
-        /// Parse Grok response into structured optimization result
-        /// </summary>
-        private RouteOptimizationResult ParseOptimizationResponse(XAIResponse response, RouteOptimizationRequest request)
+        private RouteOptimizationResult ParseOptimizationResponse(
+            ChatCompletionResponse response,
+            RouteOptimizationRequest request,
+            string model)
         {
             var content = response.Choices?.FirstOrDefault()?.Message?.Content ?? "No optimization available";
 
@@ -358,16 +292,13 @@ Focus on measurable improvements and safety compliance.";
                 SafetyImprovements = ExtractSafetyImprovements(content),
                 ImplementationSteps = ExtractImplementationSteps(content),
                 GeneratedAt = DateTime.UtcNow,
-                AIModel = DEFAULT_MODEL
+                AIModel = model
             };
         }
 
-        /// <summary>
-        /// Generate mock optimization for testing/fallback
-        /// </summary>
-        private async Task<RouteOptimizationResult> GenerateMockOptimization(RouteOptimizationRequest request)
+        private static async Task<RouteOptimizationResult> GenerateMockOptimization(RouteOptimizationRequest request)
         {
-            await Task.Delay(500); // Simulate processing time
+            await Task.Delay(500);
 
             return new RouteOptimizationResult
             {
@@ -389,17 +320,16 @@ Focus on measurable improvements and safety compliance.";
             };
         }
 
-        // Helper methods for parsing AI response
-        private double ExtractEfficiencyGain(string content) =>
+        private static double ExtractEfficiencyGain(string content) =>
             ExtractPercentage(content, new[] { "efficiency", "improvement", "gain" });
 
-        private double ExtractTimeReduction(string content) =>
+        private static double ExtractTimeReduction(string content) =>
             ExtractPercentage(content, new[] { "time", "reduction", "faster" });
 
-        private double ExtractFuelSavings(string content) =>
+        private static double ExtractFuelSavings(string content) =>
             ExtractPercentage(content, new[] { "fuel", "savings", "consumption" });
 
-        private List<string> ExtractSafetyImprovements(string content)
+        private static List<string> ExtractSafetyImprovements(string content)
         {
             var improvements = new List<string>();
             var lines = content.Split('\n');
@@ -415,7 +345,7 @@ Focus on measurable improvements and safety compliance.";
             return improvements.Count > 0 ? improvements : new List<string> { "General safety compliance maintained" };
         }
 
-        private List<string> ExtractImplementationSteps(string content)
+        private static List<string> ExtractImplementationSteps(string content)
         {
             var steps = new List<string>();
             var lines = content.Split('\n');
@@ -433,14 +363,13 @@ Focus on measurable improvements and safety compliance.";
             return steps.Count > 0 ? steps : new List<string> { "Review and implement recommendations gradually" };
         }
 
-        private double ExtractPercentage(string content, string[] keywords)
+        private static double ExtractPercentage(string content, string[] keywords)
         {
             foreach (var keyword in keywords)
             {
                 var index = content.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
                 if (index != -1)
                 {
-                    // Look for percentage patterns near the keyword
                     var nearText = content.Substring(Math.Max(0, index - 50), Math.Min(100, content.Length - Math.Max(0, index - 50)));
                     var match = System.Text.RegularExpressions.Regex.Match(nearText, @"(\d+\.?\d*)%");
                     if (match.Success && double.TryParse(match.Groups[1].Value, out var percentage))

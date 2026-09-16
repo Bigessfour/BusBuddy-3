@@ -167,6 +167,10 @@ namespace BusBuddy.WPF.Views.Map
             _attributionTimer?.Stop();
             _diagnostics?.Dispose();
             _diagnostics = null;
+            if (DistrictTilesLayer is ImageryLayer layer)
+            {
+                layer.MarkerSelected -= OnImageryMarkerSelected;
+            }
             DetachViewModel(_boundViewModel);
             _boundViewModel = null;
         }
@@ -239,9 +243,20 @@ namespace BusBuddy.WPF.Views.Map
 
         private void ConfigureImageryLayer(ImageryLayer imagery, MapViewModel? vm)
         {
+            imagery.MarkerSelected -= OnImageryMarkerSelected;
+            imagery.MarkerSelected += OnImageryMarkerSelected;
             if (vm is not null)
             {
                 ApplyMarkerTemplates(imagery);
+            }
+        }
+
+        private void OnImageryMarkerSelected(object? sender, MarkerSelectedEventArgs e)
+        {
+            e.CanBringToTop = true;
+            if (DataContext is MapViewModel vm)
+            {
+                vm.SelectMapMarker(MapMarkerTemplateSelector.Unwrap(e.SelectedMarker));
             }
         }
 

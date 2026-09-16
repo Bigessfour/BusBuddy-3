@@ -6,15 +6,15 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 
 ## When to read which spec
 
-| If you are changing…                                         | Read                         |
-| ------------------------------------------------------------ | ---------------------------- |
-| Student forms, pickup mode, AM/PM, special needs, rosters    | [students.md](students.md)   |
-| Schools, stops, homes, depots, geocoding, place types        | [locations.md](locations.md) |
-| Daily published runs, stop order, rider exceptions, versions | [routes.md](routes.md)       |
-| One-off team/club/field trips, manifests, trip status        | [trips.md](trips.md)         |
-| CDL, training, home route vs substitute vs trip loan         | [drivers.md](drivers.md)     |
-| Bus number, capacity, inspections, fuel, maintenance         | [buses.md](buses.md)         |
-| District Map, tiles, polylines, pins, snapshots              | [maps.md](maps.md)           |
+| If you are changing…                                      | Read                         |
+| --------------------------------------------------------- | ---------------------------- |
+| Student forms, pickup mode, AM/PM, special needs, rosters | [students.md](students.md)   |
+| Schools, stops, homes, depots, geocoding, place types     | [locations.md](locations.md) |
+| Daily published runs, stop order, rider exceptions        | [routes.md](routes.md)       |
+| One-off team/club/field trips, manifests, trip status     | [trips.md](trips.md)         |
+| CDL, training, home route vs substitute vs trip loan      | [drivers.md](drivers.md)     |
+| Bus number, capacity, inspections, fuel, maintenance      | [buses.md](buses.md)         |
+| District Map, tiles, polylines, pins, snapshots           | [maps.md](maps.md)           |
 
 Read **related** specs too (each file’s “Agent instructions” section lists them).
 

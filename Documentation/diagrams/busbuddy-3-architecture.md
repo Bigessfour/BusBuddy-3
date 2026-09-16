@@ -33,7 +33,7 @@ flowchart TB
     MAC["MacBook Pro<br/>VS Code + Dev Container<br/>dotnet + Docker"]
     WSL["WSL / bash helpers"]
     WINVM["Windows 11 VM / UTM<br/>Full WPF + Syncfusion"]
-    KEYS["macOS Passwords<br/>XAI / Syncfusion keys"]
+    KEYS["macOS Passwords<br/>Syncfusion + Maps keys"]
     MAC --> WSL
     MAC --> WINVM
     KEYS -.-> MAC
@@ -82,7 +82,7 @@ flowchart TB
     S_PDF["PdfReportService"]
     S_DASH["DashboardMetricsService"]
     S_GEO["GeoDataService<br/>Address Validation + SfMap<br/>Routes + Route Optimization"]
-    S_AI["GrokGlobalAPI<br/>AIInsightService"]
+    S_AI["OllamaAiService<br/>OllamaChatService"]
     S_USR["UserContextService<br/>UserSettingsService"]
     S_ADDR["AddressValidationService"]
     S_ROUTEDET["RouteDeterminationService<br/>DensityCell + Packer + Fitness"]

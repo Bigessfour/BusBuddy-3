@@ -146,25 +146,14 @@ bb-earth-view           # Open Google Earth interface
 # Related Views: MapView.xaml in BusBuddy.WPF/Views/GoogleEarth/
 ```
 
-### XAI Chat & AI Features
+### Local AI (Ollama)
 
 ```powershell
-# AI-powered development and route optimization
-bb-xai-chat             # Open XAI chat interface
-bb-ai-help              # AI-powered development assistance
-
-# Advanced Route Optimization with xAI Grok
+# Route optimization CLI still exists on the WPF host; it calls OllamaAiService
 bb-route-optimize -RouteId "Route-001" -CurrentPerformance "45 min, 12 stops" -TargetMetrics "Reduce time by 10%"
-bb-route-optimize -RouteId "Elementary-North" -Constraints @("Max 8 stops", "Safety first", "No highway") -OutputPath "reports/optimization.json"
 bb-route-optimize -RouteId "Route-003" -CurrentPerformance "52 minutes average" -TargetMetrics "Improve efficiency, reduce fuel" -Mock
 
-# PDF Report Generation with Syncfusion
-bb-generate-report -ReportType Roster -OutputPath "reports/student-roster.pdf" -OpenAfterGeneration
-bb-generate-report -ReportType RouteManifest -RouteId "Route-001" -OutputPath "manifests/route-001.pdf"
-bb-generate-report -ReportType DriverSchedule -Format Excel -OutputPath "schedules/driver-schedule.xlsx"
-
-# Related Views: XAIChatView.xaml and route optimization services
-# Related Services: GrokGlobalAPI.cs, PdfReportService.cs, SmartRouteOptimizationService.cs
+# Related Services: OllamaAiService.cs, PdfReportService.cs
 ```
 
 ### Route Management & Analysis

@@ -94,7 +94,9 @@ public static class DatabaseUserMessage
                 return postgres.SqlState switch
                 {
                     PostgresErrorCodes.ForeignKeyViolation =>
-                        "A related record is missing (for example an invalid family link). Leave family blank unless a family is set up.",
+                        postgres.ConstraintName is "FK_Schedules_Route"
+                            ? "This route still has daily schedules. Those must be removed before the route can be deleted."
+                            : "A related record is missing (for example an invalid family link). Leave family blank unless a family is set up.",
                     PostgresErrorCodes.UniqueViolation =>
                         "That value is already in use (for example student number).",
                     _ => postgres.MessageText,

@@ -2,6 +2,7 @@ using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -110,8 +111,8 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
         }
 
         var students = await context.Students.AsNoTracking()
-            .Where(s => s.Active &&
-                        (s.AMRoute == route.RouteName || s.PMRoute == route.RouteName))
+            .Where(s => s.Active)
+            .WhereOnRoute(route)
             .OrderBy(s => s.StudentName)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);

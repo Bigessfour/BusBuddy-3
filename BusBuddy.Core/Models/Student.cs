@@ -132,6 +132,19 @@ public class Student : INotifyPropertyChanged
     public string? PMRoute { get; set; }
 
     /// <summary>
+    /// Morning route assignment by identity. <see cref="AMRoute"/> is the denormalised route name kept
+    /// in step with this; the name alone cannot identify a route, so renames and deletes resolve riders
+    /// through this key instead. The name columns are dropped in a later phase — see the "Route FK
+    /// follow-up" item in docs/action-items.md.
+    /// </summary>
+    [Display(Name = "AM Route Id")]
+    public int? AmRouteId { get; set; }
+
+    /// <summary>Afternoon route assignment by identity. See <see cref="AmRouteId"/>.</summary>
+    [Display(Name = "PM Route Id")]
+    public int? PmRouteId { get; set; }
+
+    /// <summary>
     /// Morning ride eligibility. Independent of <see cref="RidesPm"/> and independent of whether
     /// <see cref="AMRoute"/> has been assigned yet — eligibility is not assignment.
     /// </summary>

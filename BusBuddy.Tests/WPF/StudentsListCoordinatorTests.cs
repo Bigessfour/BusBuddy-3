@@ -14,8 +14,8 @@ using NUnit.Framework;
 namespace BusBuddy.Tests.WPF;
 
 /// <summary>
-/// Inline grid save must write only the rows a clerk actually edited, and archiving must replace the
-/// old hard delete. All fixtures use synthetic tokens — no student PII.
+/// Inline grid save must write only the rows a clerk actually edited. Archive keeps a returning
+/// student; delete is a separate logged path. All fixtures use synthetic tokens — no student PII.
 /// </summary>
 [TestFixture]
 [Category("Unit")]
@@ -180,6 +180,44 @@ public class StudentsListCoordinatorTests
         archived.Should().BeTrue();
         loaded[0].Active.Should().BeFalse();
         service.Verify(s => s.ArchiveStudentAsync(loaded[0].StudentId), Times.Once);
+    }
+
+    [Test]
+    public async Task DeleteStudentAsync_CallsTheServiceWithTheClerkReason()
+    {
+        await SeedAsync("TEST_STUDENT_01");
+        var (coordinator, service) = CreateCoordinator();
+        service.Setup(s => s.DeleteStudentAsync(
+                It.IsAny<int>(),
+                It.IsAny<StudentDeletionReason>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        var loaded = await coordinator.LoadStudentsAsync();
+        var deleted = await coordinator.DeleteStudentAsync(
+            loaded[0],
+            StudentDeletionReason.Moved,
+            "left for TEST_DISTRICT");
+
+        deleted.Should().BeTrue();
+        service.Verify(
+            s => s.DeleteStudentAsync(loaded[0].StudentId, StudentDeletionReason.Moved, "left for TEST_DISTRICT"),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task DeleteStudentAsync_WithoutStudentService_ReturnsFalse()
+    {
+        await SeedAsync("TEST_STUDENT_01");
+        var coordinator = new StudentsListCoordinator(new TestDbContextFactory(_dbOptions));
+        var loaded = await coordinator.LoadStudentsAsync();
+
+        var deleted = await coordinator.DeleteStudentAsync(
+            loaded[0],
+            StudentDeletionReason.Mistake,
+            null);
+
+        deleted.Should().BeFalse("delete must go through IStudentService so the deletion log is written");
     }
 
 }

@@ -2,6 +2,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using NUnit.Framework;
@@ -175,5 +176,64 @@ public class RouteDeterminationServiceTests
 
         Assert.That(result.Success, Is.False);
         Assert.That(result.Error, Does.Contain("AM or PM"));
+    }
+
+    [Test]
+    public async Task ApplyClerkOverride_NameOnlyUniqueRoute_MovesOntoTarget()
+    {
+        var factory = CreateFactory();
+        int fromId;
+        int toId;
+        int studentId;
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var from = new Route
+            {
+                RouteName = "North",
+                Date = DateTime.UtcNow.Date,
+                IsActive = true,
+                Session = RouteSession.AM
+            };
+            var to = new Route
+            {
+                RouteName = "South",
+                Date = DateTime.UtcNow.Date,
+                IsActive = true,
+                Session = RouteSession.AM
+            };
+            ctx.Routes.AddRange(from, to);
+            var student = new Student
+            {
+                StudentName = "Ada",
+                StudentNumber = "A1",
+                Grade = "3",
+                HomeAddress = "1 Main",
+                City = "Wiley",
+                State = "CO",
+                Zip = "81092",
+                AMRoute = "North"
+            };
+            ctx.Students.Add(student);
+            await ctx.SaveChangesAsync();
+            fromId = from.RouteId;
+            toId = to.RouteId;
+            studentId = student.StudentId;
+        }
+
+        var result = await CreateSut(factory).ApplyClerkOverrideAsync(
+            studentId,
+            fromRouteId: 0,
+            toId,
+            RouteTimeSlotKind.AM,
+            "District Map");
+
+        Assert.That(result.Success, Is.True, result.Error);
+        await using (var ctx = factory.CreateDbContext())
+        {
+            var student = ctx.Students.Single(s => s.StudentId == studentId);
+            Assert.That(student.AmRouteId, Is.EqualTo(toId));
+            Assert.That(student.AMRoute, Is.EqualTo("South"));
+            Assert.That(StudentRouteAssignment.MatchesAm(student, fromId, "North"), Is.False);
+        }
     }
 }

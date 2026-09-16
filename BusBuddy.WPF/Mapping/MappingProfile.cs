@@ -6,8 +6,8 @@ using System;
 namespace BusBuddy.WPF.Mapping
 {
     /// <summary>
-    /// AutoMapper profile for domain models ↔ view models (Bus, Driver, Route, Student).
-    /// Not a geospatial map service.
+    /// AutoMapper profile for domain models ↔ view models (Bus, Driver).
+    /// Route and Student screens bind Core models. Not a geospatial map service.
     /// </summary>
     public class MappingProfile : Profile
     {
@@ -40,24 +40,7 @@ namespace BusBuddy.WPF.Mapping
 
             CreateMap<DriverViewModel, Driver>();
 
-            // Route mappings
-            CreateMap<Route, RouteViewModel>()
-                .ForMember(dest => dest.StartTimeFormatted, opt => opt.MapFrom(src =>
-                    src.AMBeginTime.HasValue ? src.AMBeginTime.Value.ToString(@"hh\:mm") : ""))
-                .ForMember(dest => dest.EndTimeFormatted, opt => opt.MapFrom(src =>
-                    src.PMBeginTime.HasValue ? src.PMBeginTime.Value.ToString(@"hh\:mm") : ""))
-                .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src =>
-                    CalculateDurationMinutes(src.AMBeginTime, src.PMBeginTime)))
-                .ForMember(dest => dest.StatusDisplay, opt => opt.MapFrom(src =>
-                    src.IsActive ? "Active" : "Inactive"))
-                .ForMember(dest => dest.RouteNumber, opt => opt.MapFrom(src => src.RouteId.ToString()))
-                .ForMember(dest => dest.DistanceMiles, opt => opt.MapFrom(src => src.Distance));
-
-            CreateMap<RouteViewModel, Route>()
-                .ForMember(dest => dest.AMBeginTime, opt => opt.Ignore())  // These are handled in conversion methods
-                .ForMember(dest => dest.PMBeginTime, opt => opt.Ignore())
-                .ForMember(dest => dest.Distance, opt => opt.MapFrom(src => src.DistanceMiles));
-
+            // Route UI binds Core.Models.Route. Do not map a parallel RouteViewModel.
             // No Student <-> StudentViewModel mapping: the student UI binds Core.Models.Student
             // directly. The old DTO split StudentName into first/last and typed Grade as int, both of
             // which contradict the Core model.
@@ -116,23 +99,6 @@ namespace BusBuddy.WPF.Mapping
 
 
             return "Valid";
-        }
-
-        private int? CalculateDurationMinutes(TimeSpan? amTime, TimeSpan? pmTime)
-        {
-            if (!amTime.HasValue || !pmTime.HasValue)
-            {
-
-                return null;
-            }
-
-            // Assuming PM time is later than AM time in a school day
-
-            var amMinutes = amTime.Value.TotalMinutes;
-            var pmMinutes = pmTime.Value.TotalMinutes;
-
-            // Typically PM routes are in the afternoon, so they should be later
-            return (int)(pmMinutes - amMinutes);
         }
 
     }

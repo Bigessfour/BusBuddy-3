@@ -25,7 +25,7 @@ internal sealed class MapDistrictLayers
     private readonly IStudentService? _students;
     private readonly IGeocodingService? _geocoding;
     private readonly IServiceScopeFactory? _scopes;
-    private readonly Action<double, double, IEnumerable<string>?, string?> _plot;
+    private readonly MapPinPlot _plot;
     private readonly Func<(double Lat, double Lon, string Name)?>? _depot;
 
     public MapDistrictLayers(
@@ -34,7 +34,7 @@ internal sealed class MapDistrictLayers
         IStudentService? students,
         IGeocodingService? geocoding,
         IServiceScopeFactory? scopes,
-        Action<double, double, IEnumerable<string>?, string?> plot,
+        MapPinPlot plot,
         Func<(double Lat, double Lon, string Name)?>? depot = null)
     {
         _pickups = pickups;
@@ -78,6 +78,65 @@ internal sealed class MapDistrictLayers
     {
         using var scope = _scopes?.CreateScope();
         return PlotPickups(await LoadPickupCatalogAsync(scope).ConfigureAwait(true));
+    }
+
+    /// <summary>Active catalog stops keyed by id — no plotting.</summary>
+    public async Task<IReadOnlyDictionary<int, PickupStop>> LoadPickupIndexAsync()
+    {
+        using var scope = _scopes?.CreateScope();
+        return await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Published boarding points on the given routes (<c>RouteStop</c> rows with validated GPS). Generated
+    /// routes carry stops here rather than in the catalog. Plotted as route-stop (WP) pins: a stop that lands
+    /// on an existing home / catalog pin tags that pin (gold ring) instead of stacking a duplicate caption.
+    /// </summary>
+    public async Task<int> PlotRouteStopsAsync(IReadOnlyCollection<int> routeIds)
+    {
+        if (routeIds.Count == 0)
+        {
+            return 0;
+        }
+
+        using var scope = _scopes?.CreateScope();
+        var routes = Resolve<IRouteService>(null, scope);
+        if (routes is null)
+        {
+            Logger.Information("PlotRouteStopsAsync skipped — IRouteService not registered");
+            return 0;
+        }
+
+        var plotted = 0;
+        foreach (var routeId in routeIds)
+        {
+            IEnumerable<RouteStop> stops;
+            try
+            {
+                var result = await routes.GetRouteStopsAsync(routeId).ConfigureAwait(true);
+                if (!result.IsSuccess)
+                {
+                    Logger.Warning("Route stops unavailable RouteId={RouteId} Error={Error}", routeId, result.Error);
+                    continue;
+                }
+
+                stops = result.Value;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "GetRouteStopsAsync failed RouteId={RouteId}", routeId);
+                continue;
+            }
+
+            foreach (var stop in stops.Where(s => s.HasValidatedCoordinates).OrderBy(s => s.StopOrder))
+            {
+                var name = string.IsNullOrWhiteSpace(stop.StopName) ? $"Stop {stop.StopOrder}" : stop.StopName;
+                _plot((double)stop.Latitude!.Value, (double)stop.Longitude!.Value, null, MapMarkerLabels.ForRouteStop(name), null);
+                plotted++;
+            }
+        }
+
+        return plotted;
     }
 
     /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
@@ -167,7 +226,7 @@ internal sealed class MapDistrictLayers
         var plotted = 0;
         foreach (var school in schools.Where(s => s.HasValidatedCoordinates))
         {
-            _plot((double)school.Latitude!, (double)school.Longitude!, null, MapMarkerLabels.ForSchool(school.Name));
+            _plot((double)school.Latitude!, (double)school.Longitude!, null, MapMarkerLabels.ForSchool(school.Name), null);
             plotted++;
         }
 
@@ -179,7 +238,7 @@ internal sealed class MapDistrictLayers
         var plotted = 0;
         foreach (var stop in catalog.Values.Where(s => s.HasValidatedCoordinates))
         {
-            _plot((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name));
+            _plot((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name), null);
             plotted++;
         }
 
@@ -193,7 +252,7 @@ internal sealed class MapDistrictLayers
             return 0;
         }
 
-        _plot(depot.Lat, depot.Lon, null, MapMarkerLabels.ForDepot(depot.Name));
+        _plot(depot.Lat, depot.Lon, null, MapMarkerLabels.ForDepot(depot.Name), null);
         return 1;
     }
 

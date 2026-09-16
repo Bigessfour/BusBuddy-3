@@ -17,7 +17,7 @@ namespace BusBuddy.Core.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.18")
+                .HasAnnotation("ProductVersion", "9.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -87,7 +87,7 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Grok-4");
+                        .HasDefaultValue("Ollama");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -678,7 +678,7 @@ namespace BusBuddy.Core.Migrations
                             LicenseNumber = "TX123456",
                             Make = "Blue Bird",
                             Model = "Vision",
-                            PurchaseDate = new DateTime(2020, 8, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PurchaseDate = new DateTime(2020, 8, 15, 0, 0, 0, 0, DateTimeKind.Utc),
                             PurchasePrice = 85000.00m,
                             SeatingCapacity = 72,
                             Status = "Active",
@@ -694,7 +694,7 @@ namespace BusBuddy.Core.Migrations
                             LicenseNumber = "TX654321",
                             Make = "Thomas Built",
                             Model = "Saf-T-Liner C2",
-                            PurchaseDate = new DateTime(2019, 7, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            PurchaseDate = new DateTime(2019, 7, 10, 0, 0, 0, 0, DateTimeKind.Utc),
                             PurchasePrice = 82000.00m,
                             SeatingCapacity = 66,
                             Status = "Active",
@@ -988,7 +988,6 @@ namespace BusBuddy.Core.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("");
@@ -1560,10 +1559,6 @@ namespace BusBuddy.Core.Migrations
                     b.Property<decimal?>("Distance")
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<string>("DistrictBoundaryShapefilePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<string>("DriverName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -1631,10 +1626,6 @@ namespace BusBuddy.Core.Migrations
                     b.Property<int?>("StudentCount")
                         .HasColumnType("integer");
 
-                    b.Property<string>("TownBoundaryShapefilePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<string>("WaypointsJson")
                         .HasColumnType("text");
 
@@ -1696,7 +1687,7 @@ namespace BusBuddy.Core.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("RouteAssignments");
+                    b.ToTable("RouteAssignments", (string)null);
                 });
 
             modelBuilder.Entity("BusBuddy.Core.Models.RouteRiderException", b =>
@@ -2002,6 +1993,9 @@ namespace BusBuddy.Core.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<int?>("AmRouteId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("BusStop")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -2119,6 +2113,9 @@ namespace BusBuddy.Core.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<int?>("PmRouteId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("RequiresAide")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -2208,6 +2205,9 @@ namespace BusBuddy.Core.Migrations
                     b.HasIndex("Active")
                         .HasDatabaseName("IX_Students_Active");
 
+                    b.HasIndex("AmRouteId")
+                        .HasDatabaseName("IX_Students_AmRouteId");
+
                     b.HasIndex("DestinationId");
 
                     b.HasIndex("FamilyId");
@@ -2219,6 +2219,9 @@ namespace BusBuddy.Core.Migrations
                         .HasDatabaseName("IX_Students_PMRoute");
 
                     b.HasIndex("PickupStopId");
+
+                    b.HasIndex("PmRouteId")
+                        .HasDatabaseName("IX_Students_PmRouteId");
 
                     b.HasIndex("RouteAssignmentId");
 
@@ -2232,6 +2235,60 @@ namespace BusBuddy.Core.Migrations
                         .HasDatabaseName("IX_Students_Name");
 
                     b.ToTable("Students", (string)null);
+                });
+
+            modelBuilder.Entity("BusBuddy.Core.Models.StudentDeletionLog", b =>
+                {
+                    b.Property<int>("StudentDeletionLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StudentDeletionLogId"));
+
+                    b.Property<DateTime>("DeletedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("RiderExceptionCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ScheduleCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SchoolYear")
+                        .HasMaxLength(9)
+                        .HasColumnType("character varying(9)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StudentNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TransferCount")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("WasActive")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("StudentDeletionLogId");
+
+                    b.HasIndex("DeletedUtc")
+                        .HasDatabaseName("IX_StudentDeletionLogs_DeletedUtc");
+
+                    b.HasIndex("StudentId")
+                        .HasDatabaseName("IX_StudentDeletionLogs_StudentId");
+
+                    b.ToTable("StudentDeletionLogs", (string)null);
                 });
 
             modelBuilder.Entity("BusBuddy.Core.Models.StudentSchedule", b =>
@@ -2867,6 +2924,11 @@ namespace BusBuddy.Core.Migrations
 
             modelBuilder.Entity("BusBuddy.Core.Models.Student", b =>
                 {
+                    b.HasOne("BusBuddy.Core.Models.Route", null)
+                        .WithMany()
+                        .HasForeignKey("AmRouteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("BusBuddy.Core.Models.Destination", "Destination")
                         .WithMany()
                         .HasForeignKey("DestinationId")
@@ -2881,6 +2943,11 @@ namespace BusBuddy.Core.Migrations
                     b.HasOne("BusBuddy.Core.Models.PickupStop", "PickupStop")
                         .WithMany()
                         .HasForeignKey("PickupStopId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BusBuddy.Core.Models.Route", null)
+                        .WithMany()
+                        .HasForeignKey("PmRouteId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("BusBuddy.Core.Models.RouteAssignment", "RouteAssignment")
