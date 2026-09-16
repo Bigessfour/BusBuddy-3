@@ -383,16 +383,34 @@ namespace BusBuddy.Core.Services
                     }
 
                     var routeName = route.RouteName;
+                    var scheduleCount = await context.Schedules.CountAsync(s => s.RouteId == id);
+                    var studentFkCount = await context.Students.CountAsync(s =>
+                        s.AmRouteId == id || s.PmRouteId == id);
+                    var tripCount = await context.TripEvents.CountAsync(t => t.RouteId == id);
+                    var blockers = scheduleCount + studentFkCount + tripCount;
+                    if (blockers > 0)
+                    {
+                        route.IsActive = false;
+                        await context.SaveChangesAsync();
+                        var message =
+                            $"Route retired — {scheduleCount} schedule row(s) still reference it"
+                            + (studentFkCount > 0 ? $", {studentFkCount} student assignment(s)" : string.Empty)
+                            + (tripCount > 0 ? $", {tripCount} trip event(s)" : string.Empty)
+                            + ".";
+                        Logger.Information(
+                            "Soft-retired route {RouteId} Schedules={Schedules} Students={Students} Trips={Trips}",
+                            id,
+                            scheduleCount,
+                            studentFkCount,
+                            tripCount);
+                        return Result.SuccessResult(true, message);
+                    }
+
                     var assignmentIds = await context.RouteAssignments
                         .Where(a => a.RouteId == id)
                         .Select(a => a.RouteAssignmentId)
                         .ToListAsync();
 
-                    // Riders are found by key first. The name match is kept as a fallback for rows the
-                    // AmRouteId/PmRouteId backfill could not resolve (a name that matched no route, or more
-                    // than one), so deleting a route still clears their stale name. It is case-insensitive to
-                    // match the OrdinalIgnoreCase clearing below — a case-sensitive match would skip riders
-                    // stored with different casing and leave them pointing at a deleted route.
                     var routeNameLower = routeName.ToLowerInvariant();
 
                     // CA1311/CA1862: ToLowerInvariant and StringComparison overloads have no SQL translation;
@@ -443,14 +461,6 @@ namespace BusBuddy.Core.Services
                         context.RouteAssignments.RemoveRange(assignments);
                     }
 
-                    var schedules = await context.Schedules
-                        .Where(s => s.RouteId == id)
-                        .ToListAsync();
-                    if (schedules.Count > 0)
-                    {
-                        context.Schedules.RemoveRange(schedules);
-                    }
-
                     var stops = await context.RouteStops
                         .Where(s => s.RouteId == id)
                         .ToListAsync();
@@ -471,10 +481,9 @@ namespace BusBuddy.Core.Services
                     await context.SaveChangesAsync();
 
                     Logger.Information(
-                        "Successfully deleted route {RouteId} after unassigning {StudentCount} students, {ScheduleCount} schedules, {AssignmentCount} vehicle assignments",
+                        "Hard-deleted route {RouteId} after unassigning {StudentCount} name-only riders, {AssignmentCount} vehicle assignments",
                         id,
                         assignedStudents.Count,
-                        schedules.Count,
                         assignments.Count);
                     return Result.SuccessResult(true);
                 }
@@ -495,7 +504,7 @@ namespace BusBuddy.Core.Services
                     || detail.Contains("FK_Schedules_Route", StringComparison.OrdinalIgnoreCase))
                 {
                     return Result.FailureResult<bool>(
-                        "Cannot delete this route while daily schedules or other records still reference it. Empty routes and routes whose students and daily schedules were cleared can be deleted.");
+                        "Cannot delete this route. If daily schedules, student keys, or trip events still reference it, it should retire instead of hard-delete. Empty routes can be deleted.");
                 }
 
                 return Result.FailureResult<bool>(detail);

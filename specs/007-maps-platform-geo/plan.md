@@ -6,7 +6,7 @@
 
 ## Summary
 
-Retire Google Earth Engine from BusBuddy runtime and replace the student/map/trip geo path with Google Maps Platform REST: Address Validation (USPS CASS) behind `IAddressValidationService` / `IGeocodingService`, Routes API behind a new `IRoutingService`, keep Syncfusion `SfMap` + OSM + local shapefiles. Offline hash geocoding must not run in production DI.
+Retire Google Earth Engine from BusBuddy runtime and replace the student/map/trip geo path with Google Maps Platform REST: Address Validation (USPS CASS) behind `IAddressValidationService` / `IGeocodingService`, Routes API behind a new `IRoutingService`, keep Syncfusion `SfMap` with official Google Map Tiles (no OSM fail-open). Offline hash geocoding must not run in production DI. Clerk address type-ahead is `PlacesAddressBox` (there is no `AddressValidationControl`).
 
 ## Technical Context
 
@@ -24,7 +24,7 @@ Retire Google Earth Engine from BusBuddy runtime and replace the student/map/tri
 
 **Performance Goals**: Address validate on save &lt; 3s perceived; cache hits in-process; no geocode on every keystroke (US1)
 
-**Constraints**: Serilog only; Syncfusion-only UI; no committed secrets; constitution v1.1.0 Geo = Maps + shapefiles, not EE
+**Constraints**: Serilog only; Syncfusion-only UI; no committed secrets; constitution Geo = Maps Platform + Google Map Tiles, not EE or OSM
 
 **Scale/Scope**: Wiley-scale hundreds of students; 4 user stories (P3 autocomplete optional)
 
@@ -41,7 +41,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 | V Hybrid Mac/Windows    | Pass — key via Passwords (Mac) / env (Windows)                                |
 | VI Solo CI/CD           | Pass — `feature/007-maps-platform-geo` PR; no master push                     |
 | VII YAGNI / no secrets  | Pass — delete unused EE; don’t mass-regeocode; key in Passwords               |
-| Geo (v1.1.0)            | Pass — Maps Platform + shapefiles; EE not an app dependency                   |
+| Geo (v1.1.0)            | Pass — Maps Platform + Google Map Tiles; EE not an app dependency             |
 | Hosting                 | Pass — no AWS/cloud app host                                                  |
 
 Post-design re-check: contracts are Core interfaces + HTTPS to Google; no new UI control families. **Pass.**
@@ -76,8 +76,8 @@ BusBuddy.Core/
   # DELETE: GoogleEarthEngineService.cs, GoogleEarthEngineOptions EE export workflow
 BusBuddy.WPF/
   App.xaml.cs             # DI: Maps clients; drop EE bootstrap
-  Views/GoogleEarth/      # keep view; OSM only; remove mt1.google.com layer
-  ViewModels/GoogleEarth/
+  Views/Map/              # District Map: Google Map Tiles via GoogleMapTilesImageryLayer; no OSM
+  ViewModels/Map/
 BusBuddy.Tests/Core/      # GoogleMaps*Tests, routing parser tests
 .github/scripts/          # replace GeeConnectionProbe with MapsConnectionProbe
 Documentation/            # rewrite GCP-GEE-SECRETS-AND-AUTH.md → Maps
@@ -105,4 +105,4 @@ No constitution violations requiring justification.
 - Maps APIs not enabled / key unrestricted → clerk sees config error (acceptable).
 - Removing `Google.Apis.*` if something else still references them → grep before delete.
 - `IGeoDataService` still used for DB routes — keep interface, shrink implementation.
-- View still named GoogleEarth\* — out of scope rename (spec).
+- Map view/VM live under `Views/Map` and `ViewModels/Map` (the GoogleEarth folder name is gone). Clerk address intake is `PlacesAddressBox`.

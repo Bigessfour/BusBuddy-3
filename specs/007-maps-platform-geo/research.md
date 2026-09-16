@@ -22,11 +22,11 @@
 
 ## Decision: Google Map Tiles API for District Map (Path A)
 
-**Rationale**: Plotting Google-validated homes and Routes polylines on OSM violates Maps Platform ToS (no Google content on a non-Google map). Map Tiles API `createSession` + `2dtiles` with visible “Google Maps” attribution is the compliant Syncfusion path. Unofficial `mt1.google.com/vt` scraping remains forbidden.
+**Rationale**: Plotting Google-validated homes and Routes polylines on OSM violates Maps Platform ToS (no Google content on a non-Google map). Map Tiles API `createSession` + `2dtiles` with visible “Google Maps” attribution is the compliant Syncfusion path. Unofficial `mt1.google.com/vt` scraping remains forbidden. **Implemented:** product District Map / pick-maps use `GoogleMapTilesImageryLayer`; OSM stays only in `Tools/SfMapTileProbe`.
 
 **Alternatives considered**:
 
-- Keep OSM and strip Google geometry (Path B) — fastest legal freeze; rejects route trails on the map.
+- Keep OSM and strip Google geometry (Path B) — fastest legal freeze; rejects route trails on the map. Rejected once Path A shipped.
 - WebView2 Maps JavaScript (Path C) — clean ToS, heavier for a clerk WPF app.
 
 ## Decision: No geofence — students in the system are eligible

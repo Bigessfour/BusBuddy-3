@@ -18,7 +18,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST NOT invent a parallel route model. Extend `BusBuddy.Core.Models.Route`, `IGeoDataService`, `IRoutingService`, `RouteDrivePathRefresher`. WPF binds that Core type — do not add a `RouteViewModel` DTO.
 - MUST NOT use live vehicle position to define the path.
 - Default: the published stop list is the official run. Core uniqueness is `(Date, RouteName)` because generate/clone persist calendar-dated rows. School year lives on `Student.SchoolYear`, not on `Route`.
-- Official vs retired: `Route.IsActive` is the published/active flag. There is no separate `Published` column.
+- Official vs retired: `Route.IsActive` is the published/active flag. Clerk **Delete** hard-deletes only when no `Schedules`, student AM/PM keys, or leftover `TripEvents.RouteId` remain. Otherwise it sets `IsActive = false` and keeps those rows (same class of Restrict FK as bus/driver retire). Do not Cascade `FK_Schedules_Route`.
 - Exception: rider absence that day, spare bus, substitute driver, weather/road notice in notes, or a cloned row on another date.
 
 ## Relationships

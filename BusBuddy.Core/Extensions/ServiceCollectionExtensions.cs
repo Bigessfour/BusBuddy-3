@@ -167,7 +167,7 @@ namespace BusBuddy.Core.Extensions
                     sp.GetService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>()));
             services.AddScoped<IActivityLogService>(sp =>
                 new ActivityLogService(
-                    sp.GetRequiredService<BusBuddyDbContext>(),
+                    sp.GetRequiredService<IBusBuddyDbContextFactory>(),
                     sp.GetService<IUserSettingsService>()));
             services.AddScoped<IDashboardMetricsService, DashboardMetricsService>();
             services.AddScoped<ITripEventService, TripEventService>();

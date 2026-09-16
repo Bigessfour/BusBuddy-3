@@ -37,9 +37,7 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                <TextBlock Margin="0,0,0,10">
-                    <Run Text="Status: "/><Run Text="{Binding StatusDisplay, Mode=OneWay}"/>
-                </TextBlock>
+                <TextBlock Text="{Binding StatusDisplay, Mode=OneWay}" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Ticket #" Margin="0,0,0,4"/>
                 <syncfusion:SfTextBoxExt Text="{Binding ExternalTicketNo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -176,12 +174,8 @@
                                         Height="40" Margin="0,0,0,10"
                                         AutomationProperties.Name="Bus"/>
 
-                <TextBlock Margin="0,0,0,4">
-                    <Run Text="Distance: "/><Run Text="{Binding PathMilesDisplay, Mode=OneWay}"/>
-                </TextBlock>
-                <TextBlock Margin="0,0,0,10">
-                    <Run Text="Driver hours: "/><Run Text="{Binding DriverHoursDisplay, Mode=OneWay}"/>
-                </TextBlock>
+                <TextBlock Text="{Binding PathMilesDisplay, Mode=OneWay}" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding DriverHoursDisplay, Mode=OneWay}" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Notes" Margin="0,0,0,4"/>
                 <syncfusion:SfTextBoxExt Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"

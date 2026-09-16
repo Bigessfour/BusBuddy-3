@@ -734,14 +734,20 @@ public class MapViewModelTests
         };
         var vm = await CreateSettledViewModelAsync();
         vm.SelectedRoute = route;
-        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
-        Assert.That(vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true), Is.EqualTo(2));
+        await WaitUntilAsync(() =>
+            vm.RouteLinePoints.Count >= 2
+            && RouteStopVisualCount(vm) >= 2);
+
+        Assert.That(RouteStopVisualCount(vm), Is.EqualTo(2),
+            "standalone WP pins or gold tags on overlapping district pins");
 
         vm.ResetViewCommand.Execute(null);
-        await WaitUntilAsync(() => vm.RouteLinePoints.Count == 0);
+        await WaitUntilAsync(() =>
+            vm.RouteLinePoints.Count == 0
+            && RouteStopVisualCount(vm) == 0);
 
         Assert.That(vm.RouteLinePoints, Is.Empty);
-        Assert.That(vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true), Is.EqualTo(0));
+        Assert.That(RouteStopVisualCount(vm), Is.EqualTo(0));
     }
 
     [Test]
@@ -1515,12 +1521,23 @@ public class MapViewModelTests
         var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
         while (DateTime.UtcNow < deadline)
         {
-            if (condition())
+            try
             {
-                return;
+                if (condition())
+                {
+                    return;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // ObservableCollection mutated while the predicate enumerated it.
             }
 
             await Task.Delay(20);
         }
     }
+
+    private static int RouteStopVisualCount(MapViewModel vm) =>
+        vm.MapMarkers.ToList().Count(m =>
+            m.Kind == MapMarkerLabels.Kind.Waypoint || m.RouteStopLabel is not null);
 }

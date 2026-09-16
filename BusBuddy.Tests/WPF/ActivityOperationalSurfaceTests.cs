@@ -65,6 +65,9 @@ public class ActivityOperationalSurfaceTests
         Assert.That(dialog, Does.Contain("Text=\"{Binding StatusDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding PathMilesDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding DriverHoursDisplay, Mode=OneWay}\""));
+        Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding StatusDisplay"));
+        Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding PathMilesDisplay"));
+        Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding DriverHoursDisplay"));
         var dialogVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
         Assert.That(dialogVm, Does.Contain("ITripReasonCatalog"));
         Assert.That(dialogVm, Does.Contain("never sets RouteId"));

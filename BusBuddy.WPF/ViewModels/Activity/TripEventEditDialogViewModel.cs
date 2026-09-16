@@ -135,11 +135,11 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
 
     public bool IsSports => string.Equals(Purpose, "Sports", StringComparison.OrdinalIgnoreCase);
 
-    public string StatusDisplay => _original.Status.ToString();
+    public string StatusDisplay => $"Status: {_original.Status}";
 
     public string PathMilesDisplay => _original.PathMiles is { } miles
-        ? $"{miles:0.00} mi"
-        : "Not calculated yet";
+        ? $"Distance: {miles:0.00} mi"
+        : "Distance: not calculated yet";
 
     public string DriverHoursDisplay
     {
@@ -147,7 +147,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         {
             if (!TryGetWindow(out var start, out var end))
             {
-                return "—";
+                return "Driver hours: —";
             }
 
             var hours = (decimal)(end - start).TotalHours + TripEvent.PrePostTripInspectionHours;
@@ -156,7 +156,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
                 hours = TripEvent.PrePostTripInspectionHours;
             }
 
-            return $"{hours:0.00} h (includes {TripEvent.PrePostTripInspectionHours:0.0}h inspection)";
+            return $"Driver hours: {hours:0.00} h (includes {TripEvent.PrePostTripInspectionHours:0.0}h inspection)";
         }
     }
 

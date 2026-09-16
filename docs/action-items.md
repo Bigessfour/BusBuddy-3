@@ -37,20 +37,18 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 Do in this order so parked work is not forgotten and is not started out of sequence.
 
-| Order | Item                                                                  | Why this slot                                                                                                                                                  |
-| ----- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | District Map VM re-smoke, including **Move to selected route**        | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                         |
-| 2     | Unused `AddressValidationControl` + stale `specs/007-*` OSM narrative | Hygiene only. Do after map re-smoke.                                                                                                                           |
-| 3     | `AMRoute` / `PMRoute` name-string drop                                | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop. |
-| —     | `IRouteRepository`                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                        |
-| —     | Split `RouteService` / `RouteAssignmentViewModel`                     | File-size debt. Dedicated pass only. Do not casually split.                                                                                                    |
+| Order | Item                                                           | Why this slot                                                                                                                                                  |
+| ----- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | District Map VM re-smoke, including **Move to selected route** | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                         |
+| 2     | `AMRoute` / `PMRoute` name-string drop                         | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop. |
+| —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                        |
+| —     | Split `RouteService` / `RouteAssignmentViewModel`              | File-size debt. Dedicated pass only. Do not casually split.                                                                                                    |
 
 - [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
 
 Optional:
 
 - [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
-- [ ] Parked (not ship-blocking): unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
@@ -102,7 +100,6 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
 - [x] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes (see Done log)
-- [ ] Parked (not ship-blocking): unused `AddressValidationControl`; stale `specs/007-*` OSM narrative (historical)
 
 ---
 
@@ -115,11 +112,24 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-09-16 — Activity logs factory, route soft-retire, trip display binds
+
+- **ActivityLogService:** injects `IBusBuddyDbContextFactory` and opens a context per `Log*` / `Get*` (same pattern as `RouteService`). Timeline refresh is serialized with `SemaphoreSlim` so filter changes cannot start a second `GetLogsAsync` on a long-lived context. Dropped `Contains(..., StringComparison)` (not translated by Npgsql).
+- **Route delete:** `DeleteRouteAsync` counts `Schedules`, student `AmRouteId`/`PmRouteId`, and leftover `TripEvents.RouteId`. Any blockers → `IsActive = false` and keep history. Hard-delete only when those counts are zero. Ribbon shows the Result message (retire vs deleted). Does not Cascade `FK_Schedules_Route`.
+- **TripEventEditDialog:** `StatusDisplay` / `PathMilesDisplay` / `DriverHoursDisplay` bind on `TextBlock` `Mode=OneWay` (not `Run.Text`, which defaults TwoWay).
+
+### 2026-09-16 — Spec 007 OSM + AddressValidationControl hygiene
+
+- **AddressValidationControl:** already absent from `BusBuddy.WPF/Controls` on Mac (deleted in #61; clerk intake is `PlacesAddressBox`). Guest still had the three files until they were deleted. Locked by `UnhostedAddressValidationControl_IsGone_ClerkIntakeUsesPlacesAddressBox`. Parked unused-control box closed.
+- **Spec 007:** `spec.md` / `plan.md` / `tasks.md` / `research.md` / `quickstart.md` no longer say OSM is the product default. Target is Google Map Tiles; OSM remains probe-only (`Tools/SfMapTileProbe`).
+- **Map testhost:** UTM guest **76 passed, 0 failed** (`MapViewModelTests` + `MapViewTests` + `PlacesAddressSurfaceTests` + clerk-override + quota-source). `ResetView_ClearsTrailAndWaypointMarkers` now counts waypoint pins or gold `RouteStopLabel` tags. `RefreshMarkerZoomVisuals` snapshots `MapMarkers` so zoom/reset cannot throw `InvalidOperationException`.
+- **Still open:** live District Map Debug click pass in the UTM window (Zoom stay-visible, Show Schools, Plot Pickup Stops, Export Route toast, legend, Move to selected route, `WithSource` / `MapsOptionsBound QuotaSource=none`). SSH `Start-Process` of the Debug exe did not keep a WPF window. Click it on the VM desktop.
+
 ### 2026-09-16 — Shapefile columns dropped; District Map clerk override
 
 - **Shapefile paths:** `DistrictBoundaryShapefilePath` / `TownBoundaryShapefilePath` removed from `Route`, fluent config, and snapshot. `20260916200000_DropRouteShapefilePaths` actually drops the columns (the 20250814 migration was empty). Maps stay Google tiles only; `ImageryLayer.SubShapeFileLayers` remains the Syncfusion polyline host, not a `.shp` file.
 - **Clerk override:** District Map **Move to selected route** calls `ApplyClerkOverrideAsync`. Pins now carry `StudentIds`; click selects the pin; the destination is the combo `SelectedRoute`; AM/PM comes from `RouteSession.ToAssignmentSlot`.
-- **Left parked:** `AMRoute`/`PMRoute` name strings (phased drop); unused `AddressValidationControl`; historical OSM narrative in spec 007.
+- **Left parked:** `AMRoute`/`PMRoute` name strings (phased drop). AddressValidationControl and spec 007 OSM narrative closed in the hygiene entry above.
 - **Evidence:** UTM guest `MapViewModelTests` + `MapViewTests` + `RouteDeterminationServiceTests` **67 passed, 0 failed**.
 
 ### 2026-09-16 — Npgsql timestamp resolution + Student→Route foreign key

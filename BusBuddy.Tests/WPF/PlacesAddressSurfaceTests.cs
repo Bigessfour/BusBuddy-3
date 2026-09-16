@@ -95,4 +95,13 @@ public class PlacesAddressSurfaceTests
         Assert.That(applied.SingleLine(), Is.EqualTo("100 Main St, Wiley, CO 81092, USA"));
         Assert.That(applied.Latitude, Is.EqualTo(38.15));
     }
+
+    [Test]
+    public void UnhostedAddressValidationControl_IsGone_ClerkIntakeUsesPlacesAddressBox()
+    {
+        Assert.That(XamlViewFile.Exists("Controls/AddressValidationControl.xaml"), Is.False);
+        Assert.That(XamlViewFile.Exists("Controls/AddressValidationControl.xaml.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("Controls/AddressValidationControl.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("Controls/PlacesAddressBox.xaml"), Is.True);
+    }
 }
