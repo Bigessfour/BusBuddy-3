@@ -13,7 +13,11 @@ namespace BusBuddy.Core.Services.Interfaces
         Task<IEnumerable<TripEvent>> GetUnassignedTripsAsync();
         Task AddTripAsync(TripEvent tripEvent);
         Task UpdateTripAsync(TripEvent tripEvent);
-        Task DeleteTripAsync(int id);
+        /// <summary>
+        /// Cancels the trip (<see cref="TripStatus.Cancelled"/>) and keeps the row.
+        /// Does not delete history. Route ≠ Trip.
+        /// </summary>
+        Task CancelTripAsync(int id);
         Task<bool> HasConflictsAsync(int? vehicleId, int? driverId, DateTime startTime, DateTime endTime, int? excludeTripId = null);
         Task<IEnumerable<TripEvent>> GetConflictingTripsAsync(int? vehicleId, int? driverId, DateTime startTime, DateTime endTime);
 

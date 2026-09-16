@@ -193,7 +193,7 @@ public sealed class DestinationService : IDestinationService
         return dest;
     }
 
-    public async Task<SchoolDeleteResult> DeleteSchoolAsync(
+    public async Task<CatalogDeleteResult> DeleteSchoolAsync(
         int destinationId,
         CancellationToken cancellationToken = default)
     {
@@ -205,7 +205,7 @@ public sealed class DestinationService : IDestinationService
             .ConfigureAwait(false);
         if (dest is null)
         {
-            return SchoolDeleteResult.NotFound;
+            return CatalogDeleteResult.NotFound;
         }
 
         var referenced = await SchoolIsReferencedAsync(context, dest, cancellationToken)
@@ -220,13 +220,13 @@ public sealed class DestinationService : IDestinationService
                 "Retired school DestinationId={Id} Name={Name} because students, trips, or routes still reference it",
                 dest.DestinationId,
                 dest.Name);
-            return SchoolDeleteResult.Retired;
+            return CatalogDeleteResult.Retired;
         }
 
         context.Destinations.Remove(dest);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         Logger.Warning("Deleted unused school DestinationId={Id} Name={Name}", destinationId, dest.Name);
-        return SchoolDeleteResult.Deleted;
+        return CatalogDeleteResult.Deleted;
     }
 
     private static void ValidateSchoolFields(

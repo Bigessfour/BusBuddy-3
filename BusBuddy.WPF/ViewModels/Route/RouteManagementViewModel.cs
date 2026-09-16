@@ -889,7 +889,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 IsBusy = true;
                 StatusMessage = $"Generating schedule for '{SelectedRoute.RouteName}'...";
                 var persisted = await RouteManagementExportHelper
-                    .TryPersistScheduleAsync(SelectedRoute, _scheduleService)
+                    .TryPersistScheduleAsync(SelectedRoute.RouteId, _scheduleService)
                     .ConfigureAwait(true);
                 var path = await RouteManagementExportHelper
                     .WriteSchedulePdfAsync(SelectedRoute, printAfter: false, _reportService, _contextFactory)

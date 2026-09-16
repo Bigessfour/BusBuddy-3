@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -310,22 +311,27 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                     if (isNew)
                     {
                         var added = await _busService.AddBusAsync(vehicle);
-                        Vehicles.Add(added);
-                        SelectedVehicle = added;
+                        if (!added.IsSuccess)
+                        {
+                            StatusMessage = added.Error;
+                            return;
+                        }
+
+                        Vehicles.Add(added.Value);
+                        SelectedVehicle = added.Value;
                         Logger.Information(
                             "Added vehicle BusId={BusId} BusNumber={BusNumber}",
-                            added.BusId,
-                            added.BusNumber);
-                        StatusMessage = $"Vehicle {added.BusNumber} added successfully";
+                            added.Value.BusId,
+                            added.Value.BusNumber);
+                        StatusMessage = $"Vehicle {added.Value.BusNumber} added successfully";
                     }
                     else
                     {
                         var updated = await _busService.UpdateBusAsync(vehicle);
-                        if (!updated)
+                        if (!updated.IsSuccess)
                         {
-                            Logger.Warning(
-                                "UpdateBusAsync reported no changes for BusId={BusId}",
-                                vehicle.BusId);
+                            StatusMessage = updated.Error;
+                            return;
                         }
 
                         var index = Vehicles.ToList().FindIndex(v => v.BusId == vehicle.BusId);
@@ -403,39 +409,36 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                         return;
                     }
 
-                    var ok = await _busService.DeleteBusAsync(busId);
-                    if (!ok)
+                    var deleted = await _busService.DeleteBusAsync(busId);
+                    if (!deleted.IsSuccess)
                     {
-                        Logger.Warning("DeleteBusAsync returned false for BusId={BusId}", busId);
-                        StatusMessage = "Vehicle could not be removed";
-                        UserToast.Error(
-                            $"Could not remove bus {busNumber} (not found or blocked).",
-                            "Vehicle remove failed");
+                        Logger.Warning("DeleteBusAsync failed for BusId={BusId}: {Error}", busId, deleted.Error);
+                        StatusMessage = deleted.Error;
+                        UserToast.Error(deleted.Error, "Vehicle retire failed");
                         return;
                     }
 
-                    // Hard delete removes the row; soft-retire leaves Status=Retired when FKs remain.
-                    var stillPresent = await _busService.GetBusByIdAsync(busId);
-                    if (stillPresent is null)
+                    if (!string.IsNullOrWhiteSpace(deleted.Error))
                     {
-                        Vehicles.Remove(vehicle);
-                        SelectedVehicle = null;
+                        var stillPresent = await _busService.GetBusByIdAsync(busId);
+                        if (stillPresent is not null)
+                        {
+                            vehicle.Status = stillPresent.Status;
+                        }
+
                         ApplyFilters();
-                        StatusMessage = $"Vehicle {busNumber} deleted";
-                        UserToast.Success($"Deleted bus {busNumber}.", "Vehicle deleted");
-                        Logger.Information("Hard-deleted vehicle BusId={BusId}", busId);
+                        StatusMessage = deleted.Error;
+                        UserToast.Warning(deleted.Error, "Vehicle retired");
+                        Logger.Information("Soft-retired vehicle BusId={BusId} Status={Status}", busId, vehicle.Status);
                         return;
                     }
 
-                    vehicle.Status = stillPresent.Status;
+                    Vehicles.Remove(vehicle);
+                    SelectedVehicle = null;
                     ApplyFilters();
-                    StatusMessage =
-                        $"Vehicle {busNumber} retired — still referenced by routes or fuel/maintenance history";
-                    UserToast.Warning(
-                        $"Bus {busNumber} is assigned to a route or has fuel/maintenance history.\n" +
-                        "It was retired (not hard-deleted). Unassign on Route Management if you need a hard delete later.",
-                        "Vehicle retired");
-                    Logger.Information("Soft-retired vehicle BusId={BusId} Status={Status}", busId, stillPresent.Status);
+                    StatusMessage = ClerkWriteMessages.Deleted($"Bus {busNumber}");
+                    UserToast.Success(ClerkWriteMessages.Deleted($"Bus {busNumber}"), "Vehicle deleted");
+                    Logger.Information("Hard-deleted vehicle BusId={BusId}", busId);
                 }
                 catch (Exception ex)
                 {

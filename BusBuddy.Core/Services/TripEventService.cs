@@ -124,7 +124,7 @@ public sealed class TripEventService : ITripEventService
         await context.SaveChangesAsync();
     }
 
-    public async Task DeleteTripAsync(int id)
+    public async Task CancelTripAsync(int id)
     {
         using var context = _contextFactory.CreateWriteDbContext();
         var trip = await context.TripEvents.FindAsync(id);
@@ -133,7 +133,9 @@ public sealed class TripEventService : ITripEventService
             return;
         }
 
-        context.TripEvents.Remove(trip);
+        trip.Status = TripStatus.Cancelled;
+        trip.UpdatedDate = DateTime.UtcNow;
+        context.Entry(trip).State = EntityState.Modified;
         await context.SaveChangesAsync();
     }
 

@@ -77,23 +77,27 @@ public sealed class StudentsListCoordinator
         var studentService = _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
         if (studentService is not null)
         {
-            var changed = archive
+            var result = archive
                 ? await studentService.ArchiveStudentAsync(student.StudentId).ConfigureAwait(true)
                 : await studentService.RestoreStudentAsync(student.StudentId).ConfigureAwait(true);
 
-            if (!changed)
+            if (!result.IsSuccess)
             {
                 Logger.Warning(
-                    "Active status unchanged for StudentId={StudentId} (already {State})",
+                    "Active status unchanged for StudentId={StudentId} (already {State}): {Error}",
                     student.StudentId,
-                    archive ? "archived" : "active");
-            }
-            else
-            {
-                student.Active = !archive;
+                    archive ? "archived" : "active",
+                    result.Error);
+                if (!string.IsNullOrWhiteSpace(result.Error))
+                {
+                    UserToast.Error(result.Error, archive ? "Archive failed" : "Restore failed");
+                }
+
+                return false;
             }
 
-            return changed;
+            student.Active = !archive;
+            return true;
         }
 
         using var writeContext = _contextFactory.CreateWriteDbContext();
@@ -134,7 +138,18 @@ public sealed class StudentsListCoordinator
             "Deleting student record StudentId={StudentId} Reason={Reason}",
             student.StudentId,
             reason);
-        return await studentService.DeleteStudentAsync(student.StudentId, reason, notes).ConfigureAwait(true);
+        var deleted = await studentService.DeleteStudentAsync(student.StudentId, reason, notes).ConfigureAwait(true);
+        if (!deleted.IsSuccess)
+        {
+            if (!string.IsNullOrWhiteSpace(deleted.Error))
+            {
+                UserToast.Error(deleted.Error, "Delete failed");
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     public async Task<(int Saved, IReadOnlyList<string> Errors)> SaveInlineGridEditsAsync(
@@ -191,9 +206,13 @@ public sealed class StudentsListCoordinator
             {
                 if (studentService is not null)
                 {
-                    if (!await studentService.UpdateStudentAsync(student).ConfigureAwait(true))
+                    var updated = await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+                    if (!updated.IsSuccess)
                     {
-                        Logger.Debug("No changes persisted for student {StudentId}", student.StudentId);
+                        throw new InvalidOperationException(
+                            string.IsNullOrWhiteSpace(updated.Error)
+                                ? "Could not save this student."
+                                : updated.Error);
                     }
                 }
                 else

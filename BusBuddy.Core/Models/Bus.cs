@@ -74,6 +74,7 @@ public class Bus : INotifyPropertyChanged
             {
                 _busNumber = newValue;
                 OnPropertyChanged(nameof(BusNumber));
+                OnPropertyChanged(nameof(FleetLabel));
             }
         }
     }
@@ -195,6 +196,17 @@ public class Bus : INotifyPropertyChanged
         set => LicenseNumber = value;
     }
 
+    /// <summary>
+    /// Clerk combo label. Retired buses stay on Fuel/Maintenance history screens with this suffix.
+    /// </summary>
+    [NotMapped]
+    public string FleetLabel =>
+        IsRetired ? $"{BusNumber} (retired)" : BusNumber;
+
+    [NotMapped]
+    public bool IsRetired =>
+        string.Equals(Status, "Retired", StringComparison.OrdinalIgnoreCase);
+
     [StringLength(20)]
     [Display(Name = "Status")]
     public string Status
@@ -207,6 +219,8 @@ public class Bus : INotifyPropertyChanged
             {
                 _status = newValue;
                 OnPropertyChanged(nameof(Status));
+                OnPropertyChanged(nameof(IsRetired));
+                OnPropertyChanged(nameof(FleetLabel));
             }
         }
     }

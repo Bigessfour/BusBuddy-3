@@ -109,7 +109,14 @@ public sealed class StudentsBulkRouteCoordinator
             {
                 if (studentService is not null)
                 {
-                    await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+                    var updated = await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+                    if (!updated.IsSuccess)
+                    {
+                        throw new InvalidOperationException(
+                            string.IsNullOrWhiteSpace(updated.Error)
+                                ? "Could not save this student."
+                                : updated.Error);
+                    }
                 }
                 else
                 {

@@ -9,6 +9,7 @@ using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
@@ -394,7 +395,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
                 if (result != System.Windows.MessageBoxResult.Yes)
                 {
-                    UserToast.Info("Delete cancelled — no changes made.", "Cancelled");
+                    UserToast.Info("Retire cancelled — no changes made.", "Cancelled");
                     return;
                 }
 
@@ -696,32 +697,35 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 try
                 {
                     var deactivated = await _driverService.DeleteDriverAsync(driver.DriverId).ConfigureAwait(true);
-                    if (deactivated)
+                    if (deactivated.IsSuccess)
                     {
                         RemoveDriverFromRoster(driver);
-                        base.StatusMessage =
-                            $"Driver '{driver.DriverName}' soft-retired (Inactive)";
+                        var sentence = string.IsNullOrWhiteSpace(deactivated.Error)
+                            ? $"Driver '{driver.DriverName}' retired."
+                            : deactivated.Error;
+                        base.StatusMessage = sentence;
                         Logger.Information("Soft-retired and hid driver {DriverId}", driver.DriverId);
-                        UserToast.Success(
-                            $"'{driver.DriverName}' was soft-retired (Inactive).\n" +
-                            "Route assignments were cleared where needed. The record remains for history.",
-                            "Driver soft-retired");
+                        if (UserToast.IsRetiredSuccess(deactivated))
+                        {
+                            UserToast.Warning(sentence, "Driver retired");
+                        }
+                        else
+                        {
+                            UserToast.Success(sentence, "Driver retired");
+                        }
+
                         return;
                     }
 
-                    base.StatusMessage = "Driver was not retired (not found or blocked)";
-                    UserToast.Error(
-                        "Could not soft-retire this driver (not found or blocked).",
-                        "Retire failed");
+                    base.StatusMessage = deactivated.Error;
+                    UserToast.Error(deactivated.Error, "Retire failed");
                     return;
                 }
-                catch (InvalidOperationException ex)
+                catch (Exception ex)
                 {
-                    Logger.Warning(ex, "Cannot soft-retire driver {DriverId}", driver.DriverId);
+                    Logger.Warning(ex, "Cannot retire driver {DriverId}", driver.DriverId);
                     base.StatusMessage = ex.Message;
-                    UserToast.Error(
-                        $"{ex.Message}\n\nRemove them from active routes first, then try again.",
-                        "Retire blocked");
+                    UserToast.Error(ex.Message, "Retire failed");
                     return;
                 }
             }
@@ -739,11 +743,10 @@ namespace BusBuddy.WPF.ViewModels.Driver
             tracked.Status = "Inactive";
             await context.SaveChangesAsync().ConfigureAwait(true);
             RemoveDriverFromRoster(driver);
-            base.StatusMessage = $"Driver '{driver.DriverName}' soft-retired (Inactive)";
-            Logger.Information("Soft-retired driver {DriverId} via DbContext", driver.DriverId);
-            UserToast.Warning(
-                $"'{driver.DriverName}' was marked Inactive (soft-retire) and removed from this list.",
-                "Driver soft-retired");
+            var retired = ClerkWriteMessages.Retired($"Driver '{driver.DriverName}'");
+            base.StatusMessage = retired;
+            Logger.Information("Retired driver {DriverId} via DbContext", driver.DriverId);
+            UserToast.Warning(retired, "Driver retired");
         }
 
         private void RemoveDriverFromRoster(Core.Models.Driver driver)

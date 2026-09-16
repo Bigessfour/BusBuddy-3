@@ -23,6 +23,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
     public const int DefaultMapZoom = MapDefaults.SchoolZoomLevel;
 
     private readonly IPickupStopService _pickupStops;
+    private readonly int? _editingStopId;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -37,6 +38,15 @@ public sealed class PickupStopFormViewModel : BaseViewModel
     public event EventHandler<bool?>? RequestClose;
 
     public PickupStopFormViewModel(IPickupStopService pickupStops)
+        : this(pickupStops, existing: null)
+    {
+    }
+
+    /// <summary>Opens the form on an existing catalog stop.</summary>
+    public static PickupStopFormViewModel ForEdit(IPickupStopService pickupStops, PickupStop stop) =>
+        new(pickupStops, stop ?? throw new ArgumentNullException(nameof(stop)));
+
+    private PickupStopFormViewModel(IPickupStopService pickupStops, PickupStop? existing)
     {
         _pickupStops = pickupStops ?? throw new ArgumentNullException(nameof(pickupStops));
         SaveCommand = new AsyncRelayCommand(SaveAsync);
@@ -48,9 +58,28 @@ public sealed class PickupStopFormViewModel : BaseViewModel
         var camera = DistrictCameraUi.Resolve();
         MapCenter = new Point(camera.Latitude, camera.Longitude);
         MapZoomLevel = camera.ZoomLevel;
+
+        if (existing is not null)
+        {
+            _editingStopId = existing.PickupStopId;
+            IsEditing = true;
+            Name = existing.Name;
+            Address = existing.Address ?? string.Empty;
+            SelectedStopType = existing.StopType;
+            Notes = existing.Notes ?? string.Empty;
+            ApplyMapClick((double)existing.Latitude, (double)existing.Longitude);
+        }
     }
 
-    public string Title => "Add pickup stop";
+    public bool IsEditing { get; }
+
+    public string Title => IsEditing ? "Edit pickup stop" : "Add pickup stop";
+
+    public string HeaderText => IsEditing
+        ? "Edit pickup stop — correct the shared corner or block stop"
+        : "Add pickup stop — shared corner or block stop for multiple students";
+
+    public string SaveButtonLabel => IsEditing ? "Save changes" : "Save pickup stop";
 
     public ObservableCollection<string> StopTypeOptions { get; }
 
@@ -192,16 +221,31 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
         try
         {
-            var stop = await _pickupStops.AddStopAsync(
-                Name.Trim(),
-                string.IsNullOrWhiteSpace(Address) ? null : Address.Trim(),
-                (decimal)LatitudeValue,
-                (decimal)LongitudeValue,
-                SelectedStopType,
-                string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()).ConfigureAwait(true);
+            var name = Name.Trim();
+            var address = string.IsNullOrWhiteSpace(Address) ? null : Address.Trim();
+            var latitude = (decimal)LatitudeValue;
+            var longitude = (decimal)LongitudeValue;
+            var notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
+            var stop = IsEditing
+                ? await _pickupStops.UpdateStopAsync(
+                    _editingStopId!.Value,
+                    name,
+                    address,
+                    latitude,
+                    longitude,
+                    SelectedStopType,
+                    notes).ConfigureAwait(true)
+                : await _pickupStops.AddStopAsync(
+                    name,
+                    address,
+                    latitude,
+                    longitude,
+                    SelectedStopType,
+                    notes).ConfigureAwait(true);
 
             SavedPickupStopId = stop.PickupStopId;
-            Logger.Information("Pickup stop saved PickupStopId={Id} Name={Name}", stop.PickupStopId, stop.Name);
+            Logger.Information("Pickup stop saved PickupStopId={Id} Name={Name} Editing={Editing}",
+                stop.PickupStopId, stop.Name, IsEditing);
             RequestClose?.Invoke(this, true);
         }
         catch (Exception ex)

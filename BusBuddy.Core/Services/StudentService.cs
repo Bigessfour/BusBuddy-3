@@ -446,7 +446,7 @@ public class StudentService : IStudentService
 
     #region Write Operations
 
-    public async Task<Student> AddStudentAsync(Student student)
+    public async Task<Result<Student>> AddStudentAsync(Student student)
     {
         try
         {
@@ -454,20 +454,17 @@ public class StudentService : IStudentService
 
             StudentRecordNormalizer.NormalizeForPersistence(student);
 
-            // Validate student data
             var validationErrors = await ValidateStudentAsync(student);
             if (validationErrors.Count > 0)
             {
-                throw new ArgumentException($"Student validation failed: {string.Join(", ", validationErrors)}");
+                return Result.FailureResult<Student>($"Student validation failed: {string.Join(", ", validationErrors)}");
             }
 
-            // Set default values
             if (student.EnrollmentDate == null)
             {
                 student.EnrollmentDate = DateTime.UtcNow.Date;
             }
 
-            // Geocode on add when coordinates are not provided and a geocoder is available
             if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
             {
                 try
@@ -502,16 +499,20 @@ public class StudentService : IStudentService
             }
 
             Logger.Information("Successfully added student with ID: {StudentId}", student.StudentId);
-            return student;
+            return Result.Success(student);
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error adding student: {StudentName}", student.StudentName);
-            throw;
+            return ClerkWriteMessages.FailureFromException<Student>(
+                ex,
+                "save this student",
+                Logger,
+                "Error adding student: {StudentName}",
+                student.StudentName);
         }
     }
 
-    public async Task<bool> UpdateStudentAsync(Student student)
+    public async Task<Result<bool>> UpdateStudentAsync(Student student)
     {
         try
         {
@@ -519,14 +520,12 @@ public class StudentService : IStudentService
 
             StudentRecordNormalizer.NormalizeForPersistence(student);
 
-            // Validate student data
             var validationErrors = await ValidateStudentAsync(student);
             if (validationErrors.Count > 0)
             {
-                throw new ArgumentException($"Student validation failed: {string.Join(", ", validationErrors)}");
+                return Result.FailureResult<bool>($"Student validation failed: {string.Join(", ", validationErrors)}");
             }
 
-            // Geocode if coordinates missing and address present
             if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
             {
                 try
@@ -545,13 +544,22 @@ public class StudentService : IStudentService
             }
 
             var (context, dispose) = GetWriteContext();
-            int result;
             try
             {
                 context.Students.Update(student);
                 student.AmRouteId = await ResolveRouteIdByNameAsync(context, student.AMRoute);
                 student.PmRouteId = await ResolveRouteIdByNameAsync(context, student.PMRoute);
-                result = await context.SaveChangesAsync();
+                var result = await context.SaveChangesAsync();
+                if (result > 0)
+                {
+                    Logger.Information("Successfully updated student: {StudentName}", student.StudentName);
+                }
+                else
+                {
+                    Logger.Information("Update completed with no column changes for student: {StudentId}", student.StudentId);
+                }
+
+                return Result.Success(true);
             }
             finally
             {
@@ -560,27 +568,19 @@ public class StudentService : IStudentService
                     await context.DisposeAsync();
                 }
             }
-
-            var success = result > 0;
-            if (success)
-            {
-                Logger.Information("Successfully updated student: {StudentName}", student.StudentName);
-            }
-            else
-            {
-                Logger.Warning("No changes were made when updating student: {StudentId}", student.StudentId);
-            }
-
-            return success;
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating student with ID: {StudentId}", student.StudentId);
-            throw;
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                "save this student",
+                Logger,
+                "Error updating student with ID: {StudentId}",
+                student.StudentId);
         }
     }
 
-    public async Task<bool> UpdateHomeGeocodeAsync(
+    public async Task<Result<bool>> UpdateHomeGeocodeAsync(
         int studentId,
         decimal? latitude,
         decimal? longitude,
@@ -588,7 +588,7 @@ public class StudentService : IStudentService
     {
         if (studentId <= 0)
         {
-            return false;
+            return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Student {studentId}"));
         }
 
         var (context, dispose) = GetWriteContext();
@@ -600,7 +600,7 @@ public class StudentService : IStudentService
                 .ConfigureAwait(false);
             if (row is null)
             {
-                return false;
+                return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Student {studentId}"));
             }
 
             row.Latitude = latitude;
@@ -611,12 +611,21 @@ public class StudentService : IStudentService
             }
 
             row.UpdatedDate = DateTime.UtcNow;
-            var saved = await context.SaveChangesAsync().ConfigureAwait(false);
+            await context.SaveChangesAsync().ConfigureAwait(false);
             Logger.Information(
                 "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
                 studentId,
                 latitude.HasValue && longitude.HasValue);
-            return saved > 0;
+            return Result.Success(true);
+        }
+        catch (Exception ex)
+        {
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                "save this student's home coordinates",
+                Logger,
+                "Error updating home geocode for student {StudentId}",
+                studentId);
         }
         finally
         {
@@ -630,11 +639,11 @@ public class StudentService : IStudentService
     /// <summary>
     /// Archives a student who may return. The row stays on the roster with Active=false.
     /// </summary>
-    public Task<bool> ArchiveStudentAsync(int studentId) =>
+    public Task<Result<bool>> ArchiveStudentAsync(int studentId) =>
         UpdateStudentActiveStatusAsync(studentId, isActive: false);
 
     /// <summary>Returns an archived student to active service.</summary>
-    public Task<bool> RestoreStudentAsync(int studentId) =>
+    public Task<Result<bool>> RestoreStudentAsync(int studentId) =>
         UpdateStudentActiveStatusAsync(studentId, isActive: true);
 
     /// <summary>
@@ -642,11 +651,11 @@ public class StudentService : IStudentService
     /// or Not attending. Related assignment rows are removed explicitly (FKs stay Restrict). The
     /// deletion log and Serilog entry do not include name, address, or guardian data.
     /// </summary>
-    public async Task<bool> DeleteStudentAsync(int studentId, StudentDeletionReason reason, string? notes = null)
+    public async Task<Result<bool>> DeleteStudentAsync(int studentId, StudentDeletionReason reason, string? notes = null)
     {
-        if (!Enum.IsDefined(reason))
+        if (!Enum.IsDefined(reason) || reason == default)
         {
-            throw new ArgumentOutOfRangeException(nameof(reason), reason, "A deletion reason is required.");
+            return Result.FailureResult<bool>("A deletion reason is required (Mistake, Moved, or Not attending).");
         }
 
         try
@@ -658,7 +667,7 @@ public class StudentService : IStudentService
                 if (student == null)
                 {
                     Logger.Warning("Student with ID {StudentId} not found for deletion", studentId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Student {studentId}"));
                 }
 
                 var schedules = await context.StudentSchedules
@@ -697,7 +706,7 @@ public class StudentService : IStudentService
                     WriteStudentDeletionLog(log);
                 }
 
-                return result > 0;
+                return Result.Success(true);
             }
             finally
             {
@@ -709,8 +718,12 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student record {StudentId}", studentId);
-            throw;
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                "delete this student",
+                Logger,
+                "Error deleting student record {StudentId}",
+                studentId);
         }
     }
 
@@ -1028,7 +1041,7 @@ public class StudentService : IStudentService
         return matches.Count == 1 ? matches[0] : null;
     }
 
-    public async Task<bool> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute)
+    public async Task<Result<bool>> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute)
     {
         try
         {
@@ -1048,7 +1061,8 @@ public class StudentService : IStudentService
                         Logger.Warning(
                             "AM route name {AMRoute} is missing or not unique — fail closed, no name-only write",
                             amRoute);
-                        return false;
+                        return Result.FailureResult<bool>(
+                            $"AM route name '{amRoute}' is missing or not unique.");
                     }
                 }
 
@@ -1060,7 +1074,8 @@ public class StudentService : IStudentService
                         Logger.Warning(
                             "PM route name {PMRoute} is missing or not unique — fail closed, no name-only write",
                             pmRoute);
-                        return false;
+                        return Result.FailureResult<bool>(
+                            $"PM route name '{pmRoute}' is missing or not unique.");
                     }
                 }
             }
@@ -1081,7 +1096,7 @@ public class StudentService : IStudentService
                     Logger.Warning(
                         "RouteService AM assign failed for student {StudentId}: {Error}",
                         studentId, amResult.Error);
-                    return false;
+                    return amResult;
                 }
             }
 
@@ -1094,46 +1109,48 @@ public class StudentService : IStudentService
                     Logger.Warning(
                         "RouteService PM assign failed for student {StudentId}: {Error}",
                         studentId, pmResult.Error);
-                    return false;
+                    return pmResult;
                 }
             }
 
-            return true;
+            return Result.Success(true);
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning routes for student {StudentId}", studentId);
-            throw;
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                "assign this student",
+                Logger,
+                "Error assigning routes for student {StudentId}",
+                studentId);
         }
     }
 
-    public async Task<bool> UpdateStudentActiveStatusAsync(int studentId, bool isActive)
+    public async Task<Result<bool>> UpdateStudentActiveStatusAsync(int studentId, bool isActive)
     {
         try
         {
             Logger.Information("Updating active status for student {StudentId} to {IsActive}", studentId, isActive);
 
             var (context, dispose) = GetWriteContext();
-            bool success;
-            string? studentName = null;
             try
             {
-                // BusBuddyDbContext defaults to NoTracking, so a Find-then-mutate would silently save
-                // nothing unless the caller happened to hand us a TrackAll context. Ask for tracking.
                 var student = await context.Students
                     .AsTracking()
                     .FirstOrDefaultAsync(s => s.StudentId == studentId);
                 if (student == null)
                 {
                     Logger.Warning("Student with ID {StudentId} not found", studentId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Student {studentId}"));
                 }
 
-                studentName = student.StudentName;
                 student.Active = isActive;
                 student.UpdatedDate = DateTime.UtcNow;
-                var result = await context.SaveChangesAsync();
-                success = result > 0;
+                await context.SaveChangesAsync();
+                Logger.Information(
+                    "Successfully updated active status for student: {StudentName}",
+                    student.StudentName);
+                return Result.Success(true);
             }
             finally
             {
@@ -1142,18 +1159,15 @@ public class StudentService : IStudentService
                     await context.DisposeAsync();
                 }
             }
-
-            if (success)
-            {
-                Logger.Information("Successfully updated active status for student: {StudentName}", studentName ?? "(unknown)");
-            }
-
-            return success;
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating active status for student {StudentId}", studentId);
-            throw;
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                isActive ? "restore this student" : "archive this student",
+                Logger,
+                "Error updating active status for student {StudentId}",
+                studentId);
         }
     }
 
@@ -1235,41 +1249,37 @@ public class StudentService : IStudentService
 
     #region Address and Contact Management
 
-    public async Task<bool> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip)
+    public async Task<Result<bool>> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip)
     {
         try
         {
             Logger.Information("Updating address information for student {StudentId}", studentId);
 
-            // Validate address format
             var addressValidation = ValidateAddress(homeAddress, city, state, zip);
             if (!addressValidation.IsValid)
             {
-                throw new ArgumentException($"Address validation failed: {addressValidation.ErrorMessage}");
+                return Result.FailureResult<bool>($"Address validation failed: {addressValidation.ErrorMessage}");
             }
 
             var (context, dispose) = GetWriteContext();
-            bool success;
-            string? studentName = null;
             try
             {
                 var student = await context.Students.FindAsync(studentId);
                 if (student == null)
                 {
                     Logger.Warning("Student with ID {StudentId} not found", studentId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Student {studentId}"));
                 }
 
-                studentName = student.StudentName;
                 student.HomeAddress = homeAddress;
                 student.City = city;
                 student.State = state;
                 student.Zip = zip;
-                // Explicit, because the context may have been created with NoTracking.
                 context.Entry(student).State = EntityState.Modified;
 
-                var result = await context.SaveChangesAsync();
-                success = result > 0;
+                await context.SaveChangesAsync();
+                Logger.Information("Successfully updated address for student: {StudentName}", student.StudentName);
+                return Result.Success(true);
             }
             finally
             {
@@ -1278,18 +1288,15 @@ public class StudentService : IStudentService
                     await context.DisposeAsync();
                 }
             }
-
-            if (success)
-            {
-                Logger.Information("Successfully updated address for student: {StudentName}", studentName ?? "(unknown)");
-            }
-
-            return success;
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating address for student {StudentId}", studentId);
-            throw;
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                "save this student's address",
+                Logger,
+                "Error updating address for student {StudentId}",
+                studentId);
         }
     }
 

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -88,7 +89,7 @@ public class StudentsListCoordinatorTests
             });
         service
             .Setup(s => s.UpdateStudentAsync(It.IsAny<Student>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(Result.Success(true));
 
         return (new StudentsListCoordinator(new TestDbContextFactory(_dbOptions), service.Object), service);
     }
@@ -172,7 +173,7 @@ public class StudentsListCoordinatorTests
     {
         await SeedAsync("TEST_STUDENT_01");
         var (coordinator, service) = CreateCoordinator();
-        service.Setup(s => s.ArchiveStudentAsync(It.IsAny<int>())).ReturnsAsync(true);
+        service.Setup(s => s.ArchiveStudentAsync(It.IsAny<int>())).ReturnsAsync(Result.Success(true));
 
         var loaded = await coordinator.LoadStudentsAsync();
         var archived = await coordinator.ArchiveStudentAsync(loaded[0]);
@@ -191,7 +192,7 @@ public class StudentsListCoordinatorTests
                 It.IsAny<int>(),
                 It.IsAny<StudentDeletionReason>(),
                 It.IsAny<string?>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(Result.Success(true));
 
         var loaded = await coordinator.LoadStudentsAsync();
         var deleted = await coordinator.DeleteStudentAsync(

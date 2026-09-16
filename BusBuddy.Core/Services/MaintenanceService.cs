@@ -55,9 +55,17 @@ public class MaintenanceService : IMaintenanceService
         return record;
     }
 
-    public async Task<Maintenance> CreateMaintenanceRecordAsync(Maintenance maintenance)
+    public async Task<Result<Maintenance>> CreateMaintenanceRecordAsync(Maintenance maintenance)
     {
-        MaintenanceRecordValidator.ValidateForPersist(maintenance);
+        try
+        {
+            MaintenanceRecordValidator.ValidateForPersist(maintenance);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result.FailureResult<Maintenance>(ex.Message);
+        }
+
         DetachVehicleGraph(maintenance);
         maintenance.CreatedDate = DateTime.UtcNow;
 
@@ -66,25 +74,43 @@ public class MaintenanceService : IMaintenanceService
             maintenance.VehicleId, maintenance.Date, maintenance.MaintenanceCompleted, maintenance.Status);
 
         using var context = _contextFactory.CreateWriteDbContext();
+        var bus = await context.Buses.AsNoTracking().FirstOrDefaultAsync(b => b.BusId == maintenance.VehicleId);
+        if (bus is null)
+        {
+            return Result.FailureResult<Maintenance>("Could not save this maintenance record — the selected bus was not found.");
+        }
+
         context.MaintenanceRecords.Add(maintenance);
         try
         {
             await context.SaveChangesAsync();
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
-            Logger.Error(ex, "EF failed creating maintenance record VehicleId={VehicleId}", maintenance.VehicleId);
-            throw new InvalidOperationException(FormatDbError(ex), ex);
+            return ClerkWriteMessages.FailureFromException<Maintenance>(
+                ex,
+                "save this maintenance record",
+                Logger,
+                "EF failed creating maintenance record VehicleId={VehicleId}",
+                maintenance.VehicleId);
         }
 
         Logger.Information("Created maintenance record {MaintenanceId}", maintenance.MaintenanceId);
         await context.Entry(maintenance).Reference(m => m.Vehicle).LoadAsync();
-        return maintenance;
+        return Result.Success(maintenance);
     }
 
-    public async Task<Maintenance> UpdateMaintenanceRecordAsync(Maintenance maintenance)
+    public async Task<Result<Maintenance>> UpdateMaintenanceRecordAsync(Maintenance maintenance)
     {
-        MaintenanceRecordValidator.ValidateForPersist(maintenance);
+        try
+        {
+            MaintenanceRecordValidator.ValidateForPersist(maintenance);
+        }
+        catch (ArgumentException ex)
+        {
+            return Result.FailureResult<Maintenance>(ex.Message);
+        }
+
         DetachVehicleGraph(maintenance);
         maintenance.UpdatedDate = DateTime.UtcNow;
 
@@ -93,23 +119,33 @@ public class MaintenanceService : IMaintenanceService
             maintenance.MaintenanceId, maintenance.VehicleId, maintenance.Status, maintenance.RepairCost);
 
         using var context = _contextFactory.CreateWriteDbContext();
+        var bus = await context.Buses.AsNoTracking().FirstOrDefaultAsync(b => b.BusId == maintenance.VehicleId);
+        if (bus is null)
+        {
+            return Result.FailureResult<Maintenance>("Could not save this maintenance record — the selected bus was not found.");
+        }
+
         context.MaintenanceRecords.Update(maintenance);
         try
         {
             await context.SaveChangesAsync();
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
-            Logger.Error(ex, "EF failed updating maintenance record {MaintenanceId}", maintenance.MaintenanceId);
-            throw new InvalidOperationException(FormatDbError(ex), ex);
+            return ClerkWriteMessages.FailureFromException<Maintenance>(
+                ex,
+                "save this maintenance record",
+                Logger,
+                "EF failed updating maintenance record {MaintenanceId}",
+                maintenance.MaintenanceId);
         }
 
         Logger.Information("Updated maintenance record {MaintenanceId}", maintenance.MaintenanceId);
         await context.Entry(maintenance).Reference(m => m.Vehicle).LoadAsync();
-        return maintenance;
+        return Result.Success(maintenance);
     }
 
-    public async Task<bool> DeleteMaintenanceRecordAsync(int id)
+    public async Task<Result<bool>> DeleteMaintenanceRecordAsync(int id)
     {
         Logger.Information("Deleting maintenance record {MaintenanceId}", id);
         using var context = _contextFactory.CreateWriteDbContext();
@@ -117,13 +153,26 @@ public class MaintenanceService : IMaintenanceService
         if (maintenance == null)
         {
             Logger.Warning("Maintenance record {MaintenanceId} not found for delete", id);
-            return false;
+            return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Maintenance record {id}"));
         }
 
         context.MaintenanceRecords.Remove(maintenance);
-        await context.SaveChangesAsync();
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            return ClerkWriteMessages.FailureFromException<bool>(
+                ex,
+                "delete this maintenance record",
+                Logger,
+                "EF failed deleting maintenance record {MaintenanceId}",
+                id);
+        }
+
         Logger.Information("Deleted maintenance record {MaintenanceId}", id);
-        return true;
+        return Result.Success(true);
     }
 
     public async Task<IEnumerable<Maintenance>> GetMaintenanceRecordsByVehicleAsync(int vehicleId)
@@ -194,16 +243,4 @@ public class MaintenanceService : IMaintenanceService
     /// </summary>
     private static void DetachVehicleGraph(Maintenance maintenance) =>
         maintenance.Vehicle = null!;
-
-    private static string FormatDbError(DbUpdateException ex)
-    {
-        var inner = ex.InnerException?.Message ?? ex.Message;
-        if (inner.Contains("FK_Maintenance_Vehicle", StringComparison.OrdinalIgnoreCase)
-            || inner.Contains("foreign key", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Could not save maintenance record — the selected bus is missing or invalid.";
-        }
-
-        return DatabaseUserMessage.ForOperation(ex, "save maintenance record");
-    }
 }

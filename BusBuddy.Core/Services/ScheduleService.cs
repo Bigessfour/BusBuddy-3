@@ -117,9 +117,6 @@ namespace BusBuddy.Core.Services
                     throw new ArgumentException("Departure time must be before arrival time.");
                 }
 
-                // Apply trip derivation logic before saving
-                Logger.Debug("Applying trip derivation logic before saving");
-                DeriveTripDetails(schedule);
                 ScheduleTimestampNormalizer.NormalizeForPersist(schedule);
 
                 var context = _contextFactory.CreateWriteDbContext();
@@ -175,9 +172,6 @@ namespace BusBuddy.Core.Services
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 Logger.Information("Starting to update schedule. IsSportsTrip: {IsSportsTrip}", schedule.IsSportsTrip);
 
-                // Apply trip derivation logic before saving
-                Logger.Debug("Applying trip derivation logic before updating");
-                DeriveTripDetails(schedule);
                 ScheduleTimestampNormalizer.NormalizeForPersist(schedule);
 
                 var context = _contextFactory.CreateWriteDbContext();
@@ -274,218 +268,60 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        /// <summary>
-        /// Filters schedules by sports category for dropdown focus
-        /// </summary>
-        /// <param name="category">Sports category to filter by (e.g., "Volleyball", "Football", "Activity")</param>
-        /// <returns>Filtered list of schedules</returns>
-        public async Task<IEnumerable<Schedule>> GetSchedulesByCategoryAsync(string category)
+        /// <inheritdoc />
+        public async Task<bool> AddDailyFromPublishedRouteAsync(int routeId, DateTime utcDay)
         {
-            using (LogContext.PushProperty("Operation", "GetSchedulesByCategoryAsync"))
-            using (LogContext.PushProperty("Category", category))
+            if (routeId <= 0)
             {
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                Logger.Information("Starting to retrieve schedules by category");
+                return false;
+            }
 
+            using (LogContext.PushProperty("Operation", "AddDailyFromPublishedRouteAsync"))
+            using (LogContext.PushProperty("RouteId", routeId))
+            {
                 var context = _contextFactory.CreateDbContext();
+                Route? published;
                 try
                 {
-                    var query = context.Schedules
-                        .Include(s => s.Route)
-                        .Include(s => s.Bus)
-                        .Include(s => s.Driver)
-                        .AsNoTracking();
-
-                    if (!string.IsNullOrEmpty(category))
-                    {
-                        if (category.Equals("Sports", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Return all sports categories (exclude "Activity" and null)
-                            query = query.Where(s => !string.IsNullOrEmpty(s.SportsCategory) && s.SportsCategory != "Activity");
-                            Logger.Debug("Filtering for all sports categories");
-                        }
-                        else if (category.Equals("Routes", StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Return regular routes (null or "Activity" sports category)
-                            query = query.Where(s => string.IsNullOrEmpty(s.SportsCategory) || s.SportsCategory == "Activity");
-                            Logger.Debug("Filtering for regular routes");
-                        }
-                        else
-                        {
-                            // Filter by specific sports category
-                            query = query.Where(s => s.SportsCategory == category);
-                            Logger.Debug("Filtering for specific sports category");
-                        }
-                    }
-
-                    var schedules = await query.ToListAsync();
-
-                    stopwatch.Stop();
-                    Logger.Information("Successfully retrieved {ScheduleCount} schedules by category in {ElapsedMs}ms",
-                        schedules.Count, stopwatch.ElapsedMilliseconds);
-
-                    // Log category breakdown for diagnostics
-                    if (schedules.Count > 0)
-                    {
-                        var categoryBreakdown = schedules.GroupBy(s => s.SportsCategory ?? "None")
-                            .ToDictionary(g => g.Key, g => g.Count());
-                        Logger.Debug("Category breakdown: {@CategoryBreakdown}", categoryBreakdown);
-                    }
-
-                    return schedules;
-                }
-                catch (Exception ex)
-                {
-                    stopwatch.Stop();
-                    Logger.Error(ex, "Error retrieving schedules by category after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                    throw;
+                    published = await context.Routes.AsNoTracking()
+                        .FirstOrDefaultAsync(r => r.RouteId == routeId)
+                        .ConfigureAwait(false);
                 }
                 finally
                 {
                     await context.DisposeAsync();
                 }
-            }
-        }
 
-        /// <summary>
-        /// Derives trip details from schedule properties
-        /// Auto-sets DestinationTown if Location indicates "Away" game
-        /// </summary>
-        /// <param name="schedule">Schedule to derive details for</param>
-        public void DeriveTripDetails(Schedule schedule)
-        {
-            if (schedule == null)
-            {
-                Logger.Warning("DeriveTripDetails called with null schedule");
-                return;
-            }
-
-            using (LogContext.PushProperty("Operation", "DeriveTripDetails"))
-            using (LogContext.PushProperty("ScheduleId", schedule.ScheduleId))
-            using (LogContext.PushProperty("SportsCategory", schedule.SportsCategory))
-            using (LogContext.PushProperty("Location", schedule.Location))
-            {
-                Logger.Debug("Starting trip details derivation");
-
-                // Only apply derivation logic for sports trips
-                if (string.IsNullOrEmpty(schedule.SportsCategory) || schedule.SportsCategory == "Activity")
+                if (published is null || !PublishedRouteFleet.HasPairing(published))
                 {
-                    Logger.Debug("Skipping derivation for non-sports trip");
-                    return;
+                    Logger.Information(
+                        "Hop 5 skipped RouteId={RouteId} — missing route or session pairing",
+                        routeId);
+                    return false;
                 }
 
-                var originalDestinationTown = schedule.DestinationTown;
-
-                // Auto-derive destination town from location for away games
-                if (!string.IsNullOrEmpty(schedule.Location))
+                var day = DateTime.SpecifyKind(utcDay.Date, DateTimeKind.Utc);
+                var departure = day.Add(PublishedRouteFleet.BeginTime(published));
+                var arrival = departure.AddMinutes(published.EstimatedDuration ?? 45);
+                if (arrival <= departure)
                 {
-                    var location = schedule.Location.Trim();
-                    Logger.Debug("Processing location: {Location}", location);
-
-                    // Check if it's an away game
-                    if (location.Contains("away", StringComparison.OrdinalIgnoreCase) ||
-                        location.Contains('@', StringComparison.OrdinalIgnoreCase) ||
-                        location.Contains("at ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Logger.Debug("Detected away game from location");
-
-                        // Try to extract town/city from the location
-                        var townCandidate = ExtractTownFromLocation(location);
-                        if (!string.IsNullOrEmpty(townCandidate))
-                        {
-                            schedule.DestinationTown = townCandidate;
-                            Logger.Information("Auto-derived destination town: {DestinationTown} from location: {Location}",
-                                townCandidate, location);
-                        }
-                        else
-                        {
-                            Logger.Warning("Could not extract town from away game location: {Location}", location);
-                        }
-                    }
-                    else if (location.Contains("home", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // For home games, clear destination town
-                        schedule.DestinationTown = null;
-                        Logger.Debug("Cleared destination town for home game");
-                    }
+                    arrival = departure.AddMinutes(45);
                 }
 
-                // Set default depart and scheduled times if not provided
-                if (schedule.DepartTime == null && schedule.ScheduledTime != null)
+                await AddScheduleAsync(new Schedule
                 {
-                    // Default: depart 1 hour before the scheduled event time
-                    schedule.DepartTime = schedule.ScheduledTime.Value.Subtract(TimeSpan.FromHours(1));
-                    Logger.Debug("Auto-set DepartTime to 1 hour before ScheduledTime: {DepartTime}", schedule.DepartTime);
-                }
-
-                // Ensure departure time is set based on depart time for sports trips
-                if (schedule.DepartTime.HasValue)
-                {
-                    var originalDepartureTime = schedule.DepartureTime;
-                    var departDateTime = schedule.ScheduleDate.Date.Add(schedule.DepartTime.Value);
-                    schedule.DepartureTime = departDateTime;
-                    Logger.Debug("Updated DepartureTime from {OriginalDepartureTime} to {DepartureTime}",
-                        originalDepartureTime, schedule.DepartureTime);
-                }
-
-                // Ensure arrival time is set based on scheduled time for sports trips
-                if (schedule.ScheduledTime.HasValue)
-                {
-                    var originalArrivalTime = schedule.ArrivalTime;
-                    var arrivalDateTime = schedule.ScheduleDate.Date.Add(schedule.ScheduledTime.Value);
-                    schedule.ArrivalTime = arrivalDateTime;
-                    Logger.Debug("Updated ArrivalTime from {OriginalArrivalTime} to {ArrivalTime}",
-                        originalArrivalTime, schedule.ArrivalTime);
-                }
-
-                Logger.Information("Trip details derivation completed. DestinationTown changed from {OriginalDestinationTown} to {NewDestinationTown}",
-                    originalDestinationTown, schedule.DestinationTown);
-            }
-        }
-
-        /// <summary>
-        /// Extracts town/city name from a location string
-        /// </summary>
-        /// <param name="location">Location string to parse</param>
-        /// <returns>Extracted town name or null if not found</returns>
-        private string? ExtractTownFromLocation(string location)
-        {
-            if (string.IsNullOrEmpty(location))
-            {
-                Logger.Debug("ExtractTownFromLocation called with null/empty location");
-                return null;
-            }
-
-            using (LogContext.PushProperty("Operation", "ExtractTownFromLocation"))
-            using (LogContext.PushProperty("InputLocation", location))
-            {
-                Logger.Debug("Attempting to extract town from location");
-
-                // Remove common prefixes
-                var cleanedLocation = location.Replace("away at ", "", StringComparison.OrdinalIgnoreCase)
-                                     .Replace("at ", "", StringComparison.OrdinalIgnoreCase)
-                                     .Replace("@ ", "", StringComparison.OrdinalIgnoreCase)
-                                     .Replace("away", "", StringComparison.OrdinalIgnoreCase)
-                                     .Trim();
-
-                Logger.Debug("Cleaned location: {CleanedLocation}", cleanedLocation);
-
-                // Split by common separators and take the first meaningful part
-                var parts = cleanedLocation.Split(new[] { ',', '-', '(', ')', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var part in parts)
-                {
-                    var trimmed = part.Trim();
-                    if (!string.IsNullOrEmpty(trimmed) && trimmed.Length > 2)
-                    {
-                        Logger.Information("Successfully extracted town: {ExtractedTown} from location: {OriginalLocation}",
-                            trimmed, location);
-                        return trimmed;
-                    }
-                }
-
-                Logger.Warning("Could not extract meaningful town from location: {Location}", location);
-                return null;
+                    RouteId = published.RouteId,
+                    BusId = PublishedRouteFleet.VehicleId(published)!.Value,
+                    DriverId = PublishedRouteFleet.DriverId(published)!.Value,
+                    ScheduleDate = day,
+                    DepartureTime = departure,
+                    ArrivalTime = arrival,
+                    Location = published.School,
+                    Notes = $"Daily schedule for {published.RouteName}",
+                    Status = "Scheduled",
+                    CreatedDate = DateTime.UtcNow
+                }).ConfigureAwait(false);
+                return true;
             }
         }
     }

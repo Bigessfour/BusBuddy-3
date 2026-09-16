@@ -275,7 +275,7 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public async Task<Bus> AddBusEntityAsync(Bus bus)
+        public async Task<Result<Bus>> AddBusEntityAsync(Bus bus)
         {
             using (LogContext.PushProperty("OperationType", "AddBusEntity"))
             using (LogContext.PushProperty("BusNumber", bus.BusNumber))
@@ -309,9 +309,13 @@ namespace BusBuddy.Core.Services
                         stopwatch.Stop();
                         using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
                         {
-                            DatabaseUserMessage.LogFailure(Logger, ex, "Database operation AddBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                            return ClerkWriteMessages.FailureFromException<Bus>(
+                                ex,
+                                "save this bus",
+                                Logger,
+                                "Database operation AddBus failed after {Duration}ms",
+                                stopwatch.ElapsedMilliseconds);
                         }
-                        throw;
                     }
                 }
 
@@ -320,11 +324,11 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Successfully added bus: {BusNumber} with ID {BusId}",
                     bus.BusNumber, bus.BusId);
 
-                return bus;
+                return Result.Success(bus);
             }
         }
 
-        public async Task<bool> UpdateBusEntityAsync(Bus bus)
+        public async Task<Result<bool>> UpdateBusEntityAsync(Bus bus)
         {
             using (LogContext.PushProperty("OperationType", "UpdateBusEntity"))
             using (LogContext.PushProperty("BusId", bus.BusId))
@@ -340,7 +344,7 @@ namespace BusBuddy.Core.Services
                 if (existing is null)
                 {
                     Logger.Warning("Bus with ID: {BusId} not found for update", bus.BusId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Bus {bus.BusId}"));
                 }
 
                 context.Entry(existing).CurrentValues.SetValues(bus);
@@ -370,28 +374,32 @@ namespace BusBuddy.Core.Services
                         if (result > 0)
                         {
                             Logger.Information("Successfully updated bus with ID: {BusId}", bus.BusId);
-                            return true;
                         }
                         else
                         {
-                            Logger.Warning("No changes detected when updating bus with ID: {BusId}", bus.BusId);
-                            return false;
+                            Logger.Information("Update completed with no column changes for bus: {BusId}", bus.BusId);
                         }
+
+                        return Result.Success(true);
                     }
                     catch (Exception ex)
                     {
                         stopwatch.Stop();
                         using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
                         {
-                            DatabaseUserMessage.LogFailure(Logger, ex, "Database operation UpdateBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                            return ClerkWriteMessages.FailureFromException<bool>(
+                                ex,
+                                "save this bus",
+                                Logger,
+                                "Database operation UpdateBus failed after {Duration}ms",
+                                stopwatch.ElapsedMilliseconds);
                         }
-                        throw;
                     }
                 }
             }
         }
 
-        public async Task<bool> DeleteBusEntityAsync(int busId)
+        public async Task<Result<bool>> DeleteBusEntityAsync(int busId)
         {
             using (LogContext.PushProperty("OperationType", "DeleteBusEntity"))
             using (LogContext.PushProperty("BusId", busId))
@@ -403,7 +411,7 @@ namespace BusBuddy.Core.Services
                 if (bus is null)
                 {
                     Logger.Warning("Bus with ID: {BusId} not found for deletion", busId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Bus {busId}"));
                 }
 
                 using (LogContext.PushProperty("BusNumber", bus.BusNumber))
@@ -413,11 +421,14 @@ namespace BusBuddy.Core.Services
                         .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
                         .Select(r => new { r.RouteId, r.RouteName, r.Date, r.AMVehicleId, r.PMVehicleId, r.BusNumber })
                         .ToListAsync();
-                    var hasFuel = await context.FuelRecords.AnyAsync(f => f.VehicleFueledId == busId);
-                    var hasMaintenance = await context.MaintenanceRecords.AnyAsync(m => m.VehicleId == busId);
-                    var hasActivities = await context.Activities.AnyAsync(a => a.AssignedVehicleId == busId);
+                    var fuelCount = await context.FuelRecords.CountAsync(f => f.VehicleFueledId == busId);
+                    var maintenanceCount = await context.MaintenanceRecords.CountAsync(m => m.VehicleId == busId);
+                    var activityCount = await context.Activities.CountAsync(a => a.AssignedVehicleId == busId);
 
-                    var hasBlockingFks = assignedRoutes.Count > 0 || hasFuel || hasMaintenance || hasActivities;
+                    var subject = string.IsNullOrWhiteSpace(bus.BusNumber)
+                        ? $"Bus {busId}"
+                        : $"Bus {bus.BusNumber}";
+                    var hasBlockingFks = assignedRoutes.Count > 0 || fuelCount > 0 || maintenanceCount > 0 || activityCount > 0;
                     if (!hasBlockingFks)
                     {
                         context.Buses.Remove(bus);
@@ -435,17 +446,17 @@ namespace BusBuddy.Core.Services
                                     stopwatch.ElapsedMilliseconds);
                                 _cacheService.InvalidateBusCache(busId);
                                 _cacheService.InvalidateAllBusCache();
-                                return true;
+                                return Result.Success(true);
                             }
                             catch (Exception ex)
                             {
                                 stopwatch.Stop();
-                                DatabaseUserMessage.LogFailure(
-                                    Logger,
+                                return ClerkWriteMessages.FailureFromException<bool>(
                                     ex,
+                                    "retire this bus",
+                                    Logger,
                                     "Database operation HardDeleteBus failed after {Duration}ms",
                                     stopwatch.ElapsedMilliseconds);
-                                throw;
                             }
                         }
                     }
@@ -489,12 +500,12 @@ namespace BusBuddy.Core.Services
                         : "(fuel/maintenance/activity history)";
 
                     Logger.Warning(
-                        "Soft-retiring bus {BusId} — Restrict FKs present (routes={RouteCount}, fuel={HasFuel}, maint={HasMaint}, activities={HasAct}). Labels={Labels}",
+                        "Soft-retiring bus {BusId} — Restrict FKs present (routes={RouteCount}, fuel={FuelCount}, maint={MaintCount}, activities={ActCount}). Labels={Labels}",
                         busId,
                         assignedRoutes.Count,
-                        hasFuel,
-                        hasMaintenance,
-                        hasActivities,
+                        fuelCount,
+                        maintenanceCount,
+                        activityCount,
                         routeSummary);
 
                     bus.Status = "Retired";
@@ -518,17 +529,25 @@ namespace BusBuddy.Core.Services
 
                             _cacheService.InvalidateBusCache(busId);
                             _cacheService.InvalidateAllBusCache();
-                            return true;
+                            var remainingRoutes = await context.Routes.CountAsync(r =>
+                                r.AMVehicleId == busId || r.PMVehicleId == busId);
+                            var message = ClerkWriteMessages.Retired(
+                                subject,
+                                (remainingRoutes, "route", "routes"),
+                                (fuelCount, "fuel record", "fuel records"),
+                                (maintenanceCount, "maintenance record", "maintenance records"),
+                                (activityCount, "activity", "activities"));
+                            return Result.SuccessResult(true, message);
                         }
                         catch (Exception ex)
                         {
                             stopwatch.Stop();
-                            DatabaseUserMessage.LogFailure(
-                                Logger,
+                            return ClerkWriteMessages.FailureFromException<bool>(
                                 ex,
+                                "retire this bus",
+                                Logger,
                                 "Database operation SoftRetireBus failed after {Duration}ms",
                                 stopwatch.ElapsedMilliseconds);
-                            throw;
                         }
                     }
                 }
@@ -611,93 +630,80 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public async Task<Driver> AddDriverEntityAsync(Driver driver)
+        public async Task<Result<Driver>> AddDriverEntityAsync(Driver driver)
         {
             Logger.Information("Adding new driver entity: {DriverName}", driver.DriverName);
             using var context = _contextFactory.CreateWriteDbContext();
             context.Drivers.Add(driver);
-            await context.SaveChangesAsync();
-            return driver;
+            try
+            {
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return ClerkWriteMessages.FailureFromException<Driver>(
+                    ex,
+                    "save this driver",
+                    Logger,
+                    "EF failed adding driver {DriverName}",
+                    driver.DriverName);
+            }
+
+            return Result.Success(driver);
         }
 
-        public async Task<bool> UpdateDriverEntityAsync(Driver driver)
+        public async Task<Result<bool>> UpdateDriverEntityAsync(Driver driver)
         {
             Logger.Information("Updating driver entity with ID: {DriverId}", driver.DriverId);
             using var context = _contextFactory.CreateWriteDbContext();
             context.Drivers.Update(driver);
-            var result = await context.SaveChangesAsync();
-            return result > 0;
-        }
-
-        public async Task<bool> DeleteDriverEntityAsync(int driverId)
-        {
-            Logger.Information("Deleting driver entity with ID: {DriverId}", driverId);
-            using var context = _contextFactory.CreateWriteDbContext();
-            var driver = await context.Drivers.FindAsync(driverId);
-            if (driver != null)
-            {
-                context.Drivers.Remove(driver);
-                var result = await context.SaveChangesAsync();
-                return result > 0;
-            }
-            return false;
-        }
-
-        public async Task<List<Route>> GetAllRouteEntitiesAsync()
-        {
             try
             {
-                Logger.Information("Retrieving all route entities from database using projection");
-                using var context = _contextFactory.CreateDbContext();
-
-                // Use projection to select only the fields needed
-                var routes = await context.Routes
-                    .AsNoTracking()
-                    .Select(r => new Route
-                    {
-                        RouteId = r.RouteId,
-                        RouteName = r.RouteName,
-                        Date = r.Date,
-                        IsActive = r.IsActive,
-                        Description = r.Description,
-                        Distance = r.Distance,
-                        EstimatedDuration = r.EstimatedDuration,
-                        StudentCount = r.StudentCount,
-                        StopCount = r.StopCount,
-                        School = r.School ?? string.Empty,
-
-                        // AM details
-                        AMVehicleId = r.AMVehicleId,
-                        AMDriverId = r.AMDriverId,
-                        AMBeginMiles = r.AMBeginMiles,
-                        AMEndMiles = r.AMEndMiles,
-                        AMRiders = r.AMRiders,
-                        AMBeginTime = r.AMBeginTime,
-
-                        // PM details
-                        PMVehicleId = r.PMVehicleId,
-                        PMDriverId = r.PMDriverId,
-                        PMBeginMiles = r.PMBeginMiles,
-                        PMEndMiles = r.PMEndMiles,
-                        PMRiders = r.PMRiders,
-                        PMBeginTime = r.PMBeginTime,
-
-                        // Include basic vehicle and driver information
-                        BusNumber = r.BusNumber,
-                        DriverName = r.DriverName
-
-                        // Relations are excluded in this projection for performance
-                    })
-                    .ToListAsync();
-
-                Logger.Information("Retrieved {RouteCount} route entities from database using projection", routes.Count);
-                return routes;
+                await context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve route entities from database");
-                throw; // Propagate exception to caller - no fallback to sample data
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "save this driver",
+                    Logger,
+                    "EF failed updating driver {DriverId}",
+                    driver.DriverId);
             }
+
+            return Result.Success(true);
+        }
+
+        public async Task<Result<bool>> DeleteDriverEntityAsync(int driverId)
+        {
+            Logger.Information("Soft-retiring leftover driver entity {DriverId}", driverId);
+            using var context = _contextFactory.CreateWriteDbContext();
+            var driver = await context.Drivers.FindAsync(driverId);
+            if (driver is null)
+            {
+                return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Driver {driverId}"));
+            }
+
+            driver.Status = "Inactive";
+            driver.UpdatedDate = DateTime.UtcNow;
+            try
+            {
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "retire this driver",
+                    Logger,
+                    "EF failed retiring driver {DriverId}",
+                    driverId);
+            }
+
+            var subject = string.IsNullOrWhiteSpace(driver.DriverName)
+                ? $"Driver {driverId}"
+                : $"Driver {driver.DriverName}";
+            return Result.SuccessResult(true, ClerkWriteMessages.Retired(subject));
         }
 
         public async Task<List<ActivityType>> GetActivitiesByDateAsync(DateTime date)
@@ -778,7 +784,7 @@ namespace BusBuddy.Core.Services
 
         [DebuggerStepThrough]
 
-        public async Task<Bus> AddBusAsync(Bus bus)
+        public async Task<Result<Bus>> AddBusAsync(Bus bus)
         {
             using (LogContext.PushProperty("QueryType", "AddBus"))
             {
@@ -790,13 +796,17 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to add bus: {BusNumber}", bus.BusNumber);
-                    throw;
+                    return ClerkWriteMessages.FailureFromException<Bus>(
+                        ex,
+                        "save this bus",
+                        Logger,
+                        "Failed to add bus: {BusNumber}",
+                        bus.BusNumber);
                 }
             }
         }
 
-        public async Task<bool> UpdateBusAsync(Bus bus)
+        public async Task<Result<bool>> UpdateBusAsync(Bus bus)
         {
             using (LogContext.PushProperty("QueryType", "UpdateBus"))
             {
@@ -808,17 +818,21 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to update bus with ID: {BusId}", bus.BusId);
-                    throw;
+                    return ClerkWriteMessages.FailureFromException<bool>(
+                        ex,
+                        "save this bus",
+                        Logger,
+                        "Failed to update bus with ID: {BusId}",
+                        bus.BusId);
                 }
             }
         }
 
-        public async Task<bool> DeleteBusAsync(int busId)
+        public async Task<Result<bool>> DeleteBusAsync(int busId)
         {
             using (LogContext.PushProperty("QueryType", "DeleteBus"))
             {
-                Logger.Information("Deleting bus with ID: {BusId}", busId);
+                Logger.Information("Deleting or retiring bus with ID: {BusId}", busId);
 
                 try
                 {
@@ -826,8 +840,12 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to delete bus with ID: {BusId}", busId);
-                    throw;
+                    return ClerkWriteMessages.FailureFromException<bool>(
+                        ex,
+                        "retire this bus",
+                        Logger,
+                        "Failed to delete bus with ID: {BusId}",
+                        busId);
                 }
             }
         }

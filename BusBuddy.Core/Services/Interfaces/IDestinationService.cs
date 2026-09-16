@@ -61,7 +61,7 @@ public interface IDestinationService
     /// Removes an unused school, or retires it when students, transfers, activities, or trips still
     /// reference it. specs/locations.md: "Soft-retire. Do not delete if routes/trips reference it."
     /// </summary>
-    Task<SchoolDeleteResult> DeleteSchoolAsync(
+    Task<CatalogDeleteResult> DeleteSchoolAsync(
         int destinationId,
         CancellationToken cancellationToken = default);
 

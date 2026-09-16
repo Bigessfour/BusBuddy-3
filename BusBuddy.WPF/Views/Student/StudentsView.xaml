@@ -110,6 +110,18 @@
                                 AutomationProperties.Name="Add Pickup Stop"
                                 AutomationProperties.HelpText="Place a shared corner or block stop on the map for multiple students"
                                 ToolTip="Add a district pickup stop (pin on map)"/>
+                        <syncfusion:ButtonAdv Name="EditPickupStopButton" Label="Edit Pickup Stop"
+                                Command="{Binding EditPickupStopCommand}"
+                                Style="{StaticResource StudentsToolbarButton}"
+                                AutomationProperties.Name="Edit Pickup Stop"
+                                AutomationProperties.HelpText="Correct name, pin, or type for a catalog pickup stop"
+                                ToolTip="Edit a district pickup stop"/>
+                        <syncfusion:ButtonAdv Name="RetirePickupStopButton" Label="Retire Pickup Stop"
+                                Command="{Binding RetirePickupStopCommand}"
+                                Style="{StaticResource StudentsToolbarButton}"
+                                AutomationProperties.Name="Retire Pickup Stop"
+                                AutomationProperties.HelpText="Removes an unused catalog stop. If students or published route stops still use it, the stop is retired instead of deleted."
+                                ToolTip="Delete unused pickup stop, or retire if still in use"/>
                         <syncfusion:ButtonAdv Name="EditStudentButton" Label="Edit"
                                 Command="{Binding EditStudentCommand}"
                                 Style="{StaticResource StudentsToolbarButton}"

@@ -17,6 +17,7 @@ public class FuelDialogXamlContractTests
         Assert.That(xaml, Does.Contain("OdometerText"));
         Assert.That(xaml, Does.Contain("FuelLocationText"));
         Assert.That(xaml, Does.Contain("IsEditable=\"True\""));
+        Assert.That(xaml, Does.Contain("DisplayMemberPath=\"FleetLabel\""));
         Assert.That(xaml, Does.Contain("Click=\"SaveButton_Click\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding CancelCommand}\""));
         Assert.That(xaml, Does.Contain("GallonsError"));
@@ -39,7 +40,7 @@ public class FuelDialogXamlContractTests
         Assert.That(xaml, Does.Contain("ShowEmptyPoints=\"False\""));
         Assert.That(xaml, Does.Contain("Symbol=\"Ellipse\""));
         Assert.That(xaml, Does.Not.Contain("Symbol=\"Circle\""));
-        Assert.That(xaml, Does.Contain("MappingName=\"Vehicle.BusNumber\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"Vehicle.FleetLabel\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddCommand}\""));
         Assert.That(xaml, Does.Contain("BusBuddy.Brush.Overlay.Dim"));
         Assert.That(xaml, Does.Contain("Label=\"Reports\""));

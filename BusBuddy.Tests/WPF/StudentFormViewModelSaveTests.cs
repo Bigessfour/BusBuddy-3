@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
@@ -29,7 +30,7 @@ public class StudentFormViewModelSaveTests
             .ReturnsAsync((Student s) =>
             {
                 s.StudentId = 42;
-                return s;
+                return Result.Success(s);
             });
 
         var mapsGeo = new Mock<IMapsGeoService>();

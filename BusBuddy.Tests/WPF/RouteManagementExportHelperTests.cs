@@ -110,78 +110,39 @@ public class RouteManagementExportHelperTests
     [Test]
     public async Task TryPersistScheduleAsync_NullServiceReturnsFalse()
     {
-        var route = new Route { RouteId = 1, AMVehicleId = 2, AMDriverId = 3 };
-
-        var persisted = await RouteManagementExportHelper.TryPersistScheduleAsync(route, null);
+        var persisted = await RouteManagementExportHelper.TryPersistScheduleAsync(1, null);
 
         persisted.Should().BeFalse();
     }
 
     [Test]
-    public async Task TryPersistScheduleAsync_MissingBusOrDriverDoesNotWrite()
+    public async Task TryPersistScheduleAsync_ForwardsRouteIdToDailyApi()
     {
         var scheduleService = new Mock<IScheduleService>(MockBehavior.Strict);
-        var noBus = new Route { RouteId = 1, AMDriverId = 3 };
-        var noDriver = new Route { RouteId = 1, AMVehicleId = 2 };
+        scheduleService
+            .Setup(s => s.AddDailyFromPublishedRouteAsync(
+                6,
+                It.Is<DateTime>(d => d.Kind == DateTimeKind.Utc && d.TimeOfDay == TimeSpan.Zero)))
+            .ReturnsAsync(true);
 
-        (await RouteManagementExportHelper.TryPersistScheduleAsync(noBus, scheduleService.Object)).Should().BeFalse();
-        (await RouteManagementExportHelper.TryPersistScheduleAsync(noDriver, scheduleService.Object)).Should().BeFalse();
+        var persisted = await RouteManagementExportHelper.TryPersistScheduleAsync(6, scheduleService.Object);
 
+        persisted.Should().BeTrue();
+        scheduleService.Verify(
+            s => s.AddDailyFromPublishedRouteAsync(6, It.IsAny<DateTime>()),
+            Times.Once);
         scheduleService.Verify(s => s.AddScheduleAsync(It.IsAny<Schedule>()), Times.Never);
     }
 
     [Test]
-    public async Task TryPersistScheduleAsync_WritesUtcDayFromAmBeginTimeAndDuration()
+    public async Task TryPersistScheduleAsync_ReturnsFalseWhenDailyApiRefuses()
     {
-        Schedule? captured = null;
-        var scheduleService = new Mock<IScheduleService>();
-        scheduleService.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
-            .Callback<Schedule>(s => captured = s)
-            .Returns(Task.CompletedTask);
+        var scheduleService = new Mock<IScheduleService>(MockBehavior.Strict);
+        scheduleService
+            .Setup(s => s.AddDailyFromPublishedRouteAsync(9, It.IsAny<DateTime>()))
+            .ReturnsAsync(false);
 
-        var route = new Route
-        {
-            RouteId = 6,
-            RouteName = "Hop 5",
-            School = "Wiley Elementary",
-            AMVehicleId = 2,
-            AMDriverId = 4,
-            AMBeginTime = new TimeSpan(6, 45, 0),
-            EstimatedDuration = 50,
-        };
-
-        var persisted = await RouteManagementExportHelper.TryPersistScheduleAsync(route, scheduleService.Object);
-
-        persisted.Should().BeTrue();
-        captured.Should().NotBeNull();
-        captured!.RouteId.Should().Be(6);
-        captured.BusId.Should().Be(2);
-        captured.DriverId.Should().Be(4);
-        captured.ScheduleDate.Kind.Should().Be(DateTimeKind.Utc);
-        captured.ScheduleDate.TimeOfDay.Should().Be(TimeSpan.Zero);
-        captured.DepartureTime.Should().Be(captured.ScheduleDate.Add(new TimeSpan(6, 45, 0)));
-        captured.ArrivalTime.Should().Be(captured.DepartureTime.AddMinutes(50));
-        captured.Location.Should().Be("Wiley Elementary");
-        captured.Status.Should().Be("Scheduled");
-        captured.Notes.Should().Contain("Hop 5");
-    }
-
-    [Test]
-    public async Task TryPersistScheduleAsync_FallsBackToPmPairAndDefaultTimes()
-    {
-        Schedule? captured = null;
-        var scheduleService = new Mock<IScheduleService>();
-        scheduleService.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
-            .Callback<Schedule>(s => captured = s)
-            .Returns(Task.CompletedTask);
-
-        var route = new Route { RouteId = 9, PMVehicleId = 11, PMDriverId = 12 };
-
-        (await RouteManagementExportHelper.TryPersistScheduleAsync(route, scheduleService.Object)).Should().BeTrue();
-
-        captured!.BusId.Should().Be(11);
-        captured.DriverId.Should().Be(12);
-        captured.DepartureTime.Should().Be(captured.ScheduleDate.AddHours(7));
-        captured.ArrivalTime.Should().Be(captured.DepartureTime.AddMinutes(45));
+        (await RouteManagementExportHelper.TryPersistScheduleAsync(9, scheduleService.Object)).Should().BeFalse();
+        scheduleService.Verify(s => s.AddScheduleAsync(It.IsAny<Schedule>()), Times.Never);
     }
 }

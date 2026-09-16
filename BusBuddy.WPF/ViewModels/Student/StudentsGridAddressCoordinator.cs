@@ -141,11 +141,18 @@ public sealed class StudentsGridAddressCoordinator
 
         try
         {
-            await studentService.UpdateHomeGeocodeAsync(
+            var persisted = await studentService.UpdateHomeGeocodeAsync(
                 student.StudentId,
                 student.Latitude,
                 student.Longitude,
                 student.PlaceId).ConfigureAwait(true);
+            if (!persisted.IsSuccess)
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(persisted.Error)
+                        ? "Could not save the validated coordinates."
+                        : persisted.Error);
+            }
         }
         catch (Exception ex)
         {

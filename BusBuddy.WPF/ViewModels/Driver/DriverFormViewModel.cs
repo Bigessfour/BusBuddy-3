@@ -240,11 +240,11 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 DriverModel savedDriver;
                 if (IsEditMode)
                 {
-                    var success = await _driverService.UpdateDriverAsync(Driver);
-                    if (!success)
+                    var updated = await _driverService.UpdateDriverAsync(Driver);
+                    if (!updated.IsSuccess)
                     {
-                        ShowError("Failed to update driver in the database.", "Save failed");
-                        Logger.Debug("Update operation returned false for Id={Id}", Driver.DriverId);
+                        ShowError(updated.Error, "Save failed");
+                        Logger.Debug("Update operation failed for Id={Id}: {Error}", Driver.DriverId, updated.Error);
                         return;
                     }
                     savedDriver = Driver;
@@ -253,7 +253,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 else
                 {
                     TryUpdateDriverName();
-                    savedDriver = await _driverService.AddDriverAsync(Driver);
+                    var added = await _driverService.AddDriverAsync(Driver);
+                    if (!added.IsSuccess)
+                    {
+                        ShowError(added.Error, "Save failed");
+                        return;
+                    }
+
+                    savedDriver = added.Value;
                     Logger.Debug("Add operation returned Id={Id}", savedDriver.DriverId);
                     ShowSuccess($"Added '{savedDriver.DriverName}' to the roster.", "Driver added");
                 }
@@ -285,8 +292,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 }
 
                 var result = System.Windows.MessageBox.Show(
-                    $"Are you sure you want to delete driver '{SelectedDriver.DriverName}'?",
-                    "Confirm Delete",
+                    $"Retire driver '{SelectedDriver.DriverName}'?\n\n" +
+                    "This marks them Inactive, keeps history, and clears future route assignments.",
+                    "Confirm Retire Driver",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
 
@@ -296,26 +304,29 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 }
 
                 IsLoading = true;
-                Logger.Information("Deleting driver: {DriverName} (ID: {DriverId})",
+                Logger.Information("Retiring driver: {DriverName} (ID: {DriverId})",
                     SelectedDriver.DriverName, SelectedDriver.DriverId);
-                Logger.Debug("Driver delete snapshot -> Id={Id} Name={Name}", SelectedDriver.DriverId, SelectedDriver.DriverName);
+                Logger.Debug("Driver retire snapshot -> Id={Id} Name={Name}", SelectedDriver.DriverId, SelectedDriver.DriverName);
 
-                var success = await _driverService.DeleteDriverAsync(SelectedDriver.DriverId);
-                if (success)
+                var retired = await _driverService.DeleteDriverAsync(SelectedDriver.DriverId);
+                if (!retired.IsSuccess)
                 {
-                    ShowSuccess("Driver soft-retired (Inactive)");
-                    await LoadDriversAsync();
-                    ExecuteAddDriver();
+                    ShowError(retired.Error, "Retire failed");
+                    return;
                 }
-                else
-                {
-                    ShowError("Failed to delete driver");
-                }
+
+                ShowSuccess(
+                    string.IsNullOrWhiteSpace(retired.Error)
+                        ? $"Driver '{SelectedDriver.DriverName}' retired."
+                        : retired.Error,
+                    "Driver retired");
+                await LoadDriversAsync();
+                ExecuteAddDriver();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error deleting driver");
-                ShowError($"Error deleting driver: {ex.Message}");
+                Logger.Error(ex, "Error retiring driver");
+                ShowError($"Error retiring driver: {ex.Message}");
             }
             finally
             {

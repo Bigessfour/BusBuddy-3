@@ -160,7 +160,7 @@ public class DestinationServiceTests
 
         var result = await sut.DeleteSchoolAsync(school.DestinationId);
 
-        Assert.That(result, Is.EqualTo(SchoolDeleteResult.Deleted));
+        Assert.That(result, Is.EqualTo(CatalogDeleteResult.Deleted));
         Assert.That(await sut.GetByIdAsync(school.DestinationId), Is.Null);
         Assert.That(await sut.GetActiveSchoolsAsync(), Is.Empty);
     }
@@ -193,7 +193,7 @@ public class DestinationServiceTests
 
         var result = await sut.DeleteSchoolAsync(school.DestinationId);
 
-        Assert.That(result, Is.EqualTo(SchoolDeleteResult.Retired));
+        Assert.That(result, Is.EqualTo(CatalogDeleteResult.Retired));
         var loaded = await sut.GetByIdAsync(school.DestinationId);
         Assert.That(loaded, Is.Not.Null);
         Assert.That(loaded!.IsActive, Is.False);
@@ -228,7 +228,7 @@ public class DestinationServiceTests
 
         var result = await sut.DeleteSchoolAsync(school.DestinationId);
 
-        Assert.That(result, Is.EqualTo(SchoolDeleteResult.Retired));
+        Assert.That(result, Is.EqualTo(CatalogDeleteResult.Retired));
         var loaded = await sut.GetByIdAsync(school.DestinationId);
         Assert.That(loaded, Is.Not.Null);
         Assert.That(loaded!.IsActive, Is.False);

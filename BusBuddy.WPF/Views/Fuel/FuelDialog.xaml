@@ -140,7 +140,7 @@
                         <syncfusion:ComboBoxAdv Grid.Row="4" Grid.Column="1" Style="{StaticResource FuelComboField}"
                                                 ItemsSource="{Binding AvailableBuses}"
                                                 SelectedItem="{Binding SelectedBus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                DisplayMemberPath="BusNumber"
+                                                DisplayMemberPath="FleetLabel"
                                                 IsEditable="False"
                                                 AutomationProperties.Name="Bus"
                                                 AutomationProperties.LabeledBy="{Binding ElementName=BusLabel}"/>

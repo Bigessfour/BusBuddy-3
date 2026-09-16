@@ -1,6 +1,7 @@
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -198,7 +199,19 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 if (result == true)
                 {
                     // Add the new bus to the database
-                    var addedBus = await _busService.AddBusAsync(dialog.Bus);
+                    var added = await _busService.AddBusAsync(dialog.Bus);
+                    if (!added.IsSuccess)
+                    {
+                        var failure = new Views.Bus.NotificationWindow(
+                            added.Error,
+                            "Error",
+                            Views.Bus.NotificationWindow.NotificationType.Error);
+                        failure.Owner = Application.Current.MainWindow;
+                        failure.ShowDialog();
+                        return;
+                    }
+
+                    var addedBus = added.Value;
                     Logger.Information("Added bus BusId={BusId} Number={BusNumber}", addedBus.BusId, dialog.Bus.BusNumber);
 
                     // Reload the data
@@ -265,7 +278,18 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 if (result == true)
                 {
                     // Update the bus in the database
-                    await _busService.UpdateBusAsync(dialog.Bus);
+                    var updated = await _busService.UpdateBusAsync(dialog.Bus);
+                    if (!updated.IsSuccess)
+                    {
+                        var failure = new Views.Bus.NotificationWindow(
+                            updated.Error,
+                            "Error",
+                            Views.Bus.NotificationWindow.NotificationType.Error);
+                        failure.Owner = Application.Current.MainWindow;
+                        failure.ShowDialog();
+                        return;
+                    }
+
                     Logger.Information("Updated bus BusId={BusId} Number={BusNumber}", dialog.Bus.BusId, dialog.Bus.BusNumber);
 
                     // Reload the data
@@ -323,8 +347,8 @@ namespace BusBuddy.WPF.ViewModels.Bus
             var busId = SelectedBus.BusId;
 
             var confirmDialog = new Views.Bus.ConfirmationDialog(
-                $"Are you sure you want to delete Bus #{busNumber}? This action cannot be undone.",
-                "Confirm Delete");
+                $"Delete or retire Bus #{busNumber}?\n\nEmpty buses are removed. Buses still referenced by routes, fuel, or maintenance are retired.",
+                "Confirm Retire");
             confirmDialog.Owner = Application.Current.MainWindow;
 
             var result = confirmDialog.ShowDialog();
@@ -334,26 +358,41 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 IsBusy = true;
                 try
                 {
-                    // Delete the bus from the database
-                    await _busService.DeleteBusAsync(busId);
-                    Logger.Information("Deleted bus BusId={BusId} Number={BusNumber}", busId, busNumber);
+                    var deleted = await _busService.DeleteBusAsync(busId);
+                    if (!deleted.IsSuccess)
+                    {
+                        var failure = new Views.Bus.NotificationWindow(
+                            deleted.Error,
+                            "Error",
+                            Views.Bus.NotificationWindow.NotificationType.Error);
+                        failure.Owner = Application.Current.MainWindow;
+                        failure.ShowDialog();
+                        return;
+                    }
 
-                    // Reload the data
+                    Logger.Information(
+                        "Bus BusId={BusId} Number={BusNumber} outcome={Outcome}",
+                        busId,
+                        busNumber,
+                        string.IsNullOrWhiteSpace(deleted.Error) ? "deleted" : "retired");
+
                     await LoadBusesAsync();
 
-                    // Show success notification
+                    var retired = !string.IsNullOrWhiteSpace(deleted.Error);
                     var notification = new Views.Bus.NotificationWindow(
-                        $"Bus #{busNumber} was successfully deleted.",
-                        "Bus Deleted",
-                        Views.Bus.NotificationWindow.NotificationType.Success);
+                        retired ? deleted.Error : ClerkWriteMessages.Deleted($"Bus {busNumber}"),
+                        retired ? "Bus retired" : "Bus deleted",
+                        retired
+                            ? Views.Bus.NotificationWindow.NotificationType.Warning
+                            : Views.Bus.NotificationWindow.NotificationType.Success);
                     notification.Owner = Application.Current.MainWindow;
                     notification.ShowDialog();
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to delete bus BusId={BusId}", busId);
+                    Logger.Error(ex, "Failed to retire bus BusId={BusId}", busId);
                     var notification = new Views.Bus.NotificationWindow(
-                        $"Failed to delete bus: {ex.Message}",
+                        $"Failed to retire bus: {ex.Message}",
                         "Error",
                         Views.Bus.NotificationWindow.NotificationType.Error);
                     notification.Owner = Application.Current.MainWindow;

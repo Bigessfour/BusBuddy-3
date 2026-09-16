@@ -122,59 +122,68 @@ namespace BusBuddy.Core.Services
 
         #region Basic CRUD Operations
 
-        public async Task<Result<IEnumerable<Route>>> GetAllActiveRoutesAsync()
+        public Task<Result<IEnumerable<Route>>> GetAllActiveRoutesAsync() =>
+            LoadRoutesAsync(
+                "Retrieving all active routes",
+                "Error retrieving active routes",
+                "Error retrieving routes",
+                activeOnly: true,
+                busId: null);
+
+        public Task<Result<IEnumerable<Route>>> GetAllRoutesAsync() =>
+            LoadRoutesAsync(
+                "Retrieving all routes",
+                "Error retrieving all routes",
+                "Error retrieving routes",
+                activeOnly: false,
+                busId: null);
+
+        public Task<Result<IEnumerable<Route>>> GetRoutesByBusIdAsync(int busId)
         {
-            try
+            if (busId <= 0)
             {
-                Logger.Information("Retrieving all active routes");
-                var (context, dispose) = GetReadContext();
-                try
-                {
-                    var routes = await context.Routes
-                        .Where(r => r.IsActive)
-                        .Include(r => r.AMVehicle)
-                        .Include(r => r.PMVehicle)
-                        .AsNoTracking()
-                        .OrderBy(r => r.RouteName)
-                        .ToListAsync();
-
-                    await ApplyListMetricsAsync(context, routes);
-
-                    Logger.Information("Retrieved {Count} active routes", routes.Count);
-                    return Result.SuccessResult(routes.AsEnumerable());
-                }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
+                return Task.FromResult(Result.FailureResult<IEnumerable<Route>>("Invalid busId"));
             }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving active routes");
-                return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}");
-            }
+
+            return LoadRoutesAsync(
+                $"Retrieving routes paired to bus {busId}",
+                $"Error retrieving routes for bus {busId}",
+                "Error retrieving routes for bus",
+                activeOnly: false,
+                busId);
         }
 
-        public async Task<Result<IEnumerable<Route>>> GetAllRoutesAsync()
+        private async Task<Result<IEnumerable<Route>>> LoadRoutesAsync(
+            string startLog,
+            string failLog,
+            string failUserPrefix,
+            bool activeOnly,
+            int? busId)
         {
             try
             {
-                Logger.Information("Retrieving all routes");
+                Logger.Information("{StartLog}", startLog);
                 var (context, dispose) = GetReadContext();
                 try
                 {
-                    var routes = await context.Routes
+                    var query = context.Routes
                         .Include(r => r.AMVehicle)
                         .Include(r => r.PMVehicle)
                         .AsNoTracking()
-                        .OrderBy(r => r.RouteName)
-                        .ToListAsync();
+                        .AsQueryable();
+                    if (activeOnly)
+                    {
+                        query = query.Where(r => r.IsActive);
+                    }
 
+                    if (busId.HasValue)
+                    {
+                        query = query.Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId);
+                    }
+
+                    var routes = await query.OrderBy(r => r.RouteName).ToListAsync();
                     await ApplyListMetricsAsync(context, routes);
-
+                    Logger.Information("Retrieved {Count} routes", routes.Count);
                     return Result.SuccessResult(routes.AsEnumerable());
                 }
                 finally
@@ -187,8 +196,8 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all routes");
-                return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}");
+                DatabaseUserMessage.LogFailure(Logger, ex, failLog);
+                return Result.FailureResult<IEnumerable<Route>>($"{failUserPrefix}: {ex.Message}");
             }
         }
 
@@ -392,11 +401,14 @@ namespace BusBuddy.Core.Services
                     {
                         route.IsActive = false;
                         await context.SaveChangesAsync();
-                        var message =
-                            $"Route retired — {scheduleCount} schedule row(s) still reference it"
-                            + (studentFkCount > 0 ? $", {studentFkCount} student assignment(s)" : string.Empty)
-                            + (tripCount > 0 ? $", {tripCount} trip event(s)" : string.Empty)
-                            + ".";
+                        var subject = string.IsNullOrWhiteSpace(routeName)
+                            ? $"Route {id}"
+                            : $"Route {routeName}";
+                        var message = ClerkWriteMessages.Retired(
+                            subject,
+                            (scheduleCount, "schedule", "schedules"),
+                            (studentFkCount, "student assignment", "student assignments"),
+                            (tripCount, "trip event", "trip events"));
                         Logger.Information(
                             "Soft-retired route {RouteId} Schedules={Schedules} Students={Students} Trips={Trips}",
                             id,
@@ -499,12 +511,13 @@ namespace BusBuddy.Core.Services
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting route {RouteId}", id);
                 var detail = DatabaseUserMessage.ForOperation(ex, "delete this route");
-                if (detail.Contains("related record", StringComparison.OrdinalIgnoreCase)
-                    || detail.Contains("foreign key", StringComparison.OrdinalIgnoreCase)
-                    || detail.Contains("FK_Schedules_Route", StringComparison.OrdinalIgnoreCase))
+                if (detail.Contains("daily schedules", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("FK_Schedules_Route", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("related record", StringComparison.OrdinalIgnoreCase)
+                    || detail.Contains("foreign key", StringComparison.OrdinalIgnoreCase))
                 {
                     return Result.FailureResult<bool>(
-                        "Cannot delete this route. If daily schedules, student keys, or trip events still reference it, it should retire instead of hard-delete. Empty routes can be deleted.");
+                        "Cannot delete this route while schedules, student keys, or trip events still reference it. Empty routes can be deleted; referenced routes retire.");
                 }
 
                 return Result.FailureResult<bool>(detail);

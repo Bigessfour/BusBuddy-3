@@ -828,6 +828,7 @@ namespace BusBuddy.Tests.Core
 
             Assert.That(result.IsSuccess, Is.True, result.Error);
             Assert.That(result.Error, Does.Contain("retired"));
+            Assert.That(result.Error, Does.Contain("schedule"));
             _dbContext.ChangeTracker.Clear();
             var kept = await _dbContext.Routes.FirstAsync(r => r.RouteId == route.RouteId);
             Assert.That(kept.IsActive, Is.False);

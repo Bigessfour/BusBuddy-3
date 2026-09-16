@@ -90,10 +90,11 @@ namespace BusBuddy.Tests.Core
                 Zip = "81092",
                 Active = true
             });
-            Assert.That(added.StudentId, Is.GreaterThan(0));
+            Assert.That(added.IsSuccess, Is.True, added.Error);
+            Assert.That(added.Value.StudentId, Is.GreaterThan(0));
 
             var assignResult = await _routeService.AssignStudentToRouteAsync(
-                added.StudentId, route.RouteId, RouteTimeSlot.AM);
+                added.Value.StudentId, route.RouteId, RouteTimeSlot.AM);
             Assert.That(assignResult.IsSuccess, Is.True, assignResult.Error);
 
             var csvStudent = csvStudents.First();
@@ -103,7 +104,7 @@ namespace BusBuddy.Tests.Core
 
             var assigned = await _routeService.GetStudentsForRouteAsync(route.RouteId, RouteTimeSlot.AM);
             Assert.That(assigned.IsSuccess, Is.True, assigned.Error);
-            Assert.That(assigned.Value!.Any(s => s.StudentId == added.StudentId), Is.True);
+            Assert.That(assigned.Value!.Any(s => s.StudentId == added.Value.StudentId), Is.True);
             Assert.That(assigned.Value.Any(s => s.StudentId == csvStudent.StudentId), Is.True);
 
             var bus = route.AMVehicleId.HasValue

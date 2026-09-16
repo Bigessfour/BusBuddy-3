@@ -113,6 +113,31 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-09-16 — Clerk write errors share Result sentences
+
+- **Same shape as routes:** Student/Bus/Driver/Fuel/Maintenance writes that can be blocked by FK or validation return `Result` with a ribbon sentence (`ClerkWriteMessages`). Reads stay `List`/`null`. Assign* and Delete* are not mixed with `bool`.
+- **Retire, not delete:** `DeleteRouteAsync` / `DeleteBusAsync` / `DeleteDriverAsync` soft-retire when history remains. Fuel and Maintenance combos bind `FleetLabel` (`5 (retired)`). Fuel/maintenance *records* still delete.
+- **Ribbon:** VMs show `result.Error` instead of swallowing `false` or dumping `FK_Schedules_Route`.
+- **Left parked:** `AMRoute`/`PMRoute` name-string drop; Activity/Family/Guardian leftover bools are not clerk-path hops.
+- **Evidence:** UTM guest testhost **170 passed, 0 failed** (`ClerkWriteMessagesTests` + `BusServiceTests` + `DriverServiceTests` + `StudentServiceTests` + `StudentArchiveAndEligibilityTests` + `MaintenanceServiceTests` + `DatabaseUserMessageTests` + `FuelTrendAggregatorTests` + `FuelDialogXamlContractTests` + `MaintenanceViewTests` + `StudentsListCoordinatorTests` + `StudentFormViewModelSaveTests` + `RouteAssignmentFlowTests` + `RouteServiceTests` + `MapViewModelTests`).
+
+- **Hop 5:** `IScheduleService.AddDailyFromPublishedRouteAsync` is the only daily writer. `PublishedRouteFleet` is session-slot only (no AM/PM scavenger). Begin time is `AMBeginTime` or `PMBeginTime`. Persist forwards `routeId`. `AddScheduleAsync` does not copy omitted ids.
+- **Catalog:** `CatalogDeleteResult` (schools + pickup). One `CatalogPickerDialog` with `CatalogPickerDialogViewModel<T>`. Pickup retire is toolbar-only (form is edit).
+- **Routes list:** `GetAllActiveRoutesAsync` / `GetAllRoutesAsync` / `GetRoutesByBusIdAsync` share `LoadRoutesAsync`.
+- **Trips:** `ITripEventService.CancelTripAsync` (was a lying `DeleteTripAsync`). Still sets `TripStatus.Cancelled` and keeps the row.
+- **Left parked:** `AMRoute`/`PMRoute` name-string drop; no `LocationId` on `RouteStop`.
+- **Evidence:** UTM guest testhost **68 passed, 0 failed** (`PickupStopServiceTests` + `ScheduleServiceTests` + `TripEventServiceTests` + `RouteServiceThinApiTests` + `LocationContractTests` + `PickupStopFormViewModelTests` + `CatalogPickerDialogViewModelTests` + `StudentsViewTests` + `RouteManagementExportHelperTests` + `DestinationServiceTests` + `RoutePublishedPathTests`).
+
+### 2026-09-16 — Thin APIs the clerk UI actually calls
+
+- **Pickup catalog:** `IPickupStopService.UpdateStopAsync` + `RetireStopAsync` (school Restrict-then-retire: unused delete, else `Active=false` when students or published `RouteStop.StopName` still match). Students toolbar Edit/Retire Pickup Stop. Form is save-only.
+- **Trips:** `ITripEventService.CancelTripAsync` sets `TripStatus.Cancelled` and keeps the row. Cancelled trips stay out of conflict queries.
+- **Schedules:** stripped `DeriveTripDetails` / `GetSchedulesByCategoryAsync` (Route ≠ Trip). Hop 5 daily write is `AddDailyFromPublishedRouteAsync`.
+- **Buses:** removed unused `IBusService.GetAllRouteEntitiesAsync`. Routes-for-bus is `IRouteService.GetRoutesByBusIdAsync` (`AMVehicleId` or `PMVehicleId`).
+- **Maps:** `IGeoDataService` stays geometry-only. `RouteService` greediest ctor takes `IRoutingService`; Add/Reorder already rebuild waypoints then `RouteDrivePathRefresher`.
+- **Left parked:** `AMRoute`/`PMRoute` name-string drop; no `LocationId` on `RouteStop`.
+- **Evidence:** UTM guest testhost **44 passed, 0 failed** on the first thin-API cut (`PickupStopServiceTests` + `ScheduleServiceTests` + `TripEventServiceTests` + `RouteServiceThinApiTests` + `LocationContractTests` + `PickupStopFormViewModelTests` + picker/XAML + `RouteManagementExportHelperTests`).
+
 ### 2026-09-16 — Leftover assignment writers wrap RouteService
 
 - **No `IAssignmentService`.** Clerk-path winners stay on `RouteService.AssignStudentToRouteAsync` / `AssignDriverToRouteAsync` / `AssignVehicleToRouteAsync`.

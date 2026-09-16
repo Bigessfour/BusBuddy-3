@@ -190,13 +190,17 @@ internal sealed class MapDistrictLayers
                 points = [new StudentPlotPoint(geo.Value.Lat, geo.Value.Lon, AtPickup: false, PickupName: null)];
                 stu.Latitude = (decimal)geo.Value.Lat;
                 stu.Longitude = (decimal)geo.Value.Lon;
-                if (await studentService.UpdateStudentAsync(stu).ConfigureAwait(true))
+                var persisted = await studentService.UpdateStudentAsync(stu).ConfigureAwait(true);
+                if (persisted.IsSuccess)
                 {
                     geocoded++;
                 }
                 else
                 {
-                    Logger.Warning("Bulk plot: failed persisting geocode for student {Id}", stu.StudentId);
+                    Logger.Warning(
+                        "Bulk plot: failed persisting geocode for student {Id}: {Error}",
+                        stu.StudentId,
+                        persisted.Error);
                 }
             }
 

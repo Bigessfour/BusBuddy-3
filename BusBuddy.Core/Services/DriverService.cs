@@ -161,7 +161,7 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public async Task<Driver> AddDriverAsync(Driver driver)
+        public async Task<Result<Driver>> AddDriverAsync(Driver driver)
         {
             ArgumentNullException.ThrowIfNull(driver);
 
@@ -173,7 +173,7 @@ namespace BusBuddy.Core.Services
                 var validationErrors = await ValidateDriverAsync(driver);
                 if (validationErrors.Count > 0)
                 {
-                    throw new ArgumentException($"Driver validation failed: {string.Join(", ", validationErrors)}");
+                    return Result.FailureResult<Driver>($"Driver validation failed: {string.Join(", ", validationErrors)}");
                 }
 
                 // Set default values
@@ -205,16 +205,20 @@ namespace BusBuddy.Core.Services
                 _cachingService.InvalidateCache("AllDrivers");
 
                 Logger.Information("Successfully added driver with ID: {DriverId}", driver.DriverId);
-                return driver;
+                return Result.Success(driver);
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error adding driver: {DriverName}", driver.DriverName);
-                throw;
+                return ClerkWriteMessages.FailureFromException<Driver>(
+                    ex,
+                    "save this driver",
+                    Logger,
+                    "Error adding driver: {DriverName}",
+                    driver.DriverName);
             }
         }
 
-        public async Task<bool> UpdateDriverAsync(Driver driver)
+        public async Task<Result<bool>> UpdateDriverAsync(Driver driver)
         {
             ArgumentNullException.ThrowIfNull(driver);
 
@@ -226,7 +230,7 @@ namespace BusBuddy.Core.Services
                 var validationErrors = await ValidateDriverAsync(driver);
                 if (validationErrors.Count > 0)
                 {
-                    throw new ArgumentException($"Driver validation failed: {string.Join(", ", validationErrors)}");
+                    return Result.FailureResult<bool>($"Driver validation failed: {string.Join(", ", validationErrors)}");
                 }
 
                 // Update modification timestamp
@@ -246,31 +250,32 @@ namespace BusBuddy.Core.Services
                 {
                     var result = await context.SaveChangesAsync();
                     // EF may return 0 when values are unchanged; still treat as success after Modified attach.
+                    _cachingService.InvalidateCache("AllDrivers");
                     if (result > 0)
                     {
-                        _cachingService.InvalidateCache("AllDrivers");
                         Logger.Information("Successfully updated driver: {DriverName}", driver.DriverName);
                     }
                     else
                     {
-                        _cachingService.InvalidateCache("AllDrivers");
                         Logger.Information("Update completed with no column changes for driver: {DriverId}", driver.DriverId);
                     }
 
-                    return true;
+                    return Result.Success(true);
                 }
                 catch (DbUpdateConcurrencyException ex)
                 {
                     if (!await context.Drivers.AnyAsync(e => e.DriverId == driver.DriverId))
                     {
                         Logger.Warning("Driver with ID {DriverId} not found for update", driver.DriverId);
-                        return false;
+                        return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Driver {driver.DriverId}"));
                     }
-                    else
-                    {
-                        DatabaseUserMessage.LogFailure(Logger, ex, "Concurrency error updating driver: {DriverId}", driver.DriverId);
-                        throw;
-                    }
+
+                    return ClerkWriteMessages.FailureFromException<bool>(
+                        ex,
+                        "save this driver",
+                        Logger,
+                        "Concurrency error updating driver: {DriverId}",
+                        driver.DriverId);
                 }
                 finally
                 {
@@ -282,12 +287,16 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating driver with ID: {DriverId}", driver.DriverId);
-                throw;
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "save this driver",
+                    Logger,
+                    "Error updating driver with ID: {DriverId}",
+                    driver.DriverId);
             }
         }
 
-        public async Task<bool> DeleteDriverAsync(int driverId)
+        public async Task<Result<bool>> DeleteDriverAsync(int driverId)
         {
             // Soft-retire — never hard-delete while Routes / history may reference the driver.
             Logger.Information("Soft-retiring driver {DriverId} via status Inactive", driverId);
@@ -521,7 +530,7 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public async Task<bool> AssignDriverToRouteAsync(int driverId, int routeId, bool isAMRoute)
+        public async Task<Result<bool>> AssignDriverToRouteAsync(int driverId, int routeId, bool isAMRoute)
         {
             try
             {
@@ -536,23 +545,23 @@ namespace BusBuddy.Core.Services
                     if (driver == null)
                     {
                         Logger.Warning("Driver with ID {DriverId} not found", driverId);
-                        return false;
+                        return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Driver {driverId}"));
                     }
 
                     if (driver.Status != "Active" || !driver.TrainingComplete || driver.LicenseStatus == "Expired")
                     {
+                        var reason = driver.Status != "Active" ? "inactive status" :
+                            !driver.TrainingComplete ? "training incomplete" :
+                            "expired license";
                         Logger.Warning("Driver {DriverId} is not qualified for assignment", driverId);
-                        throw new InvalidOperationException("Driver is not qualified for assignment: " +
-                            (driver.Status != "Active" ? "inactive status" :
-                             !driver.TrainingComplete ? "training incomplete" :
-                             "expired license"));
+                        return Result.FailureResult<bool>($"Driver is not qualified for assignment: {reason}");
                     }
 
                     var route = await context.Routes.FindAsync(routeId);
                     if (route == null)
                     {
                         Logger.Warning("Route with ID {RouteId} not found", routeId);
-                        return false;
+                        return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Route {routeId}"));
                     }
 
                     routeDate = route.Date;
@@ -569,7 +578,7 @@ namespace BusBuddy.Core.Services
                 {
                     Logger.Warning("Driver {DriverId} is already assigned to another route on {Date}",
                         driverId, routeDate.ToShortDateString());
-                    throw new InvalidOperationException("Driver is already assigned to another route at this time");
+                    return Result.FailureResult<bool>("Driver is already assigned to another route at this time.");
                 }
 
                 var slot = isAMRoute ? RouteTimeSlot.AM : RouteTimeSlot.PM;
@@ -579,25 +588,25 @@ namespace BusBuddy.Core.Services
                     Logger.Warning(
                         "RouteService.AssignDriverToRouteAsync failed for driver {DriverId} route {RouteId}: {Error}",
                         driverId, routeId, result.Error);
-                    return false;
+                    return result;
                 }
 
                 Logger.Information("Successfully assigned driver {DriverId} to route {RouteId}", driverId, routeId);
-                return true;
-            }
-            catch (InvalidOperationException)
-            {
-                // Rethrow business rule exceptions
-                throw;
+                return Result.Success(true);
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning driver {DriverId} to route {RouteId}", driverId, routeId);
-                throw;
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "assign this driver",
+                    Logger,
+                    "Error assigning driver {DriverId} to route {RouteId}",
+                    driverId,
+                    routeId);
             }
         }
 
-        public async Task<bool> RemoveDriverFromRouteAsync(int routeId, bool isAMRoute)
+        public async Task<Result<bool>> RemoveDriverFromRouteAsync(int routeId, bool isAMRoute)
         {
             try
             {
@@ -609,7 +618,7 @@ namespace BusBuddy.Core.Services
                 if (route == null)
                 {
                     Logger.Warning("Route with ID {RouteId} not found", routeId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Route {routeId}"));
                 }
 
                 if (isAMRoute)
@@ -623,12 +632,16 @@ namespace BusBuddy.Core.Services
 
                 await context.SaveChangesAsync();
                 Logger.Information("Successfully removed driver from route {RouteId}", routeId);
-                return true;
+                return Result.Success(true);
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error removing driver from route {RouteId}", routeId);
-                throw;
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "unassign this driver",
+                    Logger,
+                    "Error removing driver from route {RouteId}",
+                    routeId);
             }
         }
 
@@ -711,12 +724,27 @@ namespace BusBuddy.Core.Services
 
         #region License and Qualification Management
 
-        public async Task<bool> UpdateDriverLicenseInfoAsync(int driverId, string licenseNumber, string licenseClass,
+        public async Task<Result<bool>> UpdateDriverLicenseInfoAsync(int driverId, string licenseNumber, string licenseClass,
             DateTime expiryDate, string? endorsements = null)
         {
             try
             {
                 Logger.Information("Updating license info for driver {DriverId}", driverId);
+
+                if (string.IsNullOrWhiteSpace(licenseNumber))
+                {
+                    return Result.FailureResult<bool>("License number cannot be empty.");
+                }
+
+                if (string.IsNullOrWhiteSpace(licenseClass))
+                {
+                    return Result.FailureResult<bool>("License class cannot be empty.");
+                }
+
+                if (expiryDate < DateTime.Today)
+                {
+                    return Result.FailureResult<bool>("License expiry date cannot be in the past.");
+                }
 
                 var (context, dispose) = GetWriteContext();
                 try
@@ -725,26 +753,9 @@ namespace BusBuddy.Core.Services
                     if (driver == null)
                     {
                         Logger.Warning("Driver with ID {DriverId} not found", driverId);
-                        return false;
+                        return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Driver {driverId}"));
                     }
 
-                    // Validate license information
-                    if (string.IsNullOrWhiteSpace(licenseNumber))
-                    {
-                        throw new ArgumentException("License number cannot be empty");
-                    }
-
-                    if (string.IsNullOrWhiteSpace(licenseClass))
-                    {
-                        throw new ArgumentException("License class cannot be empty");
-                    }
-
-                    if (expiryDate < DateTime.Today)
-                    {
-                        throw new ArgumentException("License expiry date cannot be in the past");
-                    }
-
-                    // Update license information
                     driver.LicenseNumber = licenseNumber;
                     driver.LicenseClass = licenseClass;
                     driver.LicenseExpiryDate = expiryDate;
@@ -753,7 +764,7 @@ namespace BusBuddy.Core.Services
 
                     await context.SaveChangesAsync();
                     Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
-                    return true;
+                    return Result.Success(true);
                 }
                 finally
                 {
@@ -763,19 +774,18 @@ namespace BusBuddy.Core.Services
                     }
                 }
             }
-            catch (ArgumentException)
-            {
-                // Rethrow validation exceptions
-                throw;
-            }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating license info for driver {DriverId}", driverId);
-                throw;
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "save driver license info",
+                    Logger,
+                    "Error updating license info for driver {DriverId}",
+                    driverId);
             }
         }
 
-        public async Task<bool> UpdateDriverQualificationAsync(int driverId, bool trainingComplete,
+        public async Task<Result<bool>> UpdateDriverQualificationAsync(int driverId, bool trainingComplete,
             DateTime? backgroundCheckDate = null, DateTime? drugTestDate = null, DateTime? physicalExamDate = null)
         {
             try
@@ -788,30 +798,26 @@ namespace BusBuddy.Core.Services
                 if (driver == null)
                 {
                     Logger.Warning("Driver with ID {DriverId} not found", driverId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Driver {driverId}"));
                 }
 
-                // Update qualification information
                 driver.TrainingComplete = trainingComplete;
 
                 if (backgroundCheckDate.HasValue)
                 {
                     driver.BackgroundCheckDate = backgroundCheckDate;
-                    // Standard 2-year expiry for background checks
                     driver.BackgroundCheckExpiry = backgroundCheckDate.Value.AddYears(2);
                 }
 
                 if (drugTestDate.HasValue)
                 {
                     driver.DrugTestDate = drugTestDate;
-                    // Standard 1-year expiry for drug tests
                     driver.DrugTestExpiry = drugTestDate.Value.AddYears(1);
                 }
 
                 if (physicalExamDate.HasValue)
                 {
                     driver.PhysicalExamDate = physicalExamDate;
-                    // Standard 2-year expiry for physical exams
                     driver.PhysicalExamExpiry = physicalExamDate.Value.AddYears(2);
                 }
 
@@ -819,16 +825,20 @@ namespace BusBuddy.Core.Services
 
                 await context.SaveChangesAsync();
                 Logger.Information("Successfully updated qualification info for driver {DriverId}", driverId);
-                return true;
+                return Result.Success(true);
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating qualification info for driver {DriverId}", driverId);
-                throw;
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "save driver qualification",
+                    Logger,
+                    "Error updating qualification info for driver {DriverId}",
+                    driverId);
             }
         }
 
-        public async Task<bool> UpdateDriverStatusAsync(int driverId, string status)
+        public async Task<Result<bool>> UpdateDriverStatusAsync(int driverId, string status)
         {
             ArgumentNullException.ThrowIfNull(status);
 
@@ -836,12 +846,10 @@ namespace BusBuddy.Core.Services
             {
                 Logger.Information("Updating status for driver {DriverId} to {Status}", driverId, status);
 
-                // Validate status — use case-insensitive comparison per docs:
-                // Enumerable.Contains with IEqualityComparer → https://learn.microsoft.com/dotnet/api/system.linq.enumerable.contains
                 var validStatuses = new[] { "Active", "Inactive", "On Leave", "Suspended", "Terminated" };
                 if (!validStatuses.Contains(status, StringComparer.OrdinalIgnoreCase))
                 {
-                    throw new ArgumentException($"Invalid status. Valid values are: {string.Join(", ", validStatuses)}");
+                    return Result.FailureResult<bool>($"Invalid status. Valid values are: {string.Join(", ", validStatuses)}");
                 }
 
                 using var context = _contextFactory.CreateWriteDbContext();
@@ -850,13 +858,13 @@ namespace BusBuddy.Core.Services
                 if (driver == null)
                 {
                     Logger.Warning("Driver with ID {DriverId} not found", driverId);
-                    return false;
+                    return Result.FailureResult<bool>(ClerkWriteMessages.NotFound($"Driver {driverId}"));
                 }
 
-                // Soft-retire (Inactive/Terminated) is allowed even with route assignments — history must remain.
-                // Clear driver FKs only on today/future route days (do not rewrite historical assignment display).
-                if (!string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(driver.Status, "Active", StringComparison.OrdinalIgnoreCase))
+                var retiring = !string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(driver.Status, "Active", StringComparison.OrdinalIgnoreCase);
+
+                if (retiring)
                 {
                     var cutoffDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
                     var assignedRoutes = await context.Routes
@@ -891,29 +899,41 @@ namespace BusBuddy.Core.Services
 
                 driver.Status = status;
                 driver.UpdatedDate = DateTime.UtcNow;
-                // HasDefaultValue("Active") marks Status as store-generated on add; force update on soft-retire.
                 context.Entry(driver).Property(d => d.Status).IsModified = true;
                 context.Entry(driver).Property(d => d.UpdatedDate).IsModified = true;
 
                 await context.SaveChangesAsync();
                 _cachingService.InvalidateCache("AllDrivers");
                 Logger.Information("Successfully updated status for driver {DriverId} to {Status}", driverId, status);
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                // Rethrow validation exceptions
-                throw;
-            }
-            catch (InvalidOperationException)
-            {
-                // Rethrow business rule exceptions
-                throw;
+
+                if (!retiring)
+                {
+                    return Result.Success(true);
+                }
+
+                var remainingRoutes = await context.Routes.CountAsync(r =>
+                    r.AMDriverId == driverId || r.PMDriverId == driverId);
+                var remainingSchedules = await context.Schedules.CountAsync(s => s.DriverId == driverId);
+                var remainingActivities = await context.Activities.CountAsync(a => a.DriverId == driverId);
+                var subject = string.IsNullOrWhiteSpace(driver.DriverName)
+                    ? $"Driver {driverId}"
+                    : $"Driver {driver.DriverName}";
+                return Result.SuccessResult(
+                    true,
+                    ClerkWriteMessages.Retired(
+                        subject,
+                        (remainingRoutes, "route", "routes"),
+                        (remainingSchedules, "schedule", "schedules"),
+                        (remainingActivities, "activity", "activities")));
             }
             catch (Exception ex)
             {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating status for driver {DriverId}", driverId);
-                throw;
+                return ClerkWriteMessages.FailureFromException<bool>(
+                    ex,
+                    "retire this driver",
+                    Logger,
+                    "Error updating status for driver {DriverId}",
+                    driverId);
             }
         }
 

@@ -363,6 +363,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand EditSchoolCommand { get; private set; } = null!;
         public ICommand DeleteSchoolCommand { get; private set; } = null!;
         public ICommand AddPickupStopCommand { get; private set; } = null!;
+        public ICommand EditPickupStopCommand { get; private set; } = null!;
+        public ICommand RetirePickupStopCommand { get; private set; } = null!;
         public ICommand EditStudentCommand { get; private set; } = null!;
         public ICommand ArchiveStudentCommand { get; private set; } = null!;
         public ICommand DeleteStudentCommand { get; private set; } = null!;
@@ -410,6 +412,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             EditSchoolCommand = new AsyncRelayCommand(ExecuteEditSchoolAsync);
             DeleteSchoolCommand = new AsyncRelayCommand(ExecuteDeleteSchoolAsync);
             AddPickupStopCommand = new RelayCommand(ExecuteAddPickupStop);
+            EditPickupStopCommand = new AsyncRelayCommand(ExecuteEditPickupStopAsync);
+            RetirePickupStopCommand = new AsyncRelayCommand(ExecuteRetirePickupStopAsync);
             _editStudentRelay = new RelayCommand(ExecuteEditStudent, CanExecuteEditStudent);
             EditStudentCommand = _editStudentRelay;
             _archiveStudentRelay = new AsyncRelayCommand(ExecuteArchiveStudentAsync, CanExecuteArchiveStudent);
@@ -463,6 +467,12 @@ namespace BusBuddy.WPF.ViewModels.Student
             ApplyDialogOutcome(await _dialogs.DeleteSchoolAsync().ConfigureAwait(true));
 
         private void ExecuteAddPickupStop() => ApplyDialogOutcome(_dialogs.AddPickupStop());
+
+        private async Task ExecuteEditPickupStopAsync() =>
+            ApplyDialogOutcome(await _dialogs.EditPickupStopAsync().ConfigureAwait(true));
+
+        private async Task ExecuteRetirePickupStopAsync() =>
+            ApplyDialogOutcome(await _dialogs.RetirePickupStopAsync().ConfigureAwait(true));
 
         private void ExecuteEditStudent() => ApplyDialogOutcome(_dialogs.EditStudent(SelectedStudent));
 

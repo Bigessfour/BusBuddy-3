@@ -7,6 +7,7 @@ using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Views.Fuel;
 using CommunityToolkit.Mvvm.Input;
@@ -171,21 +172,28 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         }
 
                         var created = await _fuelService.CreateFuelRecordAsync(newFuel);
-                        FuelRecords.Add(created);
-                        SelectedFuelRecord = created;
+                        if (!created.IsSuccess)
+                        {
+                            StatusMessage = created.Error;
+                            UserToast.Error(created.Error, "Fuel save failed");
+                            return;
+                        }
+
+                        FuelRecords.Add(created.Value);
+                        SelectedFuelRecord = created.Value;
                         CalculateTrends();
-                        StatusMessage = $"Saved fuel record #{created.FuelId}";
+                        StatusMessage = $"Saved fuel record #{created.Value.FuelId}";
                         UserToast.Success(
-                            $"Fuel record saved — {created.Gallons:N3} gal on {created.FuelDate:d}.",
+                            $"Fuel record saved — {created.Value.Gallons:N3} gal on {created.Value.FuelDate:d}.",
                             "Save successful");
                         if (dialog.RememberedNewLocation)
                         {
                             UserToast.Info(
-                                $"“{created.FuelLocation}” saved to the fuel location list for future fill-ups.",
+                                $"“{created.Value.FuelLocation}” saved to the fuel location list for future fill-ups.",
                                 "New fuel location");
                         }
 
-                        Logger.Information("Added new fuel record with ID {FuelId}", created.FuelId);
+                        Logger.Information("Added new fuel record with ID {FuelId}", created.Value.FuelId);
                     }
                     else
                     {
@@ -244,27 +252,33 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         }
 
                         var updated = await _fuelService.UpdateFuelRecordAsync(recordToEdit);
+                        if (!updated.IsSuccess)
+                        {
+                            StatusMessage = updated.Error;
+                            UserToast.Error(updated.Error, "Fuel save failed");
+                            return;
+                        }
 
                         var index = FuelRecords.IndexOf(SelectedFuelRecord);
                         if (index >= 0)
                         {
-                            FuelRecords[index] = updated;
-                            SelectedFuelRecord = updated;
+                            FuelRecords[index] = updated.Value;
+                            SelectedFuelRecord = updated.Value;
                         }
 
                         CalculateTrends();
-                        StatusMessage = $"Updated fuel record #{updated.FuelId}";
+                        StatusMessage = $"Updated fuel record #{updated.Value.FuelId}";
                         UserToast.Success(
-                            $"Fuel record #{updated.FuelId} saved successfully.",
+                            $"Fuel record #{updated.Value.FuelId} saved successfully.",
                             "Save successful");
                         if (dialog.RememberedNewLocation)
                         {
                             UserToast.Info(
-                                $"“{updated.FuelLocation}” saved to the fuel location list for future fill-ups.",
+                                $"“{updated.Value.FuelLocation}” saved to the fuel location list for future fill-ups.",
                                 "New fuel location");
                         }
 
-                        Logger.Information("Updated fuel record with ID {FuelId}", updated.FuelId);
+                        Logger.Information("Updated fuel record with ID {FuelId}", updated.Value.FuelId);
                     }
                     else
                     {
@@ -304,20 +318,20 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     {
                         var fuelId = SelectedFuelRecord.FuelId;
                         var deleted = await _fuelService.DeleteFuelRecordAsync(fuelId);
-                        if (deleted)
+                        if (deleted.IsSuccess)
                         {
                             FuelRecords.Remove(SelectedFuelRecord);
                             SelectedFuelRecord = null;
                             CalculateTrends();
-                            StatusMessage = $"Deleted fuel record #{fuelId}";
-                            UserToast.Success($"Fuel record #{fuelId} deleted.", "Deleted");
+                            StatusMessage = ClerkWriteMessages.Deleted($"Fuel record {fuelId}");
+                            UserToast.Success(ClerkWriteMessages.Deleted($"Fuel record {fuelId}"), "Deleted");
                             Logger.Information("Deleted fuel record with ID {FuelId}", fuelId);
                         }
                         else
                         {
-                            StatusMessage = $"Failed to delete fuel record #{fuelId}";
-                            UserToast.Error($"Could not delete fuel record #{fuelId}.", "Delete failed");
-                            Logger.Warning("Failed to delete fuel record with ID {FuelId}", fuelId);
+                            StatusMessage = deleted.Error;
+                            UserToast.Error(deleted.Error, "Delete failed");
+                            Logger.Warning("Failed to delete fuel record with ID {FuelId}: {Error}", fuelId, deleted.Error);
                         }
                     }
                     else

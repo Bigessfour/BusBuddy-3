@@ -18,6 +18,24 @@ public interface IPickupStopService
         string? notes = null,
         CancellationToken cancellationToken = default);
 
+    Task<PickupStop> UpdateStopAsync(
+        int pickupStopId,
+        string name,
+        string? address,
+        decimal latitude,
+        decimal longitude,
+        string stopType = PickupStopTypes.Corner,
+        string? notes = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// School-style Restrict-then-retire: unused stops are deleted; students or published
+    /// route-stop names keep the row with <c>Active=false</c>.
+    /// </summary>
+    Task<CatalogDeleteResult> RetireStopAsync(
+        int pickupStopId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Nearest active stop within <paramref name="maxMeters"/> (Haversine), or null.</summary>
     Task<PickupStop?> FindNearestAsync(
         double latitude,

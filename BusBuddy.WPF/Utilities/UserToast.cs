@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Views.Bus;
 using Serilog;
 
@@ -26,6 +27,37 @@ public static class UserToast
 
     public static void Info(string message, string title = "Info") =>
         Show(message, title, NotificationWindow.NotificationType.Information);
+
+    /// <summary>
+    /// Failure → error toast. Success with a clerk sentence (soft-retire) → warning.
+    /// Empty-success → success toast. Returns <c>result.IsSuccess</c>.
+    /// </summary>
+    public static bool ShowWrite<T>(
+        Result<T> result,
+        string successTitle,
+        string successMessage,
+        string failureTitle)
+    {
+        if (result.IsFailure)
+        {
+            Error(
+                string.IsNullOrWhiteSpace(result.Error) ? "The change could not be saved." : result.Error,
+                failureTitle);
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.Error))
+        {
+            Warning(result.Error, successTitle);
+            return true;
+        }
+
+        Success(successMessage, successTitle);
+        return true;
+    }
+
+    public static bool IsRetiredSuccess<T>(Result<T> result) =>
+        result.IsSuccess && !string.IsNullOrWhiteSpace(result.Error);
 
     public static void Show(
         string message,

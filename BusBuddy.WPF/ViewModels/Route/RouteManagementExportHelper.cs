@@ -113,7 +113,7 @@ internal static class RouteManagementExportHelper
     }
 
     public static async Task<bool> TryPersistScheduleAsync(
-        BusBuddy.Core.Models.Route route,
+        int routeId,
         IScheduleService? scheduleService)
     {
         if (scheduleService is null)
@@ -121,34 +121,9 @@ internal static class RouteManagementExportHelper
             return false;
         }
 
-        var busId = route.AMVehicleId ?? route.PMVehicleId;
-        var driverId = route.AMDriverId ?? route.PMDriverId;
-        if (!busId.HasValue || !driverId.HasValue)
-        {
-            return false;
-        }
-
-        var day = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
-        var departure = day.Add(route.AMBeginTime ?? TimeSpan.FromHours(7));
-        var arrival = departure.AddMinutes(route.EstimatedDuration ?? 45);
-        if (arrival <= departure)
-        {
-            arrival = departure.AddMinutes(45);
-        }
-
-        await scheduleService.AddScheduleAsync(new Schedule
-        {
-            RouteId = route.RouteId,
-            BusId = busId.Value,
-            DriverId = driverId.Value,
-            ScheduleDate = day,
-            DepartureTime = departure,
-            ArrivalTime = arrival,
-            Location = route.School,
-            Notes = $"Generated from Route Management for {route.RouteName}",
-            Status = "Scheduled",
-            CreatedDate = DateTime.UtcNow
-        }).ConfigureAwait(true);
-        return true;
+        return await scheduleService.AddDailyFromPublishedRouteAsync(
+                routeId,
+                DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc))
+            .ConfigureAwait(true);
     }
 }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -127,7 +128,7 @@ namespace BusBuddy.Tests.Core
         {
             // No existing assignments
             var ok = await _driverService.AssignDriverToRouteAsync(1, 1, isAMRoute: true);
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
 
             _dbContext.ChangeTracker.Clear();
             var route = await _dbContext.Routes.FindAsync(1);
@@ -136,11 +137,11 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void AssignDriverToRouteAsync_UnqualifiedDriver_Throws()
+        public async Task AssignDriverToRouteAsync_UnqualifiedDriver_ReturnsFailure()
         {
-            // Driver 4 has expired license
-            Func<Task> act = async () => await _driverService.AssignDriverToRouteAsync(4, 1, true);
-            _ = act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not qualified*");
+            var result = await _driverService.AssignDriverToRouteAsync(4, 1, true);
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Should().Contain("not qualified");
         }
 
         [Test]
@@ -158,7 +159,7 @@ namespace BusBuddy.Tests.Core
         public async Task UpdateDriverLicenseInfoAsync_ValidatesAndUpdates()
         {
             var ok = await _driverService.UpdateDriverLicenseInfoAsync(1, "LIC123", "B", DateTime.Today.AddYears(1));
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
 
             var d = await _driverService.GetDriverByIdAsync(1);
             d!.LicenseNumber.Should().Be("LIC123");
@@ -172,7 +173,8 @@ namespace BusBuddy.Tests.Core
             await _driverService.AssignDriverToRouteAsync(1, 1, true);
 
             var ok = await _driverService.UpdateDriverStatusAsync(1, "Inactive");
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
+            ok.Error.Should().Contain("retired");
 
             // Read via a fresh context — test factory contexts from DriverService are not disposed.
             await using var verify = new BusBuddyDbContext(_dbOptions);
@@ -200,7 +202,8 @@ namespace BusBuddy.Tests.Core
             }
 
             var ok = await _driverService.UpdateDriverStatusAsync(1, "Inactive");
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
+            ok.Error.Should().Contain("retired");
 
             await using var verify = new BusBuddyDbContext(_dbOptions);
             var past = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == 99);

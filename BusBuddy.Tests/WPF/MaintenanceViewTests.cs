@@ -26,6 +26,7 @@ public class MaintenanceViewTests
         Assert.That(xaml, Does.Contain("MappingName=\"VehicleId\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.Vehicles, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Contain("SelectedValuePath=\"BusId\""));
+        Assert.That(xaml, Does.Contain("DisplayMemberPath=\"FleetLabel\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.PriorityOptions, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Not.Contain("GridNumericColumn MappingName=\"VehicleId\""));

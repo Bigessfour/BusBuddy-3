@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -152,9 +153,9 @@ public class FuelLocationCatalogTests
 
         public Task<IEnumerable<Fuel>> GetAllFuelRecordsAsync() => throw new NotSupportedException();
         public Task<Fuel?> GetFuelRecordByIdAsync(int id) => throw new NotSupportedException();
-        public Task<Fuel> CreateFuelRecordAsync(Fuel fuel) => throw new NotSupportedException();
-        public Task<Fuel> UpdateFuelRecordAsync(Fuel fuel) => throw new NotSupportedException();
-        public Task<bool> DeleteFuelRecordAsync(int id) => throw new NotSupportedException();
+        public Task<Result<Fuel>> CreateFuelRecordAsync(Fuel fuel) => throw new NotSupportedException();
+        public Task<Result<Fuel>> UpdateFuelRecordAsync(Fuel fuel) => throw new NotSupportedException();
+        public Task<Result<bool>> DeleteFuelRecordAsync(int id) => throw new NotSupportedException();
         public Task<IEnumerable<Fuel>> GetFuelRecordsByVehicleAsync(int vehicleId) => throw new NotSupportedException();
         public Task<IEnumerable<Fuel>> GetFuelRecordsByDateRangeAsync(DateTime startDate, DateTime endDate) => throw new NotSupportedException();
         public Task<decimal> GetTotalFuelCostAsync(int vehicleId, DateTime? startDate = null, DateTime? endDate = null) => throw new NotSupportedException();

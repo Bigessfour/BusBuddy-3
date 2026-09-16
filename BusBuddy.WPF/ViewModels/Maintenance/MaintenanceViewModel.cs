@@ -142,23 +142,30 @@ public class MaintenanceViewModel : BaseViewModel
             {
                 Logger.Information("Creating maintenance record VehicleId={VehicleId}", SelectedRecord.VehicleId);
                 var created = await _maintenanceService.CreateMaintenanceRecordAsync(SelectedRecord);
+                if (!created.IsSuccess)
+                {
+                    StatusMessage = created.Error;
+                    return;
+                }
+
                 StatusMessage = "Saved";
-                Logger.Information("Created maintenance record {MaintenanceId}", created.MaintenanceId);
+                Logger.Information("Created maintenance record {MaintenanceId}", created.Value.MaintenanceId);
             }
             else
             {
                 Logger.Information("Saving maintenance record {MaintenanceId}", SelectedRecord.MaintenanceId);
-                await _maintenanceService.UpdateMaintenanceRecordAsync(SelectedRecord);
+                var updated = await _maintenanceService.UpdateMaintenanceRecordAsync(SelectedRecord);
+                if (!updated.IsSuccess)
+                {
+                    StatusMessage = updated.Error;
+                    return;
+                }
+
                 StatusMessage = "Saved";
                 Logger.Information("Saved maintenance record {MaintenanceId}", SelectedRecord.MaintenanceId);
             }
 
             await LoadAsync();
-        }
-        catch (ArgumentException ex)
-        {
-            Logger.Warning(ex, "Maintenance validation failed for {MaintenanceId}", SelectedRecord.MaintenanceId);
-            StatusMessage = ex.Message;
         }
         catch (Exception ex)
         {
@@ -167,9 +174,7 @@ public class MaintenanceViewModel : BaseViewModel
                 ex,
                 "Failed to save maintenance record {MaintenanceId}",
                 SelectedRecord.MaintenanceId);
-            StatusMessage = ex is InvalidOperationException
-                ? ex.Message
-                : DatabaseUserMessage.ForOperation(ex, "save maintenance record");
+            StatusMessage = DatabaseUserMessage.ForOperation(ex, "save this maintenance record");
         }
     }
 
@@ -205,10 +210,16 @@ public class MaintenanceViewModel : BaseViewModel
         try
         {
             Logger.Information("Deleting maintenance record {MaintenanceId}", id);
-            await _maintenanceService.DeleteMaintenanceRecordAsync(id);
+            var deleted = await _maintenanceService.DeleteMaintenanceRecordAsync(id);
+            if (!deleted.IsSuccess)
+            {
+                StatusMessage = deleted.Error;
+                return;
+            }
+
             Records.Remove(SelectedRecord);
             SelectedRecord = null;
-            StatusMessage = "Deleted";
+            StatusMessage = ClerkWriteMessages.Deleted($"Maintenance record {id}");
             Logger.Information("Deleted maintenance record {MaintenanceId} from UI", id);
         }
         catch (Exception ex)

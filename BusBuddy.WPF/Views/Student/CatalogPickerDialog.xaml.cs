@@ -5,11 +5,11 @@ using Syncfusion.Windows.Shared;
 
 namespace BusBuddy.WPF.Views.Student;
 
-public partial class SchoolCatalogPickerDialog : ChromelessWindow
+public partial class CatalogPickerDialog : ChromelessWindow
 {
-    private static readonly ILogger Logger = Log.ForContext<SchoolCatalogPickerDialog>();
+    private static readonly ILogger Logger = Log.ForContext<CatalogPickerDialog>();
 
-    public SchoolCatalogPickerDialog(SchoolCatalogPickerDialogViewModel viewModel)
+    public CatalogPickerDialog(CatalogPickerDialogViewModel viewModel)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         InitializeComponent();
@@ -20,6 +20,6 @@ public partial class SchoolCatalogPickerDialog : ChromelessWindow
             DialogResult = result;
             Close();
         };
-        Logger.Information("School catalog picker opened Count={Count}", viewModel.Schools.Count);
+        Logger.Information("Catalog picker opened Title={Title} Count={Count}", viewModel.Title, viewModel.ItemCount);
     }
 }

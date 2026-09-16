@@ -75,11 +75,6 @@ public sealed class StudentsArchiveCoordinator
                     return true;
                 }
 
-                MessageBox.Show(
-                    "Could not delete the student — no row was removed.",
-                    "Delete failed",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
                 return false;
             }
             catch (Exception ex)

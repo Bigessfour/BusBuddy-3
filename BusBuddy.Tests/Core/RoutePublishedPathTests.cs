@@ -43,6 +43,51 @@ public class RoutePublishedPathTests
     }
 
     [Test]
+    public void PublishedRouteFleet_UsesSessionPairNotAmFirst()
+    {
+        var both = new Route
+        {
+            Session = RouteSession.PM,
+            AMVehicleId = 2,
+            AMDriverId = 4,
+            PMVehicleId = 11,
+            PMDriverId = 12
+        };
+        Assert.That(PublishedRouteFleet.VehicleId(both), Is.EqualTo(11));
+        Assert.That(PublishedRouteFleet.DriverId(both), Is.EqualTo(12));
+        Assert.That(PublishedRouteFleet.HasPairing(both), Is.True);
+
+        var am = new Route
+        {
+            Session = RouteSession.AM,
+            AMVehicleId = 2,
+            AMDriverId = 4,
+            PMVehicleId = 11,
+            PMDriverId = 12
+        };
+        Assert.That(PublishedRouteFleet.VehicleId(am), Is.EqualTo(2));
+        Assert.That(PublishedRouteFleet.DriverId(am), Is.EqualTo(4));
+
+        var pmOnly = new Route { PMVehicleId = 11, PMDriverId = 12 };
+        Assert.That(PublishedRouteFleet.HasPairing(pmOnly), Is.False);
+        Assert.That(PublishedRouteFleet.VehicleId(pmOnly), Is.Null);
+
+        var pmRow = new Route
+        {
+            Session = RouteSession.PM,
+            RouteName = "North-PM",
+            PMVehicleId = 11,
+            PMDriverId = 12,
+            PMBeginTime = new TimeSpan(15, 10, 0)
+        };
+        Assert.That(PublishedRouteFleet.HasPairing(pmRow), Is.True);
+        Assert.That(PublishedRouteFleet.BeginTime(pmRow), Is.EqualTo(new TimeSpan(15, 10, 0)));
+        Assert.That(PublishedRouteFleet.BeginTime(am), Is.EqualTo(TimeSpan.FromHours(7)));
+
+        Assert.That(PublishedRouteFleet.HasPairing(new Route { AMVehicleId = 2 }), Is.False);
+    }
+
+    [Test]
     public void RouteModel_DoesNotMergeTripIntoRoute()
     {
         var routeSource = CoreSourceFile.Read("Models/Route.cs");

@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using NUnit.Framework;
@@ -172,6 +174,21 @@ public class LocationContractTests
         var found = await sut.FindValidatedPlaceByNameAsync("Strasburg HS");
         Assert.That(found, Is.Not.Null);
         Assert.That(await sut.FindValidatedPlaceByNameAsync("See Trip Notes"), Is.Null);
+    }
+
+    [Test]
+    public void GeoDataService_IsGeometryOnly_NoGeocodingConstructor()
+    {
+        var ctor = typeof(GeoDataService).GetConstructors().Single();
+        Assert.That(ctor.GetParameters().Select(p => p.ParameterType), Is.EquivalentTo(new[]
+        {
+            typeof(IBusBuddyDbContextFactory)
+        }));
+        Assert.That(typeof(IGeoDataService).GetMethods().Select(m => m.Name), Is.EquivalentTo(new[]
+        {
+            "GetRoutesWithGeoDataAsync",
+            "GetRouteGeoDataAsync"
+        }));
     }
 
     [Test]

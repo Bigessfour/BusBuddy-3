@@ -59,7 +59,7 @@
                 <syncfusion:GridComboBoxColumn MappingName="VehicleId"
                                                HeaderText="Bus"
                                                Width="120"
-                                               DisplayMemberPath="BusNumber"
+                                               DisplayMemberPath="FleetLabel"
                                                SelectedValuePath="BusId"
                                                ItemsSource="{Binding DataContext.Vehicles, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                AllowEditing="True"/>

@@ -119,7 +119,7 @@
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridDateTimeColumn MappingName="FuelDate" HeaderText="Date" Width="120" Pattern="ShortDate"/>
                     <syncfusion:GridTextColumn MappingName="FuelLocation" HeaderText="Location" Width="140"/>
-                    <syncfusion:GridTextColumn MappingName="Vehicle.BusNumber" HeaderText="Bus" Width="90"/>
+                    <syncfusion:GridTextColumn MappingName="Vehicle.FleetLabel" HeaderText="Bus" Width="90"/>
                     <syncfusion:GridNumericColumn MappingName="VehicleOdometerReading" HeaderText="Odometer" Width="110"/>
                     <syncfusion:GridTextColumn MappingName="FuelType" HeaderText="Type" Width="100"/>
                     <syncfusion:GridNumericColumn MappingName="Gallons" HeaderText="Gallons" Width="100" NumberDecimalDigits="3"/>

@@ -20,6 +20,9 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddSchoolCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding EditSchoolCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding DeleteSchoolCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding AddPickupStopCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding EditPickupStopCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding RetirePickupStopCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ArchiveStudentCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding DeleteStudentCommand}\""));
         Assert.That(xaml, Does.Contain("Label=\"Delete Student\""));
@@ -48,13 +51,24 @@ public class StudentsViewTests
     }
 
     [Test]
-    public void SchoolCatalogPickerDialogXaml_BindsSchoolList()
+    public void CatalogPickerDialogXaml_BindsCatalogList()
     {
-        var xaml = File.ReadAllText(FindView("Views/Student/SchoolCatalogPickerDialog.xaml"));
+        var xaml = File.ReadAllText(FindView("Views/Student/CatalogPickerDialog.xaml"));
 
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Schools}\""));
-        Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedSchool, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Items}\""));
+        Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedItem, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("DisplayMemberPath=\"Name\""));
+        Assert.That(xaml, Does.Contain("Title=\"{Binding Title}\""));
+    }
+
+    [Test]
+    public void PickupStopFormXaml_HasNoFormRetire()
+    {
+        var xaml = File.ReadAllText(FindView("Views/Student/PickupStopForm.xaml"));
+
+        Assert.That(xaml, Does.Contain("Label=\"{Binding SaveButtonLabel}\""));
+        Assert.That(xaml, Does.Not.Contain("RetireCommand"));
+        Assert.That(xaml, Does.Not.Contain("Retire pickup stop"));
     }
 
     private static string FindView(string relative)

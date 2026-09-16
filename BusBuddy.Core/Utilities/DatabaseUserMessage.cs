@@ -93,12 +93,9 @@ public static class DatabaseUserMessage
             {
                 return postgres.SqlState switch
                 {
-                    PostgresErrorCodes.ForeignKeyViolation =>
-                        postgres.ConstraintName is "FK_Schedules_Route"
-                            ? "This route still has daily schedules. Those must be removed before the route can be deleted."
-                            : "A related record is missing (for example an invalid family link). Leave family blank unless a family is set up.",
+                    PostgresErrorCodes.ForeignKeyViolation => DescribeForeignKey(postgres),
                     PostgresErrorCodes.UniqueViolation =>
-                        "That value is already in use (for example student number).",
+                        "That value is already in use.",
                     _ => postgres.MessageText,
                 };
             }
@@ -115,6 +112,47 @@ public static class DatabaseUserMessage
         }
 
         return exception.Message;
+    }
+
+    private static string DescribeForeignKey(PostgresException postgres)
+    {
+        var constraint = postgres.ConstraintName ?? string.Empty;
+        var detail = $"{postgres.MessageText} {postgres.Detail}";
+        bool Named(string name) =>
+            constraint.Equals(name, StringComparison.OrdinalIgnoreCase)
+            || detail.Contains(name, StringComparison.OrdinalIgnoreCase);
+
+        if (Named("FK_Schedules_Route"))
+        {
+            return "This route still has daily schedules; retire it so those rows stay valid.";
+        }
+
+        if (Named("FK_Routes_AMVehicle") || Named("FK_Routes_PMVehicle"))
+        {
+            return "This bus is still assigned to a published route. Retire it instead of deleting.";
+        }
+
+        if (Named("FK_Routes_AMDriver") || Named("FK_Routes_PMDriver"))
+        {
+            return "This driver is still assigned to a published route. Retire them instead of deleting.";
+        }
+
+        if (Named("FK_Fuel_Vehicle"))
+        {
+            return "Could not save this fuel record — the selected bus is missing or retired.";
+        }
+
+        if (Named("FK_Maintenance_Vehicle"))
+        {
+            return "Could not save this maintenance record — the selected bus is missing or retired.";
+        }
+
+        if (Named("FK_Schedules_Driver"))
+        {
+            return "This driver still has daily schedules; retire them so those rows stay valid.";
+        }
+
+        return "A related record is missing (for example an invalid family link). Leave family blank unless a family is set up.";
     }
 
     public static bool IsConnectivityFailure(Exception? exception)

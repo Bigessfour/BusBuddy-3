@@ -82,8 +82,9 @@ namespace BusBuddy.Tests.Core
 
             var created = await _service.CreateMaintenanceRecordAsync(record);
 
-            Assert.That(created.MaintenanceId, Is.GreaterThan(0));
-            Assert.That(created.CreatedDate, Is.Not.EqualTo(default(DateTime)));
+            Assert.That(created.IsSuccess, Is.True, created.Error);
+            Assert.That(created.Value.MaintenanceId, Is.GreaterThan(0));
+            Assert.That(created.Value.CreatedDate, Is.Not.EqualTo(default(DateTime)));
             var all = await _service.GetAllMaintenanceRecordsAsync();
             Assert.That(all.Any(r => r.Description == "Brake service"));
         }

@@ -12,6 +12,11 @@ namespace BusBuddy.Core.Services
         // Basic CRUD Operations with Result Pattern
         Task<Result<IEnumerable<Route>>> GetAllActiveRoutesAsync();
         Task<Result<IEnumerable<Route>>> GetAllRoutesAsync();
+        /// <summary>
+        /// Published routes that list this bus as the AM or PM vehicle.
+        /// Empty success means no pairing, not a missing API.
+        /// </summary>
+        Task<Result<IEnumerable<Route>>> GetRoutesByBusIdAsync(int busId);
         Task<Result<Route>> GetRouteByIdAsync(int id);
         Task<Result<Route>> CreateRouteAsync(Route route);
         Task<Result<Route>> UpdateRouteAsync(Route route);

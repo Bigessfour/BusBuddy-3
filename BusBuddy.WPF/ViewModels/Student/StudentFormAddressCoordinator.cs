@@ -421,11 +421,18 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
         try
         {
-            await service.UpdateHomeGeocodeAsync(
+            var persisted = await service.UpdateHomeGeocodeAsync(
                 student.StudentId,
                 student.Latitude,
                 student.Longitude,
                 student.PlaceId).ConfigureAwait(true);
+            if (!persisted.IsSuccess)
+            {
+                Logger.Warning(
+                    "Failed to persist geocode for StudentId={StudentId}: {Error}",
+                    student.StudentId,
+                    persisted.Error);
+            }
         }
         catch (Exception ex)
         {

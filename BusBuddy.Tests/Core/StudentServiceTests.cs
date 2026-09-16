@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -77,10 +78,11 @@ namespace BusBuddy.Tests.Core
 
             var added = await _studentService.AddStudentAsync(s);
 
-            added.StudentId.Should().BeGreaterThan(0);
-            added.EnrollmentDate.Should().NotBeNull();
+            added.IsSuccess.Should().BeTrue(added.Error);
+            added.Value.StudentId.Should().BeGreaterThan(0);
+            added.Value.EnrollmentDate.Should().NotBeNull();
 
-            var fromDb = await _dbContext.Students.FindAsync(added.StudentId);
+            var fromDb = await _dbContext.Students.FindAsync(added.Value.StudentId);
             fromDb.Should().NotBeNull();
             fromDb!.StudentName.Should().Be("Alice Test");
         }
@@ -241,7 +243,7 @@ namespace BusBuddy.Tests.Core
             await _dbContext.SaveChangesAsync();
 
             var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", "West Route");
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
 
             _dbContext.ChangeTracker.Clear();
             var updated = await _dbContext.Students.FindAsync(s.StudentId);
@@ -283,7 +285,8 @@ namespace BusBuddy.Tests.Core
             await _dbContext.SaveChangesAsync();
 
             var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "North Elementary", null);
-            ok.Should().BeFalse();
+            ok.IsSuccess.Should().BeFalse();
+            ok.Error.Should().Contain("not unique");
 
             _dbContext.ChangeTracker.Clear();
             var updated = await _dbContext.Students.FindAsync(s.StudentId);
@@ -292,7 +295,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void UpdateStudentAddressAsync_InvalidState_Throws()
+        public async Task UpdateStudentAddressAsync_InvalidState_ReturnsFailure()
         {
             var s = new Student
             {
@@ -305,8 +308,9 @@ namespace BusBuddy.Tests.Core
             _dbContext.Students.Add(s);
             _dbContext.SaveChanges();
 
-            Func<Task> act = async () => await _studentService.UpdateStudentAddressAsync(s.StudentId, "123", "City", "Colorado", "12345");
-            act.Should().ThrowAsync<ArgumentException>().WithMessage("*State must be a 2-letter abbreviation*");
+            var result = await _studentService.UpdateStudentAddressAsync(s.StudentId, "123", "City", "Colorado", "12345");
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Should().Contain("2-letter abbreviation");
         }
 
         [Test]

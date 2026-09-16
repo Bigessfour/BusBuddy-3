@@ -36,7 +36,7 @@
                 CornerRadius="5"
                 Padding="12,10"
                 Margin="0,0,0,12">
-            <TextBlock Text="Add pickup stop — shared corner or block stop for multiple students"
+            <TextBlock Text="{Binding HeaderText}"
                        FontSize="16"
                        FontWeight="Bold"
                        Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
@@ -54,6 +54,7 @@
                 <StackPanel>
                     <TextBlock Text="Stop name *" Margin="0,0,0,4"/>
                     <syncfusion:SfTextBoxExt x:Name="StopNameBox"
+                                             Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                                              AutoCompleteMode="None"
                                              ShowClearButton="True"
                                              Watermark="Oak &amp; 4th"
@@ -79,6 +80,7 @@
 
                     <TextBlock Text="Notes (optional)" Margin="0,0,0,4"/>
                     <syncfusion:SfTextBoxExt x:Name="StopNotesBox"
+                                             Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                              AutoCompleteMode="None"
                                              AcceptsReturn="True"
                                              TextWrapping="Wrap"
@@ -182,7 +184,7 @@
                                   SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                   Margin="0,0,10,0"/>
             <syncfusion:ButtonAdv x:Name="SaveStopButton"
-                                  Label="Save pickup stop"
+                                  Label="{Binding SaveButtonLabel}"
                                   Click="SaveStopButton_Click"
                                   SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                   IsDefault="True"

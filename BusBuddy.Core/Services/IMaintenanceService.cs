@@ -1,4 +1,5 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services;
 
@@ -9,9 +10,9 @@ public interface IMaintenanceService
 {
     Task<IEnumerable<Maintenance>> GetAllMaintenanceRecordsAsync();
     Task<Maintenance?> GetMaintenanceRecordByIdAsync(int id);
-    Task<Maintenance> CreateMaintenanceRecordAsync(Maintenance maintenance);
-    Task<Maintenance> UpdateMaintenanceRecordAsync(Maintenance maintenance);
-    Task<bool> DeleteMaintenanceRecordAsync(int id);
+    Task<Result<Maintenance>> CreateMaintenanceRecordAsync(Maintenance maintenance);
+    Task<Result<Maintenance>> UpdateMaintenanceRecordAsync(Maintenance maintenance);
+    Task<Result<bool>> DeleteMaintenanceRecordAsync(int id);
     Task<IEnumerable<Maintenance>> GetMaintenanceRecordsByVehicleAsync(int vehicleId);
     Task<IEnumerable<Maintenance>> GetMaintenanceRecordsByDateRangeAsync(DateTime startDate, DateTime endDate);
     Task<IEnumerable<Maintenance>> GetMaintenanceRecordsByPriorityAsync(string priority);

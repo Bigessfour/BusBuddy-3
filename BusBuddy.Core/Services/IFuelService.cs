@@ -1,4 +1,5 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services;
 
@@ -9,9 +10,9 @@ public interface IFuelService
 {
     Task<IEnumerable<Fuel>> GetAllFuelRecordsAsync();
     Task<Fuel?> GetFuelRecordByIdAsync(int id);
-    Task<Fuel> CreateFuelRecordAsync(Fuel fuel);
-    Task<Fuel> UpdateFuelRecordAsync(Fuel fuel);
-    Task<bool> DeleteFuelRecordAsync(int id);
+    Task<Result<Fuel>> CreateFuelRecordAsync(Fuel fuel);
+    Task<Result<Fuel>> UpdateFuelRecordAsync(Fuel fuel);
+    Task<Result<bool>> DeleteFuelRecordAsync(int id);
     Task<IEnumerable<Fuel>> GetFuelRecordsByVehicleAsync(int vehicleId);
     Task<IEnumerable<Fuel>> GetFuelRecordsByDateRangeAsync(DateTime startDate, DateTime endDate);
     Task<decimal> GetTotalFuelCostAsync(int vehicleId, DateTime? startDate = null, DateTime? endDate = null);

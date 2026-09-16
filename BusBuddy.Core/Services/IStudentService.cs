@@ -1,6 +1,7 @@
 
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services;
 
@@ -68,35 +69,32 @@ public interface IStudentService
     /// </summary>
     /// <param name="student">Student to add</param>
     /// <returns>The created student with ID</returns>
-    Task<Student> AddStudentAsync(Student student);
+    Task<Result<Student>> AddStudentAsync(Student student);
 
     /// <summary>
     /// Updates an existing student
     /// </summary>
     /// <param name="student">Student to update</param>
-    /// <returns>True if successful, false otherwise</returns>
-    Task<bool> UpdateStudentAsync(Student student);
+    Task<Result<bool>> UpdateStudentAsync(Student student);
 
     /// <summary>
     /// Writes only geocoded home coordinates (and PlaceId) from Address Validation.
     /// Does not run full intake validation — clerks must be able to persist lat/lng on an
     /// otherwise incomplete roster row.
     /// </summary>
-    Task<bool> UpdateHomeGeocodeAsync(int studentId, decimal? latitude, decimal? longitude, string? placeId);
+    Task<Result<bool>> UpdateHomeGeocodeAsync(int studentId, decimal? latitude, decimal? longitude, string? placeId);
 
     /// <summary>
     /// Archives a student who may return. The row stays on the roster with Active=false.
     /// </summary>
     /// <param name="studentId">ID of the student to archive</param>
-    /// <returns>True if successful, false otherwise</returns>
-    Task<bool> ArchiveStudentAsync(int studentId);
+    Task<Result<bool>> ArchiveStudentAsync(int studentId);
 
     /// <summary>
     /// Returns an archived student to active service.
     /// </summary>
     /// <param name="studentId">ID of the student to restore</param>
-    /// <returns>True if successful, false otherwise</returns>
-    Task<bool> RestoreStudentAsync(int studentId);
+    Task<Result<bool>> RestoreStudentAsync(int studentId);
 
     /// <summary>
     /// Permanently removes a student row after a clerk-chosen reason. specs/students.md: Mistake,
@@ -107,8 +105,7 @@ public interface IStudentService
     /// <param name="studentId">ID of the student record to delete</param>
     /// <param name="reason">Required closed-set reason</param>
     /// <param name="notes">Optional brief clerk note (max 200 characters)</param>
-    /// <returns>True if a row was removed</returns>
-    Task<bool> DeleteStudentAsync(int studentId, StudentDeletionReason reason, string? notes = null);
+    Task<Result<bool>> DeleteStudentAsync(int studentId, StudentDeletionReason reason, string? notes = null);
 
     /// <summary>
     /// Validates student data before save
@@ -128,15 +125,14 @@ public interface IStudentService
     /// <c>IRouteService.AssignStudentToRouteAsync</c>. Ambiguous or unknown names fail closed.
     /// Empty/null slot is a no-op. Dual-write of key + name stays inside RouteService.
     /// </summary>
-    Task<bool> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute);
+    Task<Result<bool>> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute);
 
     /// <summary>
     /// Updates student active status
     /// </summary>
     /// <param name="studentId">Student ID</param>
     /// <param name="isActive">New active status</param>
-    /// <returns>True if successful</returns>
-    Task<bool> UpdateStudentActiveStatusAsync(int studentId, bool isActive);
+    Task<Result<bool>> UpdateStudentActiveStatusAsync(int studentId, bool isActive);
 
     /// <summary>
     /// Gets students whose intake is incomplete — missing required fields, no school destination, or
@@ -160,8 +156,7 @@ public interface IStudentService
     /// <param name="city">City</param>
     /// <param name="state">State (2-letter abbreviation)</param>
     /// <param name="zip">ZIP code</param>
-    /// <returns>True if successful</returns>
-    Task<bool> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip);
+    Task<Result<bool>> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip);
 
 #if DEBUG
     /// <summary>

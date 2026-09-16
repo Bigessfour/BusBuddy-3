@@ -111,7 +111,7 @@ try
             var stamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var students = new StudentService(factory);
             // Coordinates stand in for a successful Maps ValidateAndGeocode (clerks never type them as SSOT).
-            var student = await students.AddStudentAsync(new Student
+            var added = await students.AddStudentAsync(new Student
             {
                 StudentName = $"TEST_HOP2_STUDENT_{stamp}",
                 Grade = "3",
@@ -133,6 +133,13 @@ try
                 CreatedDate = DateTime.UtcNow,
                 CreatedBy = "Hop2Proof"
             });
+            if (!added.IsSuccess)
+            {
+                Console.Error.WriteLine($"FAIL — AddStudentAsync: {added.Error}");
+                return 1;
+            }
+
+            var student = added.Value;
 
             var row = await lookup.Students.AsNoTracking()
                 .SingleAsync(s => s.StudentId == student.StudentId);
@@ -440,8 +447,7 @@ try
         return 0;
     }
 
-    // Hop 5 clerk-path proof: ScheduleService.AddScheduleAsync for a route that already has AM bus/driver
-    // (same shape as RouteManagementViewModel.TryPersistScheduleAsync). Fail closed on bad route id.
+    // Hop 5 clerk-path proof: same AddDailyFromPublishedRouteAsync as Route Management persist.
     if (command is "hop5-add-schedule" or "add-schedule")
     {
         await using var lookup = factory.CreateDbContext();
@@ -465,53 +471,36 @@ try
         }
         else
         {
-            route = await lookup.Routes.AsNoTracking()
-                .Where(r => r.IsActive && r.AMVehicleId != null && r.AMDriverId != null)
+            var candidates = await lookup.Routes.AsNoTracking()
+                .Where(r => r.IsActive)
                 .OrderByDescending(r => r.RouteId)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
+            route = candidates.FirstOrDefault(PublishedRouteFleet.HasPairing);
         }
 
-        if (route is null)
-        {
-            Console.Error.WriteLine("No active route with AMVehicleId+AMDriverId. Run hop4-assign-bus-driver first.");
-            return 2;
-        }
-
-        if (route.AMVehicleId is not int busId || route.AMDriverId is not int driverId)
+        if (route is null || !PublishedRouteFleet.HasPairing(route))
         {
             Console.Error.WriteLine(
-                $"FAIL — RouteId={route.RouteId} is missing AMVehicleId/AMDriverId. Run hop4-assign-bus-driver {route.RouteId}.");
+                "No active route with a session bus+driver pairing. Run hop4-assign-bus-driver first.");
             return 2;
         }
 
+        var busId = PublishedRouteFleet.VehicleId(route)!.Value;
+        var driverId = PublishedRouteFleet.DriverId(route)!.Value;
         var beforeAssignments = await lookup.RouteAssignments.CountAsync();
-        var day = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
-        var departure = day.Add(route.AMBeginTime ?? TimeSpan.FromHours(7));
-        var arrival = departure.AddMinutes(route.EstimatedDuration ?? 45);
-        if (arrival <= departure)
-        {
-            arrival = departure.AddMinutes(45);
-        }
-
         var schedules = new ScheduleService(factory);
-        var schedule = new Schedule
+        var day = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        if (!await schedules.AddDailyFromPublishedRouteAsync(route.RouteId, day))
         {
-            RouteId = route.RouteId,
-            BusId = busId,
-            DriverId = driverId,
-            ScheduleDate = day,
-            DepartureTime = departure,
-            ArrivalTime = arrival,
-            Location = route.School,
-            Notes = "Hop5 proof — daily schedule from Route.AM* pairing",
-            Status = "Scheduled",
-            CreatedDate = DateTime.UtcNow
-        };
-        await schedules.AddScheduleAsync(schedule);
+            Console.Error.WriteLine("FAIL — AddDailyFromPublishedRouteAsync returned false.");
+            return 1;
+        }
 
         await using var verify = factory.CreateDbContext();
         var row = await verify.Schedules.AsNoTracking()
-            .SingleAsync(s => s.ScheduleId == schedule.ScheduleId);
+            .Where(s => s.RouteId == route.RouteId)
+            .OrderByDescending(s => s.ScheduleId)
+            .FirstAsync();
         var afterAssignments = await verify.RouteAssignments.CountAsync();
 
         Console.WriteLine();
@@ -536,11 +525,11 @@ try
 
         if (row.RouteId != route.RouteId || row.BusId != busId || row.DriverId != driverId)
         {
-            Console.Error.WriteLine("FAIL — schedule FKs do not match the Hop 4 route pairing.");
+            Console.Error.WriteLine("FAIL — schedule FKs do not match the published session pairing.");
             return 1;
         }
 
-        Console.WriteLine("PASS — Schedules row persisted for route with AM bus/driver.");
+        Console.WriteLine("PASS — Schedules row persisted from the route session pairing.");
         return 0;
     }
 
@@ -604,6 +593,11 @@ try
             TotalCost = 36.75m,
             Notes = "Hop6 proof fuel record"
         });
+        if (!fuel.IsSuccess)
+        {
+            Console.Error.WriteLine($"FAIL — CreateFuelRecordAsync: {fuel.Error}");
+            return 1;
+        }
 
         var maintenance = await maintSvc.CreateMaintenanceRecordAsync(new Maintenance
         {
@@ -618,12 +612,17 @@ try
             CreatedDate = DateTime.UtcNow,
             CreatedBy = "Hop6Proof"
         });
+        if (!maintenance.IsSuccess)
+        {
+            Console.Error.WriteLine($"FAIL — CreateMaintenanceRecordAsync: {maintenance.Error}");
+            return 1;
+        }
 
         await using var verify = factory.CreateDbContext();
         var fuelRow = await verify.FuelRecords.AsNoTracking()
-            .SingleAsync(f => f.FuelId == fuel.FuelId);
+            .SingleAsync(f => f.FuelId == fuel.Value.FuelId);
         var maintRow = await verify.MaintenanceRecords.AsNoTracking()
-            .SingleAsync(m => m.MaintenanceId == maintenance.MaintenanceId);
+            .SingleAsync(m => m.MaintenanceId == maintenance.Value.MaintenanceId);
 
         Console.WriteLine();
         Console.WriteLine("=== Hop 6 proof (Fuel + Maintenance) ===");

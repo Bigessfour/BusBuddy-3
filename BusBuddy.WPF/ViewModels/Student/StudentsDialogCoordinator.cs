@@ -160,50 +160,17 @@ public sealed class StudentsDialogCoordinator
             }
 
             var result = await dest.DeleteSchoolAsync(school.DestinationId).ConfigureAwait(true);
-            return result switch
-            {
-                SchoolDeleteResult.Deleted => new StudentsDialogOutcome(
-                    $"{school.Name} deleted.",
-                    ReloadReferenceData: true,
-                    SchoolCatalogChanged: true,
-                    SavedCatalogId: school.DestinationId),
-                SchoolDeleteResult.Retired => new StudentsDialogOutcome(
-                    $"{school.Name} is still in use, so it was retired (hidden from new assignments).",
-                    ReloadReferenceData: true,
-                    SchoolCatalogChanged: true,
-                    SavedCatalogId: school.DestinationId),
-                _ => new StudentsDialogOutcome("School was not found.")
-            };
+            return CatalogChangeOutcome(
+                school.Name,
+                result,
+                school.DestinationId,
+                schoolCatalogChanged: true);
         }
         catch (Exception ex)
         {
             DatabaseUserMessage.LogFailure(Logger, ex, "Error executing delete school command");
             return new StudentsDialogOutcome($"Error deleting school: {ex.Message}");
         }
-    }
-
-    private static async Task<Destination?> PickSchoolAsync(IDestinationService dest, string prompt)
-    {
-        var schools = await dest.GetActiveSchoolsAsync().ConfigureAwait(true);
-        if (schools.Count == 0)
-        {
-            MessageBox.Show(
-                "Add a school first.",
-                "No schools",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return null;
-        }
-
-        if (schools.Count == 1)
-        {
-            return schools[0];
-        }
-
-        var vm = new SchoolCatalogPickerDialogViewModel(schools, prompt);
-        var picker = new BusBuddy.WPF.Views.Student.SchoolCatalogPickerDialog(vm);
-        DialogOwner.Assign(picker);
-        return picker.ShowDialog() == true ? vm.SelectedSchool : null;
     }
 
     /// <summary>Opens the catalog pickup stop form (in-town shared boarding point).</summary>
@@ -237,6 +204,158 @@ public sealed class StudentsDialogCoordinator
             return new StudentsDialogOutcome($"Error adding pickup stop: {ex.Message}");
         }
     }
+
+    /// <summary>Picks a catalog pickup stop and opens the editor.</summary>
+    public async Task<StudentsDialogOutcome> EditPickupStopAsync()
+    {
+        try
+        {
+            var stops = App.ServiceProvider?.GetService<IPickupStopService>();
+            if (stops is null)
+            {
+                return new StudentsDialogOutcome("Pickup stop service is not available.");
+            }
+
+            var stop = await PickFromCatalogAsync(
+                    await stops.GetActiveStopsAsync().ConfigureAwait(true),
+                    "Add a pickup stop first.",
+                    "No pickup stops",
+                    "Select the pickup stop to edit.",
+                    "Select pickup stop")
+                .ConfigureAwait(true);
+            if (stop is null)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            var vm = PickupStopFormViewModel.ForEdit(stops, stop);
+            var form = new BusBuddy.WPF.Views.Student.PickupStopForm(vm);
+            DialogOwner.Assign(form);
+            if (form.ShowDialog() != true)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            return new StudentsDialogOutcome(
+                $"Saved {stop.Name}",
+                ReloadReferenceData: true,
+                PickupStopCatalogChanged: true,
+                SavedCatalogId: vm.SavedPickupStopId);
+        }
+        catch (Exception ex)
+        {
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error executing edit pickup stop command");
+            return new StudentsDialogOutcome($"Error editing pickup stop: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Removes an unused catalog stop, or retires it when students or published route stops still name it.
+    /// </summary>
+    public async Task<StudentsDialogOutcome> RetirePickupStopAsync()
+    {
+        try
+        {
+            var stops = App.ServiceProvider?.GetService<IPickupStopService>();
+            if (stops is null)
+            {
+                return new StudentsDialogOutcome("Pickup stop service is not available.");
+            }
+
+            var stop = await PickFromCatalogAsync(
+                    await stops.GetActiveStopsAsync().ConfigureAwait(true),
+                    "Add a pickup stop first.",
+                    "No pickup stops",
+                    "Select the pickup stop to delete or retire.",
+                    "Select pickup stop")
+                .ConfigureAwait(true);
+            if (stop is null)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            var confirm = MessageBox.Show(
+                $"{stop.Name} will be removed from the catalog if nothing uses it. " +
+                "If students or published route stops still point here, the stop is retired instead of deleted.",
+                "Retire pickup stop?",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                return StudentsDialogOutcome.None;
+            }
+
+            var result = await stops.RetireStopAsync(stop.PickupStopId).ConfigureAwait(true);
+            return CatalogChangeOutcome(
+                stop.Name,
+                result,
+                stop.PickupStopId,
+                pickupCatalogChanged: true);
+        }
+        catch (Exception ex)
+        {
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error executing retire pickup stop command");
+            return new StudentsDialogOutcome($"Error retiring pickup stop: {ex.Message}");
+        }
+    }
+
+    private static async Task<Destination?> PickSchoolAsync(IDestinationService dest, string prompt)
+    {
+        return await PickFromCatalogAsync(
+                await dest.GetActiveSchoolsAsync().ConfigureAwait(true),
+                "Add a school first.",
+                "No schools",
+                prompt,
+                "Select school")
+            .ConfigureAwait(true);
+    }
+
+    private static Task<T?> PickFromCatalogAsync<T>(
+        IReadOnlyList<T> items,
+        string emptyMessage,
+        string emptyTitle,
+        string prompt,
+        string windowTitle) where T : class
+    {
+        if (items.Count == 0)
+        {
+            MessageBox.Show(emptyMessage, emptyTitle, MessageBoxButton.OK, MessageBoxImage.Information);
+            return Task.FromResult<T?>(null);
+        }
+
+        if (items.Count == 1)
+        {
+            return Task.FromResult<T?>(items[0]);
+        }
+
+        var vm = new CatalogPickerDialogViewModel<T>(items, prompt, windowTitle);
+        var picker = new BusBuddy.WPF.Views.Student.CatalogPickerDialog(vm);
+        DialogOwner.Assign(picker);
+        return Task.FromResult(picker.ShowDialog() == true ? vm.SelectedItem : null);
+    }
+
+    private static StudentsDialogOutcome CatalogChangeOutcome(
+        string name,
+        CatalogDeleteResult result,
+        int catalogId,
+        bool schoolCatalogChanged = false,
+        bool pickupCatalogChanged = false) =>
+        result switch
+        {
+            CatalogDeleteResult.Deleted => new StudentsDialogOutcome(
+                $"{name} deleted.",
+                ReloadReferenceData: true,
+                SchoolCatalogChanged: schoolCatalogChanged,
+                PickupStopCatalogChanged: pickupCatalogChanged,
+                SavedCatalogId: catalogId),
+            CatalogDeleteResult.Retired => new StudentsDialogOutcome(
+                $"{name} is still in use, so it was retired (hidden from new assignments).",
+                ReloadReferenceData: true,
+                SchoolCatalogChanged: schoolCatalogChanged,
+                PickupStopCatalogChanged: pickupCatalogChanged,
+                SavedCatalogId: catalogId),
+            _ => new StudentsDialogOutcome($"{name} was not found.")
+        };
 
     /// <summary>Opens the student form bound to the selected row.</summary>
     public StudentsDialogOutcome EditStudent(StudentModel? student)

@@ -10,6 +10,7 @@ using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
@@ -1098,7 +1099,7 @@ public class MapViewModelTests
             Zip = "81092"
         };
         students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync([stu]);
-        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(true);
+        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(Result.Success(true));
 
         var geocode = new Mock<IGeocodingService>();
         geocode.Setup(g => g.GeocodeAsync("2 Home St", "Wiley", "CO", "81092"))
@@ -1140,7 +1141,7 @@ public class MapViewModelTests
             Zip = "81092"
         };
         students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync([stu]);
-        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(true);
+        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(Result.Success(true));
 
         var geocode = new Mock<IGeocodingService>();
         geocode.Setup(g => g.GeocodeAsync("3 Home St", "Wiley", "CO", "81092"))

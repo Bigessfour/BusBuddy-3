@@ -1,4 +1,5 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services
 {
@@ -11,9 +12,9 @@ namespace BusBuddy.Core.Services
         // Basic CRUD Operations
         Task<List<Driver>> GetAllDriversAsync();
         Task<Driver?> GetDriverByIdAsync(int driverId);
-        Task<Driver> AddDriverAsync(Driver driver);
-        Task<bool> UpdateDriverAsync(Driver driver);
-        Task<bool> DeleteDriverAsync(int driverId);
+        Task<Result<Driver>> AddDriverAsync(Driver driver);
+        Task<Result<bool>> UpdateDriverAsync(Driver driver);
+        Task<Result<bool>> DeleteDriverAsync(int driverId);
 
         // Query Operations
         Task<List<Driver>> GetActiveDriversAsync();
@@ -23,15 +24,15 @@ namespace BusBuddy.Core.Services
 
         // Route Assignment
         Task<List<Driver>> GetAvailableDriversForRouteAsync(DateTime routeDate, bool isAMRoute);
-        Task<bool> AssignDriverToRouteAsync(int driverId, int routeId, bool isAMRoute);
-        Task<bool> RemoveDriverFromRouteAsync(int routeId, bool isAMRoute);
+        Task<Result<bool>> AssignDriverToRouteAsync(int driverId, int routeId, bool isAMRoute);
+        Task<Result<bool>> RemoveDriverFromRouteAsync(int routeId, bool isAMRoute);
         Task<List<Route>> GetDriverRoutesAsync(int driverId, DateTime? startDate = null, DateTime? endDate = null);
         Task<bool> IsDriverAvailableForRouteAsync(int driverId, DateTime routeDate, bool isAMRoute);
 
         // License and Qualification Management
-        Task<bool> UpdateDriverLicenseInfoAsync(int driverId, string licenseNumber, string licenseClass, DateTime expiryDate, string? endorsements = null);
-        Task<bool> UpdateDriverQualificationAsync(int driverId, bool trainingComplete, DateTime? backgroundCheckDate = null, DateTime? drugTestDate = null, DateTime? physicalExamDate = null);
-        Task<bool> UpdateDriverStatusAsync(int driverId, string status);
+        Task<Result<bool>> UpdateDriverLicenseInfoAsync(int driverId, string licenseNumber, string licenseClass, DateTime expiryDate, string? endorsements = null);
+        Task<Result<bool>> UpdateDriverQualificationAsync(int driverId, bool trainingComplete, DateTime? backgroundCheckDate = null, DateTime? drugTestDate = null, DateTime? physicalExamDate = null);
+        Task<Result<bool>> UpdateDriverStatusAsync(int driverId, string status);
 
         // Driver Validation
         Task<List<string>> ValidateDriverAsync(Driver driver);

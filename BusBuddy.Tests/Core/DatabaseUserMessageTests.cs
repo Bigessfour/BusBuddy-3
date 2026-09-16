@@ -61,4 +61,20 @@ public class DatabaseUserMessageTests
         DatabaseUserMessage.ForOperation(ex, "save the student")
             .Should().Contain("related record is missing");
     }
+
+    [Test]
+    public void ForOperation_describes_route_schedule_foreign_key()
+    {
+        var ex = new DbUpdateException(
+            "An error occurred while saving the entity changes. See the inner exception for details.",
+            new PostgresException(
+                "update or delete on table \"Routes\" violates foreign key constraint \"FK_Schedules_Route\"",
+                severity: string.Empty,
+                invariantSeverity: string.Empty,
+                sqlState: PostgresErrorCodes.ForeignKeyViolation));
+
+        var message = DatabaseUserMessage.ForOperation(ex, "delete this route");
+        message.Should().Contain("daily schedules");
+        message.Should().NotContain("FK_Schedules_Route");
+    }
 }

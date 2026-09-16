@@ -83,7 +83,7 @@ namespace BusBuddy.Tests.Core
 
             var archived = await _studentService.ArchiveStudentAsync(student.StudentId);
 
-            archived.Should().BeTrue();
+            archived.IsSuccess.Should().BeTrue(archived.Error);
             var fromDb = await _dbContext.Students.FindAsync(student.StudentId);
             fromDb.Should().NotBeNull("archiving must never remove the row");
             fromDb!.Active.Should().BeFalse();
@@ -96,7 +96,7 @@ namespace BusBuddy.Tests.Core
 
             var restored = await _studentService.RestoreStudentAsync(student.StudentId);
 
-            restored.Should().BeTrue();
+            restored.IsSuccess.Should().BeTrue(restored.Error);
             var fromDb = await _dbContext.Students.FindAsync(student.StudentId);
             fromDb!.Active.Should().BeTrue();
         }
@@ -125,7 +125,7 @@ namespace BusBuddy.Tests.Core
                 StudentDeletionReason.Moved,
                 "left for TEST_DISTRICT");
 
-            deleted.Should().BeTrue();
+            deleted.IsSuccess.Should().BeTrue(deleted.Error);
             (await _dbContext.Students.FindAsync(student.StudentId)).Should().BeNull();
             var log = _dbContext.StudentDeletionLogs.Should().ContainSingle().Subject;
             log.StudentId.Should().Be(student.StudentId);
@@ -161,7 +161,7 @@ namespace BusBuddy.Tests.Core
                 student.StudentId,
                 StudentDeletionReason.NotAttending);
 
-            deleted.Should().BeTrue();
+            deleted.IsSuccess.Should().BeTrue(deleted.Error);
             (await _dbContext.Students.FindAsync(student.StudentId)).Should().BeNull();
             _dbContext.StudentSchedules.Should().BeEmpty();
             _dbContext.StudentSchoolTransfers.Should().BeEmpty();
@@ -176,11 +176,12 @@ namespace BusBuddy.Tests.Core
         {
             var student = await SeedStudentAsync();
 
-            var act = async () => await _studentService.DeleteStudentAsync(
+            var result = await _studentService.DeleteStudentAsync(
                 student.StudentId,
                 (StudentDeletionReason)0);
 
-            await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Should().Contain("deletion reason");
             (await _dbContext.Students.FindAsync(student.StudentId)).Should().NotBeNull();
         }
 
@@ -547,7 +548,7 @@ namespace BusBuddy.Tests.Core
                 -102.6208m,
                 "ChIJ_TEST_PLACE");
 
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
             var reloaded = await _dbContext.Students.AsNoTracking()
                 .FirstAsync(s => s.StudentId == seeded.StudentId);
             reloaded.Latitude.Should().Be(38.0872m);

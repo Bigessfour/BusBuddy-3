@@ -1,5 +1,6 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -92,12 +93,21 @@ public sealed class StudentPersistenceWriter
     {
         if (!_isEditMode())
         {
-            return await service.AddStudentAsync(student);
+            var added = await service.AddStudentAsync(student);
+            if (!added.IsSuccess || added.Value is null)
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(added.Error) ? "Could not save this student." : added.Error);
+            }
+
+            return added.Value;
         }
 
-        if (!await service.UpdateStudentAsync(student))
+        var updated = await service.UpdateStudentAsync(student);
+        if (!updated.IsSuccess)
         {
-            throw new InvalidOperationException("Update operation reported no changes.");
+            throw new InvalidOperationException(
+                string.IsNullOrWhiteSpace(updated.Error) ? "Could not save this student." : updated.Error);
         }
 
         return student;
