@@ -36,6 +36,23 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
     public bool IsGoogleTilesActive => _googleUrlTemplate is not null;
 
     /// <summary>
+    /// True after the latest measure/arrange pass finished (success or swallowed skip).
+    /// Reset by <see cref="BeginMarkerHostCheck"/> before a forced layout.
+    /// </summary>
+    internal bool LastMeasureCompleted { get; private set; }
+
+    /// <summary>
+    /// True when the latest layout pass swallowed a not-parented <c>TransformToVisual</c>.
+    /// </summary>
+    internal bool LastLayoutSkippedVisualTree { get; private set; }
+
+    internal void BeginMarkerHostCheck()
+    {
+        LastMeasureCompleted = false;
+        LastLayoutSkippedVisualTree = false;
+    }
+
+    /// <summary>
     /// Syncfusion <c>CustomDataSymbol.ApplyTemplate</c> calls <c>TransformToVisual</c> before the
     /// marker is parented (VM runtime-errors.log 2026-09-17). Swallow that layout throw so Window
     /// measure can finish; pin assignment is retried from the view after <see cref="MapMarkerHost"/>.
@@ -44,10 +61,15 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
     {
         try
         {
-            return base.MeasureOverride(constraint);
+            var size = base.MeasureOverride(constraint);
+            LastLayoutSkippedVisualTree = false;
+            LastMeasureCompleted = true;
+            return size;
         }
         catch (Exception ex) when (IsVisualTreeNotReady(ex))
         {
+            LastLayoutSkippedVisualTree = true;
+            LastMeasureCompleted = true;
             LogVisualTreeSkipOnce(ex);
             return SafeLayoutSize(constraint);
         }
@@ -58,10 +80,14 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
     {
         try
         {
-            return base.ArrangeOverride(arrangeBounds);
+            var size = base.ArrangeOverride(arrangeBounds);
+            LastMeasureCompleted = true;
+            return size;
         }
         catch (Exception ex) when (IsVisualTreeNotReady(ex))
         {
+            LastLayoutSkippedVisualTree = true;
+            LastMeasureCompleted = true;
             LogVisualTreeSkipOnce(ex);
             return arrangeBounds;
         }

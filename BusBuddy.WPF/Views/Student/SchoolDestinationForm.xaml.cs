@@ -19,6 +19,7 @@ public partial class SchoolDestinationForm : ChromelessWindow
 {
     private static readonly ILogger Logger = Log.ForContext<SchoolDestinationForm>();
     private readonly SchoolDestinationFormViewModel _vm;
+    private MapMarkerHost.RetryScheduler? _markerRetry;
 
     public SchoolDestinationForm(SchoolDestinationFormViewModel viewModel)
     {
@@ -109,8 +110,20 @@ public partial class SchoolDestinationForm : ChromelessWindow
 
     private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
 
-    private void AssignPickMarkers() =>
-        MapMarkerHost.TryAssign(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers);
+    private void AssignPickMarkers()
+    {
+        if (MapMarkerHost.TryAssignAndLayout(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers))
+        {
+            _markerRetry?.Stop();
+            return;
+        }
+
+        _markerRetry ??= new MapMarkerHost.RetryScheduler(
+            Dispatcher,
+            () => MapMarkerHost.TryAssignAndLayout(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers),
+            retries => Logger.Warning("School pick markers still pending after {Retries} host retries", retries));
+        _markerRetry.Arm();
+    }
 
     /// <summary>
     /// Copy control text into the VM, then run save. Syncfusion Text bindings were leaving the VM empty
@@ -219,6 +232,7 @@ public partial class SchoolDestinationForm : ChromelessWindow
     {
         _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
         SchoolPickMap.SizeChanged -= OnPickMapSizeChanged;
+        _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);
     }

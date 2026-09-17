@@ -79,7 +79,12 @@ public class UiRuntimeLoggingTests
         Assert.That(tileLayer, Does.Contain("MeasureOverride"));
         Assert.That(tileLayer, Does.Contain("ArrangeOverride"));
         Assert.That(tileLayer, Does.Contain("IsVisualTreeNotReady"));
-        Assert.That(XamlViewFile.Read("Utilities/MapMarkerHost.cs"), Does.Contain("TryAssign"));
+        Assert.That(tileLayer, Does.Contain("BeginMarkerHostCheck"));
+        Assert.That(tileLayer, Does.Contain("LastLayoutSkippedVisualTree"));
+        var host = XamlViewFile.Read("Utilities/MapMarkerHost.cs");
+        Assert.That(host, Does.Contain("TryAssign"));
+        Assert.That(host, Does.Contain("TryAssignAndLayout"));
+        Assert.That(host, Does.Contain("RetryScheduler"));
     }
 
     [Test]

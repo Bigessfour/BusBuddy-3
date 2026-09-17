@@ -20,6 +20,7 @@ public partial class PickupStopForm : ChromelessWindow
 {
     private static readonly ILogger Logger = Log.ForContext<PickupStopForm>();
     private readonly PickupStopFormViewModel _vm;
+    private MapMarkerHost.RetryScheduler? _markerRetry;
 
     public PickupStopForm(PickupStopFormViewModel viewModel)
     {
@@ -99,8 +100,20 @@ public partial class PickupStopForm : ChromelessWindow
 
     private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
 
-    private void AssignPickMarkers() =>
-        MapMarkerHost.TryAssign(StopPickMap, StopPickLayer, _vm.MapMarkers);
+    private void AssignPickMarkers()
+    {
+        if (MapMarkerHost.TryAssignAndLayout(StopPickMap, StopPickLayer, _vm.MapMarkers))
+        {
+            _markerRetry?.Stop();
+            return;
+        }
+
+        _markerRetry ??= new MapMarkerHost.RetryScheduler(
+            Dispatcher,
+            () => MapMarkerHost.TryAssignAndLayout(StopPickMap, StopPickLayer, _vm.MapMarkers),
+            retries => Logger.Warning("Pickup stop pick markers still pending after {Retries} host retries", retries));
+        _markerRetry.Arm();
+    }
 
     private async void SaveStopButton_Click(object sender, RoutedEventArgs e)
     {
@@ -192,6 +205,7 @@ public partial class PickupStopForm : ChromelessWindow
     {
         _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
         StopPickMap.SizeChanged -= OnPickMapSizeChanged;
+        _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);
     }

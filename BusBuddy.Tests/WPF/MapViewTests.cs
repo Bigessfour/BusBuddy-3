@@ -196,11 +196,11 @@ public class MapViewTests
         Assert.That(codeBehind, Does.Contain("CanHostMarkers()"));
         Assert.That(codeBehind, Does.Contain("CanApplyLayerCenter()"));
         Assert.That(codeBehind, Does.Contain("TransformToVisual"));
-        Assert.That(codeBehind, Does.Contain("MapMarkerHost.TryAssign"));
+        Assert.That(codeBehind, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
         Assert.That(codeBehind, Does.Contain("DispatcherPriority.Loaded"));
         Assert.That(codeBehind, Does.Contain("DispatcherPriority.ContextIdle"));
         Assert.That(codeBehind, Does.Contain("ScheduleMarkerHostRetry"));
-        Assert.That(codeBehind, Does.Contain("DispatcherPriority.Background"));
+        Assert.That(codeBehind, Does.Contain("MapMarkerHost.RetryScheduler"));
         var labels = XamlViewFile.Read("Utilities/MapMarkerLabels.cs");
         Assert.That(labels, Does.Contain("MapDefaults.ShowsDetailLabels(zoomLevel)"));
         Assert.That(labels, Does.Not.Contain("kind is Kind.School or Kind.Depot ||"));
@@ -309,8 +309,10 @@ public class MapViewTests
         Assert.That(stopCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
         Assert.That(school, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(stop, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
-        Assert.That(schoolCs, Does.Contain("MapMarkerHost.TryAssign"));
-        Assert.That(stopCs, Does.Contain("MapMarkerHost.TryAssign"));
+        Assert.That(schoolCs, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
+        Assert.That(stopCs, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
+        Assert.That(schoolCs, Does.Contain("MapMarkerHost.RetryScheduler"));
+        Assert.That(stopCs, Does.Contain("MapMarkerHost.RetryScheduler"));
         Assert.That(schoolCs, Does.Contain("AssignPickMarkers"));
         Assert.That(stopCs, Does.Contain("AssignPickMarkers"));
         Assert.That(schoolCs, Does.Contain("DispatcherPriority.ContextIdle"));

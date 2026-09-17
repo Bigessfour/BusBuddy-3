@@ -35,13 +35,11 @@ namespace BusBuddy.WPF.Views.Map
         private MapViewModel? _boundViewModel;
         private MapLayer? _currentLayer;
         private DispatcherTimer? _attributionTimer;
-        private DispatcherTimer? _markerHostRetryTimer;
-        private int _markerHostRetries;
+        private MapMarkerHost.RetryScheduler? _markerHostRetry;
         private MapInteractionDiagnostics? _diagnostics;
         private bool _pendingCameraSync;
         private bool _pendingMarkerRefresh;
-        private static readonly TimeSpan MarkerHostRetryInterval = TimeSpan.FromMilliseconds(150);
-        private const int MarkerHostRetryLimit = 20;
+        private bool _placingMarkers;
 
         public MapView()
         {
@@ -171,7 +169,7 @@ namespace BusBuddy.WPF.Views.Map
         private void MapView_Unloaded(object sender, RoutedEventArgs e)
         {
             _attributionTimer?.Stop();
-            _markerHostRetryTimer?.Stop();
+            _markerHostRetry?.Stop();
             _diagnostics?.Dispose();
             _diagnostics = null;
             if (DistrictTilesLayer is ImageryLayer layer)
@@ -283,25 +281,44 @@ namespace BusBuddy.WPF.Views.Map
 
         private void RefreshMarkersOnImageryLayer()
         {
+            if (_placingMarkers)
+            {
+                return;
+            }
+
+            if (!TryPlaceMarkers())
+            {
+                ScheduleMarkerHostRetry();
+            }
+        }
+
+        private bool TryPlaceMarkers()
+        {
+            if (_placingMarkers)
+            {
+                return false;
+            }
+
+            _placingMarkers = true;
             try
             {
                 if (!IsLoaded || !_mapLayerInitialized)
                 {
                     _pendingMarkerRefresh = true;
-                    return;
+                    return false;
                 }
 
                 if (DataContext is not MapViewModel vm ||
                     DistrictTilesLayer is not ImageryLayer imagery)
                 {
-                    ScheduleMarkerHostRetry();
-                    return;
+                    _pendingMarkerRefresh = true;
+                    return false;
                 }
 
                 if (!CanHostMarkers() || !CanApplyLayerCenter())
                 {
-                    ScheduleMarkerHostRetry();
-                    return;
+                    _pendingMarkerRefresh = true;
+                    return false;
                 }
 
                 ApplyMarkerTemplates(imagery);
@@ -309,19 +326,25 @@ namespace BusBuddy.WPF.Views.Map
                 // Re-assign collection so Syncfusion refreshes marker visuals. Do not bind Markers or
                 // MarkerTemplateSelector in XAML — CustomDataSymbol.ApplyTemplate calls TransformToVisual
                 // before the layer is parented (VM runtime-errors.log 2026-09-17).
-                if (!MapMarkerHost.TryAssign(MapControl, imagery, vm.MapMarkers))
+                if (!MapMarkerHost.TryAssignAndLayout(MapControl, imagery, vm.MapMarkers))
                 {
-                    ScheduleMarkerHostRetry();
-                    return;
+                    _pendingMarkerRefresh = true;
+                    return false;
                 }
 
                 _pendingMarkerRefresh = false;
-                _markerHostRetryTimer?.Stop();
+                _markerHostRetry?.Stop();
+                return true;
             }
             catch (Exception ex)
             {
-                ScheduleMarkerHostRetry();
+                _pendingMarkerRefresh = true;
                 Logger.Warning(ex, "Failed to refresh map markers on imagery layer");
+                return false;
+            }
+            finally
+            {
+                _placingMarkers = false;
             }
         }
 
@@ -335,44 +358,15 @@ namespace BusBuddy.WPF.Views.Map
             _pendingMarkerRefresh = true;
             if (!IsLoaded)
             {
-                _markerHostRetryTimer?.Stop();
+                _markerHostRetry?.Stop();
                 return;
             }
 
-            _markerHostRetryTimer ??= new DispatcherTimer(DispatcherPriority.Background)
-            {
-                Interval = MarkerHostRetryInterval,
-            };
-            _markerHostRetryTimer.Tick -= OnMarkerHostRetryTick;
-            _markerHostRetryTimer.Tick += OnMarkerHostRetryTick;
-            if (!_markerHostRetryTimer.IsEnabled)
-            {
-                _markerHostRetries = 0;
-                _markerHostRetryTimer.Start();
-            }
-        }
-
-        private void OnMarkerHostRetryTick(object? sender, EventArgs e)
-        {
-            if (!IsLoaded)
-            {
-                _markerHostRetryTimer?.Stop();
-                return;
-            }
-
-            _markerHostRetries++;
-            RefreshMarkersOnImageryLayer();
-            if (!_pendingMarkerRefresh)
-            {
-                _markerHostRetryTimer?.Stop();
-                return;
-            }
-
-            if (_markerHostRetries >= MarkerHostRetryLimit)
-            {
-                _markerHostRetryTimer?.Stop();
-                Logger.Warning("Map markers still pending after {Retries} host retries", MarkerHostRetryLimit);
-            }
+            _markerHostRetry ??= new MapMarkerHost.RetryScheduler(
+                Dispatcher,
+                TryPlaceMarkers,
+                retries => Logger.Warning("Map markers still pending after {Retries} host retries", retries));
+            _markerHostRetry.Arm();
         }
 
         /// <summary>
