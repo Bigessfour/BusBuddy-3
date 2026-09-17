@@ -101,8 +101,7 @@ namespace BusBuddy.Core.Utilities
                             ? ctx.Drivers.AsNoTracking().FirstOrDefault(d => d.DriverId == driverId.Value)
                             : null;
 
-                        var pdfService = new PdfReportService();
-                        var bytes = pdfService.GenerateRouteSummaryReport(route, stops, students, bus, driver, slot);
+                        var bytes = RouteSummaryPdfRenderer.Render(route, stops, students, bus, driver, slot);
 
                         var fileName = $"RouteSummary_{route.RouteId}_{slot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                         var path = Path.Combine(outputDirectory, fileName);
