@@ -279,10 +279,10 @@
                                           ToolTip="Delete selected route" />
                     <syncfusion:ButtonAdv x:Name="ScheduleButton"
                                           Label="Schedule"
-                                          Command="{Binding ViewScheduleCommand}"
+                                          Command="{Binding ViewRouteTimetableCommand}"
                                           Style="{StaticResource InfoButtonAdv}"
                                           AutomationProperties.Name="View Schedule"
-                                          ToolTip="View route schedule" />
+                                          ToolTip="Preview this route's stop timetable" />
                     <syncfusion:ButtonAdv x:Name="PlotButton"
                                           Label="Plot"
                                           Command="{Binding PlotRouteOnMapCommand}"
@@ -291,7 +291,7 @@
                                           ToolTip="Plot route on map" />
                     <syncfusion:ButtonAdv x:Name="PrintMapButton"
                                           Label="Print Map"
-                                          Command="{Binding PrintMapCommand}"
+                                          Command="{Binding PrintRouteSheetCommand}"
                                           Style="{StaticResource PrimaryButtonAdv}"
                                           AutomationProperties.Name="Print Route Map"
                                           ToolTip="Print route map" />
@@ -303,10 +303,10 @@
                                           ToolTip="Assign unassigned students up to route capacity for the selected time slot" />
                     <syncfusion:ButtonAdv x:Name="ReportButton"
                                           Label="Report"
-                                          Command="{Binding GenerateReportCommand}"
+                                          Command="{Binding ExportRouteSheetCommand}"
                                           Style="{StaticResource InfoButtonAdv}"
                                           AutomationProperties.Name="Generate Route Assignment Report"
-                                          ToolTip="Export route assignment summary PDF" />
+                                          ToolTip="Export the PdfGrid route sheet (stops + roster)" />
                 </WrapPanel>
             </Grid>
         </Border>

@@ -13,8 +13,6 @@ using Microsoft.Extensions.DependencyInjection; // For resolving MapViewModel / 
 using BusBuddy.WPF.ViewModels.Map; // Map markers
 using BusBuddy.WPF.Utilities; // MapMarkerLabels pin kinds
 using BusBuddy.WPF.Views.Route;
-using BusBuddy.WPF.Views.Driver;
-using BusBuddy.WPF.ViewModels.Driver;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
@@ -1016,48 +1014,15 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        private async Task ViewScheduleAsync()
+        private Task ViewScheduleAsync()
         {
-            if (SelectedRoute == null)
-            {
-                return;
-            }
-
-            try
-            {
-                var stopsResult = await _routeService.GetRouteStopsAsync(SelectedRoute.RouteId);
-                if (!stopsResult.IsSuccess)
-                {
-                    StatusMessage = stopsResult.Error ?? "Could not load published stops.";
-                    return;
-                }
-
-                var appointments = DriverScheduleViewModel.FromPublishedStops(
-                    SelectedRoute,
-                    stopsResult.Value ?? []);
-                var status = appointments.Count == 0
-                    ? $"No published stops on {SelectedRoute.RouteName} — add stops before viewing the schedule."
-                    : $"Published times for {SelectedRoute.RouteName} ({appointments.Count} stops)";
-
-                new Window
-                {
-                    Title = $"Schedule — {SelectedRoute.RouteName}",
-                    Content = new DriverScheduleView(new DriverScheduleViewModel(appointments, status)),
-                    Width = 1200,
-                    Height = 800,
-                    Owner = Application.Current?.MainWindow
-                }.Show();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to open published schedule for route {RouteName}", SelectedRoute.RouteName);
-                StatusMessage = $"Could not open schedule: {ex.Message}";
-            }
+            SaveRouteSheet(includeMap: false, preview: true);
+            return Task.CompletedTask;
         }
 
         private void GenerateReport()
         {
-            ExportRouteAssignmentPdfAsync(includeMap: false);
+            SaveRouteSheet(includeMap: false, preview: false);
         }
 
         #endregion

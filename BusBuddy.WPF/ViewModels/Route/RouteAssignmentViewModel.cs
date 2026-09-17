@@ -465,6 +465,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (ExportRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (PrintRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (ViewRouteTimetableCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         /// <summary>
@@ -489,94 +492,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (ExportRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (PrintRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (ViewRouteTimetableCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateTransferRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
         private void PrintMap()
         {
-            ExportRouteAssignmentPdfAsync(includeMap: true);
+            SaveRouteSheet(includeMap: true, preview: false);
         }
 
         private void ExportRouteAssignmentPdfAsync(bool includeMap)
         {
-            if (SelectedRoute == null)
-            {
-                return;
-            }
-
-            try
-            {
-                Logger.Information("Starting route PDF export for {RouteName} (Slot {Slot})", SelectedRoute.RouteName, SelectedTimeSlot);
-                var pdfService = App.ServiceProvider?.GetService<BusBuddy.Core.Services.PdfReportService>()
-                                   ?? new BusBuddy.Core.Services.PdfReportService();
-
-                byte[]? mapPng = null;
-                if (includeMap)
-                {
-                    try
-                    {
-                        var mapVm = _map;
-                        if (mapVm != null)
-                        {
-                            if (mapVm.LatestMapSnapshotPng == null || mapVm.LatestMapSnapshotPng.Length == 0)
-                            {
-                                Logger.Debug("No existing map snapshot; attempting proactive capture");
-                                TryProactiveMapSnapshotCapture();
-                            }
-                            mapPng = mapVm.LatestMapSnapshotPng;
-                        }
-                    }
-                    catch { /* Non-fatal if map VM unavailable */ }
-                }
-
-                BusBuddy.Core.Models.Bus? bus = null;
-                BusBuddy.Core.Models.Driver? driver = null;
-                if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.AM && SelectedRoute.AMVehicleId.HasValue)
-                {
-                    bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.AMVehicleId.Value);
-                }
-                if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM && SelectedRoute.PMVehicleId.HasValue)
-                {
-                    bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.PMVehicleId.Value);
-                }
-                if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.AM && SelectedRoute.AMDriverId.HasValue)
-                {
-                    driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.AMDriverId.Value);
-                }
-                if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM && SelectedRoute.PMDriverId.HasValue)
-                {
-                    driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.PMDriverId.Value);
-                }
-
-                var pdfBytes = pdfService.GenerateRouteSummaryReport(
-                    SelectedRoute,
-                    RouteStops.ToList(),
-                    AssignedStudentsForSelectedRoute.ToList(),
-                    bus,
-                    driver,
-                    NormalizeTimeSlot(SelectedTimeSlot),
-                    mapPng);
-
-                if (pdfBytes.Length == 0)
-                {
-                    StatusMessage = $"Failed to generate PDF for {SelectedRoute.RouteName}";
-                    return;
-                }
-
-                var safeName = string.Join("_", (SelectedRoute.RouteName ?? "Route").Split(Path.GetInvalidFileNameChars()));
-                var fileName = $"Route_{safeName}_{SelectedTimeSlot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-                var exportDir = Path.Combine(AppContext.BaseDirectory, "Exports");
-                Directory.CreateDirectory(exportDir);
-                var fullPath = Path.Combine(exportDir, fileName);
-                File.WriteAllBytes(fullPath, pdfBytes);
-                StatusMessage = $"Route PDF exported: {fileName}" + (mapPng != null ? " (with map)" : "");
-                Logger.Information("Route PDF export complete: {File} (MapEmbedded={HasMap}) Size={SizeBytes} bytes", fullPath, mapPng != null, pdfBytes.Length);
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"PDF export error: {ex.Message}";
-                Logger.Error(ex, "Route PDF export failed for {RouteId}", SelectedRoute?.RouteId);
-            }
+            SaveRouteSheet(includeMap, preview: false);
         }
 
         /// <summary>
