@@ -44,7 +44,7 @@ Do in this order so parked work is not forgotten and is not started out of seque
 | —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                           |
 | —     | `StudentsBulkRouteCoordinator`                                 | Parked. Uses `SetSlot` + `UpdateStudentAsync`. Eventually call `IRouteService.AssignStudentToRouteAsync` so a shared name cannot null a known key. Not this pass. |
 
-- [ ] **District Map VM re-smoke:** quit + relaunch Debug after `Data.*` pin bindings + pick-map attribution — expect clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route.
+- [ ] **District Map VM re-smoke:** quit + relaunch Debug after the 2026-09-17 marker-host gate (`MapMarkerHost`; no XAML `MarkerTemplateSelector` / pick-map `Markers=`). Guest `runtime-errors.log` was truncated 2026-09-17. Expect **0** `do not share a common ancestor` lines, clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route. Testhost already green: MapView + UiRuntimeLogging + MapViewModel **68 passed** on UTM 2026-09-17.
 
 Optional:
 
@@ -56,13 +56,13 @@ Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
 Lightly coupled surfaces that must stay Google-only:
 
-| Coupling          | Harden                                                                                                | Test                                                    |
-| ----------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys | Capability log; session create 200 without quota header |
-| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM)                            | `MapViewTests` + `LogTileHealth` after 2s               |
-| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap`        | XAML asserts; form Loaded bootstrap                     |
-| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor`                                                            | Settings recenter unit + live smoke                     |
-| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product                        | Do not copy probe OSM into WPF views                    |
+| Coupling          | Harden                                                                                                                                                            | Test                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys                                                             | Capability log; session create 200 without quota header |
+| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM)                                                                                        | `MapViewTests` + `LogTileHealth` after 2s               |
+| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap` + `MapMarkerHost` (no XAML `Markers=` / `MarkerTemplateSelector=`) | XAML asserts; form Loaded bootstrap; `MapViewTests`     |
+| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor`                                                                                                                        | Settings recenter unit + live smoke                     |
+| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product                                                                                    | Do not copy probe OSM into WPF views                    |
 
 After map path stabilizes: incremental `/code-review` or `/check-work` on tile + settings coupling.
 

@@ -35,9 +35,11 @@ namespace BusBuddy.WPF.Views.Map
         private MapViewModel? _boundViewModel;
         private MapLayer? _currentLayer;
         private DispatcherTimer? _attributionTimer;
+        private MapMarkerHost.RetryScheduler? _markerHostRetry;
         private MapInteractionDiagnostics? _diagnostics;
         private bool _pendingCameraSync;
         private bool _pendingMarkerRefresh;
+        private bool _placingMarkers;
 
         public MapView()
         {
@@ -92,7 +94,7 @@ namespace BusBuddy.WPF.Views.Map
                     AttachViewModel(vm);
                 }
 
-                ApplyDistrictImagery(DataContext as MapViewModel);
+                ApplyDistrictImagery();
 
                 if (MapControl is not null)
                 {
@@ -138,7 +140,9 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 _mapLayerInitialized = true;
-                RefreshMarkersOnImageryLayer();
+                _pendingMarkerRefresh = true;
+                _ = Dispatcher.BeginInvoke(RefreshMarkersOnImageryLayer, DispatcherPriority.Loaded);
+                _ = Dispatcher.BeginInvoke(RefreshMarkersOnImageryLayer, DispatcherPriority.ContextIdle);
                 Logger.Information("Map layer ready — pan/zoom enabled");
             }
             catch (Exception ex)
@@ -165,6 +169,7 @@ namespace BusBuddy.WPF.Views.Map
         private void MapView_Unloaded(object sender, RoutedEventArgs e)
         {
             _attributionTimer?.Stop();
+            _markerHostRetry?.Stop();
             _diagnostics?.Dispose();
             _diagnostics = null;
             if (DistrictTilesLayer is ImageryLayer layer)
@@ -185,7 +190,7 @@ namespace BusBuddy.WPF.Views.Map
             if (e.NewValue is MapViewModel newViewModel)
             {
                 AttachViewModel(newViewModel);
-                ApplyDistrictImagery(newViewModel);
+                ApplyDistrictImagery();
                 ReplayRouteLineFromViewModel(newViewModel);
                 RefreshMarkersOnImageryLayer();
             }
@@ -221,7 +226,7 @@ namespace BusBuddy.WPF.Views.Map
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
-        private void ApplyDistrictImagery(MapViewModel? vm)
+        private void ApplyDistrictImagery()
         {
             try
             {
@@ -232,7 +237,7 @@ namespace BusBuddy.WPF.Views.Map
                     return;
                 }
 
-                ConfigureImageryLayer(imagery, vm);
+                ConfigureImageryLayer(imagery);
                 _currentLayer = imagery;
             }
             catch (Exception ex)
@@ -241,14 +246,10 @@ namespace BusBuddy.WPF.Views.Map
             }
         }
 
-        private void ConfigureImageryLayer(ImageryLayer imagery, MapViewModel? vm)
+        private void ConfigureImageryLayer(ImageryLayer imagery)
         {
             imagery.MarkerSelected -= OnImageryMarkerSelected;
             imagery.MarkerSelected += OnImageryMarkerSelected;
-            if (vm is not null)
-            {
-                ApplyMarkerTemplates(imagery);
-            }
         }
 
         private void OnImageryMarkerSelected(object? sender, MarkerSelectedEventArgs e)
@@ -280,40 +281,97 @@ namespace BusBuddy.WPF.Views.Map
 
         private void RefreshMarkersOnImageryLayer()
         {
+            if (_placingMarkers)
+            {
+                return;
+            }
+
+            if (!TryPlaceMarkers())
+            {
+                ScheduleMarkerHostRetry();
+            }
+        }
+
+        private bool TryPlaceMarkers()
+        {
+            if (_placingMarkers)
+            {
+                return false;
+            }
+
+            _placingMarkers = true;
             try
             {
-                if (!_mapLayerInitialized ||
-                    DataContext is not MapViewModel vm ||
+                if (!IsLoaded || !_mapLayerInitialized)
+                {
+                    _pendingMarkerRefresh = true;
+                    return false;
+                }
+
+                if (DataContext is not MapViewModel vm ||
                     DistrictTilesLayer is not ImageryLayer imagery)
                 {
                     _pendingMarkerRefresh = true;
-                    return;
+                    return false;
                 }
 
-                if (!CanHostMarkers())
+                if (!CanHostMarkers() || !CanApplyLayerCenter())
                 {
                     _pendingMarkerRefresh = true;
-                    return;
+                    return false;
                 }
 
                 ApplyMarkerTemplates(imagery);
 
-                // Re-assign collection so Syncfusion refreshes marker visuals. Do not bind Markers in
-                // XAML — CustomDataSymbol.ApplyTemplate calls TransformToVisual before the layer is
-                // parented (VM runtime-errors.log 2026-09-12 Maps click cascade).
-                imagery.Markers = vm.MapMarkers;
+                // Re-assign collection so Syncfusion refreshes marker visuals. Do not bind Markers or
+                // MarkerTemplateSelector in XAML — CustomDataSymbol.ApplyTemplate calls TransformToVisual
+                // before the layer is parented (VM runtime-errors.log 2026-09-17).
+                if (!MapMarkerHost.TryAssignAndLayout(MapControl, imagery, vm.MapMarkers))
+                {
+                    _pendingMarkerRefresh = true;
+                    return false;
+                }
+
                 _pendingMarkerRefresh = false;
+                _markerHostRetry?.Stop();
+                return true;
             }
             catch (Exception ex)
             {
                 _pendingMarkerRefresh = true;
                 Logger.Warning(ex, "Failed to refresh map markers on imagery layer");
+                return false;
+            }
+            finally
+            {
+                _placingMarkers = false;
             }
         }
 
         /// <summary>
-        /// Marker templates need a live HwndSource. Do not call TransformToVisual here — that is
-        /// what Syncfusion throws while inflating MarkerTemplate during first Measure.
+        /// SizeChanged is not guaranteed after the first layout. Retry until TransformToVisual
+        /// succeeds so pins are not stuck pending with a finished viewport
+        /// (code-review 2026-09-17).
+        /// </summary>
+        private void ScheduleMarkerHostRetry()
+        {
+            _pendingMarkerRefresh = true;
+            if (!IsLoaded)
+            {
+                _markerHostRetry?.Stop();
+                return;
+            }
+
+            _markerHostRetry ??= new MapMarkerHost.RetryScheduler(
+                Dispatcher,
+                TryPlaceMarkers,
+                retries => Logger.Warning("Map markers still pending after {Retries} host retries", retries));
+            _markerHostRetry.Arm();
+        }
+
+        /// <summary>
+        /// Size + HwndSource gate. Pair with <see cref="CanApplyLayerCenter"/> so templates are not
+        /// applied until <c>TransformToVisual</c> between the layer and map succeeds.
         /// </summary>
         private bool CanHostMarkers()
         {

@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
@@ -17,6 +19,7 @@ public partial class SchoolDestinationForm : ChromelessWindow
 {
     private static readonly ILogger Logger = Log.ForContext<SchoolDestinationForm>();
     private readonly SchoolDestinationFormViewModel _vm;
+    private MapMarkerHost.RetryScheduler? _markerRetry;
 
     public SchoolDestinationForm(SchoolDestinationFormViewModel viewModel)
     {
@@ -36,6 +39,9 @@ public partial class SchoolDestinationForm : ChromelessWindow
         SchoolDismissalBox.Text = _vm.DismissalTimeText;
         SchoolLatBox.Value = _vm.LatitudeValue;
         SchoolLonBox.Value = _vm.LongitudeValue;
+
+        _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
+        SchoolPickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -93,7 +99,30 @@ public partial class SchoolDestinationForm : ChromelessWindow
                         App.ServiceProvider).ConfigureAwait(true);
                 }
             }
+
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
         };
+    }
+
+    private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+
+    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+
+    private void AssignPickMarkers()
+    {
+        if (MapMarkerHost.TryAssignAndLayout(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers))
+        {
+            _markerRetry?.Stop();
+            return;
+        }
+
+        _markerRetry ??= new MapMarkerHost.RetryScheduler(
+            Dispatcher,
+            () => MapMarkerHost.TryAssignAndLayout(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers),
+            retries => Logger.Warning("School pick markers still pending after {Retries} host retries", retries));
+        _markerRetry.Arm();
     }
 
     /// <summary>
@@ -201,6 +230,9 @@ public partial class SchoolDestinationForm : ChromelessWindow
 
     protected override void OnClosed(EventArgs e)
     {
+        _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
+        SchoolPickMap.SizeChanged -= OnPickMapSizeChanged;
+        _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);
     }

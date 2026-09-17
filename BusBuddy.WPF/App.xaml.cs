@@ -682,10 +682,34 @@ namespace BusBuddy.WPF
         // Global error handler for UI thread exceptions
         private DateTime _lastUiErrorPopupUtc;
         private string? _lastUiErrorPopupMessage;
+        private int _layoutTransientCount;
 
         private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
             var logger = Log.Logger;
+            e.Handled = true;
+
+            // Layout retries the same Syncfusion/WPF visual-tree failure dozens of times per click
+            // (VM 2026-09-17 District Map: 1139 TransformToVisual lines in ~40s). Log once, never
+            // AppendAllText the flood into runtime-errors.log.
+            if (IsLayoutTransientException(e.Exception))
+            {
+                _layoutTransientCount++;
+                if (_layoutTransientCount == 1)
+                {
+                    logger.Information(
+                        e.Exception,
+                        "Layout transient swallowed Count={Count} Message={Message}",
+                        _layoutTransientCount,
+                        e.Exception.Message);
+                }
+                else if (_layoutTransientCount % 100 == 0)
+                {
+                    logger.Information("Layout transients swallowed Count={Count}", _layoutTransientCount);
+                }
+
+                return;
+            }
 
             // Capture comprehensive UI context
             string uiContext = Current?.MainWindow?.Content?.GetType().Name ?? "Unknown";
@@ -707,11 +731,7 @@ namespace BusBuddy.WPF
             var runtimeErrorsPath = Path.Combine(logsDir, "runtime-errors.log");
             System.IO.File.AppendAllText(runtimeErrorsPath, errorEntry);
 
-            e.Handled = true;
-
-            // Layout retries the same Syncfusion/WPF visual-tree failure dozens of times per click
-            // (VM 2026-09-12 Maps click: 30 TransformToVisual dialogs in two seconds).
-            if (IsRepeatedUiError(e.Exception.Message) || IsLayoutTransientException(e.Exception))
+            if (IsRepeatedUiError(e.Exception.Message))
             {
                 return;
             }
@@ -740,7 +760,8 @@ namespace BusBuddy.WPF
 
         /// <summary>
         /// WPF/Syncfusion throws these while SfMap marker templates or mouse-hit test run before
-        /// the imagery layer is parented. They are logged; a MessageBox per layout pass is worse.
+        /// the imagery layer is parented. First hit is Information only; runtime-errors.log is not
+        /// flooded (VM 2026-09-17).
         /// </summary>
         internal static bool IsLayoutTransientException(Exception ex)
         {

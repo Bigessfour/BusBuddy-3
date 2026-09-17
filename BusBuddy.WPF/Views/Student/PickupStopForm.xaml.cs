@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using BusBuddy.Core.Models;
 using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
@@ -18,6 +20,7 @@ public partial class PickupStopForm : ChromelessWindow
 {
     private static readonly ILogger Logger = Log.ForContext<PickupStopForm>();
     private readonly PickupStopFormViewModel _vm;
+    private MapMarkerHost.RetryScheduler? _markerRetry;
 
     public PickupStopForm(PickupStopFormViewModel viewModel)
     {
@@ -29,6 +32,9 @@ public partial class PickupStopForm : ChromelessWindow
         StopTypeCombo.SelectedItem = _vm.SelectedStopType;
         StopLatBox.Value = _vm.LatitudeValue;
         StopLonBox.Value = _vm.LongitudeValue;
+
+        _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
+        StopPickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -83,7 +89,30 @@ public partial class PickupStopForm : ChromelessWindow
                         App.ServiceProvider).ConfigureAwait(true);
                 }
             }
+
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
         };
+    }
+
+    private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+
+    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+
+    private void AssignPickMarkers()
+    {
+        if (MapMarkerHost.TryAssignAndLayout(StopPickMap, StopPickLayer, _vm.MapMarkers))
+        {
+            _markerRetry?.Stop();
+            return;
+        }
+
+        _markerRetry ??= new MapMarkerHost.RetryScheduler(
+            Dispatcher,
+            () => MapMarkerHost.TryAssignAndLayout(StopPickMap, StopPickLayer, _vm.MapMarkers),
+            retries => Logger.Warning("Pickup stop pick markers still pending after {Retries} host retries", retries));
+        _markerRetry.Arm();
     }
 
     private async void SaveStopButton_Click(object sender, RoutedEventArgs e)
@@ -174,6 +203,9 @@ public partial class PickupStopForm : ChromelessWindow
 
     protected override void OnClosed(EventArgs e)
     {
+        _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
+        StopPickMap.SizeChanged -= OnPickMapSizeChanged;
+        _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);
     }

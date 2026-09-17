@@ -31,8 +31,107 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
             BindingFlags.Instance | BindingFlags.NonPublic);
 
     private string? _googleUrlTemplate;
+    private bool _loggedVisualTreeSkip;
 
     public bool IsGoogleTilesActive => _googleUrlTemplate is not null;
+
+    /// <summary>
+    /// True after the latest measure/arrange pass finished (success or swallowed skip).
+    /// Reset by <see cref="BeginMarkerHostCheck"/> before a forced layout.
+    /// </summary>
+    internal bool LastMeasureCompleted { get; private set; }
+
+    /// <summary>
+    /// True when the latest layout pass swallowed a not-parented <c>TransformToVisual</c>.
+    /// </summary>
+    internal bool LastLayoutSkippedVisualTree { get; private set; }
+
+    internal void BeginMarkerHostCheck()
+    {
+        LastMeasureCompleted = false;
+        LastLayoutSkippedVisualTree = false;
+    }
+
+    /// <summary>
+    /// Syncfusion <c>CustomDataSymbol.ApplyTemplate</c> calls <c>TransformToVisual</c> before the
+    /// marker is parented (VM runtime-errors.log 2026-09-17). Swallow that layout throw so Window
+    /// measure can finish; pin assignment is retried from the view after <see cref="MapMarkerHost"/>.
+    /// </summary>
+    protected override Size MeasureOverride(Size constraint)
+    {
+        try
+        {
+            var size = base.MeasureOverride(constraint);
+            LastLayoutSkippedVisualTree = false;
+            LastMeasureCompleted = true;
+            return size;
+        }
+        catch (Exception ex) when (IsVisualTreeNotReady(ex))
+        {
+            LastLayoutSkippedVisualTree = true;
+            LastMeasureCompleted = true;
+            LogVisualTreeSkipOnce(ex);
+            return SafeLayoutSize(constraint);
+        }
+    }
+
+    /// <inheritdoc cref="MeasureOverride"/>
+    protected override Size ArrangeOverride(Size arrangeBounds)
+    {
+        try
+        {
+            var size = base.ArrangeOverride(arrangeBounds);
+            LastMeasureCompleted = true;
+            return size;
+        }
+        catch (Exception ex) when (IsVisualTreeNotReady(ex))
+        {
+            LastLayoutSkippedVisualTree = true;
+            LastMeasureCompleted = true;
+            LogVisualTreeSkipOnce(ex);
+            return arrangeBounds;
+        }
+    }
+
+    internal static bool IsVisualTreeNotReady(Exception ex)
+    {
+        if (ex is NullReferenceException &&
+            ex.StackTrace?.Contains("Syncfusion.UI.Xaml.Maps", StringComparison.Ordinal) == true)
+        {
+            return true;
+        }
+
+        var text = ex.Message ?? string.Empty;
+        if (ex.InnerException is not null)
+        {
+            text += " " + ex.InnerException.Message;
+        }
+
+        return text.Contains("do not share a common ancestor", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void LogVisualTreeSkipOnce(Exception ex)
+    {
+        if (_loggedVisualTreeSkip)
+        {
+            return;
+        }
+
+        _loggedVisualTreeSkip = true;
+        Logger.Debug(ex, "Imagery layer layout skipped — marker visual tree not parented yet");
+    }
+
+    private Size SafeLayoutSize(Size constraint)
+    {
+        if (DesiredSize.Width > 0 && DesiredSize.Height > 0)
+        {
+            return DesiredSize;
+        }
+
+        var width = double.IsNaN(constraint.Width) || double.IsInfinity(constraint.Width) ? 0 : constraint.Width;
+        var height = double.IsNaN(constraint.Height) || double.IsInfinity(constraint.Height) ? 0 : constraint.Height;
+        return new Size(width, height);
+    }
 
     /// <summary>
     /// Applies an official Map Tiles API URL template with <c>{z}/{x}/{y}</c> placeholders.
