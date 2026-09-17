@@ -9,20 +9,16 @@ using Syncfusion.Pdf.Grid;
 namespace BusBuddy.Core.Services;
 
 /// <summary>
-/// Route sheet PDF. Tables are Syncfusion <see cref="PdfGrid"/> (not hand-placed DrawString rows).
-/// Docs: https://help.syncfusion.com/document-processing/pdf/pdf-library/net/create-pdf-file-in-wpf
+/// Route sheet PDF using the documented Syncfusion PdfGrid contract:
+/// columns + header row, RepeatHeader, FitPage pagination, PaginateBounds,
+/// PdfGridLayoutResult chaining, and PdfDocument.Template header/footer.
+/// https://help.syncfusion.com/document-processing/pdf/pdf-library/net/pdfgrid
+/// https://help.syncfusion.com/document-processing/pdf/pdf-library/net/working-with-headers-and-footers
+/// https://help.syncfusion.com/document-processing/pdf/pdf-library/net/create-pdf-file-in-wpf
 /// </summary>
 public static class RouteSummaryPdfRenderer
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(RouteSummaryPdfRenderer));
-
-    private static readonly PdfColor Banner = new(15, 76, 129);
-    private static readonly PdfColor BannerAccent = new(196, 160, 64);
-    private static readonly PdfColor HeaderCell = new(15, 76, 129);
-    private static readonly PdfColor Zebra = new(245, 247, 250);
-    private static readonly PdfColor Rule = new(210, 216, 222);
-    private static readonly PdfColor Body = new(33, 37, 41);
-    private static readonly PdfColor Muted = new(90, 98, 108);
 
     public static byte[] Render(
         Route route,
@@ -34,36 +30,34 @@ public static class RouteSummaryPdfRenderer
         byte[]? mapImagePng = null)
     {
         ArgumentNullException.ThrowIfNull(route);
-        var documentModel = RouteSummaryDocument.From(
+        var model = RouteSummaryDocument.From(
             route, stops, students, assignedBus, assignedDriver, timeSlot);
 
         try
         {
             using var pdf = new PdfDocument();
-            pdf.PageSettings.Margins.All = 36;
+            pdf.PageSettings.Margins.Top = PdfGridSupport.HeaderTemplateHeight + 12f;
+            pdf.PageSettings.Margins.Bottom = PdfGridSupport.FooterTemplateHeight + 12f;
+            pdf.PageSettings.Margins.Left = 36;
+            pdf.PageSettings.Margins.Right = 36;
+            pdf.DocumentInformation.Title = model.DisplayName;
+            pdf.DocumentInformation.Author = "BusBuddy";
+            PdfGridSupport.ApplyPageTemplates(
+                pdf,
+                "Route sheet",
+                model.ServiceDate + "  \u00b7  " + model.SlotLabel);
+
             var page = pdf.Pages.Add();
             var g = page.Graphics;
             var pageSize = page.GetClientSize();
 
-            var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 16, PdfFontStyle.Bold);
             var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 8, PdfFontStyle.Bold);
             var valueFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10);
             var sectionFont = new PdfStandardFont(PdfFontFamily.Helvetica, 11, PdfFontStyle.Bold);
-            var smallFont = new PdfStandardFont(PdfFontFamily.Helvetica, 8);
-            var white = PdfBrushes.White;
-            var bodyBrush = new PdfSolidBrush(Body);
-            var mutedBrush = new PdfSolidBrush(Muted);
+            var bodyBrush = new PdfSolidBrush(PdfGridSupport.Body);
+            var mutedBrush = new PdfSolidBrush(PdfGridSupport.Muted);
 
-            g.DrawRectangle(new PdfSolidBrush(Banner), new RectangleF(0, 0, pageSize.Width, 44));
-            g.DrawRectangle(new PdfSolidBrush(BannerAccent), new RectangleF(0, 44, pageSize.Width, 3));
-            g.DrawString("Route sheet", titleFont, white, new PointF(0, 8));
-            g.DrawString(
-                documentModel.ServiceDate + "  ·  " + documentModel.SlotLabel,
-                valueFont,
-                white,
-                new PointF(0, 28));
-
-            float y = 58f;
+            float y = 0f;
             var mapWidth = 0f;
             if (mapImagePng is { Length: > 0 })
             {
@@ -76,7 +70,7 @@ public static class RouteSummaryPdfRenderer
                         ? Math.Min(110f, bitmap.Height / (float)bitmap.Width * mapWidth)
                         : 90f;
                     var imgRect = new RectangleF(pageSize.Width - mapWidth, y, mapWidth, imgHeight);
-                    g.DrawRectangle(new PdfPen(Rule, 0.5f), imgRect);
+                    g.DrawRectangle(new PdfPen(PdfGridSupport.Rule, 0.5f), imgRect);
                     g.DrawImage(bitmap, imgRect);
                 }
                 catch (Exception ex)
@@ -87,52 +81,36 @@ public static class RouteSummaryPdfRenderer
             }
 
             var metaWidth = pageSize.Width - (mapWidth > 0 ? mapWidth + 12f : 0);
-            DrawMeta(g, labelFont, valueFont, bodyBrush, mutedBrush, documentModel, y, metaWidth);
+            DrawMeta(g, labelFont, valueFont, bodyBrush, mutedBrush, model, y, metaWidth);
             y += 88f;
 
             y = DrawSection(g, sectionFont, bodyBrush, "Stops", y);
-            var stopGrid = BuildStopGrid(documentModel);
-            var layout = new PdfGridLayoutFormat
-            {
-                Layout = PdfLayoutType.Paginate,
-                Break = PdfLayoutBreakType.FitPage
-            };
-            var stopResult = stopGrid.Draw(page, new RectangleF(0, y, pageSize.Width, pageSize.Height - y - 36), layout);
-            y = (stopResult?.Bounds.Bottom ?? y) + 16f;
-
-            var studentPage = stopResult?.Page ?? page;
-            if (y > studentPage.GetClientSize().Height - 80)
-            {
-                studentPage = pdf.Pages.Add();
-                y = 16f;
-            }
-
-            y = DrawSection(studentPage.Graphics, sectionFont, bodyBrush, "Students", y);
-            var studentGrid = BuildStudentGrid(documentModel);
-            studentGrid.Draw(
-                studentPage,
-                new RectangleF(0, y, studentPage.GetClientSize().Width, studentPage.GetClientSize().Height - y - 28),
+            var stopGrid = BuildStopGrid(model);
+            var layout = PdfGridSupport.CreateLayoutFormat(page, y);
+            var stopResult = stopGrid.Draw(
+                page,
+                new RectangleF(0, y, pageSize.Width, Math.Max(40f, pageSize.Height - y)),
                 layout);
 
-            for (var pageIndex = 0; pageIndex < pdf.Pages.Count; pageIndex++)
+            var nextPage = stopResult?.Page ?? page;
+            var nextY = (stopResult?.Bounds.Bottom ?? y) + 16f;
+            if (nextY > nextPage.GetClientSize().Height - 64f)
             {
-                var p = pdf.Pages[pageIndex];
-                var footerY = p.GetClientSize().Height - 16f;
-                p.Graphics.DrawLine(new PdfPen(Rule, 0.6f), new PointF(0, footerY - 10), new PointF(p.GetClientSize().Width, footerY - 10));
-                p.Graphics.DrawString(
-                    $"Generated {DateTime.Now:MMM d, yyyy h:mm tt}",
-                    smallFont,
-                    mutedBrush,
-                    new PointF(0, footerY - 6));
-                p.Graphics.DrawString(
-                    $"Page {pageIndex + 1} of {pdf.Pages.Count}",
-                    smallFont,
-                    mutedBrush,
-                    new PointF(p.GetClientSize().Width - 72, footerY - 6));
+                nextPage = pdf.Pages.Add();
+                nextY = 8f;
             }
+
+            nextY = DrawSection(nextPage.Graphics, sectionFont, bodyBrush, "Students", nextY);
+            var studentGrid = BuildStudentGrid(model);
+            var studentLayout = PdfGridSupport.CreateLayoutFormat(nextPage, nextY);
+            studentGrid.Draw(
+                nextPage,
+                new RectangleF(0, nextY, nextPage.GetClientSize().Width, Math.Max(40f, nextPage.GetClientSize().Height - nextY)),
+                studentLayout);
 
             using var stream = new MemoryStream();
             pdf.Save(stream);
+            pdf.Close(true);
             return stream.ToArray();
         }
         catch (Exception ex)
@@ -199,7 +177,6 @@ public static class RouteSummaryPdfRenderer
         grid.Columns[4].Width = 44;
         grid.Columns[5].Width = 44;
         SetHeader(grid, "#", "Stop", "Arr", "Dep", "Miles", "Cum");
-
         if (model.Stops.Count == 0)
         {
             AddRow(grid, string.Empty, "No stops on this route", string.Empty, string.Empty, string.Empty, string.Empty);
@@ -237,74 +214,8 @@ public static class RouteSummaryPdfRenderer
         return grid;
     }
 
-    internal static PdfGrid NewGrid(int columns)
-    {
-        var grid = new PdfGrid();
-        grid.Columns.Add(columns);
-        grid.Headers.Add(1);
-        grid.Style.CellPadding = new PdfPaddings(5, 5, 4, 4);
-        grid.Style.Font = new PdfStandardFont(PdfFontFamily.Helvetica, 8.5f);
-        return grid;
-    }
-
-    internal static void SetHeader(PdfGrid grid, params string[] titles)
-    {
-        var header = grid.Headers[0];
-        for (var i = 0; i < titles.Length && i < header.Cells.Count; i++)
-        {
-            header.Cells[i].Value = titles[i];
-        }
-    }
-
-    internal static void AddRow(PdfGrid grid, params string[] values)
-    {
-        var row = grid.Rows.Add();
-        for (var i = 0; i < values.Length && i < row.Cells.Count; i++)
-        {
-            row.Cells[i].Value = values[i];
-        }
-    }
-
-    internal static void StyleGrid(PdfGrid grid, int rightAlignFrom)
-    {
-        var headerStyle = new PdfGridCellStyle
-        {
-            BackgroundBrush = new PdfSolidBrush(HeaderCell),
-            TextBrush = PdfBrushes.White,
-            Font = new PdfStandardFont(PdfFontFamily.Helvetica, 8, PdfFontStyle.Bold)
-        };
-        headerStyle.Borders.All = new PdfPen(HeaderCell, 0.4f);
-        var cellPen = new PdfPen(Rule, 0.4f);
-        var cellStyle = new PdfGridCellStyle
-        {
-            Font = new PdfStandardFont(PdfFontFamily.Helvetica, 8.5f),
-            TextBrush = new PdfSolidBrush(Body)
-        };
-        cellStyle.Borders.All = cellPen;
-        var zebraStyle = new PdfGridCellStyle
-        {
-            Font = cellStyle.Font,
-            TextBrush = cellStyle.TextBrush,
-            BackgroundBrush = new PdfSolidBrush(Zebra)
-        };
-        zebraStyle.Borders.All = cellPen;
-
-        grid.Headers[0].ApplyStyle(headerStyle);
-        var right = new PdfStringFormat(PdfTextAlignment.Right, PdfVerticalAlignment.Middle);
-        var left = new PdfStringFormat(PdfTextAlignment.Left, PdfVerticalAlignment.Middle);
-        for (var i = 0; i < grid.Headers[0].Cells.Count; i++)
-        {
-            grid.Headers[0].Cells[i].StringFormat = i >= rightAlignFrom ? right : left;
-        }
-
-        for (var r = 0; r < grid.Rows.Count; r++)
-        {
-            var row = grid.Rows[r];
-            row.ApplyStyle(r % 2 == 1 ? zebraStyle : cellStyle);
-            for (var i = 0; i < row.Cells.Count; i++)
-            {
-                row.Cells[i].StringFormat = i >= rightAlignFrom ? right : left;
-            }
-        }
-    }
+    internal static PdfGrid NewGrid(int columns) => PdfGridSupport.CreateGrid(columns);
+    internal static void SetHeader(PdfGrid grid, params string[] titles) => PdfGridSupport.SetHeader(grid, titles);
+    internal static void AddRow(PdfGrid grid, params string[] values) => PdfGridSupport.AddRow(grid, values);
+    internal static void StyleGrid(PdfGrid grid, int rightAlignFrom) => PdfGridSupport.StyleGrid(grid, rightAlignFrom);
 }
