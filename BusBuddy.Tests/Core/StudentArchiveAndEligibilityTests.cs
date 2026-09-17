@@ -556,6 +556,73 @@ namespace BusBuddy.Tests.Core
             reloaded.HasValidatedHomeCoordinates.Should().BeTrue();
         }
 
+        [Test]
+        public async Task UpdateHomeGeocodeAsync_SameCoordinates_StillSucceeds()
+        {
+            var seeded = await SeedStudentAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var first = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId, 38.0872m, -102.6208m, "ChIJ_TEST_PLACE");
+            var again = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId, 38.0872m, -102.6208m, "ChIJ_TEST_PLACE");
+
+            first.Should().BeTrue();
+            again.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task UpdateHomeGeocodeAsync_UnknownStudent_ReturnsFalse()
+        {
+            var ok = await _studentService.UpdateHomeGeocodeAsync(999_001, 38.1m, -102.7m, null);
+            ok.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task UpdateHomeGeocodeAsync_MovesPublishedHomeStopOnAssignedRoute()
+        {
+            var seeded = await SeedStudentAsync();
+            var route = new Route { RouteName = "TEST_SN_AM", IsActive = true };
+            _dbContext.Routes.Add(route);
+            await _dbContext.SaveChangesAsync();
+            seeded.AmRouteId = route.RouteId;
+            _dbContext.Students.Update(seeded);
+            _dbContext.RouteStops.Add(new RouteStop
+            {
+                RouteId = route.RouteId,
+                StopName = "Home pickup",
+                StopAddress = "100 Test St",
+                Latitude = 38.11433420m,
+                Longitude = -102.53084580m,
+                StopOrder = 1,
+                Notes = $"StudentId={seeded.StudentId}",
+            });
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var ok = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId,
+                38.11000000m,
+                -102.54000000m,
+                placeId: null);
+
+            ok.Should().BeTrue();
+            var stop = await _dbContext.RouteStops.AsNoTracking()
+                .SingleAsync(s => s.RouteId == route.RouteId);
+            stop.Latitude.Should().Be(38.11000000m);
+            stop.Longitude.Should().Be(-102.54000000m);
+        }
+
+        [Test]
+        public void NotesNameStudent_MatchesSingleAndListTokens()
+        {
+            StudentService.NotesNameStudent("StudentId=9", 9).Should().BeTrue();
+            StudentService.NotesNameStudent("StudentId=19", 9).Should().BeFalse();
+            StudentService.NotesNameStudent("StudentIds=9,12", 9).Should().BeTrue();
+            StudentService.NotesNameStudent("StudentIds=12,9", 9).Should().BeTrue();
+            StudentService.NotesNameStudent("StudentIds=19", 9).Should().BeFalse();
+        }
+
         #endregion
     }
 }

@@ -110,9 +110,48 @@ public class RouteSummarySheetBuilderTests
         Assert.That(sheet.GenerateStopsOnlyNote, Is.Null);
         Assert.That(sheet.Students[0].Name, Is.EqualTo("Ada Clark"));
         Assert.That(sheet.Students[0].Grade, Is.EqualTo("3"));
-        Assert.That(sheet.Students[0].Stop, Is.EqualTo("100 Main"));
+        Assert.That(sheet.Students[0].Stop, Is.EqualTo("Ada Clark"));
+        Assert.That(sheet.Stops[0].Name, Is.EqualTo("Ada Clark"));
+        Assert.That(sheet.Stops[0].Riders, Is.EqualTo("1"));
         Assert.That(sheet.BusLabel, Is.EqualTo("Bus 5"));
         Assert.That(sheet.DriverLabel, Is.EqualTo("Robert Truitt"));
+    }
+
+    [Test]
+    public void Build_HomePickupStop_UsesStudentNameAndRiderCount()
+    {
+        var route = new Route
+        {
+            RouteName = "AM Special Needs Bus 5",
+            School = "Lamar High School",
+            Session = RouteSession.SpecialNeeds
+        };
+        var stop = new RouteStop
+        {
+            StopOrder = 1,
+            StopName = "Home pickup (household)",
+            StopAddress = "312 S 4th St, Lamar, CO",
+            ScheduledArrival = new TimeSpan(7, 30, 0),
+            ScheduledDeparture = new TimeSpan(7, 31, 0),
+            Status = "Active"
+        };
+        var student = new Student
+        {
+            StudentId = 21,
+            StudentName = "Azariah Gonzales",
+            Grade = "7",
+            HomeAddress = "312 S 4th St"
+        };
+
+        var sheet = RouteSummarySheetBuilder.Build(
+            route, new[] { stop }, new[] { student }, null, null, RouteTimeSlot.AM);
+
+        Assert.That(sheet.Title, Is.EqualTo("Lamar High School Special Needs Route Sheet"));
+        Assert.That(sheet.SessionLabel, Is.EqualTo("Special Needs"));
+        Assert.That(sheet.Stops[0].Name, Is.EqualTo("Azariah Gonzales"));
+        Assert.That(sheet.Stops[0].Address, Does.Contain("312 S 4th St"));
+        Assert.That(sheet.Stops[0].Riders, Is.EqualTo("1"));
+        Assert.That(sheet.Students[0].Stop, Is.EqualTo("Azariah Gonzales"));
     }
 
     [Test]

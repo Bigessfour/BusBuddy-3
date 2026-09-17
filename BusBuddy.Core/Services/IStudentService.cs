@@ -78,9 +78,9 @@ public interface IStudentService
     Task<bool> UpdateStudentAsync(Student student);
 
     /// <summary>
-    /// Writes only geocoded home coordinates (and PlaceId) from Address Validation.
-    /// Does not run full intake validation — clerks must be able to persist lat/lng on an
-    /// otherwise incomplete roster row.
+    /// Writes home coordinates (Address Validation or a clerk map click after validation).
+    /// Also moves published home <c>RouteStop</c> rows on the student's AM/PM routes that
+    /// name this student. Does not run full intake validation.
     /// </summary>
     Task<bool> UpdateHomeGeocodeAsync(int studentId, decimal? latitude, decimal? longitude, string? placeId);
 

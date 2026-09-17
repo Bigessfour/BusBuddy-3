@@ -25,7 +25,8 @@ public static class RouteSummarySheetBuilder
         Bus? bus,
         Driver? driver,
         RouteTimeSlot timeSlot,
-        string? districtName = null)
+        string? districtName = null,
+        IReadOnlySet<int>? notRidingStudentIds = null)
     {
         ArgumentNullException.ThrowIfNull(route);
 
@@ -35,12 +36,19 @@ public static class RouteSummarySheetBuilder
             .ThenBy(s => s.StopName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
+        var roster = (students ?? Array.Empty<Student>()).ToList();
+        var claimed = new HashSet<int>();
+        var ridersByStop = ordered
+            .Select(stop => ResolveRiders(stop, roster, claimed))
+            .ToList();
+
         var stopRows = new List<RouteSummarySheet.StopRow>(ordered.Count);
         double? cumulative = null;
         var anyLeg = false;
         RouteStop? previous = null;
-        foreach (var stop in ordered)
+        for (var i = 0; i < ordered.Count; i++)
         {
+            var stop = ordered[i];
             string milesText = "—";
             if (previous is not null
                 && previous.HasValidatedCoordinates
@@ -57,25 +65,28 @@ public static class RouteSummarySheetBuilder
             }
 
             var cumText = cumulative is double cum ? FormatMiles(cum) : "—";
+            var riders = ridersByStop[i];
             stopRows.Add(new RouteSummarySheet.StopRow(
                 stopRows.Count + 1,
-                string.IsNullOrWhiteSpace(stop.StopName) ? "(unnamed stop)" : stop.StopName.Trim(),
+                DisplayStopName(stop, riders),
                 stop.StopAddress?.Trim() ?? string.Empty,
                 FormatClock(ArrivalClock(stop)),
                 FormatClock(DepartureClock(stop)),
                 milesText,
                 cumText,
-                FormatRiders(CountStudentIds(stop.Notes))));
+                FormatRiders(riders.Count > 0 ? riders.Count : CountStudentIds(stop.Notes))));
             previous = stop;
         }
 
-        var roster = (students ?? Array.Empty<Student>()).ToList();
         var studentRows = roster
             .OrderBy(s => s.StudentName, StringComparer.OrdinalIgnoreCase)
             .Select(s => new RouteSummarySheet.StudentRow(
                 string.IsNullOrWhiteSpace(s.StudentName) ? "(unnamed)" : s.StudentName.Trim(),
                 s.Grade?.Trim() ?? string.Empty,
-                MatchStudentStop(s, ordered)))
+                MatchStudentStop(s, ordered, ridersByStop),
+                notRidingStudentIds is not null && notRidingStudentIds.Contains(s.StudentId)
+                    ? "Not riding today"
+                    : string.Empty))
             .ToList();
 
         var session = DisplaySession(route, timeSlot);
@@ -164,23 +175,7 @@ public static class RouteSummarySheetBuilder
             || Regex.IsMatch(name, @"-R\d+C\d+", RegexOptions.IgnoreCase);
     }
 
-    internal static int CountStudentIds(string? notes)
-    {
-        if (string.IsNullOrWhiteSpace(notes))
-        {
-            return 0;
-        }
-
-        var match = StudentIdNotes.Match(notes);
-        if (!match.Success)
-        {
-            return 0;
-        }
-
-        return match.Groups[1].Value
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Count(part => int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out _));
-    }
+    internal static int CountStudentIds(string? notes) => ParseStudentIds(notes).Count;
 
     internal static double HaversineMiles(double lat1, double lon1, double lat2, double lon2)
     {
@@ -233,7 +228,7 @@ public static class RouteSummarySheetBuilder
     {
         if (RouteSession.IsKnown(route.Session))
         {
-            return route.Session;
+            return ClerkSessionLabel(route.Session);
         }
 
         if (timeSlot == RouteTimeSlot.PM)
@@ -246,42 +241,160 @@ public static class RouteSummarySheetBuilder
             return RouteSession.AM;
         }
 
-        return RouteSession.Infer(route);
+        return ClerkSessionLabel(RouteSession.Infer(route));
     }
 
-    private static string MatchStudentStop(Student student, IReadOnlyList<RouteStop> stops)
+    internal static string ClerkSessionLabel(string session) =>
+        string.Equals(session, RouteSession.SpecialNeeds, StringComparison.OrdinalIgnoreCase)
+            ? "Special Needs"
+            : session;
+
+    private static string DisplayStopName(RouteStop stop, IReadOnlyList<Student> riders)
     {
+        var names = riders
+            .Select(s => s.StudentName?.Trim())
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (names.Count > 0)
+        {
+            return string.Join(", ", names);
+        }
+
+        var stored = stop.StopName?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(stored) || IsGenericHomeStopName(stored))
+        {
+            return "(unnamed stop)";
+        }
+
+        return stored;
+    }
+
+    internal static bool IsGenericHomeStopName(string name)
+    {
+        var n = name.Trim();
+        return n.Equals("Home", StringComparison.OrdinalIgnoreCase)
+            || n.Equals("StudentHome", StringComparison.OrdinalIgnoreCase)
+            || n.Equals("Student home", StringComparison.OrdinalIgnoreCase)
+            || n.StartsWith("Home pickup", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyList<Student> ResolveRiders(
+        RouteStop stop,
+        IReadOnlyList<Student> roster,
+        HashSet<int> claimed)
+    {
+        if (roster.Count == 0)
+        {
+            return Array.Empty<Student>();
+        }
+
+        var fromNotes = ParseStudentIds(stop.Notes)
+            .Select(id => roster.FirstOrDefault(s => s.StudentId == id))
+            .Where(s => s is not null)
+            .Cast<Student>()
+            .ToList();
+        if (fromNotes.Count > 0)
+        {
+            foreach (var rider in fromNotes)
+            {
+                claimed.Add(rider.StudentId);
+            }
+
+            return fromNotes;
+        }
+
+        var matched = new List<Student>();
+        foreach (var student in roster)
+        {
+            if (claimed.Contains(student.StudentId))
+            {
+                continue;
+            }
+
+            if (!StudentMatchesStop(student, stop))
+            {
+                continue;
+            }
+
+            claimed.Add(student.StudentId);
+            matched.Add(student);
+        }
+
+        return matched;
+    }
+
+    internal static IReadOnlyList<int> ParseStudentIds(string? notes)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return Array.Empty<int>();
+        }
+
+        var match = StudentIdNotes.Match(notes);
+        if (!match.Success)
+        {
+            return Array.Empty<int>();
+        }
+
+        return match.Groups[1].Value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? id : 0)
+            .Where(id => id > 0)
+            .ToList();
+    }
+
+    private static bool StudentMatchesStop(Student student, RouteStop stop)
+    {
+        if (!string.IsNullOrWhiteSpace(student.StudentName)
+            && string.Equals(stop.StopName?.Trim(), student.StudentName.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
         var pickup = student.PickupStop?.Name?.Trim();
-        if (!string.IsNullOrWhiteSpace(pickup))
+        if (!string.IsNullOrWhiteSpace(pickup)
+            && string.Equals(stop.StopName?.Trim(), pickup, StringComparison.OrdinalIgnoreCase))
         {
-            var byPickup = stops.FirstOrDefault(s =>
-                string.Equals(s.StopName, pickup, StringComparison.OrdinalIgnoreCase));
-            if (byPickup is not null)
-            {
-                return byPickup.StopName;
-            }
-
-            return pickup;
+            return true;
         }
 
-        if (!string.IsNullOrWhiteSpace(student.HomeAddress))
+        return AddressesOverlap(stop.StopAddress, student.HomeAddress);
+    }
+
+    private static bool AddressesOverlap(string? stopAddress, string? homeAddress)
+    {
+        var stop = NormalizeAddress(stopAddress);
+        var home = NormalizeAddress(homeAddress);
+        if (stop.Length < 6 || home.Length < 6)
         {
-            var byAddress = stops.FirstOrDefault(s =>
-                !string.IsNullOrWhiteSpace(s.StopAddress)
-                && s.StopAddress.Contains(student.HomeAddress.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (byAddress is not null)
-            {
-                return byAddress.StopName;
-            }
+            return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(student.StudentName))
+        return stop.Contains(home, StringComparison.OrdinalIgnoreCase)
+            || home.Contains(stop, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeAddress(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
         {
-            var byName = stops.FirstOrDefault(s =>
-                string.Equals(s.StopName, student.StudentName.Trim(), StringComparison.OrdinalIgnoreCase));
-            if (byName is not null)
+            return string.Empty;
+        }
+
+        return Regex.Replace(value.Trim(), @"\s+", " ");
+    }
+
+    private static string MatchStudentStop(
+        Student student,
+        IReadOnlyList<RouteStop> stops,
+        IReadOnlyList<IReadOnlyList<Student>> ridersByStop)
+    {
+        for (var i = 0; i < stops.Count; i++)
+        {
+            if (ridersByStop[i].Any(s => s.StudentId == student.StudentId))
             {
-                return byName.StopName;
+                return DisplayStopName(stops[i], ridersByStop[i]);
             }
         }
 

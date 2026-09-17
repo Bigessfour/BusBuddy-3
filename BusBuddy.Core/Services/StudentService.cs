@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using System.Text;
+using System.Globalization;
 using System.Linq; // Added for FirstOrDefault in seeding path resolution
 using BusBuddy.Core.Services.Interfaces;
 
@@ -611,12 +612,18 @@ public class StudentService : IStudentService
             }
 
             row.UpdatedDate = DateTime.UtcNow;
-            var saved = await context.SaveChangesAsync().ConfigureAwait(false);
+            if (LocationCoordinate.IsValidated(latitude, longitude))
+            {
+                await SyncPublishedHomeStopsAsync(context, row, studentId).ConfigureAwait(false);
+            }
+
+            await context.SaveChangesAsync().ConfigureAwait(false);
             Logger.Information(
                 "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
                 studentId,
                 latitude.HasValue && longitude.HasValue);
-            return saved > 0;
+            // Zero rows changed still means the student exists (confirm-without-nudge).
+            return true;
         }
         finally
         {
@@ -625,6 +632,63 @@ public class StudentService : IStudentService
                 await context.DisposeAsync().ConfigureAwait(false);
             }
         }
+    }
+
+    private static async Task SyncPublishedHomeStopsAsync(
+        BusBuddyDbContext context,
+        Student student,
+        int studentId)
+    {
+        var routeIds = new[] { student.AmRouteId, student.PmRouteId }
+            .Where(id => id is > 0)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+        if (routeIds.Count == 0)
+        {
+            return;
+        }
+
+        var stops = await context.RouteStops
+            .AsTracking()
+            .Where(s => routeIds.Contains(s.RouteId))
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        foreach (var stop in stops)
+        {
+            if (!NotesNameStudent(stop.Notes, studentId))
+            {
+                continue;
+            }
+
+            stop.Latitude = student.Latitude;
+            stop.Longitude = student.Longitude;
+            stop.UpdatedDate = DateTime.UtcNow;
+        }
+    }
+
+    internal static bool NotesNameStudent(string? notes, int studentId)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return false;
+        }
+
+        if (notes.Equals($"StudentId={studentId}", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        const string prefix = "StudentIds=";
+        if (!notes.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return notes[prefix.Length..]
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Contains(studentId.ToString(CultureInfo.InvariantCulture));
     }
 
     /// <summary>

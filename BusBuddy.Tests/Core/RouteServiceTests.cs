@@ -381,7 +381,52 @@ namespace BusBuddy.Tests.Core
             Assert.That(result.IsSuccess, Is.True);
             var updated = await ReloadStudentAsync(student.StudentId);
             Assert.That(updated.AMRoute, Is.Null.Or.Empty);
+            Assert.That(updated.AmRouteId, Is.Null);
             Assert.That(updated.PMRoute, Is.EqualTo("Route B"));
+        }
+
+        [Test]
+        public async Task AssignAndRemove_PersistOnStudentRow_AcrossNewDbContext()
+        {
+            var student = new Student
+            {
+                StudentName = "Session Persist",
+                Grade = "2",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0010",
+                Active = true
+            };
+            _dbContext.Students.Add(student);
+            await _dbContext.SaveChangesAsync();
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
+
+            var assigned = await _routeService.AssignStudentToRouteAsync(
+                student.StudentId, route.RouteId, RouteTimeSlot.AM);
+            Assert.That(assigned.IsSuccess, Is.True);
+
+            await using (var nextSession = new BusBuddyDbContext(_dbOptions))
+            {
+                var loaded = await nextSession.Students.AsNoTracking()
+                    .FirstAsync(s => s.StudentId == student.StudentId);
+                Assert.That(StudentRouteAssignment.IsAssignedAny(loaded), Is.True);
+                Assert.That(loaded.AmRouteId, Is.EqualTo(route.RouteId));
+                Assert.That(loaded.AMRoute, Is.EqualTo("Route A"));
+            }
+
+            var removed = await _routeService.RemoveStudentFromRouteAsync(
+                student.StudentId, route.RouteId, RouteTimeSlot.AM);
+            Assert.That(removed.IsSuccess, Is.True);
+
+            await using (var nextSession = new BusBuddyDbContext(_dbOptions))
+            {
+                var loaded = await nextSession.Students.AsNoTracking()
+                    .FirstAsync(s => s.StudentId == student.StudentId);
+                Assert.That(StudentRouteAssignment.IsAssignedAny(loaded), Is.False);
+                Assert.That(StudentRouteAssignment.IsUnassignedAm(loaded), Is.True);
+                Assert.That(loaded.AmRouteId, Is.Null);
+                Assert.That(loaded.AMRoute, Is.Null.Or.Empty);
+            }
         }
 
         [Test]

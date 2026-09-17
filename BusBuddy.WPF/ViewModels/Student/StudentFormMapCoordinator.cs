@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.Views.Student;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using StudentModel = BusBuddy.Core.Models.Student;
@@ -13,9 +15,10 @@ using StudentModel = BusBuddy.Core.Models.Student;
 namespace BusBuddy.WPF.ViewModels.Student;
 
 /// <summary>
-/// Opens the district map for one student: the pickup stop when it has GPS, otherwise the validated
-/// home. specs/students.md allows a pin only for coordinates that came from Address Validation, so a
-/// student with no usable coordinates opens the map without a pin rather than being scattered.
+/// Student-form map: the pin window (not District Map). The form is modal, so
+/// <see cref="MapViewLauncher"/> opens a window the clerk cannot use. Gold = Google
+/// geocode of the street address; blue = clerk pickup. specs/students.md: plot only
+/// after coordinates exist; clerks do not type lat/lng.
 /// </summary>
 public sealed class StudentFormMapCoordinator
 {
@@ -26,72 +29,98 @@ public sealed class StudentFormMapCoordinator
     private readonly ObservableCollection<PickupStop> _availablePickupStops;
     private readonly StudentFormValidationCoordinator _validation;
     private readonly Action<StudentModel>? _coordinatesCaptured;
+    private readonly IStudentService? _studentService;
 
     public StudentFormMapCoordinator(
         Func<StudentModel> student,
         Func<PickupStop?> selectedPickupStop,
         ObservableCollection<PickupStop> availablePickupStops,
         StudentFormValidationCoordinator validation,
-        Action<StudentModel>? coordinatesCaptured = null)
+        Action<StudentModel>? coordinatesCaptured = null,
+        IStudentService? studentService = null)
     {
         _student = student;
         _selectedPickupStop = selectedPickupStop;
         _availablePickupStops = availablePickupStops;
         _validation = validation;
         _coordinatesCaptured = coordinatesCaptured;
+        _studentService = studentService;
     }
 
-    public async Task ViewOnMapAsync()
+    public Task AdjustHomePinAsync() => OpenHomePinAsync();
+
+    public Task ViewOnMapAsync() => OpenHomePinAsync();
+
+    /// <summary>
+    /// Clerk-nudge for a validated (or about-to-be-validated) home. Does not change address text.
+    /// </summary>
+    private async Task OpenHomePinAsync()
     {
         var student = _student();
+        if (string.IsNullOrWhiteSpace(student.HomeAddress) && !student.HasValidatedHomeCoordinates)
+        {
+            _validation.SetGlobalError("Enter and validate the home address, then adjust the pin.");
+            return;
+        }
+
+        _validation.IsValidating = true;
+        _validation.SetStatus("Loading map preview...", Brushes.Blue);
         try
         {
-            Logger.Information("Opening map view for StudentId={StudentId}", student.StudentId);
-
-            var sp = App.ServiceProvider;
-            var pickups = await ResolvePickupCatalogForPlotAsync(sp).ConfigureAwait(true);
-            var pins = StudentPlotLocation.PinsFromStored(student, pickups);
-            if (pins.Count == 0 && string.IsNullOrWhiteSpace(student.HomeAddress))
+            var validated = await TryGeocodeAddressAsync(student).ConfigureAwait(true);
+            var catalog = ResolveSelectedCatalogStop(student);
+            var pinVm = new StudentHomePinViewModel(student, validated, catalog);
+            var window = new StudentHomePinWindow(pinVm);
+            DialogOwner.Assign(window);
+            if (window.ShowDialog() != true || !pinVm.HasMapPick)
             {
-                _validation.SetGlobalError("Please enter a home address before viewing on map.");
+                _validation.SetStatus("Map closed — pickup pin unchanged.", Brushes.Gray);
                 return;
             }
 
-            _validation.IsValidating = true;
-            _validation.SetStatus("Loading map preview...", Brushes.Blue);
+            student.Latitude = (decimal)pinVm.LatitudeValue;
+            student.Longitude = (decimal)pinVm.LongitudeValue;
+            _coordinatesCaptured?.Invoke(student);
 
-            var mapsGeo = sp?.GetService<IMapsGeoService>() ?? sp?.GetService<IGeocodingService>();
-            if (pins.Count == 0)
+            if (student.StudentId > 0)
             {
-                if (mapsGeo is null)
+                var service = _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
+                if (service is null)
                 {
-                    ReportMappingUnconfigured();
-                    MapViewLauncher.Show(Application.Current?.MainWindow as Window, _ => { });
+                    _validation.SetStatus(
+                        "Pickup pin is on the form only. Save the student to persist it.",
+                        Brushes.Orange);
                     return;
                 }
 
-                pins = await GeocodeHomePinAsync(student, mapsGeo).ConfigureAwait(true);
-                if (pins.Count > 0)
+                var persisted = await service.UpdateHomeGeocodeAsync(
+                    student.StudentId,
+                    student.Latitude,
+                    student.Longitude,
+                    student.PlaceId).ConfigureAwait(true);
+                if (!persisted)
                 {
-                    // The pin now belongs to the address text as typed; the save path uses this to
-                    // drop coordinates if the clerk edits the address afterwards without re-validating.
-                    _coordinatesCaptured?.Invoke(student);
+                    _validation.SetGlobalError(
+                        "Could not persist the pickup pin. The form still has the new point — save the student.");
+                    _validation.SetStatus("Pickup pin not saved to the database.", Brushes.Orange);
+                    return;
                 }
             }
 
-            ShowMap(student, pins);
-            ReportPlotOutcome(pins, mapsGeo);
-
+            _validation.SetStatus(
+                "Pickup pin saved. Street address is unchanged. Refresh Drive Path if this home is already a published stop.",
+                Brushes.Green);
             Logger.Information(
-                "Map view opened for StudentId={StudentId} Pins={PinCount}",
+                "Clerk adjusted home pin StudentId={StudentId} HasCoords={HasCoords} HadValidatedPin={HadValidated}",
                 student.StudentId,
-                pins.Count);
+                student.HasValidatedHomeCoordinates,
+                validated.HasValue);
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error opening map view");
+            Logger.Error(ex, "Error opening student home pin map");
             _validation.SetGlobalError($"Map view failed: {ex.Message}");
-            _validation.SetStatus("❌ Map failed to load", Brushes.Red);
+            _validation.SetStatus("Map failed to load", Brushes.Red);
         }
         finally
         {
@@ -99,86 +128,40 @@ public sealed class StudentFormMapCoordinator
         }
     }
 
-    /// <summary>
-    /// The stop the student actually boards at: the in-flight selection, the already-loaded catalog
-    /// entry, or a direct lookup. Null means "plot the home instead".
-    /// </summary>
-    private async Task<IReadOnlyDictionary<int, PickupStop>?> ResolvePickupCatalogForPlotAsync(IServiceProvider? sp)
+    private PickupStop? ResolveSelectedCatalogStop(StudentModel student)
     {
         if (_selectedPickupStop() is { } selected)
         {
-            return StudentPlotLocation.Index([selected]);
+            return selected;
         }
 
-        if (_student().PickupStopId is not int stopId)
+        if (student.PickupStopId is not int stopId)
         {
             return null;
         }
 
-        var listed = _availablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
-        if (listed is not null)
-        {
-            return StudentPlotLocation.Index([listed]);
-        }
-
-        var stopService = sp?.GetService<IPickupStopService>();
-        var stop = stopService is not null
-            ? await stopService.GetByIdAsync(stopId).ConfigureAwait(true)
-            : null;
-        return stop is not null ? StudentPlotLocation.Index([stop]) : null;
+        return _availablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
     }
 
-    private static async Task<IReadOnlyList<StudentPlotPoint>> GeocodeHomePinAsync(
-        StudentModel student,
-        IGeocodingService mapsGeo)
+    private async Task<(double Latitude, double Longitude)?> TryGeocodeAddressAsync(StudentModel student)
     {
+        if (string.IsNullOrWhiteSpace(student.HomeAddress))
+        {
+            return null;
+        }
+
+        var mapsGeo = App.ServiceProvider?.GetService<IMapsGeoService>()
+            ?? App.ServiceProvider?.GetService<IGeocodingService>();
+        if (mapsGeo is null)
+        {
+            return student.HasValidatedHomeCoordinates
+                ? ((double)student.Latitude!, (double)student.Longitude!)
+                : null;
+        }
+
         var coords = await mapsGeo
             .GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip)
             .ConfigureAwait(true);
-        if (!coords.HasValue)
-        {
-            return [];
-        }
-
-        student.Latitude = (decimal)coords.Value.latitude;
-        student.Longitude = (decimal)coords.Value.longitude;
-        return [new StudentPlotPoint(coords.Value.latitude, coords.Value.longitude, AtPickup: false, PickupName: null)];
+        return coords;
     }
-
-    private static void ShowMap(StudentModel student, IReadOnlyList<StudentPlotPoint> pins)
-    {
-        MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
-        {
-            MapStudentPlot.Draw(
-                (lat, lon, names, label, ids) => vm.PlotStop(lat, lon, names, label, studentIds: ids),
-                student,
-                pins);
-            if (pins.Count > 0)
-            {
-                vm.CenterOnMarkers();
-            }
-        });
-    }
-
-    private void ReportPlotOutcome(IReadOnlyList<StudentPlotPoint> pins, IGeocodingService? mapsGeo)
-    {
-        if (pins.Count > 0)
-        {
-            _validation.SetStatus(
-                pins[0].AtPickup ? $"✓ Location plotted at {pins[0].PickupName}" : "✓ Location plotted on map",
-                Brushes.Green);
-            return;
-        }
-
-        if (mapsGeo is null || (mapsGeo is IMapsGeoService maps && !maps.IsConfigured))
-        {
-            ReportMappingUnconfigured();
-            return;
-        }
-
-        _validation.SetStatus("Address could not be geocoded — map opened without a pin.", Brushes.Orange);
-    }
-
-    private void ReportMappingUnconfigured() =>
-        _validation.SetStatus("Mapping is not configured (missing GOOGLE_MAPS_API_KEY).", Brushes.Orange);
 }

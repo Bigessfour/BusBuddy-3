@@ -413,6 +413,23 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task RequestMapSnapshot_AsksTheBoundViewToCapture()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        var raised = 0;
+        vm.CaptureSnapshotRequested += (_, _) =>
+        {
+            raised++;
+            vm.LatestMapSnapshotPng = new byte[] { 0x89, 0x50 };
+        };
+
+        vm.RequestMapSnapshot();
+
+        Assert.That(raised, Is.EqualTo(1));
+        Assert.That(vm.LatestMapSnapshotPng, Is.EqualTo(new byte[] { 0x89, 0x50 }));
+    }
+
+    [Test]
     public async Task RouteStopOnExistingPin_TagsThatPinInsteadOfStackingASecondCaption()
     {
         // Screenshot 2026-09-15: "Lamar Stop 7 chool" = school caption + WP caption on one spot.

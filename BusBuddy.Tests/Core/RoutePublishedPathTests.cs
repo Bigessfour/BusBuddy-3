@@ -190,6 +190,10 @@ public class RoutePublishedPathTests
         Assert.That(await verify.RouteStops.CountAsync(s => s.RouteId == routeId), Is.EqualTo(2));
         Assert.That(await verify.Students.CountAsync(), Is.EqualTo(1));
         Assert.That(await verify.RouteRiderExceptions.CountAsync(), Is.EqualTo(1));
+
+        var ids = await service.GetRiderExceptionStudentIdsAsync(routeId, DateTime.Today);
+        Assert.That(ids.IsSuccess, Is.True, ids.Error);
+        Assert.That(ids.Value, Does.Contain(studentId));
     }
 
     [Test]

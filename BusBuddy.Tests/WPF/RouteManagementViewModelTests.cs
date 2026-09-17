@@ -107,6 +107,30 @@ public class RouteManagementViewModelTests
     }
 
     [Test]
+    public async Task RefreshDrivePath_DisabledWhenSelectedRouteHasFewerThanTwoStops()
+    {
+        var routes = new List<Route>
+        {
+            new() { RouteId = 16, RouteName = "Copy of Route 174632", IsActive = true, StopCount = 0 }
+        };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(routes));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
+
+        var vm = new RouteManagementViewModel(new Mock<IBusBuddyDbContextFactory>().Object, routeService.Object, null, null);
+        await vm.InitializeAsync();
+        vm.SelectedRoute = vm.Routes[0];
+
+        vm.RefreshDrivePathCommand.CanExecute(null).Should().BeFalse();
+        vm.PrintScheduleCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Test]
     public async Task AssignVehicleCommand_UsesSelectedBusId()
     {
         var route = new Route { RouteId = 1, RouteName = "Alpha", IsActive = true, BusNumber = "BUS-5" };

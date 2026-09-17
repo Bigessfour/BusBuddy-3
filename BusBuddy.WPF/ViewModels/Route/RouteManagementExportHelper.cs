@@ -68,12 +68,17 @@ internal static class RouteManagementExportHelper
             FileName = path,
             UseShellExecute = true
         };
-        if (print)
+        // Verb=print throws Win32Exception on many Windows setups after the PDF is already written
+        // (guest 2026-09-17: "Failed printing schedule" after a successful write).
+        _ = print;
+        try
         {
-            psi.Verb = "print";
+            Process.Start(psi);
         }
-
-        Process.Start(psi);
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Could not open {Path}", path);
+        }
     }
 
     public static async Task<string> WriteSchedulePdfAsync(

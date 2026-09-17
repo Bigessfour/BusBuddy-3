@@ -22,7 +22,7 @@
 | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Clerk hops 1–6          | **Met** — DbPrep on Docker Postgres + PR #64                                                                 |
 | Windows VM proof        | **Met (hybrid)** — UTM testhost + live District Map smoke 2026-09-10; optional ribbon hops 1–6 UI still open |
-| District Map / Settings | **In progress** — Google-only basemap (no OSM); Bing placeholder until UrlTemplate; VM re-smoke still open   |
+| District Map / Settings | **In progress** — Debug relaunch 2026-09-17 11:20 passed marker-host gate; leftover Export toast + Move pin  |
 | a11y Phase 2 / wishlist | Out of scope                                                                                                 |
 
 **Verdict:** Ship-ready. Remaining open boxes are optional ribbon UI clicks, schema hygiene, or decide-later — not blockers.
@@ -37,17 +37,22 @@ Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
 
 Do in this order so parked work is not forgotten and is not started out of sequence.
 
-| Order | Item                                                           | Why this slot                                                                                                                                                     |
-| ----- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | District Map VM re-smoke, including **Move to selected route** | Ship proof for the override we just wired. Confirm Zoom In/Out, Show Schools, Plot Pickup Stops, Export Route, legend.                                            |
-| 1b    | Print hop-1 route sheet                                        | Confirm times 07:00→last stop (not 13:01), `#` 1..n, miles `—` without GPS, generate-stops note when roster empty.                                                |
-| 2     | `AMRoute` / `PMRoute` name-string drop                         | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** First slice later: one already-keyed read path, then stop.    |
-| —     | `IRouteRepository`                                             | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                           |
-| —     | `StudentsBulkRouteCoordinator`                                 | Parked. Uses `SetSlot` + `UpdateStudentAsync`. Eventually call `IRouteService.AssignStudentToRouteAsync` so a shared name cannot null a known key. Not this pass. |
+| Order | Item                                                                                  | Why this slot                                                                                                                                              |
+| ----- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | AM Special Needs **Schedule** smoke                                                   | Ribbon bind + published clocks are on this branch. Live Schedule window / re-print after caption still open.                                               |
+| 1b    | District Map leftover: **Export Route** toast (no route) + **Move to selected route** | Marker-host Debug relaunch passed 2026-09-17 11:20. Remaining clerk clicks only.                                                                           |
+| 2     | `AMRoute` / `PMRoute` name-string drop                                                | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.**                                                        |
+| —     | `IRouteRepository`                                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                    |
+| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                           | Parked. Do not “finish” `RouteAssignments`. Later wrap onto `AssignStudentToRouteAsync` or leave. Not this pass.                                           |
+| —     | Generate also assign roster keys                                                      | Decide **after** Special Needs smoke. Generate-stops-only (`StudentIds=` notes, empty `AmRouteId`/`PmRouteId`) is a clerk-path gap, not an unbound button. |
 
-- [ ] **Route sheet print:** Assignment ribbon Schedule / Print Map / Report bind `ViewRouteTimetableCommand` / `PrintRouteSheetCommand` / `ExportRouteSheetCommand` → `RouteSummaryPdfRenderer`. Print AM Special Needs (Bus 5): 14 stops in clock order, 9 assigned students, not 1/50/51 + 13:01. Testhost: `RouteAssignmentViewTests` PdfGrid command bindings + `RouteSummarySheetBuilderTests`.
+- [ ] **Route schedule smoke (AM Special Needs):** Assignment **Schedule** opens `RouteScheduleWindow` (published `RouteStop` clocks, not `DriverScheduleView`). Title from `DisplayNameFor`, clocks `ScheduledArrival`/`ScheduledDeparture` (not `EstimatedDuration` / UTC `Estimated*`). Re-time confirms before overwrite; Print = `RouteSummaryPdfRenderer` PdfGrid. Report = `ExportRouteSheetCommand`; Print Map = `PrintRouteSheetCommand` (map-embedded sheet). Assignment **Drive Path** + Route Management Drive Path skip empty copies (guest 2026-09-17: `Copy of Route 174632` then SN Bus 5 refreshed). Route Management **Print Schedule** uses PdfGrid preview (no `print` verb). Stops grid binds `PublishedArrivalText`. Testhost: `RouteScheduleViewModelTests` + `RouteAssignmentViewTests` + `RouteManagementViewModelTests`. Live: quit Debug, rebuild this branch, Bus 5 AM — 14 stops in clock order.
 
-- [ ] **District Map VM re-smoke:** quit + relaunch Debug after the 2026-09-17 marker-host gate (`MapMarkerHost`; no XAML `MarkerTemplateSelector` / pick-map `Markers=`). Guest `runtime-errors.log` was truncated 2026-09-17. Expect **0** `do not share a common ancestor` lines, clean captions (no CustomDataSymbol binding warnings), `WithSource` ≫ 0, `MapsOptionsBound … QuotaSource=none` (no createSession quota retry). Also confirm the 2026-09-15 toolbar fixes: Zoom In/Out stay visible after zooming, Show Schools leaves only black school pins, Plot Pickup Stops draws gold `Stop n` pins, Export Route toasts when no route is selected, legend card replaces Active Buses; **Move to selected route** moves a plotted student pin onto the combo route. Testhost already green: MapView + UiRuntimeLogging + MapViewModel **68 passed** on UTM 2026-09-17.
+- [ ] **Schedule sheet formatting (re-print after rebuild):** Helvetica Standard was collapsing spaces; renderer now uses Arial TTF. Stop column prefers roster / `StudentId=` names over `Home pickup` place kinds; Riders is matched count. Session label is `Special Needs`. Live: quit Debug, rebuild, Print Bus 5 AM again.
+
+- [ ] **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route** on a plotted student pin. Testhost `MapToolbarSmokeTests` (3 passed, 2026-09-17) covers both commands. Live proof still needs `Scripts\run-map-diag-smoke.cmd` on the VM desktop + `Scripts/score-map-logs.ps1`. Do not SSH `Start-Process`.
+
+- [ ] **Student form map (live):** Edit student → **View on Map** / **Adjust pin** now opens the home-pin window (not District Map behind the modal). Gold = validated address, blue = pickup. Confirm after rebuild on the VM.
 
 Optional:
 
@@ -102,7 +107,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [x] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0` (see Done log 2026-09-10)
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
-- [x] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes (see Done log)
+- [x] Windows VM env: `GOOGLE_MAPS_API_KEY` set; `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` unset (`QuotaSource=none`) (see Done log 2026-09-17)
 
 ---
 
@@ -114,6 +119,52 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-09-17 — Live District Map harvest (PID 11296, 12:00 guest)
+
+- Desktop `BusBuddy.WPF.exe` Debug + header Map. `runtime-errors.log` not recreated (0 unhandled). Session-scoped `score-map-logs.ps1 -Since "2026-09-17 12:00:00"` **PASS**.
+- `MapsOptionsBound … QuotaSource=none` at 12:00:17; `MapTileBootstrap Host=DistrictMap Outcome=ok`; `WithSource=34` `Google=true`. No ancestor / CustomDataSymbol / TransformToVisual / createSession 403 after 12:00.
+- Serilog lives in `BusBuddy.WPF\bin\Debug\logs\` (not `net9.0-windows\logs`). Extract: `artifacts/map-smoke-20260917-1200/map-smoke-extract.txt`.
+- This launch did **not** log Show Schools / Plot Pickup / Export / Move — testhost already covers those. Optional eye check: zoom buttons + pin colors still yours.
+
+### 2026-09-17 — Map testhost poke (A+B; live C waiting on desktop)
+
+- Guest testhost filter `MapViewTests|MapViewModelTests|UiRuntimeLogging`: **69 passed**, 0 failed (was 68; fixture grew).
+- Added `MapToolbarSmokeTests` (no SfMap session): Zoom In/Out clamp, Show Schools, Refresh+Home overlay, Plot Pickup (gold/catalog + empty toast), Export no-route status, `MapRouteExporter.ExportAsync` write, ApplyClerkOverride reason `District Map`, PrintRequested + snapshot hook, zoom `CanExecute` after zoom. XAML lock: no `MarkerTemplateSelector=`, no pick-map `Markers=`, `MapMarkerHost.TryAssignAndLayout` present.
+- Guest: **3 passed**. `[Apartment(STA)]` omitted — NUnit STA + `ResetView` fire-and-forget crashes `SingleThreadedTestSynchronizationContext`.
+- Log gate script: `Scripts/score-map-logs.ps1` (exit 1 on ancestor / CustomDataSymbol bind / unhandled TransformToVisual / missing `QuotaSource=none` or `WithSource`). Canonical file: `bin\Debug\net9.0-windows\logs\runtime-errors.log` (`App.xaml.cs` BaseDirectory). Rotated empty 0-byte file at 11:57 guest. Preconditions: API key set, billing project unset, `BUSBUDDY_CONNECTION` set, `BUSBUDDY_MAP_DIAGNOSTICS` user=`0` until desktop smoke.
+- **Human step still required:** double-click `Scripts\run-map-diag-smoke.cmd`, open District Map ~15s, then Cursor harvest + score.
+
+### 2026-09-17 — Strict /code-review remediations (maps leftover still desktop)
+
+- **Blocker fixed:** `Commands.cs` was **1155** lines. Drive path / Time / Schedule / Report wrappers moved to `RouteAssignmentViewModel.Schedule.cs` (**226**). `Commands.cs` is **927**.
+- **Blocker fixed:** Print Map called `TryCaptureMapSnapshot` via reflection — **that method did not exist**, so `MapEmbedded` stayed false. Snapshot is now `MapViewModel.RequestMapSnapshot` → `CaptureSnapshotRequested` → `MapView.CaptureMapSnapshot`. Capture no longer `Measure`/`Arrange` with infinity (that would wreck the live SfMap). Guest testhost `RequestMapSnapshot_AsksTheBoundViewToCapture` **passed**.
+- **Race fixed:** selecting a route started `UpdateMapForRouteAsync`, which overwrote `Moved 1 rider` with “no waypoints”. Clerk override now `BeginDraw()` and the trail write checks `IsCurrent` before `StatusMessage`. `ApplyClerkOverride_MovesSelectedStudentOntoSelectedPmRoute` **passed** (was failing on guest immediately before).
+- **Still not live-proved:** Export toast (empty combo), pin+Move, Schedule window, Print Map with snapshot. UIA missed the Map toolbar (`GetClickablePoint` failed → click at 958,152). Relaunch pid 4732 wrote no new Serilog under `bin\Debug\...\logs` or `C:\Windows\Logs` after 11:43. Testhost covers Export-without-selection + Move. Need a desktop pass with Start In = exe dir.
+
+### 2026-09-17 — Maps /code-review + leftover proofs
+
+- **Review (uncommitted sheet/map caption):** no spec blockers (Route≠Trip, no live GPS, no `MappingService` geo, Optimize does not rewrite clocks). **Fixed:** Print Map caption `y` now `max(metaBottom, map+caption)` so Stops cannot cover `Published path (not live tracking)`. **Not changed:** sheet `#` stays **clock order** (plan P2 / not `1/50/51`), not `StopOrder`. Nits parked: assignment Time has no confirm; not-riding badge is window-only; Haversine per-leg miles.
+- **Leftover clicks:** still VM-desktop. Testhost **3 passed** (`ExportRouteDataCommand_WithoutSelection`, `ApplyClerkOverride_MovesSelectedStudent`, caption). Live Print Map (relaunch 11:35): `Route_AM Special Needs Bus 5_AM_20260917_113529.pdf` PdfGrid, `MapEmbedded=false` (no snapshot yet). Export toast / pin+Move / Schedule window not logged this pass (UIA hit the “Student at stop” label, not a home pin).
+- **Relaunch note:** `schtasks` without Start In writes Serilog under `C:\Windows\logs\` — pull that file, or launch from `bin\Debug\net9.0-windows`.
+
+### 2026-09-17 — Prod-ready maps P0–P2 (tiles + path + clocks + sheet caption)
+
+- **P0 env:** User `GOOGLE_MAPS_API_KEY` present; User/Machine `GCP_BILLING_PROJECT` and `GOOGLE_CLOUD_PROJECT` unset. Startup `MapsOptionsBound … QuotaSource=none`.
+- **P0 logs (Debug PID 12384, 11:20+):** `runtime-errors.log` 0 bytes; **0** ancestor lines after 10:00; MapView `BindingErrors=0`; no CustomDataSymbol warnings. `LogTileHealth` `WithSource=34` `Google=true`.
+- **P0 three SfMaps:** `MapTileBootstrap Host=DistrictMap|SchoolPick|StopPick Outcome=ok` (11:22:54 / 11:25:18 / 11:26:50). No OSM fail-open.
+- **P0 toolbar (interactive-session UIA):** Zoom In 14 / Out 13; Home `Reset view requested`; Refresh restored overlay and refreshed **AM Special Needs Bus 5** (`Drive path computed Stops=14 DistanceMeters=42069 Duration=3580s`); Show Schools; Plot Pickup Stops. Export toast + Move-to-route on a selected pin remain leftover clicks.
+- **P0 probe (guest):** Address Validation / Routes / Places / matrix OK. Route Optimization WARN — API not authorized for this key (fail-open).
+- **P1 path/clocks:** RouteId 4 `Distance=26.14` `EstimatedDuration=60`. 14 stops validated (no 0,0). `ScheduledArrival` 07:30…07:43 increasing (not `13:01`, not identical). Per-leg Routes field mask **not** added. School/stop forms opened incomplete and cancelled (no unvalidated pin save).
+- **P2 caption:** `RouteSummaryPdfRenderer.PublishedPathCaption` = `Published path (not live tracking)` under embedded snapshot. Guest testhost `GenerateRouteSummaryReport_EmbeddedMap_CaptionsPublishedPathNotLive` **passed**. 9 students keyed on `AmRouteId=4`. Live Schedule window / re-print after rebuild still open in Now.
+
+### 2026-09-17 — District Map Debug relaunch (`MapMarkerHost` in memory)
+
+- **Launch path:** [`.vscode/launch.json`](../.vscode/launch.json) `.NET Core Launch (BusBuddy WPF)` (and Staging) now start `bin/Debug/net9.0-windows/BusBuddy.WPF.exe`. The green play button is Run, not a Debug/Release picker.
+- **Relaunch:** quit any old window; guest Debug rebuild 11:20:02; interactive-session start PID 12384 at 11:20:47 (`BUSBUDDY_DEBUG=1`). Header **Map** at 11:22:54 opened `MapView` (`Opening district map window`, `MapTileBootstrap Host=DistrictMap Outcome=ok`).
+- **Log gate:** `MapsOptionsBound … QuotaSource=none`; `WithSource=34`; **0** `do not share a common ancestor` and **0** CustomDataSymbol warnings after 11:20. `runtime-errors.log` stayed empty (0 bytes). MapView idle inspect `BindingErrors=0`. Zoom In/Out logged after zoom (buttons still there); Show Schools + Plot Pickup Stops logged; UIA **Pin Legend** present.
+- **Evidence:** [`artifacts/utm-runtime-logs-20260917/debug/`](../artifacts/utm-runtime-logs-20260917/debug/) (`application20260917.log`, `ui-diagnostics-20260917.log`, `district-map-relaunch-trace.txt`).
+- **Left open:** Export Route toast with no route selected; Move to selected route on a student pin (later UIA clicks opened SchoolDestinationForm instead).
 
 ### 2026-09-16 — Route Management path/print + hop 4/5 testhost
 

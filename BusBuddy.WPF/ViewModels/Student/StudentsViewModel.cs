@@ -212,6 +212,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                     // Ensure selection-dependent commands update their CanExecute state
                     NotifySelectionDependentCommands();
                     Logger.Debug("Selection-dependent commands invalidated (CanExecute re-evaluated)");
+                    if (_selectedStudent is not null)
+                    {
+                        StatusMessage = _selectedStudent.StudentName;
+                    }
                 }
             }
         }
@@ -260,6 +264,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Logger.Debug("QuickSearchText changed: {Text}", _quickSearchText);
                     ApplyQuickFilter();
                     OnPropertyChanged(nameof(FilterStatusText));
+                    NotifyRosterCounts();
                 }
             }
         }
@@ -278,6 +283,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Logger.Debug("ActiveFilter changed: {Filter}", _activeFilter);
                     ApplyQuickFilter();
                     OnPropertyChanged(nameof(FilterStatusText));
+                    NotifyRosterCounts();
                 }
             }
         }
@@ -531,8 +537,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             StudentsView?.Refresh();
             StatusMessage = archiving ? "Student archived" : "Student restored";
-            OnPropertyChanged(nameof(TotalStudents));
-            OnPropertyChanged(nameof(ActiveStudents));
+            NotifyRosterCounts();
             OnPropertyChanged(nameof(ArchiveStudentButtonLabel));
             NotifySelectionDependentCommands();
         }
@@ -564,8 +569,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             SelectedStudent = null;
             StudentsView?.Refresh();
             StatusMessage = "Student deleted";
-            OnPropertyChanged(nameof(TotalStudents));
-            OnPropertyChanged(nameof(ActiveStudents));
+            NotifyRosterCounts();
         }
 
         /// <summary>
@@ -692,8 +696,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                     SelectedStudent = Students.FirstOrDefault();
                     StudentsView?.Refresh();
-                    OnPropertyChanged(nameof(TotalStudents));
-                    OnPropertyChanged(nameof(ActiveStudents));
+                    NotifyRosterCounts();
 
                     Logger.Information("Loaded {Count} incomplete student records", incomplete.Count);
                     StatusMessage = incomplete.Count == 0
@@ -745,8 +748,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                         : affected == 0
                             ? "No students updated"
                             : $"Assigned {routeName} to {affected} student(s)";
-                    OnPropertyChanged(nameof(StudentsWithRoutes));
-                    OnPropertyChanged(nameof(UnassignedStudents));
+                    NotifyRosterCounts();
                 }
             }
             catch (Exception ex)
@@ -774,8 +776,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 var result = await _bulkRoute.OptimizeUnassignedAsync();
                 await LoadStudentsAsync();
                 StatusMessage = result.Status;
-                OnPropertyChanged(nameof(StudentsWithRoutes));
-                OnPropertyChanged(nameof(UnassignedStudents));
+                NotifyRosterCounts();
                 Logger.Information(
                     "AI route optimization completed Assigned={Assigned} Remaining={Remaining} MockAi={Mock}",
                     result.AssignedCount, result.RemainingUnassigned, result.UsedMockAi);
@@ -979,8 +980,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                         SelectedStudent = Students[0];
                     }
 
-                    OnPropertyChanged(nameof(TotalStudents));
-                    OnPropertyChanged(nameof(ActiveStudents));
+                    NotifyRosterCounts();
                 }
                 catch (Exception ex)
                 {
@@ -1046,6 +1046,19 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         #endregion
+
+        /// <summary>
+        /// Re-push roster totals so footer bindings refresh. <see cref="StudentsWithRoutes"/>
+        /// and <see cref="UnassignedStudents"/> are computed; WPF keeps the last notified value
+        /// unless these names are raised after load/delete/archive/import/filter.
+        /// </summary>
+        private void NotifyRosterCounts()
+        {
+            OnPropertyChanged(nameof(TotalStudents));
+            OnPropertyChanged(nameof(ActiveStudents));
+            OnPropertyChanged(nameof(StudentsWithRoutes));
+            OnPropertyChanged(nameof(UnassignedStudents));
+        }
 
         #region INotifyPropertyChanged Implementation
 

@@ -137,18 +137,18 @@
                                                   VerticalAlignment="Center"
                                                   AutomationProperties.Name="Quick Search"
                                                   AutomationProperties.HelpText="Type to search students by name, ID, or route"/>
-                        <syncfusion:ComboBoxAdv Name="ActiveFilterCombo" Width="130"
-                                                  ItemsSource="{Binding AvailableActiveFilters}"
-                                                  SelectedItem="{Binding ActiveFilter, Mode=TwoWay}"
-                                                  VerticalAlignment="Center"
-                                                  AutomationProperties.Name="Active Status Filter"
-                                                  AutomationProperties.HelpText="Show active students, archived students, or all"/>
                     </StackPanel>
                 </DockPanel>
                 <DockPanel LastChildFill="True">
                     <TextBlock DockPanel.Dock="Left" Text="Roster"
                                Style="{StaticResource StudentsToolbarCaption}"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
+                        <syncfusion:ComboBoxAdv Name="ActiveFilterCombo" Width="130" Margin="0,0,8,0"
+                                                  ItemsSource="{Binding AvailableActiveFilters}"
+                                                  SelectedItem="{Binding ActiveFilter, Mode=TwoWay}"
+                                                  VerticalAlignment="Center"
+                                                  AutomationProperties.Name="Active Status Filter"
+                                                  AutomationProperties.HelpText="Show active students, archived students, or all"/>
                         <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                                 Command="{Binding RefreshCommand}"
                                 Style="{StaticResource StudentsToolbarButton}"
@@ -215,8 +215,7 @@
                    ItemsSource="{Binding StudentsView}"
                                SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
                                AutoGenerateColumns="False"
-                               AllowEditing="True"
-                               EditTrigger="OnTap"
+                               AllowEditing="False"
                                AllowSorting="True"
                                AllowFiltering="True"
                                AllowGrouping="True"
@@ -229,7 +228,6 @@
                                ColumnSizer="Star"
                                AutomationProperties.Name="Students Data Grid"
                                AutomationProperties.HelpText="Grid displaying all students with their route assignments and contact information"
-                               AddNewRowPosition="Top"
                                ShowBusyIndicator="True"
                                NavigationMode="Cell"
                                AllowResizingColumns="True">
@@ -238,7 +236,7 @@
                 <syncfusion:GridTableSummaryRow ShowSummaryInRow="False">
                     <syncfusion:GridTableSummaryRow.SummaryColumns>
                         <syncfusion:GridSummaryColumn Name="TotalStudents"
-                                                    MappingName="StudentNumber"
+                                                    MappingName="StudentId"
                                                     SummaryType="CountAggregate"
                                                     Format="'Total: {Count:0}'" />
                         <syncfusion:GridSummaryColumn Name="ActiveCount"
@@ -253,7 +251,7 @@
                 <syncfusion:GridSummaryRow ShowSummaryInRow="True">
                     <syncfusion:GridSummaryRow.SummaryColumns>
                         <syncfusion:GridSummaryColumn Name="GroupCount"
-                                                    MappingName="StudentNumber"
+                                                    MappingName="StudentId"
                                                     SummaryType="CountAggregate"
                                                     Format="'{Count} students in this group'" />
                     </syncfusion:GridSummaryRow.SummaryColumns>
@@ -262,9 +260,9 @@
 
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridTextColumn HeaderText="Student ID"
-                                         MappingName="StudentNumber"
+                                         MappingName="StudentId"
                                          Width="100"
-                                         AllowEditing="True"/>
+                                         AllowEditing="False"/>
                 <syncfusion:GridTextColumn HeaderText="Name"
                                          MappingName="StudentName"
                                          Width="180"
@@ -290,7 +288,8 @@
                 <syncfusion:GridTextColumn HeaderText="School (recorded)"
                                          MappingName="School"
                                          Width="150"
-                                         AllowEditing="False"/>
+                                         AllowEditing="False"
+                                         IsHidden="True"/>
                 <syncfusion:GridTextColumn HeaderText="Address"
                                          MappingName="HomeAddress"
                                          Width="200"

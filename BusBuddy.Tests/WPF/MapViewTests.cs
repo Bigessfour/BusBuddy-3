@@ -282,7 +282,14 @@ public class MapViewTests
         var form = XamlViewFile.ReadFolder("ViewModels/Student");
         Assert.That(form, Does.Contain("StudentPlotLocation.PinsFromStored"));
         Assert.That(form, Does.Contain("MapStudentPlot.Draw"));
-        Assert.That(form, Does.Contain("ResolvePickupCatalogForPlotAsync"));
+        var mapCoordinator = XamlViewFile.Read("ViewModels/Student/StudentFormMapCoordinator.cs");
+        Assert.That(mapCoordinator, Does.Contain("OpenHomePinAsync"));
+        Assert.That(mapCoordinator, Does.Contain("AdjustHomePinAsync"));
+        Assert.That(mapCoordinator, Does.Contain("ViewOnMapAsync() => OpenHomePinAsync"));
+        Assert.That(mapCoordinator, Does.Not.Contain("MapViewLauncher.Show"));
+        var studentForm = XamlViewFile.Read("Views/Student/StudentForm.xaml");
+        Assert.That(studentForm, Does.Contain("AdjustHomePinCommand"));
+        Assert.That(studentForm, Does.Contain("Adjust home pin on map"));
     }
 
     [Test]
@@ -297,6 +304,14 @@ public class MapViewTests
         Assert.That(stop, Does.Contain("utils:GoogleMapTilesImageryLayer"));
         Assert.That(stop, Does.Contain("LayerType=\"Bing\""));
         Assert.That(stop, Does.Not.Contain("LayerType=\"OSM\""));
+
+        var home = XamlViewFile.Read("Views/Student/StudentHomePinWindow.xaml");
+        Assert.That(home, Does.Contain("utils:GoogleMapTilesImageryLayer"));
+        Assert.That(home, Does.Contain("LayerType=\"Bing\""));
+        Assert.That(home, Does.Not.Contain("LayerType=\"OSM\""));
+        Assert.That(home, Does.Contain("utils:DistrictSfMap"));
+        Assert.That(home, Does.Not.Contain("maps:SfMap"));
+        Assert.That(home, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
 
         Assert.That(school, Does.Contain("utils:DistrictSfMap"));
         Assert.That(stop, Does.Contain("utils:DistrictSfMap"));
@@ -323,6 +338,11 @@ public class MapViewTests
         Assert.That(stop, Does.Contain("StopPickGoogleLogo"));
         Assert.That(schoolCs, Does.Contain("RefreshGoogleAttributionAsync"));
         Assert.That(stopCs, Does.Contain("RefreshGoogleAttributionAsync"));
+
+        var homeCs = XamlViewFile.Read("Views/Student/StudentHomePinWindow.xaml.cs");
+        Assert.That(homeCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
+        Assert.That(homeCs, Does.Contain("host: \"HomePick\""));
+        Assert.That(homeCs, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
     }
 
     [Test]

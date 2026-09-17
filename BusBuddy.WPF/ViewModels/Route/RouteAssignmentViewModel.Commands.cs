@@ -12,13 +12,8 @@ using Serilog;
 using Microsoft.Extensions.DependencyInjection; // For resolving MapViewModel / services
 using BusBuddy.WPF.ViewModels.Map; // Map markers
 using BusBuddy.WPF.Utilities; // MapMarkerLabels pin kinds
-using BusBuddy.WPF.Views.Route;
-using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces; // IGeocodingService
-using System.Globalization;
-using System.IO; // For PDF export file writing
+using BusBuddy.WPF.Views.Route; // RouteStopEditDialog
 using System.Threading; // For debounce timer
-using System.Text.RegularExpressions; // Start time validation
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -218,9 +213,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 var result = await _routeService.RecordRiderExceptionAsync(
                     route.RouteId,
                     student.StudentId,
-                    // Same UTC-labelled calendar day the route and its stop ETAs use, so "today"
-                    // means one day for both and the per-day exception key cannot split in two.
-                    DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                    PublishedSessionDateUtc,
                     "Not riding today");
                 if (!result.IsSuccess)
                 {
@@ -650,92 +643,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        /// <summary>
-        /// Basic sequential timing of route stops based on a user-provided StartTimeString.
-        /// Each stop gets arrival = current time cursor, departure = arrival + StopDuration minutes (default 2 if 0).
-        /// Persisted via IRouteService.UpdateRouteStopsTimingAsync when available.
-        /// </summary>
-        private async Task TimeRouteStopsAsync()
-        {
-            if (SelectedRoute == null || !RouteStops.Any())
-            {
-                return;
-            }
-
-            if (!IsStartTimeValid)
-            {
-                StatusMessage = "Cannot time stops — invalid Start Time (HH:mm)";
-                return;
-            }
-
-            try
-            {
-                IsLoading = true;
-                StatusMessage = "Calculating stop times...";
-
-                // Parse start time; fallback to 07:30 if invalid
-                if (!TimeSpan.TryParseExact(
-                        _startTimeString.Trim(),
-                        new[] { @"hh\:mm", @"h\:mm" },
-                        CultureInfo.InvariantCulture,
-                        out var startOfRun))
-                {
-                    startOfRun = new TimeSpan(7, 30, 0); // 07:30 fallback
-                    _startTimeString = "07:30"; // normalize
-                    OnPropertyChanged(nameof(StartTimeString));
-                }
-
-                // A stop time is a face time — 07:00 means seven in the morning at the stop — so the
-                // clock is written as-is on a UTC-labelled calendar day, matching Route.Date and the
-                // timestamptz Kind converters. No time-zone shift here.
-                var runDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
-                var stampedUtc = DateTime.UtcNow;
-                var cursor = startOfRun;
-
-                // Order stops by StopOrder to ensure consistency
-                foreach (var stop in RouteStops.OrderBy(s => s.StopOrder))
-                {
-                    var dwell = TimeSpan.FromMinutes(stop.StopDuration > 0 ? stop.StopDuration : 2); // default dwell
-                    // ScheduledArrival is the published time PdfReportService prefers, so it has to move
-                    // with the grid or the printed route keeps a stale generated time.
-                    stop.ScheduledArrival = cursor;
-                    stop.ScheduledDeparture = cursor + dwell;
-                    stop.EstimatedArrivalTime = runDate + stop.ScheduledArrival;
-                    stop.EstimatedDepartureTime = runDate + stop.ScheduledDeparture;
-                    stop.UpdatedDate = stampedUtc;
-                    cursor = stop.ScheduledDeparture; // advance cursor
-                }
-
-                var persistResult = await _routeService.UpdateRouteStopsTimingAsync(SelectedRoute.RouteId, RouteStops);
-                if (!persistResult.IsSuccess)
-                {
-                    StatusMessage = $"Timing calculated but failed to persist: {persistResult.Error}";
-                    MessageBox.Show(persistResult.Error ?? "Failed to persist timing", "Timing Persistence", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-                else
-                {
-                    StatusMessage = $"Timing updated for {RouteStops.Count} stops (Start {StartTimeString})";
-                }
-
-                // Notify grid
-                foreach (var prop in new[] { nameof(RouteStops) })
-                {
-                    OnPropertyChanged(prop);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to time route stops");
-                StatusMessage = $"Error timing stops: {ex.Message}";
-                MessageBox.Show($"Failed to time stops: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
-                (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            }
-        }
-
         // Route Activation Commands
         private async Task ActivateRouteAsync()
         {
@@ -1012,17 +919,6 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Error(ex, "Failed to load route stops for route {RouteName}", SelectedRoute.RouteName);
                 StatusMessage = $"Could not load stops for {GetRouteDisplayName(SelectedRoute)}: {ex.Message}";
             }
-        }
-
-        private Task ViewScheduleAsync()
-        {
-            SaveRouteSheet(includeMap: false, preview: true);
-            return Task.CompletedTask;
-        }
-
-        private void GenerateReport()
-        {
-            SaveRouteSheet(includeMap: false, preview: false);
         }
 
         #endregion

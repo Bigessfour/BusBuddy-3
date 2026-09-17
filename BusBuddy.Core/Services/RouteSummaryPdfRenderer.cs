@@ -23,6 +23,9 @@ public static class RouteSummaryPdfRenderer
     private static readonly PdfColor Body = new(33, 37, 41);
     private static readonly PdfColor Muted = new(90, 98, 108);
 
+    /// <summary>Caption under an embedded District Map snapshot — published path, not live GPS.</summary>
+    public const string PublishedPathCaption = "Published path (not live tracking)";
+
     public static byte[] Render(
         Route route,
         IEnumerable<RouteStop> stops,
@@ -47,11 +50,13 @@ public static class RouteSummaryPdfRenderer
             var g = page.Graphics;
             var pageSize = page.GetClientSize();
 
-            var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10, PdfFontStyle.Bold);
-            var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 8, PdfFontStyle.Bold);
-            var valueFont = new PdfStandardFont(PdfFontFamily.Helvetica, 9);
-            var sectionFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10, PdfFontStyle.Bold);
-            var smallFont = new PdfStandardFont(PdfFontFamily.Helvetica, 8);
+            // PdfStandardFont Helvetica (incl. Regular) draws space glyphs at width 0 in this
+            // Syncfusion pin — live 2026-09-17 sheet read as LamarHighSchoolSpecialNeedsRouteSheet.
+            var titleFont = PdfSheetFonts.Bold(11);
+            var labelFont = PdfSheetFonts.Bold(8);
+            var valueFont = PdfSheetFonts.Regular(9);
+            var sectionFont = PdfSheetFonts.Bold(11);
+            var smallFont = PdfSheetFonts.Regular(8);
             var bodyBrush = new PdfSolidBrush(Body);
             var mutedBrush = new PdfSolidBrush(Muted);
 
@@ -61,6 +66,7 @@ public static class RouteSummaryPdfRenderer
 
             float y = 38f;
             var mapWidth = 0f;
+            var mapBlockBottom = y;
             if (mapImagePng is { Length: > 0 })
             {
                 try
@@ -74,6 +80,12 @@ public static class RouteSummaryPdfRenderer
                     var imgRect = new RectangleF(pageSize.Width - mapWidth, y, mapWidth, imgHeight);
                     g.DrawRectangle(new PdfPen(Rule, 0.5f), imgRect);
                     g.DrawImage(bitmap, imgRect);
+                    g.DrawString(
+                        PublishedPathCaption,
+                        PdfSheetFonts.Regular(7),
+                        mutedBrush,
+                        new RectangleF(imgRect.X, imgRect.Bottom + 2f, mapWidth, 14f));
+                    mapBlockBottom = imgRect.Bottom + 16f;
                 }
                 catch (Exception ex)
                 {
@@ -84,7 +96,7 @@ public static class RouteSummaryPdfRenderer
 
             var metaWidth = pageSize.Width - (mapWidth > 0 ? mapWidth + 12f : 0);
             y = DrawMeta(g, labelFont, valueFont, smallFont, bodyBrush, mutedBrush, sheet, y, metaWidth);
-            y += 10f;
+            y = Math.Max(y, mapBlockBottom) + 10f;
 
             y = DrawSection(g, sectionFont, bodyBrush, "Stops", y);
             var stopGrid = BuildStopGrid(sheet);
@@ -139,7 +151,7 @@ public static class RouteSummaryPdfRenderer
         var bounds = new RectangleF(0, 0, contentWidth, 22);
 
         var footer = new PdfPageTemplateElement(bounds);
-        var font = new PdfStandardFont(PdfFontFamily.Helvetica, 8);
+        var font = PdfSheetFonts.Regular(8);
         var brush = new PdfSolidBrush(Muted);
         footer.Graphics.DrawLine(new PdfPen(Rule, 0.5f), new PointF(0, 2), new PointF(bounds.Width, 2));
         footer.Graphics.DrawString(
@@ -169,8 +181,8 @@ public static class RouteSummaryPdfRenderer
         float y,
         float width)
     {
-        g.DrawString(model.DisplayName, new PdfStandardFont(PdfFontFamily.Helvetica, 12, PdfFontStyle.Bold), body, new PointF(0, y));
-        y += 16f;
+        g.DrawString(model.DisplayName, PdfSheetFonts.Bold(13), body, new PointF(0, y));
+        y += 18f;
         if (model.IsGeneratedName && !string.IsNullOrWhiteSpace(model.FullRouteName))
         {
             g.DrawString(model.FullRouteName, smallFont, muted, new PointF(0, y));
@@ -180,18 +192,18 @@ public static class RouteSummaryPdfRenderer
         var col = width / 2f;
         DrawPair(g, labelFont, valueFont, body, muted, "Date", model.ServiceDate, 0, y);
         DrawPair(g, labelFont, valueFont, body, muted, "School", model.School, col, y);
-        y += 20f;
+        y += 16f;
         DrawPair(g, labelFont, valueFont, body, muted, "Slot", model.SessionLabel, 0, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Departure", model.DepartureText, col / 2f, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Arrive school", model.ArrivalText, col, y);
-        y += 20f;
+        y += 16f;
         DrawPair(g, labelFont, valueFont, body, muted, "Driver", model.DriverLabel, 0, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Vehicle", model.BusLabel, col, y);
-        y += 20f;
+        y += 16f;
         DrawPair(g, labelFont, valueFont, body, muted, "Stops", model.Stops.Count.ToString(), 0, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Students", model.RosterCount.ToString(), col / 2f, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Miles", model.TotalMilesText, col, y);
-        return y + 18f;
+        return y + 14f;
     }
 
     private static void DrawPair(
@@ -205,8 +217,10 @@ public static class RouteSummaryPdfRenderer
         float x,
         float y)
     {
-        g.DrawString(label.ToUpperInvariant(), labelFont, muted, new PointF(x, y));
-        g.DrawString(value, valueFont, body, new PointF(x, y + 9));
+        var heading = label.ToUpperInvariant();
+        g.DrawString(heading, labelFont, muted, new PointF(x, y));
+        var labelWidth = labelFont.MeasureString(heading).Width;
+        g.DrawString(value, valueFont, body, new PointF(x + labelWidth + 6f, y));
     }
 
     private static float DrawSection(PdfGraphics g, PdfFont font, PdfBrush brush, string title, float y)
@@ -281,7 +295,7 @@ public static class RouteSummaryPdfRenderer
         grid.Columns.Add(columns);
         grid.Headers.Add(1);
         grid.Style.CellPadding = new PdfPaddings(4, 4, 3, 3);
-        grid.Style.Font = new PdfStandardFont(PdfFontFamily.Helvetica, 9);
+        grid.Style.Font = PdfSheetFonts.Regular(9);
         return grid;
     }
 
@@ -309,13 +323,13 @@ public static class RouteSummaryPdfRenderer
         {
             BackgroundBrush = new PdfSolidBrush(HeaderCell),
             TextBrush = PdfBrushes.White,
-            Font = new PdfStandardFont(PdfFontFamily.Helvetica, 8, PdfFontStyle.Bold)
+            Font = PdfSheetFonts.Bold(8)
         };
         headerStyle.Borders.All = new PdfPen(HeaderCell, 0.4f);
         var cellPen = new PdfPen(Rule, 0.4f);
         var cellStyle = new PdfGridCellStyle
         {
-            Font = new PdfStandardFont(PdfFontFamily.Helvetica, 9),
+            Font = PdfSheetFonts.Regular(9),
             TextBrush = new PdfSolidBrush(Body)
         };
         cellStyle.Borders.All = cellPen;

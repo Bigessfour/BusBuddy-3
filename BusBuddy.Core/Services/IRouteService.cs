@@ -36,6 +36,8 @@ namespace BusBuddy.Core.Services
             int studentId,
             DateTime exceptionDate,
             string? reason = null);
+        /// <summary>Student ids with a not-riding row on that UTC calendar day. Does not change clocks.</summary>
+        Task<Result<IReadOnlyList<int>>> GetRiderExceptionStudentIdsAsync(int routeId, DateTime exceptionDate);
         /// <summary>Active students with neither AM nor PM assigned. Prefer the slot overload for fill work.</summary>
         Task<Result<List<Student>>> GetUnassignedStudentsAsync();
         /// <summary>Active students missing that slot. AM-assigned/PM-empty children are returned for PM, and vice versa.</summary>
