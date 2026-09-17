@@ -17,7 +17,7 @@ namespace BusBuddy.Core.Utilities
         public static string GenerateFirstActiveRoutePdf(
             IBusBuddyDbContextFactory contextFactory,
             string outputDirectory,
-            RouteTimeSlot slot = RouteTimeSlot.AM)
+            RouteTimeSlot? slot = null)
         {
             ArgumentNullException.ThrowIfNull(contextFactory);
             using var ctx = contextFactory.CreateDbContext();
@@ -38,7 +38,7 @@ namespace BusBuddy.Core.Utilities
             IBusBuddyDbContextFactory contextFactory,
             int routeId,
             string outputDirectory,
-            RouteTimeSlot slot = RouteTimeSlot.AM)
+            RouteTimeSlot? slot = null)
         {
             var opId = Guid.NewGuid().ToString("N");
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -84,27 +84,30 @@ namespace BusBuddy.Core.Utilities
                             .ToList();
                         Log.Debug("[RoutePdfPrinter] Loaded {StopCount} stops for route {RouteId} (OpId={OpId})", stops.Count, route.RouteId, opId);
 
+                        var resolvedSlot = slot ?? RouteSession.ToAssignmentSlot(route);
                         var studentQuery = ctx.Students.AsNoTracking();
-                        var students = (slot == RouteTimeSlot.Both
+                        var students = (resolvedSlot == RouteTimeSlot.Both
                                 ? studentQuery.WhereOnRoute(route)
-                                : studentQuery.WhereOnSlot(route.RouteId, route.RouteName, slot))
+                                : studentQuery.WhereOnSlot(route.RouteId, route.RouteName, resolvedSlot))
                             .OrderBy(s => s.StudentName)
                             .ToList();
-                        Log.Debug("[RoutePdfPrinter] Loaded {StudentCount} students matched for slot {Slot} (OpId={OpId})", students.Count, slot, opId);
+                        Log.Debug("[RoutePdfPrinter] Loaded {StudentCount} students matched for slot {Slot} (OpId={OpId})", students.Count, resolvedSlot, opId);
 
-                        var vehicleId = slot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
-                        var driverId = slot == RouteTimeSlot.PM ? route.PMDriverId : route.AMDriverId;
+                        var vehicleId = resolvedSlot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+                        var driverId = resolvedSlot == RouteTimeSlot.PM ? route.PMDriverId : route.AMDriverId;
                         Bus? bus = vehicleId.HasValue
                             ? ctx.Buses.AsNoTracking().FirstOrDefault(b => b.BusId == vehicleId.Value)
                             : null;
                         Driver? driver = driverId.HasValue
                             ? ctx.Drivers.AsNoTracking().FirstOrDefault(d => d.DriverId == driverId.Value)
                             : null;
+                        var districtName = ResolveDistrictName(ctx, route);
 
                         var pdfService = new PdfReportService();
-                        var bytes = pdfService.GenerateRouteSummaryReport(route, stops, students, bus, driver, slot);
+                        var bytes = pdfService.GenerateRouteSummaryReport(
+                            route, stops, students, bus, driver, resolvedSlot, mapImagePng: null, districtName);
 
-                        var fileName = $"RouteSummary_{route.RouteId}_{slot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                        var fileName = $"RouteSummary_{route.RouteId}_{resolvedSlot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                         var path = Path.Combine(outputDirectory, fileName);
                         File.WriteAllBytes(path, bytes);
 
@@ -122,6 +125,22 @@ namespace BusBuddy.Core.Utilities
                     throw;
                 }
             }
+        }
+
+        private static string? ResolveDistrictName(BusBuddyDbContext ctx, Route route)
+        {
+            if (string.IsNullOrWhiteSpace(route.School))
+            {
+                return ctx.Destinations.AsNoTracking()
+                    .Where(d => d.IsActive && !string.IsNullOrWhiteSpace(d.DistrictName))
+                    .Select(d => d.DistrictName)
+                    .FirstOrDefault();
+            }
+
+            return ctx.Destinations.AsNoTracking()
+                .Where(d => d.Name == route.School && !string.IsNullOrWhiteSpace(d.DistrictName))
+                .Select(d => d.DistrictName)
+                .FirstOrDefault();
         }
     }
 }

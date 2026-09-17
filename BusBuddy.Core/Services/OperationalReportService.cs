@@ -189,14 +189,17 @@ namespace BusBuddy.Core.Services
             string? notes,
             IReadOnlyList<RouteStop>? stops = null)
         {
+            var slot = RouteSession.ToAssignmentSlot(route);
             var assigned = students
-                .Where(s => StudentRouteAssignment.MatchesEither(s, route))
+                .Where(s => StudentRouteAssignment.Matches(s, route, slot))
                 .ToList();
-            var bus = route.AMVehicleId.HasValue
-                ? buses.FirstOrDefault(b => b.BusId == route.AMVehicleId.Value)
+            var vehicleId = slot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+            var driverId = slot == RouteTimeSlot.PM ? route.PMDriverId : route.AMDriverId;
+            var bus = vehicleId.HasValue
+                ? buses.FirstOrDefault(b => b.BusId == vehicleId.Value)
                 : null;
-            var driver = route.AMDriverId.HasValue
-                ? drivers.FirstOrDefault(d => d.DriverId == route.AMDriverId.Value)
+            var driver = driverId.HasValue
+                ? drivers.FirstOrDefault(d => d.DriverId == driverId.Value)
                 : null;
             var pdf = _pdf.GenerateRouteSummaryReport(
                 route,
@@ -204,7 +207,7 @@ namespace BusBuddy.Core.Services
                 assigned,
                 bus,
                 driver,
-                RouteTimeSlot.AM);
+                slot);
             if (pdf.Length > 0)
             {
                 return pdf;

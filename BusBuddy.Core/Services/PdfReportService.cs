@@ -347,8 +347,7 @@ namespace BusBuddy.Core.Services
             Driver? assignedDriver,
             BusBuddy.Core.Models.RouteTimeSlot timeSlot)
         {
-            // Delegate to core implementation without map image
-            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, null);
+            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, null, null);
         }
 
         /// <summary>
@@ -365,7 +364,20 @@ namespace BusBuddy.Core.Services
             BusBuddy.Core.Models.RouteTimeSlot timeSlot,
             byte[]? mapImagePng)
         {
-            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, mapImagePng);
+            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, mapImagePng, null);
+        }
+
+        public byte[] GenerateRouteSummaryReport(
+            Route route,
+            IEnumerable<RouteStop> stops,
+            IEnumerable<Student> students,
+            Bus? assignedBus,
+            Driver? assignedDriver,
+            BusBuddy.Core.Models.RouteTimeSlot timeSlot,
+            byte[]? mapImagePng,
+            string? districtName)
+        {
+            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, mapImagePng, districtName);
         }
 
         private byte[] GenerateRouteSummaryReportInternal(
@@ -375,7 +387,8 @@ namespace BusBuddy.Core.Services
             Bus? assignedBus,
             Driver? assignedDriver,
             BusBuddy.Core.Models.RouteTimeSlot timeSlot,
-            byte[]? mapImagePng)
+            byte[]? mapImagePng,
+            string? districtName)
         {
             ArgumentNullException.ThrowIfNull(route);
             stops ??= Array.Empty<RouteStop>();
@@ -384,203 +397,14 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Generating route PDF summary for {Route} (Slot {Slot})", route.RouteName, timeSlot);
-
-                using var document = new PdfDocument();
-                var page = document.Pages.Add();
-                var g = page.Graphics;
-
-                // Fonts & colors
-                var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 18, PdfFontStyle.Bold);
-                var sectionFont = new PdfStandardFont(PdfFontFamily.Helvetica, 13, PdfFontStyle.Bold);
-                var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10, PdfFontStyle.Bold);
-                var bodyFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10);
-                var accent = new PdfColor(11, 126, 200);
-                var textBrush = PdfBrushes.Black;
-                var accentBrush = new PdfSolidBrush(accent);
-
-                var pageWidth = page.GetClientSize().Width;
-                g.DrawRectangle(accentBrush, new RectangleF(0, 0, pageWidth, 50));
-                g.DrawString("Bus Buddy — Route Summary", titleFont, PdfBrushes.White, new PointF(20, 15));
-                // Header details block
-                float y = 60f;
-                var detailsRect = new RectangleF(12, y, pageWidth - 24, 76f);
-                g.DrawRectangle(new PdfSolidBrush(new PdfColor(245, 247, 249)), detailsRect);
-                g.DrawRectangle(new PdfPen(accent, 0.6f), detailsRect);
-
-                // Compute route timing summary
-                string fmt(DateTime dt) => dt.ToString("HH:mm");
-                var validArrivals = stops.Where(s => s.EstimatedArrivalTime != default).Select(s => s.EstimatedArrivalTime).ToList();
-                var validDepartures = stops.Where(s => s.EstimatedDepartureTime != default).Select(s => s.EstimatedDepartureTime).ToList();
-                var depText = validArrivals.Any() ? fmt(validArrivals.Min()) : "--:--";
-                var arrText = validDepartures.Any() ? fmt(validDepartures.Max()) : "--:--";
-
-                // Left column
-                float leftX = detailsRect.X + 12f;
-                float lineY = detailsRect.Y + 10f;
-                g.DrawString($"Route: {route.RouteName ?? "(Unnamed Route)"}", sectionFont, textBrush, new PointF(leftX, lineY));
-                lineY += 20f;
-                g.DrawString($"Stops: {stops.Count()}    Students: {students.Count()}", bodyFont, textBrush, new PointF(leftX, lineY));
-                lineY += 16f;
-                g.DrawString($"Departure: {depText}    Arrival: {arrText}", bodyFont, textBrush, new PointF(leftX, lineY));
-
-                // Right column
-                float rightX = detailsRect.Right - 260f; // approx right column start
-                float rY = detailsRect.Y + 12f;
-                g.DrawString($"Date: {route.Date:yyyy-MM-dd}", bodyFont, textBrush, new PointF(rightX, rY));
-                rY += 16f;
-                g.DrawString($"Slot: {timeSlot}", bodyFont, textBrush, new PointF(rightX, rY));
-                rY += 16f;
-                g.DrawString($"Driver: {assignedDriver?.DriverName ?? "(none)"}", bodyFont, textBrush, new PointF(rightX, rY));
-                rY += 16f;
-                g.DrawString($"Vehicle: {assignedBus?.BusNumber ?? "(none)"}", bodyFont, textBrush, new PointF(rightX, rY));
-
-                y = detailsRect.Bottom + 20f;
-
-                // Optional map image (embed to top-right area under header bar)
-                if (mapImagePng != null && mapImagePng.Length > 0)
-                {
-                    try
-                    {
-                        using var imgStream = new MemoryStream(mapImagePng);
-                        using (var pdfBitmap = new Syncfusion.Pdf.Graphics.PdfBitmap(imgStream))
-                        {
-                            // Reserve a rectangle (approx 220x160) — adjust height proportionally
-                            const float targetWidth = 220f;
-                            var imgHeight = pdfBitmap.Height > 0 ? (pdfBitmap.Height / (float)pdfBitmap.Width) * targetWidth : 160f;
-                            var imgRect = new RectangleF(pageWidth - targetWidth - 20f, 60f, targetWidth, imgHeight);
-                            g.DrawRectangle(new PdfSolidBrush(new PdfColor(240, 240, 240)), imgRect); // light backdrop
-                            g.DrawImage(pdfBitmap, imgRect);
-                        }
-                        // Leave y unchanged (text occupies left column); map sits independently
-                    }
-                    catch (Exception imgEx)
-                    {
-                        Logger.Warning(imgEx, "Failed embedding map image into route PDF");
-                    }
-                }
-
-                // Stops Section (Detailed Schedule Table)
-                g.DrawString("Stops (Schedule)", sectionFont, textBrush, new PointF(20, y));
-                y += 18f;
-                if (!stops.Any())
-                {
-                    g.DrawString("(No stops added)", bodyFont, textBrush, new PointF(30, y));
-                    y += 18f;
-                }
-                else
-                {
-                    // Table headers
-                    float x0 = 30f; float x1 = x0 + 28f; float x2 = x1 + 140f; float x3 = x2 + 70f; float x4 = x3 + 70f; float x5 = x4 + 60f;
-                    g.DrawString("#", labelFont, textBrush, new PointF(x0, y));
-                    g.DrawString("Stop", labelFont, textBrush, new PointF(x1, y));
-                    g.DrawString("Arr", labelFont, textBrush, new PointF(x2, y));
-                    g.DrawString("Dep", labelFont, textBrush, new PointF(x3, y));
-                    g.DrawString("Miles", labelFont, textBrush, new PointF(x4, y));
-                    g.DrawString("Cum", labelFont, textBrush, new PointF(x5, y));
-                    y += 12f;
-                    double cumulativeMiles = 0.0;
-                    DateTime? firstArr = null; DateTime? lastDep = null;
-                    var orderedStops = stops.OrderBy(s => s.StopOrder).Take(32).ToList();
-                    for (int i = 0; i < orderedStops.Count; i++)
-                    {
-                        var stop = orderedStops[i];
-                        var arr = FormatStopClock(stop.ScheduledArrival, stop.EstimatedArrivalTime);
-                        var dep = FormatStopClock(stop.ScheduledDeparture, stop.EstimatedDepartureTime);
-                        // Approximate leg miles if coordinates present with previous
-                        double legMiles = 0.0;
-                        if (i == 0)
-                        {
-                            legMiles = 0.0; // from origin (school) not yet tracked here
-                        }
-                        else
-                        {
-                            var prev = orderedStops[i - 1];
-                            if (prev.Latitude.HasValue && prev.Longitude.HasValue && stop.Latitude.HasValue && stop.Longitude.HasValue)
-                            {
-                                legMiles = Haversine((double)prev.Latitude.Value, (double)prev.Longitude.Value, (double)stop.Latitude.Value, (double)stop.Longitude.Value);
-                            }
-                        }
-                        cumulativeMiles += legMiles;
-                        if (firstArr == null && stop.EstimatedArrivalTime != default) firstArr = stop.EstimatedArrivalTime;
-                        if (stop.EstimatedDepartureTime != default) lastDep = stop.EstimatedDepartureTime;
-                        g.DrawString(stop.StopOrder.ToString(), bodyFont, textBrush, new PointF(x0, y));
-                        g.DrawString(Trim(stop.StopName, 18), bodyFont, textBrush, new PointF(x1, y));
-                        g.DrawString(arr, bodyFont, textBrush, new PointF(x2, y));
-                        g.DrawString(dep, bodyFont, textBrush, new PointF(x3, y));
-                        g.DrawString(legMiles.ToString("0.0"), bodyFont, textBrush, new PointF(x4, y));
-                        g.DrawString(cumulativeMiles.ToString("0.0"), bodyFont, textBrush, new PointF(x5, y));
-                        y += 12f;
-                        if (y > page.GetClientSize().Height - 150f) break;
-                    }
-                    y += 6f;
-                }
-
-                // Students Section
-                g.DrawString("Students", sectionFont, textBrush, new PointF(20, y));
-                y += 20f;
-                if (!students.Any())
-                {
-                    g.DrawString("(No students assigned)", bodyFont, textBrush, new PointF(30, y));
-                    y += 18f;
-                }
-                else
-                {
-                    foreach (var stu in students.OrderBy(s => s.StudentName).Take(40))
-                    {
-                        g.DrawString($"• {stu.StudentName ?? "(Student)"}", bodyFont, textBrush, new PointF(30, y));
-                        y += 14f;
-                        if (y > page.GetClientSize().Height - 60f) break;
-                    }
-                }
-
-                // Footer
-                var footerY = page.GetClientSize().Height - 30f;
-                g.DrawString($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}", bodyFont, textBrush, new PointF(20, footerY));
-
-                using var ms = new MemoryStream();
-                document.Save(ms);
-                return ms.ToArray();
+                return RouteSummaryPdfRenderer.Render(
+                    route, stops, students, assignedBus, assignedDriver, timeSlot, mapImagePng, districtName);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error generating route PDF summary for {RouteId}", route.RouteId);
                 return Array.Empty<byte>();
             }
-        }
-
-        // Lightweight Haversine for PDF schedule (duplicate kept local to avoid coupling to VM)
-        private static double Haversine(double lat1, double lon1, double lat2, double lon2)
-        {
-            const double R = 3958.8; // miles
-            double dLat = (lat2 - lat1) * Math.PI / 180.0;
-            double dLon = (lon2 - lon1) * Math.PI / 180.0;
-            double a = Math.Pow(Math.Sin(dLat / 2), 2) + Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) * Math.Pow(Math.Sin(dLon / 2), 2);
-            double c = 2 * Math.Asin(Math.Sqrt(a));
-            return R * c;
-        }
-
-        private static string Trim(string? value, int max)
-        {
-            if (string.IsNullOrEmpty(value)) return string.Empty;
-            if (value.Length <= max) return value;
-            ReadOnlySpan<char> span = value.AsSpan(0, max - 1);
-            char[] buffer = new char[span.Length + 1];
-            span.CopyTo(buffer);
-            buffer[^1] = '…';
-            return new string(buffer);
-        }
-
-        /// <summary>
-        /// Prefer ScheduledArrival/Departure (TimeSpan wall clock). Fall back to Estimated* DateTime.
-        /// </summary>
-        private static string FormatStopClock(TimeSpan scheduled, DateTime estimated)
-        {
-            if (scheduled != default)
-            {
-                return $"{(int)scheduled.TotalHours:00}:{scheduled.Minutes:00}";
-            }
-
-            return estimated == default ? "--:--" : estimated.ToString("HH:mm");
         }
 
         #region Fallback Text Generation (Used when PDF generation fails)

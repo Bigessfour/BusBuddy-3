@@ -206,6 +206,87 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public void GenerateRouteSummaryReport_WritesLetterhead_NotBusBuddyBanner()
+        {
+            var route = new Route
+            {
+                RouteName = "Draft-Hop1_Proof_School_20260909224028-R0C0-1",
+                School = "Wiley School",
+                Date = new DateTime(2026, 9, 17, 0, 0, 0, DateTimeKind.Utc),
+                Session = RouteSession.AM,
+                EstimatedDuration = 361
+            };
+            var stops = new[]
+            {
+                new RouteStop
+                {
+                    StopOrder = 50,
+                    StopName = "WallClockProof",
+                    ScheduledArrival = new TimeSpan(7, 0, 0),
+                    ScheduledDeparture = new TimeSpan(7, 1, 0),
+                    Notes = "StudentId=9",
+                    EstimatedArrivalTime = new DateTime(2026, 9, 17, 13, 0, 0, DateTimeKind.Utc)
+                },
+                new RouteStop
+                {
+                    StopOrder = 1,
+                    StopName = "TEST_HOP2_STUDENT",
+                    ScheduledArrival = new TimeSpan(7, 59, 0),
+                    ScheduledDeparture = new TimeSpan(7, 59, 0),
+                    Notes = "StudentId=2"
+                }
+            };
+
+            var bytes = _service.GenerateRouteSummaryReport(
+                route,
+                stops,
+                Array.Empty<Student>(),
+                new Bus { BusNumber = "5" },
+                null,
+                RouteTimeSlot.AM);
+
+            Assert.That(bytes[0], Is.EqualTo((byte)'%'));
+            Assert.That(bytes[1], Is.EqualTo((byte)'P'));
+            var text = ExtractPdfStreamText(bytes);
+            Assert.That(text, Does.Contain("AM Route Sheet"));
+            Assert.That(text, Does.Not.Contain("Bus Buddy"));
+            Assert.That(text, Does.Contain("07:00"));
+            Assert.That(text, Does.Contain("07:59"));
+            Assert.That(text, Does.Not.Contain("13:01"));
+            Assert.That(text, Does.Contain("Bus 5"));
+            Assert.That(text, Does.Contain("Wiley School"));
+            Assert.That(text, Does.Contain(RouteSummarySheetBuilder.GenerateStopsOnlyMessage));
+            Assert.That(text, Does.Not.Contain("(No students assigned)"));
+        }
+
+        [Test]
+        public void GenerateRouteSummaryReport_AssignedStudent_AppearsWithGrade()
+        {
+            var route = new Route { RouteName = "Town AM", School = "Wiley School", Session = RouteSession.AM };
+            var bytes = _service.GenerateRouteSummaryReport(
+                route,
+                new[]
+                {
+                    new RouteStop
+                    {
+                        StopOrder = 1,
+                        StopName = "Barn",
+                        ScheduledArrival = new TimeSpan(7, 0, 0),
+                        ScheduledDeparture = new TimeSpan(7, 1, 0)
+                    }
+                },
+                new[] { new Student { StudentName = "Ada Clark", Grade = "3" } },
+                null,
+                null,
+                RouteTimeSlot.PM);
+
+            var text = ExtractPdfStreamText(bytes);
+            Assert.That(text, Does.Contain("Ada Clark"));
+            Assert.That(text, Does.Contain("3"));
+            Assert.That(text, Does.Contain("AM Route Sheet"));
+        }
+
+        [Test]
         public void GenerateRouteReport_WithGrokAI_MocksAndVerifies()
         {
             // Arrange - for Reports + AI/Grok (item 5), boosts coverage for finish/reports integration
