@@ -1,3 +1,4 @@
+using System;
 using BusBuddy.WPF.Logging;
 using BusBuddy.WPF.Views.Settings;
 using NUnit.Framework;
@@ -69,6 +70,16 @@ public class UiRuntimeLoggingTests
         Assert.That(source, Does.Contain("OnUnobservedTaskException"));
         Assert.That(source, Does.Contain("IsLayoutTransientException"));
         Assert.That(source, Does.Contain("IsRepeatedUiError"));
+        Assert.That(source, Does.Contain("_layoutTransientCount"));
+        Assert.That(source, Does.Contain("Layout transient swallowed"));
+        Assert.That(
+            source.IndexOf("IsLayoutTransientException(e.Exception)", StringComparison.Ordinal),
+            Is.LessThan(source.IndexOf("AppendAllText(runtimeErrorsPath", StringComparison.Ordinal)));
+        var tileLayer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
+        Assert.That(tileLayer, Does.Contain("MeasureOverride"));
+        Assert.That(tileLayer, Does.Contain("ArrangeOverride"));
+        Assert.That(tileLayer, Does.Contain("IsVisualTreeNotReady"));
+        Assert.That(XamlViewFile.Read("Utilities/MapMarkerHost.cs"), Does.Contain("TryAssign"));
     }
 
     [Test]

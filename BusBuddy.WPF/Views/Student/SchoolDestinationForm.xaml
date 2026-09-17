@@ -185,11 +185,11 @@
                                     EnablePan="True"
                                     MouseLeftButtonUp="SchoolPickMap_MouseLeftButtonUp"
                                     AutomationProperties.Name="School location map">
+                            <!-- Markers assigned in code-behind after tile bootstrap (MapMarkerHost). -->
                             <utils:DistrictSfMap.Layers>
                                 <utils:GoogleMapTilesImageryLayer x:Name="SchoolPickLayer"
                                                    LayerType="Bing"
-                                                   Center="{Binding MapCenter}"
-                                                   Markers="{Binding MapMarkers}"/>
+                                                   Center="{Binding MapCenter}"/>
                             </utils:DistrictSfMap.Layers>
                         </utils:DistrictSfMap>
                         <Border x:Name="SchoolPickAttribution"

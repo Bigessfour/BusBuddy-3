@@ -324,8 +324,7 @@
                                 <DataTemplate x:Key="SchoolMarkerTemplate">
                                     <StackPanel Orientation="Vertical"
                                                 HorizontalAlignment="Center"
-                                                Margin="0,-18,0,0"
-                                                ToolTip="{Binding Data.DisplayCaption}">
+                                                Margin="0,-18,0,0">
                                         <Ellipse Width="{Binding Data.MarkerSize}"
                                                  Height="{Binding Data.MarkerSize}"
                                                  HorizontalAlignment="Center"
@@ -353,8 +352,7 @@
                                 <DataTemplate x:Key="StopMarkerTemplate">
                                     <StackPanel Orientation="Vertical"
                                                 HorizontalAlignment="Center"
-                                                Margin="0,-14,0,0"
-                                                ToolTip="{Binding Data.DisplayCaption}">
+                                                Margin="0,-14,0,0">
                                         <Ellipse Width="{Binding Data.MarkerSize}"
                                                  Height="{Binding Data.MarkerSize}"
                                                  HorizontalAlignment="Center"
@@ -381,8 +379,7 @@
                                 <DataTemplate x:Key="HomeMarkerTemplate">
                                     <StackPanel Orientation="Vertical"
                                                 HorizontalAlignment="Center"
-                                                Margin="0,-10,0,0"
-                                                ToolTip="{Binding Data.DisplayCaption}">
+                                                Margin="0,-10,0,0">
                                         <Ellipse Width="{Binding Data.MarkerSize}"
                                                  Height="{Binding Data.MarkerSize}"
                                                  HorizontalAlignment="Center"
@@ -416,8 +413,9 @@
                                 LayerType=Bing with empty key is a no-op until UrlTemplate is set (avoids Syncfusion HTTP OSM).
                                 Camera is Center + ZoomLevel only. Do not bind ImageryLayer.Radius: it doubles the
                                 bounds before solving zoom and re-fits on every SizeChanged, overriding user zoom.
-                                Markers are assigned in code-behind after Loaded (CanHostMarkers) — binding them
-                                here inflates CustomDataSymbol templates during first Measure and throws TransformToVisual.
+                                Markers and MarkerTemplateSelector are assigned in code-behind after
+                                CanHostMarkers + TransformToVisual succeed. Binding either here inflates
+                                CustomDataSymbol templates during first Measure (VM runtime-errors.log 2026-09-17).
                             -->
                             <utils:DistrictSfMap x:Name="GeoMap"
                                         HorizontalAlignment="Stretch"
@@ -433,8 +431,7 @@
                                 <utils:DistrictSfMap.Layers>
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="Bing"
-                                                       Center="{Binding MapCenter, Mode=TwoWay}"
-                                                       MarkerTemplateSelector="{StaticResource DistrictMarkerTemplateSelector}">
+                                                       Center="{Binding MapCenter, Mode=TwoWay}">
                                         <maps:ImageryLayer.SubShapeFileLayers>
                                             <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
                                                 <maps:SubShapeFileLayer.MapElements>

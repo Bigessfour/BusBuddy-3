@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
@@ -36,6 +38,9 @@ public partial class SchoolDestinationForm : ChromelessWindow
         SchoolDismissalBox.Text = _vm.DismissalTimeText;
         SchoolLatBox.Value = _vm.LatitudeValue;
         SchoolLonBox.Value = _vm.LongitudeValue;
+
+        _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
+        SchoolPickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -93,8 +98,19 @@ public partial class SchoolDestinationForm : ChromelessWindow
                         App.ServiceProvider).ConfigureAwait(true);
                 }
             }
+
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
         };
     }
+
+    private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+
+    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+
+    private void AssignPickMarkers() =>
+        MapMarkerHost.TryAssign(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers);
 
     /// <summary>
     /// Copy control text into the VM, then run save. Syncfusion Text bindings were leaving the VM empty
@@ -201,6 +217,8 @@ public partial class SchoolDestinationForm : ChromelessWindow
 
     protected override void OnClosed(EventArgs e)
     {
+        _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
+        SchoolPickMap.SizeChanged -= OnPickMapSizeChanged;
         SfSkinManager.Dispose(this);
         base.OnClosed(e);
     }

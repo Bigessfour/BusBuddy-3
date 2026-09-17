@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using BusBuddy.Core.Models;
 using BusBuddy.WPF.Controls;
 using BusBuddy.WPF.Utilities;
@@ -29,6 +31,9 @@ public partial class PickupStopForm : ChromelessWindow
         StopTypeCombo.SelectedItem = _vm.SelectedStopType;
         StopLatBox.Value = _vm.LatitudeValue;
         StopLonBox.Value = _vm.LongitudeValue;
+
+        _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
+        StopPickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -83,8 +88,19 @@ public partial class PickupStopForm : ChromelessWindow
                         App.ServiceProvider).ConfigureAwait(true);
                 }
             }
+
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
         };
     }
+
+    private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
+        _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
+
+    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+
+    private void AssignPickMarkers() =>
+        MapMarkerHost.TryAssign(StopPickMap, StopPickLayer, _vm.MapMarkers);
 
     private async void SaveStopButton_Click(object sender, RoutedEventArgs e)
     {
@@ -174,6 +190,8 @@ public partial class PickupStopForm : ChromelessWindow
 
     protected override void OnClosed(EventArgs e)
     {
+        _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
+        StopPickMap.SizeChanged -= OnPickMapSizeChanged;
         SfSkinManager.Dispose(this);
         base.OnClosed(e);
     }
