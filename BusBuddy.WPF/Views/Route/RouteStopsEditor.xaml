@@ -86,8 +86,8 @@
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" Width="60" />
                 <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" Width="180" />
-                <syncfusion:GridDateTimeColumn HeaderText="Arrival" MappingName="EstimatedArrivalTime" Width="110" DisplayBinding="{Binding EstimatedArrivalTime, StringFormat=HH:mm}" />
-                <syncfusion:GridDateTimeColumn HeaderText="Departure" MappingName="EstimatedDepartureTime" Width="110" DisplayBinding="{Binding EstimatedDepartureTime, StringFormat=HH:mm}" />
+                <syncfusion:GridTextColumn HeaderText="Arrive" MappingName="PublishedArrivalText" Width="80" />
+                <syncfusion:GridTextColumn HeaderText="Depart" MappingName="PublishedDepartureText" Width="80" />
                 <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" Width="100" />
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>

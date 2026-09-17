@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using NUnit.Framework;
 
@@ -35,6 +36,18 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Not.Contain("DisplayMemberPath=\"RouteName\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Latitude\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Longitude\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"StudentId\""));
+        Assert.That(xaml, Does.Not.Contain("MappingName=\"StudentNumber\""));
+        Assert.That(xaml, Does.Not.Contain("AddNewRowPosition"));
+        Assert.That(xaml, Does.Contain("AllowEditing=\"False\""));
+        Assert.That(xaml, Does.Not.Contain("EditTrigger=\"OnTap\""));
+        Assert.That(xaml, Does.Contain("IsHidden=\"True\""));
+        Assert.That(xaml, Does.Contain("Name=\"ActiveFilterCombo\""));
+        var roster = xaml.IndexOf("Text=\"Roster\"", StringComparison.Ordinal);
+        var filter = xaml.IndexOf("Name=\"ActiveFilterCombo\"", StringComparison.Ordinal);
+        var record = xaml.IndexOf("Text=\"Record\"", StringComparison.Ordinal);
+        Assert.That(roster, Is.GreaterThan(record));
+        Assert.That(filter, Is.GreaterThan(roster), "Active filter sits on the Roster row so it is not clipped off Record");
     }
 
     [Test]

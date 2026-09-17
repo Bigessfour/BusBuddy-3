@@ -370,6 +370,46 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<Result<IReadOnlyList<int>>> GetRiderExceptionStudentIdsAsync(int routeId, DateTime exceptionDate)
+        {
+            try
+            {
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<IReadOnlyList<int>>("Invalid routeId");
+                }
+
+                var day = DateTime.SpecifyKind(exceptionDate.Date, DateTimeKind.Utc);
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var ids = await context.RouteRiderExceptions
+                        .AsNoTracking()
+                        .Where(e => e.RouteId == routeId && e.ExceptionDate == day)
+                        .Select(e => e.StudentId)
+                        .Distinct()
+                        .ToListAsync();
+                    return Result.SuccessResult<IReadOnlyList<int>>(ids);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(
+                    Logger,
+                    ex,
+                    "Error loading rider exceptions RouteId={RouteId}",
+                    routeId);
+                return Result.FailureResult<IReadOnlyList<int>>($"Error loading rider exceptions: {ex.Message}");
+            }
+        }
+
         public async Task<Result<List<Student>>> GetUnassignedStudentsAsync()
         {
             try

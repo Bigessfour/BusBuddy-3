@@ -208,6 +208,7 @@ namespace BusBuddy.WPF.Views.Map
             vm.ViewResetRequested += OnViewResetRequested;
             vm.RouteLineUpdated += OnRouteLineUpdated;
             vm.PrintRequested += OnPrintRequested;
+            vm.CaptureSnapshotRequested += OnCaptureSnapshotRequested;
             vm.MapMarkersChanged += OnMapMarkersChanged;
             vm.PropertyChanged += OnViewModelPropertyChanged;
         }
@@ -221,6 +222,7 @@ namespace BusBuddy.WPF.Views.Map
 
             viewModel.RouteLineUpdated -= OnRouteLineUpdated;
             viewModel.PrintRequested -= OnPrintRequested;
+            viewModel.CaptureSnapshotRequested -= OnCaptureSnapshotRequested;
             viewModel.MapMarkersChanged -= OnMapMarkersChanged;
             viewModel.ViewResetRequested -= OnViewResetRequested;
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
@@ -585,6 +587,14 @@ namespace BusBuddy.WPF.Views.Map
                 RouteTrailLayer ?? FindName("RouteTrailLayer") as SubShapeFileLayer,
                 points);
 
+        private void OnCaptureSnapshotRequested(object? sender, EventArgs e)
+        {
+            if (MapControl is FrameworkElement mapElement && DataContext is MapViewModel vm)
+            {
+                vm.CaptureMapSnapshot(mapElement);
+            }
+        }
+
         private void OnPrintRequested(object? sender, EventArgs e)
         {
             try
@@ -593,6 +603,8 @@ namespace BusBuddy.WPF.Views.Map
                 {
                     return;
                 }
+
+                OnCaptureSnapshotRequested(sender, e);
 
                 var printDlg = new PrintDialog();
                 if (printDlg.ShowDialog() != true)
@@ -631,11 +643,6 @@ namespace BusBuddy.WPF.Views.Map
                 ((IAddChild)pageContent).AddChild(fixedPage);
                 doc.Pages.Add(pageContent);
                 printDlg.PrintDocument(doc.DocumentPaginator, "BusBuddy Route Map");
-
-                if (DataContext is MapViewModel vm)
-                {
-                    vm.CaptureMapSnapshot(mapElement);
-                }
             }
             catch (Exception ex)
             {

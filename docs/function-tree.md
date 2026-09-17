@@ -14,6 +14,7 @@ flowchart TB
     Students[StudentsView]
     Reports[ReportsView]
     RouteAssign[RouteAssignmentView]
+    RouteSched[RouteScheduleWindow]
     Dashboard[DashboardView]
     MaintView[MaintenanceView]
     SchedView[DriverScheduleView]
@@ -56,6 +57,7 @@ flowchart TB
   MapView --> MapsValidate
   SettingsView --> MapView
   RouteAssign --> RouteDet
+  RouteAssign --> RouteSched
   Reports --> ReportsSvc
   ReportsSvc --> Pdf
   Dashboard --> Metrics

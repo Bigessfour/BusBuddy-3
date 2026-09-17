@@ -80,6 +80,12 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// </summary>
         public event EventHandler? PrintRequested;
 
+        /// <summary>Bound map view captures the live SfMap into <see cref="LatestMapSnapshotPng"/>.</summary>
+        public event EventHandler? CaptureSnapshotRequested;
+
+        /// <summary>Ask the bound map view to write <see cref="LatestMapSnapshotPng"/> (no print dialog).</summary>
+        public void RequestMapSnapshot() => CaptureSnapshotRequested?.Invoke(this, EventArgs.Empty);
+
         // Map interaction events (view listens and applies actual SfMap changes).
         // Zoom and center flow through MapZoomLevel/MapCenter PropertyChanged, not events.
         public event EventHandler? ViewResetRequested;
@@ -587,6 +593,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                     }
                 }
 
+                _trail.BeginDraw();
                 if (moved > 0 && firstError is null)
                 {
                     StatusMessage = $"Moved {moved} rider(s) onto {target.RouteName}";
@@ -812,6 +819,11 @@ namespace BusBuddy.WPF.ViewModels.Map
                     CenterOnPoints(plot.Markers.Select(s => new Point(s.Latitude, s.Longitude)));
                 }
 
+                if (!_trail.IsCurrent(generation))
+                {
+                    return;
+                }
+
                 StatusMessage = persist.Computed && !persist.Persisted && !string.IsNullOrWhiteSpace(persist.Message)
                     ? persist.Message
                     : plot.StatusMessage;
@@ -883,6 +895,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             if (SelectedRoute is null)
             {
                 StatusMessage = "Select a route to export";
+                Logger.Information("Export Route requested with no selection");
                 UserToast.Warning("Pick a route in the Route list, then press Export Route.", "Export Route");
                 return;
             }
@@ -1466,11 +1479,6 @@ namespace BusBuddy.WPF.ViewModels.Map
 
             try
             {
-                // Ensure layout up to date
-                mapElement.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                mapElement.Arrange(new Rect(mapElement.DesiredSize));
-                mapElement.UpdateLayout();
-
                 var width = (int)Math.Max(1, mapElement.ActualWidth);
                 var height = (int)Math.Max(1, mapElement.ActualHeight);
 

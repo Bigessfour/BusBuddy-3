@@ -60,6 +60,19 @@ public class RouteStop
     [Display(Name = "Scheduled Departure")]
     public TimeSpan ScheduledDeparture { get; set; }
 
+    /// <summary>Clerk-facing arrival. Empty clocks are an em dash, never midnight or UTC <see cref="EstimatedArrivalTime"/>.</summary>
+    [NotMapped]
+    public string PublishedArrivalText => FormatPublishedClock(ScheduledArrival);
+
+    /// <summary>Clerk-facing departure. Same rules as <see cref="PublishedArrivalText"/>.</summary>
+    [NotMapped]
+    public string PublishedDepartureText => FormatPublishedClock(ScheduledDeparture);
+
+    internal static string FormatPublishedClock(TimeSpan value) =>
+        value == default
+            ? "—"
+            : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{(int)value.TotalHours:00}:{value.Minutes:00}");
+
     /// <summary>
     /// General scheduled time for the stop (typically the arrival time)
     /// Used by route duration calculations and stop reordering

@@ -107,6 +107,10 @@ public class MainWindowClerkPathTests
         Assert.That(XamlViewFile.Exists("Views/Route/RouteStopsEditor.xaml"), Is.True);
         var assignment = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
         Assert.That(assignment, Does.Contain("RouteStopsEditor"));
+        var stops = XamlViewFile.Read("Views/Route/RouteStopsEditor.xaml");
+        Assert.That(stops, Does.Contain("MappingName=\"PublishedArrivalText\""));
+        Assert.That(stops, Does.Contain("MappingName=\"PublishedDepartureText\""));
+        Assert.That(stops, Does.Not.Contain("MappingName=\"EstimatedArrivalTime\""));
     }
 
     [Test]

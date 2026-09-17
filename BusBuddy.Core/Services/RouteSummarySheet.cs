@@ -34,5 +34,5 @@ public sealed class RouteSummarySheet
         string Cumulative,
         string Riders);
 
-    public sealed record StudentRow(string Name, string Grade, string Stop);
+    public sealed record StudentRow(string Name, string Grade, string Stop, string Status = "");
 }

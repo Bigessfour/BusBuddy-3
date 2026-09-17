@@ -162,6 +162,7 @@
                 <Setter Property="FontSize" Value="14"/>
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="Padding" Value="12,0"/>
+                <Setter Property="SizeMode" Value="Normal"/>
                 <Setter Property="IconWidth" Value="0"/>
                 <Setter Property="IconHeight" Value="0"/>
                 <Setter Property="SmallIcon" Value="{x:Null}"/>
@@ -452,14 +453,24 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
-                            <syncfusion:ButtonAdv Name="ValidateAddressButton"
-                                    Label="Validate Address"
-                                    Command="{Binding ValidateAddressCommand}"
-                                    Style="{StaticResource StudentFormActionButtonStyle}"
-                                    HorizontalAlignment="Left"
-                                    Margin="0,10,0,0"
-                                    SizeMode="Normal"
-                                    AutomationProperties.Name="Validate Address"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <syncfusion:ButtonAdv Name="ValidateAddressButton"
+                                        Label="Validate Address"
+                                        Command="{Binding ValidateAddressCommand}"
+                                        Style="{StaticResource StudentFormActionButtonStyle}"
+                                        HorizontalAlignment="Left"
+                                        SizeMode="Normal"
+                                        AutomationProperties.Name="Validate Address"/>
+                                <syncfusion:ButtonAdv Name="AdjustHomePinButton"
+                                        Label="Adjust pin on map"
+                                        Command="{Binding AdjustHomePinCommand}"
+                                        Style="{StaticResource StudentFormActionButtonStyle}"
+                                        HorizontalAlignment="Left"
+                                        Margin="10,0,0,0"
+                                        SizeMode="Normal"
+                                        ToolTip="Google can land a county-road pin on the highway. Click the driveway after Validate Address. The street address does not change."
+                                        AutomationProperties.Name="Adjust home pin on map"/>
+                            </StackPanel>
                             <Border Margin="0,8,0,0"
                                     Padding="10,8"
                                     Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
@@ -615,19 +626,17 @@
                                        Margin="0,4,0,0"
                                        Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                        FontSize="12"/>
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,8,0,0">
+                            <WrapPanel Grid.Row="3" Margin="0,8,0,0">
                                 <syncfusion:ButtonAdv Label="Suggest nearest"
                                                       Command="{Binding SuggestNearestPickupStopCommand}"
                                                       Style="{StaticResource StudentFormActionButtonStyle}"
-                                                      SizeMode="Small"
                                                       Margin="0,0,8,0"
                                                       AutomationProperties.Name="Suggest nearest pickup stop"/>
                                 <syncfusion:ButtonAdv Label="Use home as stop"
                                                       Command="{Binding UseHomeAsPickupStopCommand}"
                                                       Style="{StaticResource StudentFormActionButtonStyle}"
-                                                      SizeMode="Small"
                                                       AutomationProperties.Name="Use home address as pickup stop"/>
-                            </StackPanel>
+                            </WrapPanel>
                         </Grid>
 
                         <!-- AI and Mapping Actions -->
@@ -647,17 +656,8 @@
                                     SizeMode="Normal"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                     Margin="10,0,0,0"
-                                    ToolTip="Show student location on district map"
+                                    ToolTip="Open the pickup map: gold = validated street address, blue = driveway. Click to move the blue pin."
                                     AutomationProperties.Name="View on Map"/>
-                <syncfusion:ButtonAdv Name="ImportCsvButton"
-                    Label="Import CSV"
-                                    Command="{Binding ImportCsvCommand}"
-                                    Style="{StaticResource StudentFormActionButtonStyle}"
-                                    SizeMode="Normal"
-                                    Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                                    Margin="10,0,0,0"
-                                    ToolTip="Import student data from CSV file"
-                                    AutomationProperties.Name="Import CSV"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>

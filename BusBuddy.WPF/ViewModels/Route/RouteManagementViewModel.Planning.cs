@@ -1,3 +1,4 @@
+using System.Windows;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.WPF.Logging;
 
@@ -41,9 +42,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
-                StatusMessage = refresh.Message
+                var skip = refresh.Message
                     ?? "Stop order saved. Google Routes is not configured, so the road polyline was skipped.";
-                UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", "hydrated", refresh.Message);
+                StatusMessage = $"{SelectedRoute.RouteName}: {skip}";
+                var outcome = refresh.Skipped ? "skipped" : "hydrated";
+                UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", outcome, skip);
+                if (refresh.Skipped)
+                {
+                    MessageBox.Show(
+                        $"{SelectedRoute.RouteName} has {SelectedRoute.StopCount ?? 0} geocoded stop(s).\n\n{skip}",
+                        "Drive Path",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
             }
             catch (Exception ex)
             {

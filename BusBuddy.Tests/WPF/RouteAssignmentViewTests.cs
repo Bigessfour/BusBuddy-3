@@ -33,10 +33,11 @@ public class RouteAssignmentViewTests
     public void RouteAssignmentViewXaml_WiresPdfGridSheetCommands()
     {
         var xaml = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
-        Assert.That(xaml, Does.Contain("Command=\"{Binding ViewRouteTimetableCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ViewScheduleCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshDrivePathCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PrintRouteSheetCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ExportRouteSheetCommand}\""));
-        Assert.That(xaml, Does.Not.Contain("Command=\"{Binding ViewScheduleCommand}\""));
+        Assert.That(xaml, Does.Not.Contain("Command=\"{Binding ViewRouteTimetableCommand}\""));
         Assert.That(xaml, Does.Not.Contain("Command=\"{Binding PrintMapCommand}\""));
         Assert.That(xaml, Does.Not.Contain("Command=\"{Binding GenerateReportCommand}\""));
     }

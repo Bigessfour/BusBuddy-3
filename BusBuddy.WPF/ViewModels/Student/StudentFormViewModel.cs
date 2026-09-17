@@ -128,7 +128,8 @@ namespace BusBuddy.WPF.ViewModels.Student
                 () => SelectedPickupStop,
                 AvailablePickupStops,
                 _validation,
-                _address.TrackPinnedAddress);
+                _address.TrackPinnedAddress,
+                studentService);
             _csvImport = new StudentFormCsvImportCoordinator(_validation);
             _schoolTimes = new StudentFormSchoolTimesLauncher(() => SelectedSchoolDestination, _validation);
 
@@ -253,6 +254,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand CancelCommand { get; private set; } = null!;
         public ICommand SuggestRoutesCommand { get; private set; } = null!;
         public ICommand ViewOnMapCommand { get; private set; } = null!;
+        public ICommand AdjustHomePinCommand { get; private set; } = null!;
         public ICommand ImportCsvCommand { get; private set; } = null!;
         public ICommand ValidateDataCommand { get; private set; } = null!;
         public ICommand ClearGlobalErrorCommand { get; private set; } = null!;
@@ -269,6 +271,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             CancelCommand = new RelayCommand(ExecuteCancel);
             SuggestRoutesCommand = new AsyncRelayCommand(_routeSuggestions.SuggestRoutesAsync);
             ViewOnMapCommand = new AsyncRelayCommand(_map.ViewOnMapAsync);
+            AdjustHomePinCommand = new AsyncRelayCommand(_map.AdjustHomePinAsync);
             ImportCsvCommand = new AsyncRelayCommand(_csvImport.ImportCsvAsync);
             ValidateDataCommand = new AsyncRelayCommand(_validation.ValidateAllDataAsync);
             ClearGlobalErrorCommand = new RelayCommand(_validation.ClearGlobalError);

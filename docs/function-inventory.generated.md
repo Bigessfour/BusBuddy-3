@@ -2,20 +2,20 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-09-16T00:02:19.770449+00:00
+Generated: 2026-09-17T17:32:02.068954+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
-**Configured surfaces:** 44 (from `.function-inventory.json` `surfaces` allowlist)
+**Configured surfaces:** 46 (from `.function-inventory.json` `surfaces` allowlist)
 
-**Summary:** 44 correctness surfaces | 41 with proof | 3 without proof
+**Summary:** 46 correctness surfaces | 43 with proof | 3 without proof
 This list is the **correctness queue** — resident/clerk-critical pages, services, and handlers only. Tiny helpers, Angular route paths, and demoted UI shells are omitted.
 
 Ship gate remains project acceptance / smoke checklists — inventory count alone is not “done.”
 
 ## Surfaces without proof (review these)
+- **P1** Other Public: RouteScheduleWindow.xaml.RouteScheduleWindow.xaml @ BusBuddy.WPF/Views/Route/RouteScheduleWindow.xaml.cs:1
 - **P2** Other Public: MaintenanceViewModel.MaintenanceViewModel @ BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1
-- **P2** Other Public: DriverScheduleViewModel.DriverScheduleViewModel @ BusBuddy.WPF/ViewModels/Driver/DriverScheduleViewModel.cs:1
 - **P2** Other Public: FuelDialogViewModel.FuelDialogViewModel @ BusBuddy.WPF/ViewModels/Fuel/FuelDialogViewModel.cs:1
 
 Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 write paths.
@@ -55,7 +55,9 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P1 | Other Public | StudentSchoolTransferForm.xaml.StudentSchoolTransferForm.xaml | BusBuddy.WPF/Views/Student/StudentSchoolTransferForm.xaml.cs:1 | BusBuddy.Tests/WPF/PlacesAddressSurfaceTests.cs | has logic |
 | P1 | Core Service | RouteService.RouteService | BusBuddy.Core/Services/RouteService.cs:1 | BusBuddy.Tests/Core/RouteServiceTests.cs | has logic |
 | P1 | Other Public | RouteManagementView.xaml.RouteManagementView.xaml | BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs:1 | BusBuddy.Tests/WPF/RouteManagementViewTests.cs, BusBuddy.Tes... | has logic |
-| P1 | Other Public | RouteManagementViewModel.RouteManagementViewModel | BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs:1 | BusBuddy.Tests/WPF/RouteManagementViewModelTests.cs | has logic |
+| P1 | Other Public | RouteScheduleWindow.xaml.RouteScheduleWindow.xaml | BusBuddy.WPF/Views/Route/RouteScheduleWindow.xaml.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | RouteScheduleViewModel.RouteScheduleViewModel | BusBuddy.WPF/ViewModels/Route/RouteScheduleViewModel.cs:1 | BusBuddy.Tests/WPF/RouteScheduleViewModelTests.cs | has logic |
+| P2 | Other Public | RouteManagementViewModel.RouteManagementViewModel | BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs:1 | BusBuddy.Tests/WPF/RouteManagementViewModelTests.cs | has logic |
 | P2 | Other Public | RouteManagementExportHelper.RouteManagementExportHelper | BusBuddy.WPF/ViewModels/Route/RouteManagementExportHelper.cs:1 | BusBuddy.Tests/WPF/RouteManagementExportHelperTests.cs | has logic |
 | P2 | Core Service | RouteDeterminationService.RouteDeterminationService | BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs:1 | BusBuddy.Tests/Core/RouteDetermination/RouteDeterminationSer... | has logic |
 | P2 | Other Public | AssignFitnessEvaluator.AssignFitnessEvaluator | BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs:1 | BusBuddy.Tests/Core/RouteDetermination/AssignFitnessEvaluato... | has logic |
@@ -71,7 +73,7 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | BusBuddy.Tests/WPF/MaintenanceViewTests.cs | has logic |
 | P2 | Other Public | MaintenanceViewModel.MaintenanceViewModel | BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
-| P2 | Other Public | DriverScheduleViewModel.DriverScheduleViewModel | BusBuddy.WPF/ViewModels/Driver/DriverScheduleViewModel.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | DriverScheduleViewModel.DriverScheduleViewModel | BusBuddy.WPF/ViewModels/Driver/DriverScheduleViewModel.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
 | P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |
 | P2 | Core Service | GeoDataService.GeoDataService | BusBuddy.Core/Services/GeoDataService.cs:1 | BusBuddy.Tests/Core/GeoDataServiceTests.cs | has logic |
 | P2 | Core Service | DestinationService.DestinationService | BusBuddy.Core/Services/DestinationService.cs:1 | BusBuddy.Tests/Core/DestinationServiceTests.cs | has logic |

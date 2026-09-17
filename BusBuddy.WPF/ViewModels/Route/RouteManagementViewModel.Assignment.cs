@@ -1,8 +1,11 @@
 using System.IO;
+using System.Windows;
 using Serilog.Context;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Logging;
+using BusBuddy.WPF.Views.Reports;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -313,15 +316,71 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsBusy = true;
                 StatusMessage = $"Printing schedule for '{SelectedRoute.RouteName}'...";
-                var path = await RouteManagementExportHelper
-                    .WriteSchedulePdfAsync(SelectedRoute, printAfter: true, _reportService, _contextFactory)
+                var slot = SelectedTimeSlot == RouteTimeSlot.PM ? RouteTimeSlot.PM : RouteTimeSlot.AM;
+                var stopsResult = await _routeService.GetRouteStopsAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                var studentsResult = await _routeService.GetStudentsForRouteAsync(SelectedRoute.RouteId, slot)
                     .ConfigureAwait(true);
-                StatusMessage = $"Schedule sent to printer / opened: {Path.GetFileName(path)}";
+                var stops = stopsResult.IsSuccess && stopsResult.Value is not null
+                    ? stopsResult.Value.ToList()
+                    : new List<RouteStop>();
+                var students = studentsResult.IsSuccess && studentsResult.Value is not null
+                    ? studentsResult.Value
+                    : new List<BusBuddy.Core.Models.Student>();
+                BusBuddy.Core.Models.Bus? bus = null;
+                BusBuddy.Core.Models.Driver? driver = null;
+                if (slot == RouteTimeSlot.PM)
+                {
+                    if (SelectedRoute.PMVehicleId is int pmBus)
+                    {
+                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == pmBus);
+                    }
+
+                    if (SelectedRoute.PMDriverId is int pmDriver)
+                    {
+                        driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == pmDriver);
+                    }
+                }
+                else
+                {
+                    if (SelectedRoute.AMVehicleId is int amBus)
+                    {
+                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == amBus);
+                    }
+
+                    if (SelectedRoute.AMDriverId is int amDriver)
+                    {
+                        driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == amDriver);
+                    }
+                }
+
+                var pdfBytes = RouteSummaryPdfRenderer.Render(
+                    SelectedRoute, stops, students, bus, driver, slot);
+                var exportDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "BusBuddy",
+                    "Printouts");
+                Directory.CreateDirectory(exportDir);
+                var safeName = string.Join("_", (SelectedRoute.RouteName ?? "Route").Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"Route_{safeName}_{slot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                var fullPath = Path.Combine(exportDir, fileName);
+                File.WriteAllBytes(fullPath, pdfBytes);
+
+                var preview = new PdfPreviewWindow(
+                    pdfBytes,
+                    RouteSummarySheetBuilder.DisplayNameFor(SelectedRoute) + " schedule");
+                DialogOwner.Assign(preview);
+                preview.Show();
+                StatusMessage = $"Schedule preview: {stops.Count} stops, {students.Count} students ({fileName})";
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed printing schedule");
                 StatusMessage = $"Error printing schedule: {ex.Message}";
+                MessageBox.Show(
+                    $"Could not build the published stop sheet:\n{ex.Message}",
+                    "Print Schedule",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
             finally
             {

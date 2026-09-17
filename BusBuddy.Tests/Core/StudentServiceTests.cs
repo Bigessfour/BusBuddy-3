@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -249,6 +250,38 @@ namespace BusBuddy.Tests.Core
             updated.PMRoute.Should().Be("West Route");
             updated.AmRouteId.Should().Be(1);
             updated.PmRouteId.Should().Be(2);
+        }
+
+        [Test]
+        public async Task UpdateStudentAsync_ClearingRouteNames_PersistsUnassignedOnNewContext()
+        {
+            var s = new Student
+            {
+                StudentName = "Dana",
+                Grade = "2",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                AMRoute = "East Route",
+                PMRoute = "West Route"
+            };
+            var added = await _studentService.AddStudentAsync(s);
+            added.AmRouteId.Should().Be(1);
+            added.PmRouteId.Should().Be(2);
+
+            added.AMRoute = null;
+            added.PMRoute = null;
+            var ok = await _studentService.UpdateStudentAsync(added);
+            ok.Should().BeTrue();
+
+            await using var nextSession = new BusBuddyDbContext(_dbOptions);
+            var reloaded = await nextSession.Students.AsNoTracking()
+                .FirstAsync(row => row.StudentId == added.StudentId);
+            StudentRouteAssignment.IsAssignedAny(reloaded).Should().BeFalse();
+            reloaded.AmRouteId.Should().BeNull();
+            reloaded.PmRouteId.Should().BeNull();
+            reloaded.AMRoute.Should().BeNull();
+            reloaded.PMRoute.Should().BeNull();
         }
 
         [Test]

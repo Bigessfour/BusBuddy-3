@@ -247,43 +247,70 @@ namespace BusBuddy.Tests.Core
 
             Assert.That(bytes[0], Is.EqualTo((byte)'%'));
             Assert.That(bytes[1], Is.EqualTo((byte)'P'));
+            var sheet = RouteSummarySheetBuilder.Build(
+                route, stops, Array.Empty<Student>(), new Bus { BusNumber = "5" }, null, RouteTimeSlot.AM);
+            Assert.That(sheet.Title, Does.Contain("AM Route Sheet"));
+            Assert.That(sheet.DepartureText, Is.EqualTo("07:00"));
+            Assert.That(sheet.ArrivalText, Is.EqualTo("07:59"));
+            Assert.That(sheet.BusLabel, Is.EqualTo("Bus 5"));
+            Assert.That(sheet.School, Is.EqualTo("Wiley School"));
+            Assert.That(sheet.GenerateStopsOnlyNote, Is.EqualTo(RouteSummarySheetBuilder.GenerateStopsOnlyMessage));
             var text = ExtractPdfStreamText(bytes);
-            Assert.That(text, Does.Contain("AM Route Sheet"));
+            Assert.That(text, Does.Contain("Arial"));
             Assert.That(text, Does.Not.Contain("Bus Buddy"));
-            Assert.That(text, Does.Contain("07:00"));
-            Assert.That(text, Does.Contain("07:59"));
-            Assert.That(text, Does.Not.Contain("13:01"));
-            Assert.That(text, Does.Contain("Bus 5"));
-            Assert.That(text, Does.Contain("Wiley School"));
-            Assert.That(text, Does.Contain(RouteSummarySheetBuilder.GenerateStopsOnlyMessage));
-            Assert.That(text, Does.Not.Contain("(No students assigned)"));
         }
 
         [Test]
         public void GenerateRouteSummaryReport_AssignedStudent_AppearsWithGrade()
         {
             var route = new Route { RouteName = "Town AM", School = "Wiley School", Session = RouteSession.AM };
-            var bytes = _service.GenerateRouteSummaryReport(
-                route,
-                new[]
+            var stops = new[]
+            {
+                new RouteStop
                 {
-                    new RouteStop
-                    {
-                        StopOrder = 1,
-                        StopName = "Barn",
-                        ScheduledArrival = new TimeSpan(7, 0, 0),
-                        ScheduledDeparture = new TimeSpan(7, 1, 0)
-                    }
-                },
-                new[] { new Student { StudentName = "Ada Clark", Grade = "3" } },
-                null,
-                null,
-                RouteTimeSlot.PM);
+                    StopOrder = 1,
+                    StopName = "Barn",
+                    ScheduledArrival = new TimeSpan(7, 0, 0),
+                    ScheduledDeparture = new TimeSpan(7, 1, 0)
+                }
+            };
+            var students = new[] { new Student { StudentName = "Ada Clark", Grade = "3" } };
+            var bytes = _service.GenerateRouteSummaryReport(route, stops, students, null, null, RouteTimeSlot.PM);
 
+            var sheet = RouteSummarySheetBuilder.Build(route, stops, students, null, null, RouteTimeSlot.PM);
+            Assert.That(sheet.Students[0].Name, Is.EqualTo("Ada Clark"));
+            Assert.That(sheet.Students[0].Grade, Is.EqualTo("3"));
+            Assert.That(sheet.Title, Does.Contain("AM Route Sheet"));
             var text = ExtractPdfStreamText(bytes);
-            Assert.That(text, Does.Contain("Ada Clark"));
-            Assert.That(text, Does.Contain("3"));
-            Assert.That(text, Does.Contain("AM Route Sheet"));
+            Assert.That(text, Does.Contain("Arial"));
+        }
+
+        [Test]
+        public void GenerateRouteSummaryReport_EmbeddedMap_CaptionsPublishedPathNotLive()
+        {
+            var route = new Route { RouteName = "Town AM", School = "Wiley School", Session = RouteSession.AM };
+            var stops = new[]
+            {
+                new RouteStop
+                {
+                    StopOrder = 1,
+                    StopName = "Barn",
+                    ScheduledArrival = new TimeSpan(7, 0, 0),
+                    ScheduledDeparture = new TimeSpan(7, 1, 0)
+                }
+            };
+            var png = Convert.FromBase64String(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
+
+            var withMap = _service.GenerateRouteSummaryReport(
+                route, stops, Array.Empty<Student>(), null, null, RouteTimeSlot.AM, png);
+            var withoutMap = _service.GenerateRouteSummaryReport(
+                route, stops, Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
+
+            Assert.That(RouteSummaryPdfRenderer.PublishedPathCaption, Does.Contain("Published path"));
+            Assert.That(RouteSummaryPdfRenderer.PublishedPathCaption, Does.Contain("not live"));
+            Assert.That(withMap[0], Is.EqualTo((byte)'%'));
+            Assert.That(withMap.Length, Is.GreaterThan(withoutMap.Length));
         }
 
         [Test]

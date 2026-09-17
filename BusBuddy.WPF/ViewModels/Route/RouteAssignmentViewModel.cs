@@ -429,6 +429,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         // Plot currently assigned students for selected route
 
         public ICommand PlotRouteOnMapCommand { get; private set; } = null!;
+        public ICommand RefreshDrivePathCommand { get; private set; } = null!;
         public ICommand TimeRouteCommand { get; private set; } = null!; // Basic stop timing
         public ICommand PrintMapCommand { get; private set; } = null!;
         public ICommand GenerateRoutesCommand { get; private set; } = null!;
@@ -443,7 +444,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             AutoAssignCommand = new RelayCommand(async () => await AutoAssignStudentsAsync());
             SaveRouteCommand = new RelayCommand(async () => await SaveRouteAsync(), () => CanSaveRoute);
             DeleteRouteCommand = new RelayCommand(async () => await DeleteRouteAsync());
-            ViewScheduleCommand = new RelayCommand(async () => await ViewScheduleAsync(), () => SelectedRoute != null);
+            ViewScheduleCommand = new RelayCommand(async () => await ViewScheduleAsync(), () => SelectedRoute != null && !IsLoading);
             RefreshDataCommand = new RelayCommand(async () => await RefreshDataAsync());
             GenerateReportCommand = new RelayCommand(GenerateReport);
 
@@ -457,17 +458,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             ActivateRouteCommand = new RelayCommand(async () => await ActivateRouteAsync(), () => CanActivateRoute);
             DeactivateRouteCommand = new RelayCommand(async () => await DeactivateRouteAsync(), () => CanDeactivateRoute);
             PlotRouteOnMapCommand = new RelayCommand(async () => await PlotRouteOnMapAsync(), () => SelectedRoute != null);
+            RefreshDrivePathCommand = new RelayCommand(
+                async () => await RefreshAssignmentDrivePathAsync(),
+                () => SelectedRoute != null && RouteStops.Count >= 2 && !IsLoading);
             TimeRouteCommand = new RelayCommand(async () => await TimeRouteStopsAsync(), () => SelectedRoute != null && RouteStops.Any() && IsStartTimeValid);
             PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
             GenerateRoutesCommand = new RelayCommand(async () => await GenerateRoutesAsync(), () => !_isGeneratingRoutes);
             GenerateTransferRoutesCommand = new RelayCommand(async () => await GenerateTransferRoutesAsync(), () => !_isGeneratingRoutes);
             // Re-evaluate map/ timing commands
             (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (RefreshDrivePathCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (ExportRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            (ViewRouteTimetableCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         /// <summary>
@@ -490,11 +494,11 @@ namespace BusBuddy.WPF.ViewModels.Route
             (ActivateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (DeactivateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (RefreshDrivePathCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (ExportRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
-            (ViewRouteTimetableCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateTransferRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
@@ -506,54 +510,6 @@ namespace BusBuddy.WPF.ViewModels.Route
         private void ExportRouteAssignmentPdfAsync(bool includeMap)
         {
             SaveRouteSheet(includeMap, preview: false);
-        }
-
-        /// <summary>
-        /// Attempts to proactively capture a map snapshot by locating an existing MapView instance in visual trees.
-        /// Scans Application.Current.Windows for a MapView and invokes its internal snapshot via reflection.
-        /// If none found, logs and returns silently. Avoids tight coupling until a formal capture command is exposed.
-        /// </summary>
-        private void TryProactiveMapSnapshotCapture()
-        {
-            try
-            {
-                var app = System.Windows.Application.Current;
-                if (app == null) return;
-                foreach (Window w in app.Windows)
-                {
-                    // Depth-first search visual tree for MapView type
-                    var target = FindDescendantByTypeName(w, "MapView");
-                    if (target != null)
-                    {
-                        var m = target.GetType().GetMethod("TryCaptureMapSnapshot", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                        if (m != null)
-                        {
-                            m.Invoke(target, null);
-                            Logger.Debug("Invoked TryCaptureMapSnapshot via reflection on MapView");
-                        }
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Debug(ex, "Proactive map snapshot capture attempt failed (non-fatal)");
-            }
-        }
-
-        // Simple visual tree walker (recursive)
-        private static System.Windows.DependencyObject? FindDescendantByTypeName(System.Windows.DependencyObject root, string typeName)
-        {
-            if (root == null) return null;
-            if (root.GetType().Name == typeName) return root;
-            var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-                var match = FindDescendantByTypeName(child, typeName);
-                if (match != null) return match;
-            }
-            return null;
         }
 
         #region IDisposable

@@ -383,7 +383,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             PrintScheduleCommand = _printScheduleRelay;
             _refreshRelay = new AsyncRelayCommand(LoadRoutesAsync, () => !IsRefreshing);
             RefreshCommand = _refreshRelay;
-            _refreshDrivePathRelay = new AsyncRelayCommand(RefreshDrivePathAsync, () => IsRouteSelected && !IsBusy);
+            _refreshDrivePathRelay = new AsyncRelayCommand(
+                RefreshDrivePathAsync,
+                () => IsRouteSelected && !IsBusy && SelectedRoute!.StopCount.GetValueOrDefault(2) >= 2);
             RefreshDrivePathCommand = _refreshDrivePathRelay;
             _optimizeStopOrderRelay = new AsyncRelayCommand(OptimizeStopOrderAsync, () => IsRouteSelected && !IsBusy);
             OptimizeStopOrderCommand = _optimizeStopOrderRelay;

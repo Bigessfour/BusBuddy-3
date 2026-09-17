@@ -170,5 +170,9 @@ public class StudentFormViewModelSaveTests
         Assert.That(xaml, Does.Not.Contain("SelectedValuePath"));
         Assert.That(xaml, Does.Contain("Name=\"PickupStopComboBox\""));
         Assert.That(xaml, Does.Contain("Style=\"{StaticResource StudentFormActionButtonStyle}\""));
+        Assert.That(xaml, Does.Contain("Label=\"Suggest nearest\""));
+        Assert.That(xaml, Does.Contain("Label=\"Use home as stop\""));
+        Assert.That(xaml, Does.Not.Contain("SizeMode=\"Small\""));
+        Assert.That(xaml, Does.Not.Contain("Import CSV"), "CSV import stays on the roster toolbar, not Edit Student");
     }
 }
