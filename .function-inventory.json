@@ -11,6 +11,8 @@
     "BusBuddy.WPF/Views/Student/StudentSchoolTransferForm.xaml.cs",
     "BusBuddy.Core/Services/RouteService.cs",
     "BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs",
+    "BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml.cs",
+    "BusBuddy.WPF/ViewModels/Route/RouteAssignmentViewModel.cs",
     "BusBuddy.WPF/Views/Route/RouteScheduleWindow.xaml.cs",
     "BusBuddy.WPF/ViewModels/Route/RouteScheduleViewModel.cs",
     "BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs",

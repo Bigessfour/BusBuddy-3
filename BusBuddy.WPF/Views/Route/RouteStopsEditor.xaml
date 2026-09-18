@@ -8,7 +8,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              mc:Ignorable="d"
-             d:DesignHeight="400" d:DesignWidth="600">
+             d:DesignHeight="400" d:DesignWidth="600"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -28,9 +30,7 @@
                                    Command="{Binding AddStopCommand}"
                                    SizeMode="Normal"
                                    CornerRadius="3"
-                                   Background="{DynamicResource ButtonBackgroundBrush}"
-                                   Foreground="{DynamicResource ButtonForegroundBrush}"
-                                   Padding="10,5" Margin="0,0,6,4"
+                                   Padding="10,5" Margin="0,0,8,4"
                                    AutomationProperties.Name="Add Stop" ToolTip="Add a new stop" />
             <syncfusion:ButtonAdv Label="Remove"
                                    Command="{Binding RemoveStopCommand}"
@@ -38,34 +38,24 @@
                                    CornerRadius="3"
                                    Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                                   Padding="10,5" Margin="0,0,6,4"
+                                   Padding="10,5" Margin="0,0,8,4"
                                    AutomationProperties.Name="Remove Stop" ToolTip="Remove selected stop" />
             <syncfusion:ButtonAdv Label="Up"
                                    Command="{Binding MoveStopUpCommand}"
                                    SizeMode="Normal"
                                    CornerRadius="3"
-                                   Background="{DynamicResource ButtonBackgroundBrush}"
-                                   Foreground="{DynamicResource ButtonForegroundBrush}"
-                                   Padding="10,5" Margin="0,0,6,4"
+                                   Padding="10,5" Margin="0,0,8,4"
                                    AutomationProperties.Name="Move Stop Up" ToolTip="Move selected stop up" />
             <syncfusion:ButtonAdv Label="Down"
                                    Command="{Binding MoveStopDownCommand}"
                                    SizeMode="Normal"
                                    CornerRadius="3"
-                                   Background="{DynamicResource ButtonBackgroundBrush}"
-                                   Foreground="{DynamicResource ButtonForegroundBrush}"
-                                   Padding="10,5" Margin="0,0,12,4"
+                                   Padding="10,5" Margin="0,0,8,4"
                                    AutomationProperties.Name="Move Stop Down" ToolTip="Move selected stop down" />
-            <TextBlock Text="Start Time:" VerticalAlignment="Center" Margin="0,0,4,4"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" />
-            <syncfusion:SfMaskedEdit Width="80" Text="{Binding StartTimeString, Mode=TwoWay}" Margin="0,0,10,4"
-                                     AutomationProperties.Name="Route Start Time" />
             <syncfusion:ButtonAdv Label="Time Route"
                                    Command="{Binding TimeRouteCommand}"
                                    SizeMode="Normal"
                                    CornerRadius="3"
-                                   Background="{DynamicResource ButtonBackgroundBrush}"
-                                   Foreground="{DynamicResource ButtonForegroundBrush}"
                                    Padding="10,5" Margin="0,0,0,4"
                                    AutomationProperties.Name="Time Route Stops" ToolTip="Recalculate arrival and departure times" />
         </WrapPanel>
@@ -75,20 +65,24 @@
                    AutoGenerateColumns="False"
                    AllowSorting="True"
                    AllowFiltering="True"
-                   AllowGrouping="True"
-                   ShowGroupDropArea="True"
+                   AllowGrouping="False"
+                   ShowGroupDropArea="False"
+                   AllowResizingColumns="True"
                    SelectionMode="Single"
                    GridLinesVisibility="Both"
+                   HeaderLinesVisibility="Both"
                    ColumnSizer="Star"
+                   HorizontalAlignment="Stretch"
+                   VerticalAlignment="Stretch"
                    Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                    AutomationProperties.Name="Route Stops Grid"
                    AutomationProperties.HelpText="Grid listing route stops with timing information">
             <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" Width="60" />
-                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" Width="180" />
-                <syncfusion:GridTextColumn HeaderText="Arrive" MappingName="PublishedArrivalText" Width="80" />
-                <syncfusion:GridTextColumn HeaderText="Depart" MappingName="PublishedDepartureText" Width="80" />
-                <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" Width="100" />
+                <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" MinimumWidth="48" MaximumWidth="64" />
+                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" MinimumWidth="140" />
+                <syncfusion:GridTextColumn HeaderText="Arrive" MappingName="PublishedArrivalText" MinimumWidth="72" />
+                <syncfusion:GridTextColumn HeaderText="Depart" MappingName="PublishedDepartureText" MinimumWidth="72" />
+                <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" MinimumWidth="88" />
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,6,0,0">

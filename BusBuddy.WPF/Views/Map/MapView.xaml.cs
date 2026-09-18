@@ -40,6 +40,7 @@ namespace BusBuddy.WPF.Views.Map
         private bool _pendingCameraSync;
         private bool _pendingMarkerRefresh;
         private bool _placingMarkers;
+        private bool _syncingCenterFromLayer;
 
         public MapView()
         {
@@ -175,6 +176,7 @@ namespace BusBuddy.WPF.Views.Map
             if (DistrictTilesLayer is ImageryLayer layer)
             {
                 layer.MarkerSelected -= OnImageryMarkerSelected;
+                layer.CenterChanged -= OnImageryCenterChanged;
             }
             DetachViewModel(_boundViewModel);
             _boundViewModel = null;
@@ -252,6 +254,36 @@ namespace BusBuddy.WPF.Views.Map
         {
             imagery.MarkerSelected -= OnImageryMarkerSelected;
             imagery.MarkerSelected += OnImageryMarkerSelected;
+            imagery.CenterChanged -= OnImageryCenterChanged;
+            imagery.CenterChanged += OnImageryCenterChanged;
+        }
+
+        /// <summary>
+        /// Pan writes Center on the layer. Keep the view-model in sync without a XAML TwoWay
+        /// Center binding (that binding throws TransformToVisual before the layer is parented).
+        /// </summary>
+        private void OnImageryCenterChanged(object? sender, CenterChangedEventArgs e)
+        {
+            if (_syncingCenterFromLayer || DataContext is not MapViewModel vm || DistrictTilesLayer is null)
+            {
+                return;
+            }
+
+            var center = DistrictTilesLayer.Center;
+            if (vm.MapCenter == center)
+            {
+                return;
+            }
+
+            _syncingCenterFromLayer = true;
+            try
+            {
+                vm.MapCenter = center;
+            }
+            finally
+            {
+                _syncingCenterFromLayer = false;
+            }
         }
 
         private void OnImageryMarkerSelected(object? sender, MarkerSelectedEventArgs e)
@@ -367,7 +399,13 @@ namespace BusBuddy.WPF.Views.Map
             _markerHostRetry ??= new MapMarkerHost.RetryScheduler(
                 Dispatcher,
                 TryPlaceMarkers,
-                retries => Logger.Warning("Map markers still pending after {Retries} host retries", retries));
+                retries =>
+                {
+                    // Keep _pendingMarkerRefresh so SizeChanged / later layout can still attach pins.
+                    Logger.Information(
+                        "Map marker host retry paused after {Retries} attempts — will retry on the next layout",
+                        retries);
+                });
             _markerHostRetry.Arm();
         }
 
@@ -426,6 +464,11 @@ namespace BusBuddy.WPF.Views.Map
             {
                 Dispatcher.Invoke(() =>
                 {
+                    if (_syncingCenterFromLayer)
+                    {
+                        return;
+                    }
+
                     if (_currentLayer is ImageryLayer imagery
                         && !TrySetLayerCenter(imagery, vm.MapCenter))
                     {
@@ -505,7 +548,21 @@ namespace BusBuddy.WPF.Views.Map
                 return false;
             }
 
-            imagery.Center = center;
+            if (imagery.Center == center)
+            {
+                return true;
+            }
+
+            _syncingCenterFromLayer = true;
+            try
+            {
+                imagery.Center = center;
+            }
+            finally
+            {
+                _syncingCenterFromLayer = false;
+            }
+
             return true;
         }
 

@@ -76,7 +76,7 @@ These are enforced by specs (`specs/*.md`) and by static tests:
 ## How it is built
 
 - **Spec-driven.** A constitution (`.specify/memory/constitution.md`) fixes the non-negotiables (Syncfusion-only UI, Serilog-only logging, layered Core/WPF/Tests, hybrid Mac + Windows VM, solo-dev CI). Numbered feature specs under `specs/00x-*` carry plan and tasks; `specs/{students,routes,trips,…}.md` are the domain contract.
-- **Hybrid development.** Core, tests, Docker Postgres, and secrets live on a Mac. The WPF app runs in a Windows 11 VM (UTM) over a shared folder. `./run-wpf.sh` builds on the Mac and launches inside the VM; `Scripts/utm-wpf-test.sh` runs the WPF test host on the guest over SSH.
+- **Hybrid development.** Core, tests, Docker Postgres, and secrets live on a Mac. The WPF app runs in a Windows 11 VM (UTM) from `C:\dev\BusBuddy-3` over SSH (`Scripts/utm-dev-bridge.sh`). `./run-wpf.sh` is Mac preflight plus `launch`; `utm-wpf-test.sh` is a shim for `test`. See `docs/utm-dev-bridge.md`.
 - **AI-assisted, with guardrails.** The developer works with coding agents. `AGENTS.md`, the constitution, a RAG index of the repo, and a `check-project-done.py` judge exist to keep agents inside the domain rules rather than to replace review.
 - **Definition of done is executable.** `python3 .github/scripts/check-project-done.py` returns exit 0 only when every checklist item passes or is explicitly deferred with a reason. See `01-status.md` for today's result.
 

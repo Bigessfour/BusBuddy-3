@@ -43,6 +43,17 @@ public static class UiSurfaceProbe
     }
 
     /// <summary>
+    /// Leaf controls under <c>BusBuddy.WPF.Controls</c> (PlacesAddressBox) use dependency
+    /// properties, not a view-model. Do not treat a null DataContext as a miswire.
+    /// </summary>
+    public static bool IsEmbeddedControl(Type? type)
+    {
+        var ns = type?.Namespace;
+        return !string.IsNullOrEmpty(ns)
+            && ns.Equals("BusBuddy.WPF.Controls", StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Chrome hosts (VehicleForm → VehiclesView → VehicleManagementView) and document windows
     /// (PdfPreviewWindow) load with a null DataContext by design. Warn only when a feature
     /// UserControl has neither its own nor a descendant view-model.
@@ -50,9 +61,10 @@ public static class UiSurfaceProbe
     public static LogEventLevel ClassifyDataContextLevel(
         object? dataContext,
         bool descendantHasDataContext,
-        bool isWindow)
+        bool isWindow,
+        bool isEmbeddedControl = false)
     {
-        if (dataContext is not null || descendantHasDataContext || isWindow)
+        if (dataContext is not null || descendantHasDataContext || isWindow || isEmbeddedControl)
         {
             return LogEventLevel.Information;
         }
@@ -128,7 +140,8 @@ public static class UiSurfaceProbe
         var level = ClassifyDataContextLevel(
             root.DataContext,
             HasDescendantDataContext(root),
-            root is Window);
+            root is Window,
+            IsEmbeddedControl(root.GetType()));
         UiDiagnosticsLog.Write(
             Logger,
             level,

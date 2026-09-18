@@ -446,7 +446,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             DeleteRouteCommand = new RelayCommand(async () => await DeleteRouteAsync());
             ViewScheduleCommand = new RelayCommand(async () => await ViewScheduleAsync(), () => SelectedRoute != null && !IsLoading);
             RefreshDataCommand = new RelayCommand(async () => await RefreshDataAsync());
-            GenerateReportCommand = new RelayCommand(GenerateReport);
+            GenerateReportCommand = ExportRouteSheetCommand;
 
             // Enhanced Route Building Commands
             AssignVehicleCommand = new RelayCommand(async () => await AssignVehicleAsync(), () => CanAssignVehicle);
@@ -462,7 +462,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 async () => await RefreshAssignmentDrivePathAsync(),
                 () => SelectedRoute != null && RouteStops.Count >= 2 && !IsLoading);
             TimeRouteCommand = new RelayCommand(async () => await TimeRouteStopsAsync(), () => SelectedRoute != null && RouteStops.Any() && IsStartTimeValid);
-            PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
+            PrintMapCommand = PrintRouteSheetCommand;
             GenerateRoutesCommand = new RelayCommand(async () => await GenerateRoutesAsync(), () => !_isGeneratingRoutes);
             GenerateTransferRoutesCommand = new RelayCommand(async () => await GenerateTransferRoutesAsync(), () => !_isGeneratingRoutes);
             // Re-evaluate map/ timing commands
@@ -502,11 +502,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             (GenerateRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateTransferRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
-        private void PrintMap()
-        {
-            SaveRouteSheet(includeMap: true, preview: false);
-        }
-
         private void ExportRouteAssignmentPdfAsync(bool includeMap)
         {
             SaveRouteSheet(includeMap, preview: false);

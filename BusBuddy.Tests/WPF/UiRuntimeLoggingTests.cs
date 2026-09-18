@@ -27,6 +27,14 @@ public class UiRuntimeLoggingTests
             Is.True);
         Assert.That(WpfTraceSerilogListener.IsMisconfigurationTrace("Loaded Visual from template"), Is.False);
         Assert.That(WpfTraceSerilogListener.IsMisconfigurationTrace(null), Is.False);
+        Assert.That(
+            WpfTraceSerilogListener.IsMisconfigurationTrace(
+                "Cannot find source for binding with reference 'ElementName=PanelPresenter'. BindingExpression:Path=SafeHeight; DataItem=null; target element is 'DoubleAnimation' (HashCode=1); target property is 'Duration' (type 'Duration')"),
+            Is.False);
+        Assert.That(
+            WpfTraceSerilogListener.IsMisconfigurationTrace(
+                "Cannot find source for binding with reference 'ElementName=ItemsPresenter'. BindingExpression:Path=DesiredSize.Height; DataItem=null; target element is 'DoubleAnimation'; target property is 'Duration'"),
+            Is.False);
     }
 
     [Test]
@@ -57,6 +65,15 @@ public class UiRuntimeLoggingTests
         Assert.That(
             UiSurfaceProbe.ClassifyDataContextLevel(new object(), descendantHasDataContext: false, isWindow: false),
             Is.EqualTo(Serilog.Events.LogEventLevel.Information));
+        Assert.That(UiSurfaceProbe.IsEmbeddedControl(typeof(BusBuddy.WPF.Controls.PlacesAddressBox)), Is.True);
+        Assert.That(UiSurfaceProbe.IsEmbeddedControl(typeof(SettingsView)), Is.False);
+        Assert.That(
+            UiSurfaceProbe.ClassifyDataContextLevel(
+                null,
+                descendantHasDataContext: false,
+                isWindow: false,
+                isEmbeddedControl: true),
+            Is.EqualTo(Serilog.Events.LogEventLevel.Information));
     }
 
     [Test]
@@ -78,6 +95,7 @@ public class UiRuntimeLoggingTests
         var tileLayer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
         Assert.That(tileLayer, Does.Contain("MeasureOverride"));
         Assert.That(tileLayer, Does.Contain("ArrangeOverride"));
+        Assert.That(tileLayer, Does.Contain("OnPropertyChanged"));
         Assert.That(tileLayer, Does.Contain("IsVisualTreeNotReady"));
         Assert.That(tileLayer, Does.Contain("BeginMarkerHostCheck"));
         Assert.That(tileLayer, Does.Contain("LastLayoutSkippedVisualTree"));
@@ -85,6 +103,12 @@ public class UiRuntimeLoggingTests
         Assert.That(host, Does.Contain("TryAssign"));
         Assert.That(host, Does.Contain("TryAssignAndLayout"));
         Assert.That(host, Does.Contain("RetryScheduler"));
+        var mapView = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
+        Assert.That(mapView, Does.Contain("Map marker host retry paused"));
+        Assert.That(mapView, Does.Not.Contain("Map markers still pending after"));
+        var ollama = CoreSourceFile.Read("Services/OllamaAiService.cs");
+        Assert.That(ollama, Does.Contain("Logger.Information(ex,"));
+        Assert.That(ollama, Does.Contain("Ollama is not reachable"));
     }
 
     [Test]

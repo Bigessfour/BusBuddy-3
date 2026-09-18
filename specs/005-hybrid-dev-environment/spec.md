@@ -55,14 +55,15 @@ As a Windows VM developer, I connect to Docker Postgres on the Mac host IP print
 - **FR-002**: `DEVELOPMENT-GUIDE.md` hybrid section remains the detailed operator guide; this feature must not create a third competing standards doc.
 - **FR-003**: Agents MUST NOT invent cloud/AWS/non-Windows WPF hosts for BusBuddy runtime.
 - **FR-004**: Spec-Kit / RAG must surface these rules (constitution + this spec).
+- **FR-005**: Agents talk to the UTM guest only through `Scripts/utm-dev-bridge.sh` (`doctor|status|sync|exec|test|launch|pull-logs`). They must not start `watch`, must not `utmctl exec` to launch WPF, and must not `dotnet run` the WPF project on the Mac. See `docs/utm-dev-bridge.md`.
 
 ## Agent checklist (canonical short form)
 
-| Host       | Do                                                                         | Do not                           |
-| ---------- | -------------------------------------------------------------------------- | -------------------------------- |
-| Mac        | Core, Docker Postgres, RAG, Passwords, build with `EnableWindowsTargeting` | Claim WPF runs natively on macOS |
-| Windows VM | Full Syncfusion WPF run/debug; shared folder; env/keys secrets             | Assume Keychain/Passwords API    |
-| Either     | Local Ollama for AI; solo CI via PR gates                                  | Propose AWS/cloud app hosting    |
+| Host       | Do                                                                                              | Do not                           |
+| ---------- | ----------------------------------------------------------------------------------------------- | -------------------------------- |
+| Mac        | Core, Docker Postgres, RAG, Passwords, build with `EnableWindowsTargeting`                      | Claim WPF runs natively on macOS |
+| Windows VM | Full Syncfusion WPF from `C:\dev\BusBuddy-3` (SSH bridge); `Z:\` is bootstrap; env/keys secrets | Assume Keychain/Passwords API    |
+| Either     | Local Ollama for AI; solo CI via PR gates                                                       | Propose AWS/cloud app hosting    |
 
 ## Success Criteria _(mandatory)_
 

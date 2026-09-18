@@ -79,7 +79,9 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("EnableZoom=\"True\""));
         Assert.That(xaml, Does.Contain("EnablePan=\"True\""));
         Assert.That(xaml, Does.Contain("IsHitTestVisible=\"True\""));
-        Assert.That(xaml, Does.Contain("Center=\"{Binding MapCenter, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Not.Contain("Center=\"{Binding MapCenter"));
+        Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("OnImageryCenterChanged"));
+        Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("TrySetLayerCenter"));
         Assert.That(xaml, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(xaml, Does.Not.Contain("MarkerTemplateSelector=\"{StaticResource DistrictMarkerTemplateSelector}\""));
         Assert.That(xaml, Does.Contain("x:Key=\"DistrictMarkerTemplateSelector\""));

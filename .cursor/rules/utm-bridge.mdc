@@ -1,0 +1,31 @@
+---
+description: UTM Windows guest is the only WPF runtime. Agents use utm-dev-bridge.sh subcommands over SSH, never watch, never Mac dotnet run of WPF, never utmctl exec to launch.
+alwaysApply: true
+---
+
+# UTM bridge (Cursor → Windows VM)
+
+Cursor has no UTM protocol. The guest RPC is [`Scripts/utm-dev-bridge.sh`](Scripts/utm-dev-bridge.sh). Read [`docs/utm-dev-bridge.md`](docs/utm-dev-bridge.md) before inventing SSH.
+
+## Hard rules
+
+- WPF testhost and the GUI exist only on the UTM Windows guest.
+- Runtime root is `C:\dev\BusBuddy-3`. `Z:\` (SPICE WebDAV) is bootstrap only. Never `dotnet build` / `dotnet run` / testhost from `Z:\`.
+- Allowed commands:
+
+```bash
+./Scripts/utm-dev-bridge.sh doctor
+./Scripts/utm-dev-bridge.sh status
+./Scripts/utm-dev-bridge.sh sync
+./Scripts/utm-dev-bridge.sh exec -- <powershell>
+./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~…'
+./Scripts/utm-dev-bridge.sh launch
+./Scripts/utm-dev-bridge.sh pull-logs
+```
+
+- Read `~/.cache/utm-dev-bridge/status.json` (or `status`) before `doctor`.
+- Never start `watch` from an agent.
+- Never `dotnet run` the WPF project on the Mac.
+- Never `utmctl exec` to launch the app (Session 0 / SYSTEM). `utmctl exec` is OpenSSH bootstrap only (`Scripts/Enable-BusBuddyOpenSSH.ps1`).
+- Never `ssh … powershell -Command "…"`. `exec` always uses `-EncodedCommand` (UTF-16LE).
+- After a guest run: `pull-logs` and cite the files under `artifacts/utm-runtime-logs-*/`.

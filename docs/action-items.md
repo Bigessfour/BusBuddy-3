@@ -60,6 +60,11 @@ Optional:
 
 Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
+Parked hygiene (from PR #92 audit; not this pass):
+
+- [ ] **AddressService DI:** `StudentsViewModel` / `StudentsView` still `new AddressService()` (with a `GetService` fallback). Register it or merge into `AddressValidationService`.
+- [ ] **IStudentScheduleService:** registered in `AddDataServices`, no consumer. Wire a clerk surface or drop the registration.
+
 ### Maps coupling checklist (harden / test)
 
 Lightly coupled surfaces that must stay Google-only:

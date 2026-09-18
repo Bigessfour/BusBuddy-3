@@ -78,8 +78,10 @@ if ((Test-Path $adminKeys) -and (Get-Content $adminKeys -Raw -ErrorAction Silent
     Add-Content -Path $adminKeys -Value $pub -Encoding ascii
     Write-Log "Wrote $adminKeys"
 }
-icacls $adminKeys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F" | Out-Null
-Write-Log "ACL set on administrators_authorized_keys"
+# Microsoft: administrators_authorized_keys must be SYSTEM + Administrators only.
+# Use the Administrators SID so localized Windows still matches Learn docs.
+icacls $adminKeys /inheritance:r /grant "*S-1-5-32-544:F" /grant "SYSTEM:F" | Out-Null
+Write-Log "ACL set on administrators_authorized_keys (SYSTEM + *S-1-5-32-544)"
 
 # Default Windows sshd ignores per-user authorized_keys for Administrators.
 # Keep that Match block; we populated administrators_authorized_keys.

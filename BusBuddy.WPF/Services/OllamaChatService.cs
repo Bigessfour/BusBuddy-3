@@ -127,7 +127,7 @@ namespace BusBuddy.WPF.Services
             }
             else
             {
-                Logger.Warning(
+                Logger.Information(
                     "Ollama not reachable at {NativeBase}. Chat will use graceful offline fallback. Start Ollama locally to enable live AI.",
                     _options.NativeBaseUrl);
             }

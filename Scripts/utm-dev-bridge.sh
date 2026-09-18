@@ -1,24 +1,11 @@
 #!/bin/zsh
 # utm-dev-bridge.sh
-# Mac host <-> UTM Windows 11 ARM guest: persistent SSH, rsync, localhost port forwards.
+# Agent-facing CLI: Mac host ↔ UTM Windows 11 ARM (SSH + NTFS copy at C:\dev\BusBuddy-3).
 #
-# Save:  BusBuddy-3/Scripts/utm-dev-bridge.sh  (this repo)
-# Optional:  ln -sf "$(pwd)/Scripts/utm-dev-bridge.sh" "$HOME/.local/bin/utm-dev-bridge"
+#   ./Scripts/utm-dev-bridge.sh doctor|status|sync|exec|test|launch|pull-logs|watch
 #
-# Run from the Mac (not inside the VM):
-#   ./Scripts/utm-dev-bridge.sh
-#   ./Scripts/utm-dev-bridge.sh --doctor
-#   ./Scripts/utm-dev-bridge.sh --sync-once
-#
-# Config (env, or ~/.config/utm-dev-bridge.env):
-#   VM_IP          Fixed IPv4. Empty = utmctl + last-known IP.
-#   SSH_USER       Guest Windows account (default: Macbook)
-#   SSH_KEY        Private key (default: ~/.ssh/busbuddy-utm)
-#   UTM_VM_NAME    utmctl name (default: Windows)
-#   LOCAL_DIR      Mac project root
-#   REMOTE_DIR     Guest path, POSIX form (default: /c/dev/BusBuddy-3)
-#   FORWARD_PORTS  Comma list forwarded Mac:port -> VM:127.0.0.1:port (default: 3000,5000,8080)
-#   POLL_SECONDS   Sync interval if fswatch is missing (default: 1.5)
+# Operators: docs/utm-dev-bridge.md
+# Config: ~/.config/utm-dev-bridge.env  (see Scripts/utm-dev-bridge.env.example)
 
 emulate -L zsh
 set -u
@@ -27,372 +14,387 @@ setopt pipefail
 typeset -r SCRIPT_NAME="${0:t}"
 typeset -r SCRIPT_DIR="${0:A:h}"
 typeset -r REPO_ROOT="${SCRIPT_DIR:h}"
-typeset -r CONFIG_FILE="${UTM_DEV_BRIDGE_ENV:-$HOME/.config/utm-dev-bridge.env}"
-typeset -r STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/utm-dev-bridge"
-typeset -r LAST_IP_FILE="${STATE_DIR}/last-ipv4"
-typeset -r CTL_SOCK="${STATE_DIR}/ssh.sock"
-typeset -ga FORWARD_ACTIVE FORWARD_SKIPPED FORWARD_SSH
 
-# --- colors (TTY only) ----------------------------------------------------------
-if [[ -t 1 ]]; then
-  typeset -r C_RESET=$'\033[0m' C_DIM=$'\033[2m' C_BOLD=$'\033[1m'
-  typeset -r C_RED=$'\033[31m' C_GRN=$'\033[32m' C_YLW=$'\033[33m'
-  typeset -r C_CYN=$'\033[36m' C_MAG=$'\033[35m'
-else
-  typeset -r C_RESET= C_DIM= C_BOLD= C_RED= C_GRN= C_YLW= C_CYN= C_MAG=
-fi
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/utm-dev-bridge.inc"
 
-log()  { print -r -- "${C_DIM}[$(date +%H:%M:%S)]${C_RESET} $*"; }
-ok()   { print -r -- "${C_GRN}●${C_RESET} $*"; }
-warn() { print -r -- "${C_YLW}▲${C_RESET} $*"; }
-err()  { print -r -- "${C_RED}✖${C_RESET} $*" >&2; }
-info() { print -r -- "${C_CYN}→${C_RESET} $*"; }
+typeset -r DEFAULT_FILTER='FullyQualifiedName~StudentsListCoordinatorTests|FullyQualifiedName~StudentsViewModelTests|FullyQualifiedName~StudentFormViewModelSaveTests|FullyQualifiedName~StudentsViewTests|FullyQualifiedName~PostgresConnectionResolverTests|FullyQualifiedName~DestinationServiceTests'
+typeset -r FULL_FILTER='Category!=Integration&Category!=InMemoryFlaky'
 
 usage() {
   cat <<'EOF'
-utm-dev-bridge — persistent SSH + rsync + localhost tunnels (Mac → UTM Windows)
+utm-dev-bridge — Mac → UTM Windows guest RPC (SSH, not utmctl exec)
 
 USAGE
-  utm-dev-bridge.sh              Connect, watch-sync, keep tunnels up
-  utm-dev-bridge.sh --sync-once  One rsync, then exit (no watch / no -N)
-  utm-dev-bridge.sh --doctor      Probe utmctl, SSH, rsync, ports
-  utm-dev-bridge.sh --help
+  utm-dev-bridge.sh doctor
+  utm-dev-bridge.sh status
+  utm-dev-bridge.sh sync [--mirror] [--full]
+  utm-dev-bridge.sh exec -- <powershell>
+  utm-dev-bridge.sh test [--no-sync] [--deps-only] [--full] [--filter EXPR]
+  utm-dev-bridge.sh launch [--no-sync]
+  utm-dev-bridge.sh pull-logs
+  utm-dev-bridge.sh watch          # human-only; agents must not start this
 
-ENVIRONMENT  (also loaded from ~/.config/utm-dev-bridge.env)
-  VM_IP            Guest IPv4 (empty = auto via utmctl)
-  SSH_USER         Windows account          default: Macbook
-  SSH_KEY          Identity file            default: ~/.ssh/busbuddy-utm
-  UTM_VM_NAME      utmctl VM name           default: Windows
-  LOCAL_DIR        Mac project root         default: repo containing this script
-  REMOTE_DIR       Guest dest (Git/MSYS)   default: /c/dev/BusBuddy-3
-  FORWARD_PORTS    Mac localhost binds      default: 3000,5000,8080
-  POLL_SECONDS      Fallback watch interval  default: 1.5
+ALIASES
+  --doctor      doctor
+  --sync-once   sync
 
-Ports use SSH LocalForward (-L): Mac browser http://127.0.0.1:3000
-reaches the process listening on the guest's 127.0.0.1:3000.
+ENVIRONMENT  (also ~/.config/utm-dev-bridge.env)
+  VM_IP          Guest IPv4 (empty = utmctl, then probed last-known)
+  SSH_USER       Windows account          default: Macbook
+  SSH_KEY        Identity file            default: ~/.ssh/busbuddy-utm
+  UTM_VM_NAME    utmctl VM name           default: Windows
+  LOCAL_DIR      Mac project root         default: this repo
+  REMOTE_DIR     Guest dest (Git/MSYS)    default: /c/dev/BusBuddy-3
+  FORWARD_PORTS  Opt-in Mac localhost -L  default: empty
+  POLL_SECONDS   watch poll if no fswatch default: 1.5
+
+Runtime root is C:\dev\BusBuddy-3. Z:\ is bootstrap only.
+See docs/utm-dev-bridge.md.
 EOF
 }
 
-load_config() {
-  if [[ -f "${CONFIG_FILE}" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "${CONFIG_FILE}"
-    set +a
+print_status_human() {
+  local host="$1"
+  ok "SSH  ${SSH_USER}@${host}  (keepalive 15s, ControlMaster)"
+  ok "sync ${SYNC_ENGINE:-none}  ${LOCAL_DIR}  →  ${REMOTE_DIR}  ($(posix_to_win_path))"
+  if (( ${#FORWARD_ACTIVE} )); then
+    local p
+    for p in "${FORWARD_ACTIVE[@]}"; do
+      ok "open ${C_CYN}http://127.0.0.1:${p}/${C_RESET}  →  guest :${p}"
+    done
+  else
+    info "no port forwards (FORWARD_PORTS empty)"
   fi
-
-  : "${SSH_USER:=Macbook}"
-  : "${SSH_KEY:=$HOME/.ssh/busbuddy-utm}"
-  : "${UTM_VM_NAME:=Windows}"
-  : "${LOCAL_DIR:=$REPO_ROOT}"
-  : "${REMOTE_DIR:=/c/dev/BusBuddy-3}"
-  : "${FORWARD_PORTS:=3000,5000,8080}"
-  : "${POLL_SECONDS:=1.5}"
-  : "${VM_IP:=}"
-  : "${RSYNC_PATH:=}"
-}
-
-need_cmd() {
-  command -v "$1" >/dev/null 2>&1 || { err "Missing command: $1"; return 1; }
-}
-
-ipv4_only() {
-  grep -E '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
-}
-
-resolve_vm_ip() {
-  local ip
-  if [[ -n "${VM_IP}" ]]; then
-    print -r -- "${VM_IP}"
-    return 0
+  if (( ${#FORWARD_SKIPPED} )); then
+    warn "already in use on Mac, skipped: ${(j:, :)FORWARD_SKIPPED}"
   fi
+}
 
+cmd_doctor() {
+  print -r -- "${C_BOLD}doctor${C_RESET}"
+  need_cmd ssh && ok "ssh"
+  need_cmd rsync && ok "rsync $(rsync --version | head -1)"
   if command -v utmctl >/dev/null 2>&1; then
-    ip="$(utmctl ip-address "${UTM_VM_NAME}" 2>/dev/null | ipv4_only | head -1 || true)"
-    if [[ -n "${ip}" ]]; then
-      print -r -- "${ip}"
-      return 0
-    fi
-  fi
-
-  if [[ -f "${LAST_IP_FILE}" ]]; then
-    ip="$(<"${LAST_IP_FILE}")"
-    if [[ "${ip}" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-      warn "utmctl has no IPv4; using last-known ${ip}"
-      print -r -- "${ip}"
-      return 0
-    fi
-  fi
-
-  return 1
-}
-
-ensure_vm_started() {
-  command -v utmctl >/dev/null 2>&1 || return 0
-  local vm_status
-  vm_status="$(utmctl status "${UTM_VM_NAME}" 2>/dev/null || true)"
-  case "${vm_status}" in
-    started|running) return 0 ;;
-  esac
-  warn "UTM VM '${UTM_VM_NAME}' is '${vm_status:-unknown}' — starting"
-  utmctl start "${UTM_VM_NAME}" >/dev/null 2>&1 || true
-}
-
-typeset -a SSH_OPTS
-
-init_ssh_opts() {
-  SSH_OPTS=(
-    -i "${SSH_KEY}"
-    -o IdentitiesOnly=yes
-    -o StrictHostKeyChecking=accept-new
-    -o UserKnownHostsFile="${STATE_DIR}/known_hosts"
-    -o ServerAliveInterval=15
-    -o ServerAliveCountMax=4
-    -o TCPKeepAlive=yes
-    -o ExitOnForwardFailure=yes
-    -o ConnectTimeout=8
-    -o BatchMode=yes
-  )
-}
-
-remote_target() {
-  print -r -- "${SSH_USER}@${1}"
-}
-
-ssh_direct() {
-  ssh "${SSH_OPTS[@]}" "$@"
-}
-
-ssh_mux() {
-  ssh "${SSH_OPTS[@]}" -o ControlMaster=no -o ControlPath="${CTL_SOCK}" "$@"
-}
-
-master_alive() {
-  ssh -O check -o ControlPath="${CTL_SOCK}" "$(remote_target "$1")" >/dev/null 2>&1
-}
-
-ssh_run() {
-  local host="$1"
-  shift
-  if master_alive "${host}"; then
-    ssh_mux "$(remote_target "${host}")" "$@"
+    ok "utmctl  status=$(utmctl status "${UTM_VM_NAME}" 2>/dev/null || echo missing)"
   else
-    ssh_direct "$(remote_target "${host}")" "$@"
+    warn "utmctl missing — set VM_IP by hand"
   fi
-}
+  command -v fswatch >/dev/null 2>&1 && ok "fswatch" || warn "fswatch missing (optional)"
+  if [[ "${SSH_KEY}" == '~'* ]]; then
+    err "SSH_KEY still has a literal tilde: ${SSH_KEY} — quote-expand failed"
+  fi
+  [[ -f "${SSH_KEY}" ]] && ok "key ${SSH_KEY}" || err "key missing: ${SSH_KEY}"
+  [[ -d "${LOCAL_DIR}" ]] && ok "local ${LOCAL_DIR}" || err "LOCAL_DIR missing"
 
-probe_remote_rsync() {
-  local host="$1" candidate
-  if [[ -n "${RSYNC_PATH}" ]]; then
-    print -r -- "${RSYNC_PATH}"
-    return 0
+  ensure_vm_started
+  local ip
+  if ! ip="$(resolve_vm_ip)"; then
+    err "Could not resolve VM IPv4. Set VM_IP=192.168.64.2"
+    return 1
   fi
-  for candidate in \
-    '/usr/bin/rsync' \
-    'C:/Program Files/Git/usr/bin/rsync.exe'
-  do
-    if ssh_run "${host}" "${candidate} --version" >/dev/null 2>&1; then
-      print -r -- "${candidate}"
-      return 0
-    fi
-  done
-  if ssh_run "${host}" "rsync --version" >/dev/null 2>&1; then
-    print -r -- rsync
-    return 0
-  fi
-  return 1
-}
+  CURRENT_HOST="${ip}"
+  ok "guest IPv4 ${ip}"
 
-remote_win_path() {
-  local p="${REMOTE_DIR}"
-  if [[ "${p}" == /c/* ]]; then
-    print -r -- "C:${p#/c}"
+  if probe_ssh_ok "${ip}" 8; then
+    ok "SSH login ${SSH_USER}@${ip}"
   else
-    print -r -- "${p}"
+    err "SSH failed. Check sshd in the guest and ${SSH_KEY}"
+    err "Microsoft checklist: https://learn.microsoft.com/windows-server/administration/openssh/openssh_keymanagement"
+    return 1
   fi
-}
 
-choose_sync_engine() {
-  local host="$1"
-  RSYNC_REMOTE=""
-  if RSYNC_REMOTE="$(probe_remote_rsync "${host}")"; then
-    SYNC_ENGINE=rsync
-    return 0
-  fi
-  if ssh_run "${host}" "tar --version" >/dev/null 2>&1; then
-    SYNC_ENGINE=tar
-    return 0
-  fi
-  SYNC_ENGINE=""
-  return 1
-}
-
-tar_once() {
-  local host="$1"
-  local dest dest_ps stamp list
-  dest="$(remote_win_path)"
-  stamp="${STATE_DIR}/last-tar-sync"
-  list="$(mktemp -t utm-dev-bridge-files)"
-  COPYFILE_DISABLE=1
-  export COPYFILE_DISABLE
-
-  (
-    cd "${LOCAL_DIR}" || exit 1
-    if [[ -f "${stamp}" ]]; then
-      find . \
-        \( -name .git -o -name node_modules -o -name bin -o -name obj \
-           -o -name build -o -name TestResults -o -name .vs -o -name .idea \) -prune -o \
-        -type f -newer "${stamp}" -print
+  if choose_sync_engine "${ip}"; then
+    if [[ "${SYNC_ENGINE}" == rsync ]]; then
+      ok "guest rsync  ${RSYNC_REMOTE}"
     else
-      find . \
-        \( -name .git -o -name node_modules -o -name bin -o -name obj \
-           -o -name build -o -name TestResults -o -name .vs -o -name .idea \) -prune -o \
-        -type f -print
+      warn "guest rsync missing — using tar incremental. Deletes on the guest are not mirrored."
     fi
-  ) > "${list}"
-
-  if [[ ! -s "${list}" ]]; then
-    rm -f "${list}"
-    return 0
+  else
+    err "No rsync or tar on the guest"
+    return 1
   fi
 
-  local count
-  count="$(wc -l < "${list}" | tr -d ' ')"
-  info "tar  ${count} file(s) → ${dest}"
-
-  # Windows OpenSSH uses cmd.exe: POSIX single quotes are literal, so -C 'C:/...'
-  # becomes chdir to a quoted path. Double quotes are valid in cmd and PowerShell.
-  (
-    cd "${LOCAL_DIR}" || exit 1
-    tar -cf - -T "${list}"
-  ) | ssh_run "${host}" "tar -xf - -C \"${dest}\""
-
-  local rc=$?
-  rm -f "${list}"
-  if (( rc == 0 )); then
-    touch "${stamp}"
+  if [[ -n "${FORWARD_PORTS}" ]]; then
+    local p
+    for p in ${(s:,:)FORWARD_PORTS}; do
+      p="${p// /}"
+      [[ -z "${p}" ]] && continue
+      if port_in_use "${p}"; then
+        warn "Mac already listening on ${p}"
+      else
+        ok "Mac port ${p} free"
+      fi
+    done
+  else
+    ok "FORWARD_PORTS empty (no LocalForward)"
   fi
-  return "${rc}"
+
+  write_status_json true
+  return 0
 }
 
-sync_files() {
-  local host="$1"
-  case "${SYNC_ENGINE}" in
-    rsync) rsync_once "${host}" "${RSYNC_REMOTE}" ;;
-    tar)   tar_once "${host}" ;;
-    *)     return 1 ;;
-  esac
+cmd_status() {
+  mkdir -p "${STATE_DIR}"
+  if [[ -f "${STATUS_JSON}" ]]; then
+    if [[ -n "${CURRENT_HOST}" ]] || CURRENT_HOST="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("ip") or "")' "${STATUS_JSON}" 2>/dev/null)"; then
+      :
+    fi
+  fi
+  if [[ -z "${CURRENT_HOST}" ]]; then
+    CURRENT_HOST="$(resolve_vm_ip 2>/dev/null || true)"
+  fi
+  local alive="false"
+  if [[ -n "${CURRENT_HOST}" ]] && master_alive "${CURRENT_HOST}"; then
+    alive="true"
+  fi
+  if [[ -f "${STATUS_JSON}" ]]; then
+    python3 - "${STATUS_JSON}" "${alive}" <<'PY'
+import json, sys
+path, alive = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as f:
+    data = json.load(f)
+data["master_alive"] = alive.lower() == "true"
+print(json.dumps(data, indent=2))
+PY
+  else
+    print -r -- '{"ok":false,"error":"no status.json yet — run doctor or sync"}'
+    return 1
+  fi
 }
 
-ensure_remote_dir() {
-  local host="$1"
-  local win_path
-  win_path="$(remote_win_path)"
-  win_path="${win_path//\//\\}"
-  ssh_run "${host}" "powershell -NoProfile -Command New-Item -ItemType Directory -Force -Path '${win_path}' | Out-Null" \
-    >/dev/null 2>&1 || true
+cmd_sync() {
+  local reset_tar=0
+  while (( $# )); do
+    case "$1" in
+      --mirror) SYNC_MIRROR=1; shift ;;
+      --full) reset_tar=1; shift ;;
+      *) err "Unknown sync flag: $1"; return 2 ;;
+    esac
+  done
+  ensure_connected 300 || return 1
+  choose_sync_engine "${CURRENT_HOST}" || { err "No guest rsync/tar"; return 1; }
+  ensure_remote_dir "${CURRENT_HOST}"
+  local extra=""
+  (( SYNC_MIRROR )) && extra=" (--mirror)"
+  (( reset_tar )) && extra+=" (--full)"
+  info "one-shot ${SYNC_ENGINE} ${LOCAL_DIR} → ${REMOTE_DIR}${extra}"
+  if [[ "${SYNC_ENGINE}" == tar ]] && (( reset_tar )); then
+    rm -f "${STATE_DIR}/last-tar-sync"
+  fi
+  sync_files "${CURRENT_HOST}" || { err "sync failed"; write_status_json false; return 1; }
+  write_status_json true
+  ok "sync complete"
 }
 
-rsync_once() {
-  local host="$1" rsync_remote="$2"
-  local -a excludes
-  excludes=(
-    --exclude '.git/'
-    --exclude 'node_modules/'
-    --exclude 'bin/'
-    --exclude 'obj/'
-    --exclude 'build/'
-    --exclude 'TestResults/'
-    --exclude '.vs/'
-    --exclude '.idea/'
-    --exclude 'rag/.index/'
-    --exclude 'Documentation/Archive/'
-    --exclude '.DS_Store'
-    --exclude '*.user'
-    --exclude '*.wpftmp.csproj'
+cmd_exec() {
+  if [[ "${1:-}" == -- ]]; then
+    shift
+  fi
+  (( $# )) || { err "exec needs a PowerShell command after --"; return 2; }
+  ensure_connected 300 || return 1
+  local script="${(j: :)@}"
+  ssh_ps "${CURRENT_HOST}" "${script}"
+}
+
+cmd_test() {
+  local do_sync=1 deps_only=0 filter="${DEFAULT_FILTER}"
+  while (( $# )); do
+    case "$1" in
+      --deps-only) deps_only=1; shift ;;
+      --no-sync) do_sync=0; shift ;;
+      --full) filter="${FULL_FILTER}"; shift ;;
+      --filter)
+        shift
+        [[ $# -ge 1 ]] || { err "--filter needs an expression"; return 2; }
+        filter="$1"
+        shift
+        ;;
+      --mirror) SYNC_MIRROR=1; shift ;;
+      *) err "Unknown test flag: $1"; return 2 ;;
+    esac
+  done
+
+  ensure_connected 300 || return 1
+  local win_root sln_ps filter_ps
+  win_root="$(posix_to_win_path)"
+  sln_ps="${win_root}\\BusBuddy.sln"
+  sln_ps=${sln_ps:gs/\'/\'\'/}
+
+  if (( do_sync )) && (( ! deps_only )); then
+    choose_sync_engine "${CURRENT_HOST}" || { err "No guest rsync/tar"; return 1; }
+    ensure_remote_dir "${CURRENT_HOST}"
+    info "Syncing Mac → guest"
+    sync_files "${CURRENT_HOST}" || { err "sync failed"; return 1; }
+    write_status_json true
+  fi
+
+  info "Probing guest toolchain on ${SSH_USER}@${CURRENT_HOST} …"
+  local out
+  out="$(ssh_ps "${CURRENT_HOST}" "
+\$ProgressPreference = 'SilentlyContinue'
+\$ErrorActionPreference = 'Continue'
+& dotnet --list-runtimes
+if (Test-Path -LiteralPath '${sln_ps}') { 'SLN_OK' } else { 'SLN_MISSING' }
+\$conn = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'Machine')
+if ([string]::IsNullOrWhiteSpace(\$conn)) { \$conn = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'User') }
+if ([string]::IsNullOrWhiteSpace(\$conn)) { \$conn = \$env:BUSBUDDY_CONNECTION }
+if ([string]::IsNullOrWhiteSpace(\$conn)) { 'CONN_MISSING' } else {
+  \$hostPart = (\$conn -split ';') | Where-Object { \$_ -like 'Host=*' } | Select-Object -First 1
+  'CONN_OK ' + \$hostPart
+}
+")" || {
+    err "SSH probe failed"
+    return 1
+  }
+  print -r -- "${C_DIM}${out}${C_RESET}"
+
+  print -r -- "${out}" | grep -q 'Microsoft.WindowsDesktop.App' || {
+    err "Microsoft.WindowsDesktop.App runtime missing on guest — install .NET 9 Desktop Runtime / SDK"
+    return 1
+  }
+  ok "WindowsDesktop.App present"
+
+  print -r -- "${out}" | grep -q 'SLN_OK' || {
+    err "${win_root}\\BusBuddy.sln missing — run ./Scripts/utm-dev-bridge.sh sync (REMOTE_DIR=${REMOTE_DIR})"
+    return 1
+  }
+  ok "Guest repo present (${win_root})"
+
+  if print -r -- "${out}" | grep -q 'CONN_OK'; then
+    ok "BUSBUDDY_CONNECTION available (User/Machine)"
+  else
+    warn "BUSBUDDY_CONNECTION missing — Integration tests needing Postgres will fail; run launch or .\\utm_run_in_vm.ps1 once in the guest"
+  fi
+
+  (( deps_only )) && { ok "deps-only complete"; return 0; }
+
+  filter_ps=${filter:gs/\'/\'\'/}
+  info "dotnet test on guest (${win_root})"
+  info "filter: ${filter}"
+  ssh_ps "${CURRENT_HOST}" "
+\$ProgressPreference = 'SilentlyContinue'
+\$ErrorActionPreference = 'Stop'
+Set-Location '${win_root}'
+if (-not (Test-Path -LiteralPath 'BusBuddy.Tests\\BusBuddy.Tests.csproj')) {
+  Write-Error 'BusBuddy.Tests project missing under ${win_root}'
+  exit 2
+}
+\$userConn = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'User')
+if ([string]::IsNullOrWhiteSpace(\$userConn)) {
+  \$userConn = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'Machine')
+}
+if (-not [string]::IsNullOrWhiteSpace(\$userConn)) { \$env:BUSBUDDY_CONNECTION = \$userConn }
+\$hint = \$env:BUSBUDDY_CONNECTION -replace 'Password=[^;]+', 'Password=***'
+Write-Host ('BUSBUDDY_CONNECTION host hint: ' + \$hint)
+& dotnet test 'BusBuddy.Tests\\BusBuddy.Tests.csproj' -c Release --filter '${filter_ps}'
+exit \$LASTEXITCODE
+"
+}
+
+cmd_launch() {
+  local do_sync=1
+  while (( $# )); do
+    case "$1" in
+      --no-sync) do_sync=0; shift ;;
+      --mirror) SYNC_MIRROR=1; shift ;;
+      *) err "Unknown launch flag: $1"; return 2 ;;
+    esac
+  done
+
+  ensure_connected 300 || return 1
+  local win_root exe_ps user_ps
+  win_root="$(posix_to_win_path)"
+  win_root=${win_root:gs/\'/\'\'/}
+  exe_ps="${win_root}\\BusBuddy.WPF\\bin\\Debug\\net9.0-windows\\BusBuddy.WPF.exe"
+  user_ps=${SSH_USER:gs/\'/\'\'/}
+
+  if (( do_sync )); then
+    choose_sync_engine "${CURRENT_HOST}" || { err "No guest rsync/tar"; return 1; }
+    ensure_remote_dir "${CURRENT_HOST}"
+    info "Syncing Mac → guest before launch"
+    sync_files "${CURRENT_HOST}" || { err "sync failed"; return 1; }
+    write_status_json true
+  fi
+
+  info "Launching WPF on interactive session ${user_ps} from ${win_root}"
+  ssh_ps "${CURRENT_HOST}" "
+\$ErrorActionPreference = 'Continue'
+\$winRoot = '${win_root}'
+\$exe = '${exe_ps}'
+Set-Location \$winRoot
+if (-not (Test-Path -LiteralPath \$exe)) {
+  Write-Output 'BUILD needed'
+  & dotnet build 'BusBuddy.WPF\\BusBuddy.WPF.csproj' -c Debug -p:EnableWindowsTargeting=true --nologo
+  Write-Output ('BUILD_EXIT=' + \$LASTEXITCODE)
+  if (\$LASTEXITCODE -ne 0) { exit \$LASTEXITCODE }
+}
+if (-not (Test-Path -LiteralPath \$exe)) {
+  Write-Output 'LAUNCH_FAIL no exe'
+  exit 3
+}
+\$tn = 'BusBuddyUtmLaunch'
+schtasks /Delete /TN \$tn /F 2>\$null | Out-Null
+schtasks /Create /TN \$tn /SC ONCE /ST 23:59 /RL LIMITED /IT /F /TR ('\"' + \$exe + '\"') /RU '${user_ps}' | Out-Null
+schtasks /Run /TN \$tn | Out-Null
+Start-Sleep -Seconds 5
+\$p = Get-Process -Name 'BusBuddy.WPF' -ErrorAction SilentlyContinue | Select-Object -First 1
+if (\$null -eq \$p) { Write-Output 'LAUNCH_FAIL'; exit 3 }
+Write-Output ('LAUNCH pid=' + \$p.Id + ' session=' + \$p.SessionId)
+"
+}
+
+cmd_pull_logs() {
+  ensure_connected 300 || return 1
+  local stamp dest win_root out copied
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  dest="${REPO_ROOT}/artifacts/utm-runtime-logs-${stamp}"
+  mkdir -p "${dest}"
+  win_root="$(posix_to_win_path)"
+  win_root=${win_root:gs/\'/\'\'/}
+
+  info "Collecting guest Serilog files → ${dest}"
+  typeset -a posix_dirs
+  posix_dirs=(
+    "${REMOTE_DIR}/BusBuddy.WPF/bin/Debug/net9.0-windows/logs"
+    "${REMOTE_DIR}/BusBuddy.WPF/bin/Release/net9.0-windows/logs"
+    "${REMOTE_DIR}/BusBuddy.WPF/bin/Debug/logs"
+    "${REMOTE_DIR}/BusBuddy.WPF/bin/Release/logs"
+    "${REMOTE_DIR}/BusBuddy.WPF/logs"
+    "${REMOTE_DIR}/BusBuddy.WPF/Logs"
+    "${REMOTE_DIR}/logs"
+    "${REMOTE_DIR}/Logs"
   )
 
-  rsync -a --delete --omit-dir-times --no-perms --no-group --no-owner \
-    --itemize-changes --human-readable \
-    -e "ssh ${SSH_OPTS[*]} -o ControlMaster=no -o ControlPath=${CTL_SOCK}" \
-    --rsync-path="${rsync_remote}" \
-    "${excludes[@]}" \
-    "${LOCAL_DIR}/" \
-    "$(remote_target "${host}"):${REMOTE_DIR}/"
-}
-
-port_in_use() {
-  lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
-}
-
-select_port_forwards() {
-  local p
-  FORWARD_ACTIVE=()
-  FORWARD_SKIPPED=()
-  FORWARD_SSH=()
-  for p in ${(s:,:)FORWARD_PORTS}; do
-    p="${p// /}"
-    [[ -z "${p}" ]] && continue
-    if port_in_use "${p}"; then
-      FORWARD_SKIPPED+=("${p}")
+  copied=0
+  local d win leaf parent win_scp
+  for d in "${posix_dirs[@]}"; do
+    win="$(posix_to_win_path "${d}")"
+    win=${win:gs/\'/\'\'/}
+    out="$(ssh_ps "${CURRENT_HOST}" "if (Test-Path -LiteralPath '${win}') { 'YES' } else { 'NO' }" | tr -d '\r')"
+    if [[ "${out}" != *YES* ]]; then
       continue
     fi
-    FORWARD_ACTIVE+=("${p}")
-    FORWARD_SSH+=(-L "127.0.0.1:${p}:127.0.0.1:${p}")
-  done
-}
-
-start_master() {
-  local host="$1"
-  local -a ssh_cmd
-
-  select_port_forwards
-
-  mkdir -p "${STATE_DIR}"
-  rm -f "${CTL_SOCK}"
-
-  ssh_cmd=(
-    ssh -N -M
-    "${SSH_OPTS[@]}"
-    -o ControlMaster=yes
-    -o ControlPath="${CTL_SOCK}"
-    -o ControlPersist=no
-  )
-  (( ${#FORWARD_SSH} )) && ssh_cmd+=("${FORWARD_SSH[@]}")
-  ssh_cmd+=("$(remote_target "${host}")")
-
-  "${ssh_cmd[@]}" &
-  MASTER_PID=$!
-  print -r -- "${MASTER_PID}" > "${STATE_DIR}/master.pid"
-
-  local i
-  for i in {1..25}; do
-    if master_alive "${host}"; then
-      return 0
+    leaf="${d##*/}"
+    parent="${d%/*}"
+    parent="${parent##*/}"
+    win_scp="${win//\\//}"
+    mkdir -p "${dest}/${parent}-${leaf}"
+    if scp -q -r "${SSH_OPTS[@]}" "$(remote_target "${CURRENT_HOST}"):${win_scp}" "${dest}/${parent}-${leaf}/"; then
+      (( copied++ )) || true
     fi
-    if ! kill -0 "${MASTER_PID}" 2>/dev/null; then
-      return 1
-    fi
-    sleep 0.2
   done
-  return 1
-}
 
-stop_master() {
-  local host="${1:-}"
-  if [[ -n "${host}" ]]; then
-    ssh -O exit -o ControlPath="${CTL_SOCK}" "$(remote_target "${host}")" >/dev/null 2>&1 || true
+  if (( copied == 0 )); then
+    warn "no matching Serilog directories on guest"
+  else
+    ok "copied ${copied} log dir(s) → ${dest}"
   fi
-  if [[ -n "${MASTER_PID:-}" ]]; then
-    kill "${MASTER_PID}" 2>/dev/null || true
-    wait "${MASTER_PID}" 2>/dev/null || true
-  fi
-  MASTER_PID=""
-  rm -f "${CTL_SOCK}"
+  print -r -- "${dest}"
 }
 
 SYNC_PID=""
-stop_sync() {
+stop_sync_loop() {
   if [[ -n "${SYNC_PID}" ]] && kill -0 "${SYNC_PID}" 2>/dev/null; then
     kill "${SYNC_PID}" 2>/dev/null || true
     wait "${SYNC_PID}" 2>/dev/null || true
@@ -402,27 +404,35 @@ stop_sync() {
 
 sync_loop() {
   local host="$1"
+  local in_flight=0
 
   run_sync() {
     local out
+    if (( in_flight )); then
+      return 0
+    fi
+    in_flight=1
     if out="$(sync_files "${host}" 2>&1)"; then
       if [[ -n "${out}" ]]; then
         print -r -- "${C_DIM}${out}${C_RESET}"
       fi
+      write_status_json true
     else
       warn "sync failed (will retry): ${out}"
     fi
+    in_flight=0
   }
 
   run_sync
 
   if command -v fswatch >/dev/null 2>&1; then
-    ok "watching with fswatch (latency 0.35s)"
+    ok "watching with fswatch (debounce 1s)"
     fswatch -o --latency 0.35 \
       -e '/\.git/' -e '/bin/' -e '/obj/' -e '/node_modules/' -e '/build/' \
+      -e '/keys/' -e '/logs/' -e '/Logs/' -e '/TestResults/' \
       "${LOCAL_DIR}" | while read -r _; do
-        info "change detected — syncing"
-        sleep 0.2
+        info "change detected — debounce"
+        sleep 1
         run_sync
       done
   else
@@ -434,99 +444,22 @@ sync_loop() {
   fi
 }
 
-print_banner() {
-  print
-  print -r -- "${C_BOLD}UTM dev bridge${C_RESET}  Mac ↔ ${UTM_VM_NAME}"
-  print -r -- "${C_DIM}Ctrl-C stops tunnels and the sync loop.${C_RESET}"
-  print
-}
-
-print_status() {
-  local host="$1"
-  ok "SSH  ${SSH_USER}@${host}  (keepalive 15s, ControlMaster)"
-  ok "sync ${SYNC_ENGINE}  ${LOCAL_DIR}  →  ${REMOTE_DIR}"
-  if (( ${#FORWARD_ACTIVE} )); then
-    local p
-    for p in "${FORWARD_ACTIVE[@]}"; do
-      ok "open ${C_CYN}http://127.0.0.1:${p}/${C_RESET}  →  guest :${p}"
-    done
-  else
-    warn "no port forwards bound"
-  fi
-  if (( ${#FORWARD_SKIPPED} )); then
-    warn "already in use on Mac, skipped: ${(j:, :)FORWARD_SKIPPED}"
-  fi
-  print
-}
-
-doctor() {
-  print -r -- "${C_BOLD}doctor${C_RESET}"
-  need_cmd ssh && ok "ssh"
-  need_cmd rsync && ok "rsync $(rsync --version | head -1)"
-  if command -v utmctl >/dev/null 2>&1; then
-    ok "utmctl  status=$(utmctl status "${UTM_VM_NAME}" 2>/dev/null || echo missing)"
-  else
-    warn "utmctl missing — set VM_IP by hand"
-  fi
-  command -v fswatch >/dev/null 2>&1 && ok "fswatch" || warn "fswatch missing (optional)"
-  [[ -f "${SSH_KEY}" ]] && ok "key ${SSH_KEY}" || err "key missing: ${SSH_KEY}"
-  [[ -d "${LOCAL_DIR}" ]] && ok "local ${LOCAL_DIR}" || err "LOCAL_DIR missing"
-
-  ensure_vm_started
-  local ip
-  if ! ip="$(resolve_vm_ip)"; then
-    err "Could not resolve VM IPv4. Set VM_IP=192.168.64.2"
-    return 1
-  fi
-  ok "guest IPv4 ${ip}"
-
-  if ssh_direct "$(remote_target "${ip}")" "echo ok" >/dev/null 2>&1; then
-    ok "SSH login ${SSH_USER}@${ip}"
-  else
-    err "SSH failed. Check sshd in the guest and ${SSH_KEY}"
-    return 1
-  fi
-
-  if choose_sync_engine "${ip}"; then
-    if [[ "${SYNC_ENGINE}" == rsync ]]; then
-      ok "guest rsync  ${RSYNC_REMOTE}"
-    else
-      warn "guest rsync missing — using tar incremental (Windows tar.exe). Deletes on the guest are not mirrored."
-    fi
-  else
-    err "No rsync or tar on the guest"
-    return 1
-  fi
-
-  local p
-  for p in ${(s:,:)FORWARD_PORTS}; do
-    p="${p// /}"
-    if port_in_use "${p}"; then
-      warn "Mac already listening on ${p}"
-    else
-      ok "Mac port ${p} free"
-    fi
-  done
-  return 0
-}
-
-cleanup() {
+cleanup_watch() {
   trap - INT TERM EXIT
   print
   warn "shutting down"
-  stop_sync
+  stop_sync_loop
   stop_master "${CURRENT_HOST:-}"
+  utm_lock_end
   exit 0
 }
 
-run_bridge() {
-  mkdir -p "${STATE_DIR}" "${HOME}/.config"
-  need_cmd ssh || exit 1
-  [[ -f "${SSH_KEY}" ]] || { err "SSH_KEY not found: ${SSH_KEY}"; exit 1; }
-  [[ -d "${LOCAL_DIR}" ]] || { err "LOCAL_DIR missing: ${LOCAL_DIR}"; exit 1; }
-
-  print_banner
-  trap cleanup INT TERM EXIT
+cmd_watch() {
+  print
+  print -r -- "${C_BOLD}UTM dev bridge${C_RESET}  Mac ↔ ${UTM_VM_NAME}"
+  print -r -- "${C_DIM}Ctrl-C stops tunnels and the sync loop. Agents should not start watch.${C_RESET}"
+  print
+  trap cleanup_watch INT TERM EXIT
 
   local backoff=2
   while true; do
@@ -542,10 +475,8 @@ run_bridge() {
     print -r -- "${ip}" > "${LAST_IP_FILE}"
 
     info "connecting ${SSH_USER}@${ip} ..."
-    stop_sync
-    stop_master "${ip}"
-
-    if ! start_master "${ip}"; then
+    stop_sync_loop
+    if ! ensure_master "${ip}" no; then
       err "SSH master failed — retry in ${backoff}s (guest asleep or sshd down?)"
       sleep "${backoff}"
       (( backoff = backoff < 30 ? backoff + 2 : 30 ))
@@ -558,52 +489,61 @@ run_bridge() {
       continue
     fi
     ensure_remote_dir "${ip}"
-
-    print_status "${ip}"
+    print_status_human "${ip}"
+    write_status_json true
     backoff=2
 
     sync_loop "${ip}" &
     SYNC_PID=$!
 
-    wait "${MASTER_PID}" 2>/dev/null || true
+    if [[ -n "${MASTER_PID}" ]]; then
+      wait "${MASTER_PID}" 2>/dev/null || true
+    else
+      while master_alive "${ip}"; do
+        sleep 5
+      done
+    fi
     warn "SSH dropped — reconnecting"
-    stop_sync
+    stop_sync_loop
     sleep 1
   done
-}
-
-sync_once_main() {
-  mkdir -p "${STATE_DIR}"
-  need_cmd ssh || exit 1
-  ensure_vm_started
-  local ip
-  ip="$(resolve_vm_ip)" || { err "No VM IPv4"; exit 1; }
-  CURRENT_HOST="${ip}"
-  trap 'stop_master "${CURRENT_HOST}"' EXIT INT TERM
-  start_master "${ip}" || { err "SSH failed"; exit 1; }
-  choose_sync_engine "${ip}" || { err "No guest rsync/tar"; exit 1; }
-  ensure_remote_dir "${ip}"
-  info "one-shot ${SYNC_ENGINE} ${LOCAL_DIR} → ${REMOTE_DIR}"
-  rm -f "${STATE_DIR}/last-tar-sync"
-  sync_files "${ip}"
-  ok "sync complete"
 }
 
 # --- main --------------------------------------------------------------------
 load_config
 mkdir -p "${STATE_DIR}"
 init_ssh_opts
-MODE=bridge
+
+MODE=""
 case "${1:-}" in
-  -h|--help) usage; exit 0 ;;
-  --doctor) MODE=doctor ;;
-  --sync-once) MODE=sync-once ;;
-  "") MODE=bridge ;;
+  ""|-h|--help|help)
+    usage
+    if [[ -f "${STATUS_JSON}" ]]; then
+      print
+      info "existing status:"
+      cmd_status || true
+    fi
+    [[ -z "${1:-}" ]] && exit 2
+    exit 0
+    ;;
+  doctor|--doctor) MODE=doctor; shift ;;
+  status) MODE=status; shift ;;
+  sync|--sync-once) MODE=sync; shift ;;
+  exec) MODE=exec; shift ;;
+  test) MODE=test; shift ;;
+  launch) MODE=launch; shift ;;
+  pull-logs) MODE=pull-logs; shift ;;
+  watch) MODE=watch; shift ;;
   *) err "Unknown argument: $1"; usage; exit 2 ;;
 esac
 
 case "${MODE}" in
-  doctor) doctor ;;
-  sync-once) sync_once_main ;;
-  bridge) run_bridge ;;
+  doctor) cmd_doctor ;;
+  status) cmd_status ;;
+  sync) cmd_sync "$@" ;;
+  exec) cmd_exec "$@" ;;
+  test) cmd_test "$@" ;;
+  launch) cmd_launch "$@" ;;
+  pull-logs) cmd_pull_logs ;;
+  watch) cmd_watch ;;
 esac

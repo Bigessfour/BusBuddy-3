@@ -45,6 +45,22 @@ public class RouteManagementViewTests
     }
 
     [Test]
+    public void PrintSchedule_OpensInAppPdfPreview_NotShellExecute()
+    {
+        var assignment = XamlViewFile.Read("ViewModels/Route/RouteManagementViewModel.Assignment.cs");
+        var start = assignment.IndexOf("private async Task PrintScheduleAsync()", StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        var print = assignment[start..];
+        Assert.That(print, Does.Contain("new PdfPreviewWindow("));
+        Assert.That(print, Does.Contain("preview.Show()"));
+        Assert.That(print, Does.Not.Contain("WriteSchedulePdfAsync"));
+        Assert.That(print, Does.Not.Contain("RevealOrOpen"));
+        var helper = XamlViewFile.Read("ViewModels/Route/RouteManagementExportHelper.cs");
+        Assert.That(helper, Does.Contain("catch (Exception ex)"));
+        Assert.That(helper, Does.Contain("Could not open {Path}"));
+    }
+
+    [Test]
     public void RouteManagementView_ResolvesViewModelFromDi()
     {
         var source = XamlViewFile.Read("Views/Route/RouteManagementView.xaml.cs");

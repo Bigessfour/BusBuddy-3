@@ -109,10 +109,10 @@ Durable rules: [.specify/memory/constitution.md](.specify/memory/constitution.md
 | Host       | Do                                                                                                                               | Do not                                            |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | Mac        | Core, Docker Postgres, RAG/MCP, Passwords secrets; `EnableWindowsTargeting` is in `Directory.Build.props` (CLI `-p:` still fine) | Claim WPF runs natively on macOS                  |
-| Windows VM | Full Syncfusion WPF; shared folder; env / shared `keys/`                                                                         | Assume macOS Passwords/Keychain                   |
+| Windows VM | Full Syncfusion WPF; `C:\dev\BusBuddy-3` via SSH bridge; env / shared `keys/`                                                    | Assume macOS Passwords/Keychain                   |
 | Either     | Local Ollama for app AI; PR → Build & Test                                                                                       | Invent AWS/cloud app hosting for BusBuddy runtime |
 
-Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM), `./Scripts/utm-dev-bridge.sh` (SSH sync), `./Scripts/utm-wpf-test.sh` (sync + `dotnet test` on guest WPF testhost). Postgres from VM uses Mac host IP (`run-wpf.sh` / `ipconfig getifaddr en0`).
+Launchers: `./Scripts/utm-dev-bridge.sh` (agent RPC: `doctor|status|sync|exec|test|launch|pull-logs`; humans may `watch`). `./run-wpf.sh` is Mac Postgres + preflight + `launch`. `.\utm_run_in_vm.ps1` runs inside the VM from `C:\dev\BusBuddy-3` only. `./Scripts/utm-wpf-test.sh` is a shim for `test`. **Do not** `utmctl exec` to launch WPF. Details: [docs/utm-dev-bridge.md](docs/utm-dev-bridge.md). Postgres from VM uses Mac host IP (`run-wpf.sh` / `192.168.64.1`).
 
 ## Key implementation files (quick index)
 
@@ -126,7 +126,8 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM), `./S
 | Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                         |
 | AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`, `BusBuddy.Core/Services/OllamaAiService.cs`                |
 | CI workflow           | `.github/workflows/ci.yml`                                                                               |
-| WPF tests on UTM      | `./Scripts/utm-wpf-test.sh` (SSH → guest `dotnet test`; needs WindowsDesktop)                            |
+| WPF tests on UTM      | `./Scripts/utm-dev-bridge.sh test` (SSH → `C:\dev\BusBuddy-3`; `utm-wpf-test.sh` shim)                   |
+| UTM guest RPC         | [docs/utm-dev-bridge.md](docs/utm-dev-bridge.md) + `Scripts/utm-dev-bridge.sh`                           |
 | Auto-merge            | `.github/workflows/auto-merge.yml`                                                                       |
 | RAG indexer           | `rag/index.py`                                                                                           |
 | Spec-Kit constitution | `.specify/memory/constitution.md`                                                                        |

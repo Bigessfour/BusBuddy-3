@@ -93,6 +93,25 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
         }
     }
 
+    /// <summary>
+    /// <c>ImageryLayer.Center</c> (XAML or code) calls <c>CalculateGeoCoordinates</c> →
+    /// <c>TransformToVisual</c> before the layer is parented. That path is not Measure/Arrange,
+    /// so it used to flood <c>Dispatcher.UnhandledException</c> (VM 2026-09-17).
+    /// </summary>
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        try
+        {
+            base.OnPropertyChanged(e);
+        }
+        catch (Exception ex) when (IsVisualTreeNotReady(ex))
+        {
+            LastLayoutSkippedVisualTree = true;
+            LastMeasureCompleted = true;
+            LogVisualTreeSkipOnce(ex);
+        }
+    }
+
     internal static bool IsVisualTreeNotReady(Exception ex)
     {
         if (ex is NullReferenceException &&

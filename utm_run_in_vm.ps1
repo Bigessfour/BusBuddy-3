@@ -2,13 +2,11 @@
 # BusBuddy WPF launcher for UTM / Parallels Windows VM.
 # Works in Windows PowerShell 5.1 (powershell.exe) AND PowerShell 7 (pwsh).
 #
-# In the VM Terminal / PowerShell:
-#   cd Z:\
+# In the VM Terminal / PowerShell (NTFS copy — do not build on Z:\ WebDAV):
+#   cd C:\dev\BusBuddy-3
 #   powershell -NoProfile -ExecutionPolicy Bypass -File .\utm_run_in_vm.ps1
 #
-# Or double-click: utm_run_in_vm.cmd
-#
-# From Mac host (preflight only): ./run-wpf.sh
+# Or from Mac: ./run-wpf.sh  /  ./Scripts/utm-dev-bridge.sh launch
 #
 # Hot Reload (faster UI iteration — no full restart for many C# edits):
 #   powershell -NoProfile -ExecutionPolicy Bypass -File .\utm_run_in_vm.ps1 -Watch
@@ -185,10 +183,10 @@ function Find-BusBuddyRoot {
     }
 
     $quick = @(
-        "Z:\",
         "C:\dev\BusBuddy-3",
         "C:\dev\busbuddy",
         "C:\dev\BusBuddy",
+        "Z:\",
         "Z:\Shared with Windows",
         "Z:\BusBuddy-3",
         "D:\Shared with Windows",
@@ -203,7 +201,7 @@ function Find-BusBuddyRoot {
     }
 
     $candidates = @()
-    $searchRoots = @("Z:\", "Y:\", "X:\", "W:\", "E:\", "D:\", "C:\")
+    $searchRoots = @("C:\dev", "C:\", "Z:\", "Y:\", "X:\", "W:\", "E:\", "D:\")
     try {
         Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue | ForEach-Object {
             if ($_.Root) { $searchRoots += $_.Root }
