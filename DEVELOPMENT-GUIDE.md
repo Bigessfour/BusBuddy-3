@@ -478,28 +478,31 @@ The project was originally Windows-only (WPF). On macOS:
 
 - **Core/.NET dev & tests**: Use VS Code + this project's `.devcontainer` (runs Linux .NET container via Docker Desktop). `EnableWindowsTargeting` is set in `Directory.Build.props` so Mac CLI and the C# language service can load `net*-windows` TFMs; `-p:EnableWindowsTargeting=true` is still fine and used in CI.
 - **Full WPF app (UI/debug)**: Use your Windows 11 VM (UTM recommended on Apple Silicon; Parallels also works).
-    - Share the BusBuddy-3 folder bidirectionally into the VM (UTM Directory Sharing; you can label the share "Shared with Windows").
-    - The tree is live — edits on Mac appear immediately inside the guest.
-    - In VM: .NET 9 SDK + Visual Studio 2022 (or VS Code + C# Dev Kit). Open the shared folder and run normally, **or** use the one-command launcher from your Mac terminal (see below).
+    - Share the BusBuddy-3 folder into the VM for **bootstrap** (UTM Directory Sharing / `Z:\`). WPF cannot build reliably on that WebDAV share.
+    - Runtime tree is the NTFS copy `C:\dev\BusBuddy-3`, kept in sync by `./Scripts/utm-dev-bridge.sh sync`. See [docs/utm-dev-bridge.md](docs/utm-dev-bridge.md).
+    - In VM: .NET 9 SDK + Visual Studio 2022 (or VS Code + C# Dev Kit). Open `C:\dev\BusBuddy-3`, **or** launch from the Mac terminal (see below).
 - **From your Mac terminal — the closest thing to `dotnet run` for the WPF UI**:
 
     ```bash
     ./run-wpf.sh
+    # equivalent guest RPC:
+    ./Scripts/utm-dev-bridge.sh launch
     ```
 
     - Does a fast preflight build on the Mac using the required flag (targets the WPF app so you get immediate feedback).
     - Starts (or re-uses) the UTM VM named "Windows".
-    - Attempts to auto-launch the app inside the guest via `utmctl exec` so the main window (Dashboard, Reports, Map, etc.) appears on the VM desktop.
-    - If auto-launch can't connect yet (VM still booting / logging in / guest agent), it prints precise copy-paste commands.
+    - Syncs to `C:\dev\BusBuddy-3` over SSH and launches `BusBuddy.WPF.exe` in the logged-in `Macbook` session (`schtasks /IT`). It does **not** use `utmctl exec` to start the GUI.
+    - If SSH isn't ready yet (VM still booting / logging in / sshd), it prints copy-paste commands.
     - The script prints your current Mac host IP (for reaching Docker Postgres from inside the VM).
 
-    When you are already sitting in a PowerShell prompt _inside the VM_ (and the shared folder is visible):
+    When you are already sitting in a PowerShell prompt _inside the VM_:
 
     ```powershell
+    cd C:\dev\BusBuddy-3
     .\utm_run_in_vm.ps1
     ```
 
-    That script has robust discovery for whatever drive letter or "Shared with Windows" folder your UTM share got mounted as, pulls GEE credentials from the shared `keys/` artifacts, supports dropping `SYNCFUSION_LICENSE_KEY.txt` for a real (non-trial) license, and then does the build + `Start-Process` launch of the WPF app.
+    That script prefers `C:\dev\BusBuddy-3`, may robocopy from `Z:\` if the NTFS copy is missing, then builds and launches the WPF app. Do not `dotnet run` from `Z:\`.
 
 - **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data).
     - Host (Mac): localhost:5432

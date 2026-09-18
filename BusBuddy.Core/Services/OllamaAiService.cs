@@ -192,7 +192,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex,
+                Logger.Information(ex,
                     "Ollama is not reachable at {BaseUrl}. Using offline fallback. Start Ollama locally (default http://localhost:11434) to enable live AI.",
                     _options.BaseUrl);
                 return FailedResponse($"Network Error: {ex.Message}");

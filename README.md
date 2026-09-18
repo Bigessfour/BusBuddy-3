@@ -42,32 +42,40 @@ BusBuddy streamlines school transportation operations through intelligent route 
     - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
     - WPF UI **cannot** run natively on macOS.
 - **Windows 11 VM side (for full WPF app)**:
-    - Share the project folder from Mac (UTM directory sharing works great; name it "Shared with Windows" or similar). The source tree is live/bidirectional.
-    - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon). The shared folder appears under a drive letter or "Shared with Windows".
-    - Build/run the full `BusBuddy.WPF` project normally for UI/debug (or use the helper below from your Mac).
-    - Changes sync via shared folder/git.
-- **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (run `ipconfig getifaddr en0` on Mac; the script below prints it for you).
+    - Share the project folder from Mac for **bootstrap** (UTM directory sharing / `Z:\`). Do not build WPF on that WebDAV share.
+    - Runtime copy is `C:\dev\BusBuddy-3`, synced by `./Scripts/utm-dev-bridge.sh`. See [docs/utm-dev-bridge.md](docs/utm-dev-bridge.md).
+    - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon). Open `C:\dev\BusBuddy-3`.
+    - Build/run `BusBuddy.WPF` from that NTFS tree (or use the helper below from your Mac).
+- **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (usually `192.168.64.1` on UTM shared net).
 - **Keys & secrets**: Loaded from **macOS Passwords** at startup (`LoadApiKeysFromMacPasswords()`). See [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) and [AGENTS.md](AGENTS.md). Earth Engine is not used.
 
 **To launch the WPF UI from your Mac terminal (the "dotnet run" experience for this hybrid setup):**
 
 ```bash
 ./run-wpf.sh
+# or:
+./Scripts/utm-dev-bridge.sh launch
 ```
 
 What it does:
 
 - Preflight `dotnet build ... -p:EnableWindowsTargeting=true` on the Mac (fast compile gate; focuses on the WPF app).
 - Ensures your UTM "Windows" VM is running (starts it if stopped; re-uses if already open).
-- Tries to auto-discover the shared project root _inside the guest_ and launch `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` detached so the main window appears on the VM desktop.
-- If guest automation isn't ready yet (boot/login), prints the exact manual steps (including the robust `utm_run_in_vm.ps1` that lives in your shared tree, handles drive-letter / "Shared with Windows" discovery, shared GEE key, and optional Syncfusion license drop-in).
+- Syncs to `C:\dev\BusBuddy-3` over SSH and launches `BusBuddy.WPF.exe` in the logged-in `Macbook` session. It does **not** use `utmctl exec` to start the GUI.
+- If SSH isn't ready yet (boot/login/sshd), prints the exact manual steps (`cd C:\dev\BusBuddy-3` then `utm_run_in_vm.ps1`).
 
-When you are already inside the VM PowerShell: just run `.\utm_run_in_vm.ps1` from the project root (or any dir — it searches for the sln).
+When you are already inside the VM PowerShell: `cd C:\dev\BusBuddy-3` then `.\utm_run_in_vm.ps1`.
+
+Guest tests from Mac:
+
+```bash
+./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~MapViewModelTests'
+```
 
 Use standard tools:
 
 - `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` (Mac/container preflight)
-- `./run-wpf.sh` (Mac) or `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (inside VM)
+- `./run-wpf.sh` (Mac) or `cd C:\dev\BusBuddy-3` then `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (inside VM, NTFS copy only)
 - Docker for services/tests.
 
 Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). **What remains to ship:** [docs/action-items.md](docs/action-items.md). **When the project is done:** [docs/done-checklist.md](docs/done-checklist.md) (`python3 .github/scripts/check-project-done.py`). Architecture: [Documentation/diagrams/busbuddy-3-architecture.md](Documentation/diagrams/busbuddy-3-architecture.md).

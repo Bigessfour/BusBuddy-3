@@ -35,7 +35,7 @@ Mac cannot click WPF. Static UI wiring and XAML tests run here. Live ribbon proo
 | --- | -------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------- |
 | K01 | Does the code work?  | Clerk hops 1–6 Core boxes checked; `BusBuddy.sln` + `run-wpf.sh` exist               | Hops 1–6 are `[x]` and required launch files exist    |
 | K02 | Tests / coverage     | Not a line-% gate. Every `.function-inventory.json` surface has a matching test file | No inventory surface lacks proof                      |
-| K03 | End-to-end harness   | `Scripts/utm-wpf-test.sh` + WPF test project                                         | Harness file exists (guest run is `--with-utm`)       |
+| K03 | End-to-end harness   | `Scripts/utm-dev-bridge.sh test` + `utm-wpf-test.sh` shim + WPF test project         | Harness file exists (guest run is `--with-utm`)       |
 | K04 | README               | `README.md` Quick Start, env vars, hybrid Mac/VM                                     | File exists and mentions `run-wpf.sh`                 |
 | K05 | Analytics            | No marketing tags. Observability = Serilog `RuntimeCapabilityLogger`                 | Logger file exists                                    |
 | K06 | A/B tests            | N/A — single-district clerk desktop                                                  | N/A                                                   |

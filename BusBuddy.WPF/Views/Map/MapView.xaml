@@ -413,9 +413,10 @@
                                 LayerType=Bing with empty key is a no-op until UrlTemplate is set (avoids Syncfusion HTTP OSM).
                                 Camera is Center + ZoomLevel only. Do not bind ImageryLayer.Radius: it doubles the
                                 bounds before solving zoom and re-fits on every SizeChanged, overriding user zoom.
-                                Markers and MarkerTemplateSelector are assigned in code-behind after
-                                CanHostMarkers + TransformToVisual succeed. Binding either here inflates
-                                CustomDataSymbol templates during first Measure (VM runtime-errors.log 2026-09-17).
+                                Markers, MarkerTemplateSelector, and ImageryLayer.Center are assigned in
+                                code-behind after CanHostMarkers + TransformToVisual succeed. Binding
+                                Center here calls CalculateGeoCoordinates during first Measure
+                                (1139 TransformToVisual errors, VM 2026-09-17).
                             -->
                             <utils:DistrictSfMap x:Name="GeoMap"
                                         HorizontalAlignment="Stretch"
@@ -430,8 +431,7 @@
                                         SizeChanged="GeoMap_SizeChanged">
                                 <utils:DistrictSfMap.Layers>
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
-                                                       LayerType="Bing"
-                                                       Center="{Binding MapCenter, Mode=TwoWay}">
+                                                       LayerType="Bing">
                                         <maps:ImageryLayer.SubShapeFileLayers>
                                             <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
                                                 <maps:SubShapeFileLayer.MapElements>

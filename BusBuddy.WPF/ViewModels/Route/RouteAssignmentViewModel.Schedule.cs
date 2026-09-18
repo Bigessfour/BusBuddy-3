@@ -237,9 +237,4 @@ public partial class RouteAssignmentViewModel
 
     private void PrintSelectedRouteSheetPreview() =>
         SaveRouteSheet(includeMap: false, preview: true);
-
-    private void GenerateReport()
-    {
-        SaveRouteSheet(includeMap: false, preview: false);
-    }
 }

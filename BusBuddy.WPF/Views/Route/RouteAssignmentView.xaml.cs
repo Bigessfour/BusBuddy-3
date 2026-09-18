@@ -8,6 +8,8 @@ using Serilog;
 using Syncfusion.SfSkinManager;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
+using BusBuddy.WPF.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
 using Syncfusion.UI.Xaml.Grid;
@@ -27,6 +29,7 @@ namespace BusBuddy.WPF.Views.Route
         private Point _dragStartPoint;
         private CoreStudent? _dragStudent;
         private bool _isDraggingFromAssigned;
+        private bool _loggedVisibleSize;
 
         public RouteAssignmentView()
         {
@@ -54,6 +57,8 @@ namespace BusBuddy.WPF.Views.Route
 
                 Loaded += OnLoaded;
                 Unloaded += OnUnloaded;
+                IsVisibleChanged += OnIsVisibleChanged;
+                SizeChanged += OnHostSizeChanged;
 
                 // Attach bubbling interaction diagnostics (adapted from other views)
                 try
@@ -125,10 +130,64 @@ namespace BusBuddy.WPF.Views.Route
 
                 Logger.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
 
+                RelayoutHostedGrids("Loaded");
+
                 // Run a lightweight accessibility/audit pass for buttons/labels
                 try { AuditButtonsAccessibility(); } catch { }
             }
             catch { }
+        }
+
+        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (IsVisible)
+            {
+                Dispatcher.BeginInvoke(() => RelayoutHostedGrids("IsVisible"), DispatcherPriority.Loaded);
+            }
+        }
+
+        private void OnHostSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.PreviousSize.Width <= 0 || e.PreviousSize.Height <= 0)
+            {
+                RelayoutHostedGrids("SizeChanged");
+            }
+        }
+
+        /// <summary>
+        /// Dock documents load at 0x0. When the Route Assignments tab is shown, refresh Star
+        /// column sizers so student/stop grids fill the GroupBox.
+        /// </summary>
+        private void RelayoutHostedGrids(string reason)
+        {
+            if (ActualWidth <= 0 || ActualHeight <= 0)
+            {
+                return;
+            }
+
+            try
+            {
+                UnassignedStudentsGrid?.GridColumnSizer?.Refresh();
+                AssignedStudentsGrid?.GridColumnSizer?.Refresh();
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, "Route assignment grid column sizer refresh skipped");
+            }
+
+            if (_loggedVisibleSize)
+            {
+                return;
+            }
+
+            _loggedVisibleSize = true;
+            UiDiagnosticsLog.Write(
+                Logger,
+                Serilog.Events.LogEventLevel.Information,
+                "RouteAssignmentView visible Reason={Reason} ActualSize={Width:F0}x{Height:F0}",
+                reason,
+                ActualWidth,
+                ActualHeight);
         }
 
         private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
@@ -136,6 +195,8 @@ namespace BusBuddy.WPF.Views.Route
             // Detach handlers — cleanup
             try
             {
+                IsVisibleChanged -= OnIsVisibleChanged;
+                SizeChanged -= OnHostSizeChanged;
                 RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
                 RemoveHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged));
                 RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
@@ -156,7 +217,11 @@ namespace BusBuddy.WPF.Views.Route
                 {
                     bool? canExec = null; try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { }
                     var autoName = AutomationProperties.GetName(badv);
-                    Logger.Information("RouteAssign ButtonAdv: Name={Name} Label={Label} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", name, badv.Label, autoName, badv.Command != null, canExec);
+                    UiDiagnosticsLog.Write(
+                        Logger,
+                        Serilog.Events.LogEventLevel.Information,
+                        "RouteAssign ButtonAdv: Name={Name} Label={Label} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}",
+                        name, badv.Label, autoName, badv.Command != null, canExec);
                 }
                 else if (src is Button btn)
                 {
@@ -166,7 +231,12 @@ namespace BusBuddy.WPF.Views.Route
                 }
                 else
                 {
-                    Logger.Information("RouteAssign Click: Type={Type} Name={Name}", type, name);
+                    UiDiagnosticsLog.Write(
+                        Logger,
+                        Serilog.Events.LogEventLevel.Information,
+                        "RouteAssign Click: Type={Type} Name={Name}",
+                        type,
+                        name);
                 }
             }
             catch (Exception ex)
@@ -402,7 +472,8 @@ namespace BusBuddy.WPF.Views.Route
             }
 
             grid.Opacity = canDrop ? 0.85 : 1.0;
-            grid.BorderBrush = canDrop ? Brushes.DodgerBlue : Brushes.Transparent;
+            var accent = grid.TryFindResource("BusBuddy.Brush.Primary") as Brush;
+            grid.BorderBrush = canDrop ? (accent ?? Brushes.Transparent) : Brushes.Transparent;
             grid.BorderThickness = canDrop ? new Thickness(2) : new Thickness(0);
         }
 

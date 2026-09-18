@@ -8,10 +8,9 @@
 #   (catches compile errors on Mac before switching focus to the VM).
 # - Ensures the UTM VM named "Windows" (or the one with the matching UUID) is running.
 #   Starts it (visible window) if it is stopped. Polls until running.
-# - Tries to auto-discover the shared project root *inside the guest* and launch the WPF
-#   app detached (so the window appears on the VM desktop while you stay on Mac terminal).
-# - If guest exec/launch isn't ready yet (early boot, no guest agent, or first login),
-#   prints crystal-clear manual instructions you can copy-paste into a PowerShell window inside the VM.
+# - Syncs to C:\dev\BusBuddy-3 over SSH and launches WPF in the logged-in
+#   Macbook desktop session (schtasks /IT). utmctl exec is not used for launch.
+# - If SSH launch isn't ready yet, prints manual commands for C:\dev\BusBuddy-3.
 #
 # Prerequisites on Mac:
 #   - UTM installed (brew install --cask utm) + utmctl in PATH.
@@ -131,91 +130,40 @@ if [[ "${HOST_IP}" != "unknown" ]]; then
   echo "${PFX} Wrote keys/mac-host-ip.txt for the VM launcher."
 fi
 
-# 3. Attempt automatic launch inside guest via utmctl exec + discovery (best UX when guest agent ready)
-echo "${PFX} Attempting auto-launch of WPF inside the VM (via guest exec)..."
-
-# The discovery + launch command. We run a PowerShell one-liner that:
-# - Searches likely drives + PSDrives for BusBuddy.sln (mirrors the logic in utm_run_in_vm.ps1)
-# - If found, Start-Process dotnet run detached so the GUI appears on the desktop and this returns quickly.
-# - Prints the used path so we can show it here.
-LAUNCH_PS=$'
-$ErrorActionPreference = "SilentlyContinue"
-$roots = @()
-Get-PSDrive -PSProvider FileSystem | % { if ($_.Root) { $roots += $_.Root } }
-# UTM SPICE shares commonly appear as Z: localhost@9843 (with "spice clipboard" folder).
-# Prioritize Z: and anything with localhost@ or spice in the name/root.
-$roots += @("Z:\\", "Y:\\", "X:\\", "E:\\", "D:\\", "C:\\")
-$roots += @("Z:\\Shared with Windows", "D:\\Shared with Windows", "Z:\\BusBuddy-3")
-$found = $null
-foreach ($r in ($roots | Select -Unique)) {
-  if (-not (Test-Path $r)) { continue }
-  $m = Get-ChildItem -Path $r -Filter "BusBuddy.sln" -Recurse -Depth 5 -ErrorAction SilentlyContinue |
-       ? { $_.FullName -notlike "*\\bin\\*" -and $_.FullName -notlike "*\\obj\\*" -and $_.FullName -notlike "*\\Archive\\*" } |
-       Select -First 1
-  if ($m) { $found = $m.DirectoryName; break }
-}
-if (-not $found) { Write-Output "NOTFOUND"; exit 1 }
-Set-Location $found
-Write-Output "FOUND:$found"
-$hostIp = "'"${HOST_IP}"'"
-$ipFile = Join-Path $found "keys\mac-host-ip.txt"
-if (Test-Path $ipFile) { $hostIp = (Get-Content $ipFile -Raw).Trim() }
-if ($hostIp -match "^\d") {
-  $env:BUSBUDDY_CONNECTION = "Host=$hostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true;Timeout=5"
-  $env:DatabaseProvider = "Postgres"
-  Write-Output "CONN:$hostIp"
-}
-Start-Process -FilePath "dotnet" -ArgumentList "run","--project","BusBuddy.WPF/BusBuddy.WPF.csproj" -WorkingDirectory $found -WindowStyle Normal
-exit 0
-'
-
-# Run the discovery+launch. Capture stdout (the FOUND line or NOTFOUND).
-# We use --cmd powershell.exe with the -Command payload.
-GUEST_OUT=$(utmctl exec "${VM_NAME}" \
-  --cmd 'powershell.exe' \
-  -- '-NoProfile' '-NonInteractive' '-Command' "${LAUNCH_PS}" 2>&1 || true)
-
-echo "${PFX} Guest exec output (may be empty if agent not ready yet):"
-echo "${GUEST_OUT}" | sed 's/^/    /'
-
-if echo "${GUEST_OUT}" | grep -q "FOUND:" ; then
-  GUEST_ROOT=$(echo "${GUEST_OUT}" | grep "FOUND:" | head -1 | sed 's/.*FOUND://')
-  echo ""
-  echo "✅ Launched (or launch requested) from inside guest at: ${GUEST_ROOT}"
-  echo "   The BusBuddy WPF window should now appear on the Windows desktop in your UTM VM."
-  echo "   If you do not see it, check the VM window (it may have been minimized or on another virtual desktop)."
-  exit 0
+# 3. Sync NTFS copy + launch in the logged-in Macbook session (SSH, not utmctl exec).
+BRIDGE="${ROOT}/Scripts/utm-dev-bridge.sh"
+echo "${PFX} Syncing + launching WPF via ${BRIDGE} (C:\\dev\\BusBuddy-3, interactive session)..."
+if [[ -x "${BRIDGE}" || -f "${BRIDGE}" ]]; then
+  if "${BRIDGE}" launch; then
+    echo ""
+    echo "Launched from C:\\dev\\BusBuddy-3 in the Macbook desktop session."
+    echo "The BusBuddy WPF window should appear on the Windows desktop in UTM."
+    echo "If you need guest logs on the Mac: ./Scripts/utm-dev-bridge.sh pull-logs"
+    exit 0
+  fi
+  echo "${PFX} Bridge launch failed — print manual steps (VM may still be logging in)."
+else
+  echo "ERROR: missing ${BRIDGE}" >&2
 fi
 
-# 4. Fallback: VM is up (or starting), but we couldn't auto-launch. Give perfect manual instructions.
+# 4. Fallback: VM is up, SSH launch did not succeed.
 echo ""
-echo "⚠️  Could not auto-launch via guest exec (this is common on first boot, before full login, or if UTM guest agent integration is not fully enabled)."
+echo "Could not auto-launch via SSH. Log into the UTM Windows desktop, then either:"
 echo ""
-echo "✅ The VM should now be running and visible."
-echo "   Switch to the UTM 'Windows' window, log in if prompted, open a PowerShell (or Windows Terminal) *inside the VM*, and run ONE of:"
+echo "  # From this Mac (preferred):"
+echo "  ./Scripts/utm-dev-bridge.sh doctor"
+echo "  ./Scripts/utm-dev-bridge.sh launch"
 echo ""
-echo "   # Easiest: in Explorer open the shared BusBuddy-3 folder, double-click:"
-echo "   utm_run_in_vm.cmd"
+echo "  # Inside the VM, from the NTFS copy only:"
+echo "  cd C:\\dev\\BusBuddy-3"
+echo "  powershell -NoProfile -ExecutionPolicy Bypass -File .\\utm_run_in_vm.ps1"
 echo ""
-echo "   # Or in Windows PowerShell (powershell.exe is fine — PowerShell 7 not required):"
-echo "   cd Z:\\"
-echo "   powershell -NoProfile -ExecutionPolicy Bypass -File .\\utm_run_in_vm.ps1"
-echo ""
-echo "   # If Z:\\ has no BusBuddy.sln, open the share in Explorer, Shift+right-click"
-echo "   # the folder background -> Open in Terminal, then run the .cmd / .ps1 there."
-echo ""
-echo "   # Fallback without the script (after files are on C:\\dev\\BusBuddy-3):"
-echo "   cd C:\\dev\\BusBuddy-3"
-echo "   dotnet run --project BusBuddy.WPF\\BusBuddy.WPF.csproj -c Debug"
-echo ""
-echo "   (The .ps1 also handles GEE key from the shared keys/ folder and will remind about Syncfusion license.)"
+echo "  # First-time OpenSSH bootstrap (guest agent / utmctl exec only):"
+echo "  # Scripts/Enable-BusBuddyOpenSSH.ps1"
 echo ""
 echo "Host IP for Docker Postgres from inside VM: ${HOST_IP}"
-echo "Example connection override (if not using the default in App):"
+echo "Example connection override:"
 echo "   \$env:BUSBUDDY_CONNECTION = \"Host=${HOST_IP};Port=5432;Database=busbuddy;Username=busbuddy;Password=...\""
-echo ""
-echo "Tip: Put the project on a share that appears early (or map a drive letter in your VM login script) for the smoothest experience."
-echo "     You can also open the shared folder in Explorer inside the VM and double-click or right-click 'Run with PowerShell' on utm_run_in_vm.ps1 ."
 echo ""
 echo "Done. Re-run ./run-wpf.sh after the desktop is fully up if you want another launch attempt."
 

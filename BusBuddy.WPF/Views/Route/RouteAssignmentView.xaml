@@ -9,15 +9,16 @@
              xmlns:models="clr-namespace:BusBuddy.Core.Models;assembly=BusBuddy.Core"
              mc:Ignorable="d"
              d:DesignHeight="800"
-             d:DesignWidth="1200">
+             d:DesignWidth="1200"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Centralized Syncfusion theme/resources validated for this project -->
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <!-- Enum provider for RouteTimeSlot (use as ItemsSource via StaticResource) -->
             <ObjectDataProvider x:Key="RouteTimeSlotValues"
                                 MethodName="GetValues"
                                 ObjectType="{x:Type sys:Enum}">
@@ -25,78 +26,70 @@
                     <x:Type TypeName="models:RouteTimeSlot" />
                 </ObjectDataProvider.MethodParameters>
             </ObjectDataProvider>
-            <!-- Themed button styles — plain Label text (emoji often blank under Fluent ButtonAdv) -->
             <Style x:Key="PrimaryButtonAdv"
                    TargetType="syncfusion:ButtonAdv">
-                <Setter Property="Padding"
-                        Value="12,8" />
-                <Setter Property="Margin"
-                        Value="6,4,0,0" />
-                <Setter Property="SizeMode"
-                        Value="Normal" />
-                <Setter Property="IconWidth"
-                        Value="0" />
-                <Setter Property="IconHeight"
-                        Value="0" />
-                <Setter Property="SmallIcon"
-                        Value="{x:Null}" />
-                <Setter Property="Background"
-                        Value="{DynamicResource ButtonBackgroundBrush}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource ButtonForegroundBrush}" />
+                <Setter Property="Padding" Value="12,6" />
+                <Setter Property="Margin" Value="0,0,8,6" />
+                <Setter Property="MinHeight" Value="36" />
+                <Setter Property="SizeMode" Value="Normal" />
+                <Setter Property="IconWidth" Value="0" />
+                <Setter Property="IconHeight" Value="0" />
+                <Setter Property="SmallIcon" Value="{x:Null}" />
             </Style>
             <Style x:Key="SuccessButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Success}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Success}" />
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
             </Style>
             <Style x:Key="WarningButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Warning}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource PrimaryBackgroundBrush}" />
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Warning}" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryBackgroundBrush}" />
             </Style>
             <Style x:Key="DangerButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}" />
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
             </Style>
             <Style x:Key="InfoButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
-                   BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource ButtonBackgroundBrush}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource ButtonForegroundBrush}" />
+                   BasedOn="{StaticResource PrimaryButtonAdv}"/>
+            <Style x:Key="RouteToolbarCaption"
+                   TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Margin" Value="0,0,10,0" />
+                <Setter Property="MinWidth" Value="52" />
             </Style>
-            <!-- Watermark search uses SfTextBoxExt (Syncfusion only) -->
+            <Style x:Key="RoutePickerStack"
+                   TargetType="StackPanel">
+                <Setter Property="Margin" Value="0,0,10,0" />
+                <Setter Property="VerticalAlignment" Value="Bottom" />
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="20">
+    <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="2*" MinHeight="180" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" MinHeight="140" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <!-- Service Error Panel -->
         <Border x:Name="ServiceErrorBanner"
                 Grid.Row="0"
                 Visibility="Collapsed"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
                 CornerRadius="6"
                 Padding="12"
-                Margin="0,0,0,12">
+                Margin="0,0,0,8">
             <TextBlock x:Name="ServiceErrorText"
                        Text="Route service unavailable — route assignment is disabled."
                        Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
@@ -104,17 +97,15 @@
                        TextWrapping="Wrap"
                        AutomationProperties.Name="Route Assignment Service Error" />
         </Border>
-        <!-- Banner -->
         <Border Grid.Row="1"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="6"
-                Padding="12"
-                Margin="0,0,0,12">
-            <StackPanel Orientation="Horizontal"
-                        VerticalAlignment="Center">
+                Padding="10,8"
+                Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="&#xE90F;"
                            FontFamily="Segoe MDL2 Assets"
-                           FontSize="22"
+                           FontSize="20"
                            Margin="0,0,8,0"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
@@ -125,208 +116,216 @@
                            VerticalAlignment="Center" />
             </StackPanel>
         </Border>
-        <!-- Route Configuration Bar -->
         <Border x:Name="RouteConfigurationBar"
                 Grid.Row="2"
                 Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"
-                Padding="10"
-                Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <!-- Route Picker -->
-                <StackPanel Grid.Column="0"
-                            Orientation="Vertical"
-                            Margin="0,0,10,0">
-                    <TextBlock Text="Route"
-                               FontWeight="SemiBold" />
-                    <syncfusion:ComboBoxAdv x:Name="RoutePicker"
-                                            ItemsSource="{Binding AvailableRoutes}"
-                                            DisplayMemberPath="RouteName"
-                                            SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
-                                            MaxDropDownHeight="240"
-                                            AutomationProperties.Name="Route Selector"
-                                            ToolTip="Select a route to manage" />
-                </StackPanel>
-                <!-- Date -->
-                <StackPanel Grid.Column="1"
-                            Orientation="Vertical"
-                            Margin="0,0,10,0">
-                    <TextBlock Text="Date"
-                               FontWeight="SemiBold" />
-                    <syncfusion:SfDatePicker x:Name="RouteDatePicker"
-                                             Value="{Binding SelectedRoute.Date, Mode=TwoWay}"
-                                             AutomationProperties.Name="Route Date" />
-                </StackPanel>
-                <!-- Time Slot -->
-                <StackPanel Grid.Column="2"
-                            Orientation="Vertical"
-                            Margin="0,0,10,0">
-                    <TextBlock Text="Time Slot"
-                               FontWeight="SemiBold" />
-                    <syncfusion:ComboBoxAdv x:Name="TimeSlotCombo"
-                                            SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
-                                            ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
-                                            AutomationProperties.Name="Route Time Slot" />
-                </StackPanel>
-                <!-- Bus -->
-                <StackPanel Grid.Column="3"
-                            Orientation="Vertical"
-                            Margin="0,0,10,0">
-                    <TextBlock Text="Bus"
-                               FontWeight="SemiBold" />
-                    <syncfusion:ComboBoxAdv x:Name="BusCombo"
-                                            ItemsSource="{Binding AvailableBuses}"
-                                            DisplayMemberPath="BusNumber"
-                                            SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
-                                            IsEditable="False"
-                                            MaxDropDownHeight="240"
-                                            AutomationProperties.Name="Bus Selector"
-                                            AutomationProperties.HelpText="Select a bus for the route" />
-                </StackPanel>
-                <!-- Driver -->
-                <StackPanel Grid.Column="4"
-                            Orientation="Vertical"
-                            Margin="0,0,10,0">
-                    <TextBlock Text="Driver"
-                               FontWeight="SemiBold" />
-                    <syncfusion:ComboBoxAdv x:Name="DriverCombo"
-                                            ItemsSource="{Binding AvailableDrivers}"
-                                            DisplayMemberPath="DriverName"
-                                            SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
-                                            MaxDropDownHeight="240"
-                                            AutomationProperties.Name="Driver Selector"
-                                            AutomationProperties.HelpText="Select a driver for the route" />
-                </StackPanel>
-                <!-- Start Time and Actions — WrapPanel so Labels are not crushed to blank icon tiles -->
-                <WrapPanel Grid.Column="5"
-                           Orientation="Horizontal"
-                           VerticalAlignment="Bottom">
-                    <TextBlock Text="Start:"
-                               VerticalAlignment="Center"
-                               Margin="0,0,6,0" />
-                    <syncfusion:SfMaskedEdit x:Name="StartTimeInput"
-                                             Width="80"
-                                             Margin="0,4,0,0"
-                                             Text="{Binding StartTimeString, Mode=TwoWay}"
-                                             AutomationProperties.Name="Route Start Time" />
-                    <syncfusion:ButtonAdv x:Name="AssignBusButton"
-                                          Label="Assign Bus"
-                                          Command="{Binding AssignVehicleCommand}"
-                                          Style="{StaticResource WarningButtonAdv}"
-                                          AutomationProperties.Name="Assign Bus to Route"
-                                          ToolTip="Assign the selected bus to the route for the chosen time slot" />
-                    <syncfusion:ButtonAdv x:Name="AssignDriverButton"
-                                          Label="Assign Driver"
-                                          Command="{Binding AssignDriverCommand}"
-                                          Style="{StaticResource WarningButtonAdv}"
-                                          AutomationProperties.Name="Assign Driver to Route"
-                                          ToolTip="Assign the selected driver to the route for the chosen time slot" />
-                    <syncfusion:ButtonAdv x:Name="RefreshDataButton"
-                                          Label="Refresh"
-                                          Command="{Binding RefreshDataCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="Refresh Route Data"
-                                          ToolTip="Reload routes, buses, drivers, and student assignments" />
-                    <syncfusion:ButtonAdv x:Name="GenerateRoutesButton"
-                                          Label="Generate Routes"
-                                          Command="{Binding GenerateRoutesCommand}"
-                                          Style="{StaticResource SuccessButtonAdv}"
-                                          AutomationProperties.Name="Generate Routes"
-                                          ToolTip="Year-start auto route build for school destinations" />
-                    <syncfusion:ButtonAdv x:Name="GenerateTransferRoutesButton"
-                                          Label="Transfer Routes"
-                                          Command="{Binding GenerateTransferRoutesCommand}"
-                                          Style="{StaticResource WarningButtonAdv}"
-                                          AutomationProperties.Name="Generate Transfer Routes"
-                                          ToolTip="Generate separate transfer fleet drafts" />
-                    <syncfusion:ButtonAdv x:Name="TimeButton"
-                                          Label="Time"
-                                          Command="{Binding TimeRouteCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="Time Route"
-                                          ToolTip="Calculate timing for all stops" />
-                    <syncfusion:ButtonAdv x:Name="SaveButton"
-                                          Label="Save"
-                                          Command="{Binding SaveRouteCommand}"
-                                          Style="{StaticResource PrimaryButtonAdv}"
-                                          AutomationProperties.Name="Save Route"
-                                          ToolTip="Save route and assignments" />
-                    <syncfusion:ButtonAdv x:Name="ActivateButton"
-                                          Label="Activate"
-                                          Command="{Binding ActivateRouteCommand}"
-                                          Style="{StaticResource SuccessButtonAdv}"
-                                          AutomationProperties.Name="Activate Route"
-                                          ToolTip="Activate selected route" />
-                    <syncfusion:ButtonAdv x:Name="DeactivateButton"
-                                          Label="Deactivate"
-                                          Command="{Binding DeactivateRouteCommand}"
-                                          Style="{StaticResource WarningButtonAdv}"
-                                          AutomationProperties.Name="Deactivate Route"
-                                          ToolTip="Deactivate selected route" />
-                    <syncfusion:ButtonAdv x:Name="DeleteButton"
-                                          Label="Delete"
-                                          Command="{Binding DeleteRouteCommand}"
-                                          Style="{StaticResource DangerButtonAdv}"
-                                          AutomationProperties.Name="Delete Route"
-                                          ToolTip="Delete selected route" />
-                    <syncfusion:ButtonAdv x:Name="ScheduleButton"
-                                          Label="Schedule"
-                                          Command="{Binding ViewScheduleCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="View Schedule"
-                                          ToolTip="Published stop times for the selected route" />
-                    <syncfusion:ButtonAdv x:Name="PlotButton"
-                                          Label="Plot"
-                                          Command="{Binding PlotRouteOnMapCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="Plot Route on Map"
-                                          ToolTip="Plot route on map" />
-                    <syncfusion:ButtonAdv x:Name="DrivePathButton"
-                                          Label="Drive Path"
-                                          Command="{Binding RefreshDrivePathCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="Refresh Drive Path"
-                                          ToolTip="Compute the Google Routes polyline from published stops" />
-                    <syncfusion:ButtonAdv x:Name="PrintMapButton"
-                                          Label="Print Map"
-                                          Command="{Binding PrintRouteSheetCommand}"
-                                          Style="{StaticResource PrimaryButtonAdv}"
-                                          AutomationProperties.Name="Print Route Map"
-                                          ToolTip="Export the PdfGrid route sheet with the current map snapshot" />
-                    <syncfusion:ButtonAdv x:Name="AutoAssignButton"
-                                          Label="Auto-Assign"
-                                          Command="{Binding AutoAssignCommand}"
-                                          Style="{StaticResource SuccessButtonAdv}"
-                                          AutomationProperties.Name="Auto Assign Students"
-                                          ToolTip="Assign unassigned students up to route capacity for the selected time slot" />
-                    <syncfusion:ButtonAdv x:Name="ReportButton"
-                                          Label="Report"
-                                          Command="{Binding ExportRouteSheetCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="Generate Route Assignment Report"
-                                          ToolTip="Export the PdfGrid route sheet (stops + roster)" />
-                </WrapPanel>
-            </Grid>
+                Padding="10,8"
+                Margin="0,0,0,8">
+            <StackPanel>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" MinWidth="200" />
+                        <ColumnDefinition Width="*" MinWidth="112" />
+                        <ColumnDefinition Width="Auto" MinWidth="96" />
+                        <ColumnDefinition Width="*" MinWidth="88" />
+                        <ColumnDefinition Width="*" MinWidth="120" />
+                        <ColumnDefinition Width="Auto" MinWidth="88" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Style="{StaticResource RoutePickerStack}">
+                        <TextBlock Text="Route" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <syncfusion:ComboBoxAdv x:Name="RoutePicker"
+                                                MinWidth="200"
+                                                HorizontalAlignment="Stretch"
+                                                ItemsSource="{Binding AvailableRoutes}"
+                                                DisplayMemberPath="RouteName"
+                                                SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
+                                                IsEditable="False"
+                                                MaxDropDownHeight="240"
+                                                AutomationProperties.Name="Route Selector"
+                                                ToolTip="Select a route to manage" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Style="{StaticResource RoutePickerStack}">
+                        <TextBlock Text="Date" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <syncfusion:SfDatePicker x:Name="RouteDatePicker"
+                                                 HorizontalAlignment="Stretch"
+                                                 Value="{Binding SelectedRoute.Date, Mode=TwoWay}"
+                                                 AutomationProperties.Name="Route Date" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Style="{StaticResource RoutePickerStack}">
+                        <TextBlock Text="Time Slot" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <syncfusion:ComboBoxAdv x:Name="TimeSlotCombo"
+                                                MinWidth="88"
+                                                HorizontalAlignment="Stretch"
+                                                SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
+                                                ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
+                                                IsEditable="False"
+                                                AutomationProperties.Name="Route Time Slot" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Style="{StaticResource RoutePickerStack}">
+                        <TextBlock Text="Bus" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <syncfusion:ComboBoxAdv x:Name="BusCombo"
+                                                HorizontalAlignment="Stretch"
+                                                ItemsSource="{Binding AvailableBuses}"
+                                                DisplayMemberPath="BusNumber"
+                                                SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
+                                                IsEditable="False"
+                                                MaxDropDownHeight="240"
+                                                AutomationProperties.Name="Bus Selector"
+                                                AutomationProperties.HelpText="Select a bus for the route" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4" Style="{StaticResource RoutePickerStack}">
+                        <TextBlock Text="Driver" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <syncfusion:ComboBoxAdv x:Name="DriverCombo"
+                                                HorizontalAlignment="Stretch"
+                                                ItemsSource="{Binding AvailableDrivers}"
+                                                DisplayMemberPath="DriverName"
+                                                SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+                                                IsEditable="False"
+                                                MaxDropDownHeight="240"
+                                                AutomationProperties.Name="Driver Selector"
+                                                AutomationProperties.HelpText="Select a driver for the route" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="5" Orientation="Vertical">
+                        <TextBlock Text="Start" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <syncfusion:SfMaskedEdit x:Name="StartTimeInput"
+                                                 Width="80"
+                                                 HorizontalAlignment="Left"
+                                                 Text="{Binding StartTimeString, Mode=TwoWay}"
+                                                 AutomationProperties.Name="Route Start Time" />
+                    </StackPanel>
+                </Grid>
+                <DockPanel LastChildFill="True" Margin="0,0,0,2">
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="Fleet"
+                               Style="{StaticResource RouteToolbarCaption}" />
+                    <WrapPanel Orientation="Horizontal">
+                        <syncfusion:ButtonAdv x:Name="AssignBusButton"
+                                              Label="Assign Bus"
+                                              Command="{Binding AssignVehicleCommand}"
+                                              Style="{StaticResource WarningButtonAdv}"
+                                              AutomationProperties.Name="Assign Bus to Route"
+                                              ToolTip="Assign the selected bus to the route for the chosen time slot" />
+                        <syncfusion:ButtonAdv x:Name="AssignDriverButton"
+                                              Label="Assign Driver"
+                                              Command="{Binding AssignDriverCommand}"
+                                              Style="{StaticResource WarningButtonAdv}"
+                                              AutomationProperties.Name="Assign Driver to Route"
+                                              ToolTip="Assign the selected driver to the route for the chosen time slot" />
+                    </WrapPanel>
+                </DockPanel>
+                <DockPanel LastChildFill="True" Margin="0,0,0,2">
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="Route"
+                               Style="{StaticResource RouteToolbarCaption}" />
+                    <WrapPanel Orientation="Horizontal">
+                        <syncfusion:ButtonAdv x:Name="RefreshDataButton"
+                                              Label="Refresh"
+                                              Command="{Binding RefreshDataCommand}"
+                                              Style="{StaticResource InfoButtonAdv}"
+                                              AutomationProperties.Name="Refresh Route Data"
+                                              ToolTip="Reload routes, buses, drivers, and student assignments" />
+                        <syncfusion:ButtonAdv x:Name="SaveButton"
+                                              Label="Save"
+                                              Command="{Binding SaveRouteCommand}"
+                                              Style="{StaticResource PrimaryButtonAdv}"
+                                              AutomationProperties.Name="Save Route"
+                                              ToolTip="Save route and assignments" />
+                        <syncfusion:ButtonAdv x:Name="ActivateButton"
+                                              Label="Activate"
+                                              Command="{Binding ActivateRouteCommand}"
+                                              Style="{StaticResource SuccessButtonAdv}"
+                                              AutomationProperties.Name="Activate Route"
+                                              ToolTip="Activate selected route" />
+                        <syncfusion:ButtonAdv x:Name="DeactivateButton"
+                                              Label="Deactivate"
+                                              Command="{Binding DeactivateRouteCommand}"
+                                              Style="{StaticResource WarningButtonAdv}"
+                                              AutomationProperties.Name="Deactivate Route"
+                                              ToolTip="Deactivate selected route" />
+                        <syncfusion:ButtonAdv x:Name="DeleteButton"
+                                              Label="Delete"
+                                              Command="{Binding DeleteRouteCommand}"
+                                              Style="{StaticResource DangerButtonAdv}"
+                                              AutomationProperties.Name="Delete Route"
+                                              ToolTip="Delete selected route" />
+                        <syncfusion:ButtonAdv x:Name="GenerateRoutesButton"
+                                              Label="Generate Routes"
+                                              Command="{Binding GenerateRoutesCommand}"
+                                              Style="{StaticResource SuccessButtonAdv}"
+                                              AutomationProperties.Name="Generate Routes"
+                                              ToolTip="Year-start auto route build for school destinations" />
+                        <syncfusion:ButtonAdv x:Name="GenerateTransferRoutesButton"
+                                              Label="Transfer Routes"
+                                              Command="{Binding GenerateTransferRoutesCommand}"
+                                              Style="{StaticResource WarningButtonAdv}"
+                                              AutomationProperties.Name="Generate Transfer Routes"
+                                              ToolTip="Generate separate transfer fleet drafts" />
+                        <syncfusion:ButtonAdv x:Name="AutoAssignButton"
+                                              Label="Auto-Assign"
+                                              Command="{Binding AutoAssignCommand}"
+                                              Style="{StaticResource SuccessButtonAdv}"
+                                              AutomationProperties.Name="Auto Assign Students"
+                                              ToolTip="Assign unassigned students up to route capacity for the selected time slot" />
+                    </WrapPanel>
+                </DockPanel>
+                <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="Publish"
+                               Style="{StaticResource RouteToolbarCaption}" />
+                    <WrapPanel Orientation="Horizontal">
+                        <syncfusion:ButtonAdv x:Name="TimeButton"
+                                              Label="Time"
+                                              Command="{Binding TimeRouteCommand}"
+                                              Style="{StaticResource InfoButtonAdv}"
+                                              AutomationProperties.Name="Time Route"
+                                              ToolTip="Calculate timing for all stops" />
+                        <syncfusion:ButtonAdv x:Name="ScheduleButton"
+                                              Label="Schedule"
+                                              Command="{Binding ViewScheduleCommand}"
+                                              Style="{StaticResource InfoButtonAdv}"
+                                              AutomationProperties.Name="View Schedule"
+                                              ToolTip="Published stop times for the selected route" />
+                        <syncfusion:ButtonAdv x:Name="PlotButton"
+                                              Label="Plot"
+                                              Command="{Binding PlotRouteOnMapCommand}"
+                                              Style="{StaticResource InfoButtonAdv}"
+                                              AutomationProperties.Name="Plot Route on Map"
+                                              ToolTip="Plot route on map" />
+                        <syncfusion:ButtonAdv x:Name="DrivePathButton"
+                                              Label="Drive Path"
+                                              Command="{Binding RefreshDrivePathCommand}"
+                                              Style="{StaticResource InfoButtonAdv}"
+                                              AutomationProperties.Name="Refresh Drive Path"
+                                              ToolTip="Compute the Google Routes polyline from published stops" />
+                        <syncfusion:ButtonAdv x:Name="PrintMapButton"
+                                              Label="Print Map"
+                                              Command="{Binding PrintRouteSheetCommand}"
+                                              Style="{StaticResource PrimaryButtonAdv}"
+                                              AutomationProperties.Name="Print Route Map"
+                                              ToolTip="Export the PdfGrid route sheet with the current map snapshot" />
+                        <syncfusion:ButtonAdv x:Name="ReportButton"
+                                              Label="Report"
+                                              Command="{Binding ExportRouteSheetCommand}"
+                                              Style="{StaticResource InfoButtonAdv}"
+                                              AutomationProperties.Name="Generate Route Assignment Report"
+                                              ToolTip="Export the PdfGrid route sheet (stops + roster)" />
+                    </WrapPanel>
+                </DockPanel>
+            </StackPanel>
         </Border>
-        <!-- Main Content: Unassigned ↔ Assigned -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="3" MinHeight="180">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" MinWidth="160" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="*" MinWidth="160" />
             </Grid.ColumnDefinitions>
-            <!-- Unassigned Students -->
             <GroupBox Grid.Column="0"
-                      Header="📚 Unassigned Students"
-                      Margin="0,0,12,0">
+                      Header="Unassigned Students"
+                      Margin="0,0,8,0"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -335,7 +334,8 @@
                     </Grid.RowDefinitions>
                     <syncfusion:SfTextBoxExt x:Name="UnassignedSearchBox"
                                              Grid.Row="0"
-                                             Margin="0,0,0,8"
+                                             Margin="0,0,0,6"
+                                             HorizontalAlignment="Stretch"
                                              Watermark="Search unassigned students..."
                                              Text="{Binding StudentSearchText, UpdateSourceTrigger=PropertyChanged}"
                                              AutomationProperties.Name="Unassigned Student Search"
@@ -347,11 +347,15 @@
                                            AutoGenerateColumns="False"
                                            AllowSorting="True"
                                            AllowFiltering="True"
-                                           AllowGrouping="True"
-                                           ShowGroupDropArea="True"
+                                           AllowGrouping="False"
+                                           ShowGroupDropArea="False"
+                                           AllowResizingColumns="True"
                                            SelectionMode="Single"
                                            GridLinesVisibility="Both"
+                                           HeaderLinesVisibility="Both"
                                            ColumnSizer="Star"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Stretch"
                                            AllowDrop="True"
                                            PreviewMouseLeftButtonDown="UnassignedGrid_PreviewMouseLeftButtonDown"
                                            PreviewMouseMove="Grid_PreviewMouseMove"
@@ -364,52 +368,58 @@
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name"
                                                        MappingName="StudentName"
-                                                       Width="150" />
+                                                       MinimumWidth="120" />
                             <syncfusion:GridTextColumn HeaderText="Grade"
                                                        MappingName="Grade"
-                                                       Width="70" />
+                                                       MinimumWidth="56"
+                                                       MaximumWidth="80" />
                             <syncfusion:GridTextColumn HeaderText="Address"
                                                        MappingName="HomeAddress"
-                                                       Width="200" />
+                                                       MinimumWidth="140" />
                             <syncfusion:GridTextColumn HeaderText="City"
                                                        MappingName="City"
-                                                       Width="120" />
+                                                       MinimumWidth="80" />
                         </syncfusion:SfDataGrid.Columns>
                     </syncfusion:SfDataGrid>
                     <TextBlock Grid.Row="2"
+                               Margin="0,4,0,0"
                                Text="{Binding UnassignedStudentCount, StringFormat=Unassigned: {0}}" />
                 </Grid>
             </GroupBox>
-            <!-- Actions -->
             <StackPanel Grid.Column="1"
-                        VerticalAlignment="Center">
+                        VerticalAlignment="Center"
+                        MinWidth="132"
+                        Margin="0,0,8,0">
                 <syncfusion:ButtonAdv x:Name="AssignButton"
                                       Label="Assign"
                                       Command="{Binding AssignStudentCommand}"
                                       Style="{StaticResource PrimaryButtonAdv}"
-                                      Margin="0,0,0,10"
-                                      Padding="16,8"
+                                      Margin="0,0,0,8"
+                                      HorizontalAlignment="Stretch"
                                       AutomationProperties.Name="Assign Student"
                                       ToolTip="Assign selected student to route" />
                 <syncfusion:ButtonAdv x:Name="RemoveButton"
                                       Label="Remove"
                                       Command="{Binding RemoveStudentCommand}"
                                       Style="{StaticResource PrimaryButtonAdv}"
-                                      Padding="16,8"
-                                      Margin="0,0,0,10"
+                                      Margin="0,0,0,8"
+                                      HorizontalAlignment="Stretch"
                                       AutomationProperties.Name="Remove Student"
                                       ToolTip="Remove selected student from the year assignment (not a same-day absence)" />
                 <syncfusion:ButtonAdv x:Name="NotRidingTodayButton"
                                       Label="Not riding today"
                                       Command="{Binding MarkNotRidingTodayCommand}"
                                       Style="{StaticResource PrimaryButtonAdv}"
-                                      Padding="16,8"
+                                      Margin="0"
+                                      HorizontalAlignment="Stretch"
                                       AutomationProperties.Name="Not riding today"
                                       ToolTip="Same-day rider exception — does not delete the stop or year assignment" />
             </StackPanel>
-            <!-- Assigned Students -->
             <GroupBox Grid.Column="2"
-                      Header="✅ Assigned to Route">
+                      Header="Assigned to Route"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -422,11 +432,15 @@
                                            AutoGenerateColumns="False"
                                            AllowSorting="True"
                                            AllowFiltering="True"
-                                           AllowGrouping="True"
-                                           ShowGroupDropArea="True"
+                                           AllowGrouping="False"
+                                           ShowGroupDropArea="False"
+                                           AllowResizingColumns="True"
                                            SelectionMode="Single"
                                            GridLinesVisibility="Both"
+                                           HeaderLinesVisibility="Both"
                                            ColumnSizer="Star"
+                                           HorizontalAlignment="Stretch"
+                                           VerticalAlignment="Stretch"
                                            AllowDrop="True"
                                            PreviewMouseLeftButtonDown="AssignedGrid_PreviewMouseLeftButtonDown"
                                            PreviewMouseMove="Grid_PreviewMouseMove"
@@ -439,35 +453,45 @@
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name"
                                                        MappingName="StudentName"
-                                                       Width="150" />
+                                                       MinimumWidth="120" />
                             <syncfusion:GridTextColumn HeaderText="Grade"
                                                        MappingName="Grade"
-                                                       Width="70" />
+                                                       MinimumWidth="56"
+                                                       MaximumWidth="80" />
                             <syncfusion:GridTextColumn HeaderText="Address"
                                                        MappingName="HomeAddress"
-                                                       Width="200" />
+                                                       MinimumWidth="140" />
                             <syncfusion:GridTextColumn HeaderText="City"
                                                        MappingName="City"
-                                                       Width="120" />
+                                                       MinimumWidth="80" />
                         </syncfusion:SfDataGrid.Columns>
                     </syncfusion:SfDataGrid>
                     <TextBlock Grid.Row="1"
+                               Margin="0,4,0,0"
                                Text="{Binding AssignedStudentCount, StringFormat=Assigned: {0}}" />
                 </Grid>
             </GroupBox>
         </Grid>
-        <!-- Stops Editor -->
-        <GroupBox Grid.Row="4"
-                  Header="🧭 Route Stops"
-                  Margin="0,12,0,0">
-            <views:RouteStopsEditor />
+        <GridSplitter Grid.Row="4"
+                      Height="6"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      ResizeDirection="Rows"
+                      Background="{DynamicResource BusBuddy.Brush.Surface.Border}"
+                      Margin="0,4"/>
+        <GroupBox Grid.Row="5"
+                  Header="Route Stops"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  Padding="6">
+            <views:RouteStopsEditor HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch" />
         </GroupBox>
-        <!-- Footer / Status -->
-        <Border Grid.Row="5"
-                Margin="0,12,0,0"
+        <Border Grid.Row="6"
+                Margin="0,8,0,0"
                 Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"
-                Padding="10">
+                Padding="10,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -475,6 +499,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding StatusMessage}"
+                               TextTrimming="CharacterEllipsis"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     <TextBlock Text="Loading..."
                                Margin="12,0,0,0"

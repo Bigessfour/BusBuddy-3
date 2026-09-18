@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection; // For resolving MapViewModel / 
 using BusBuddy.WPF.ViewModels.Map; // Map markers
 using BusBuddy.WPF.Utilities; // MapMarkerLabels pin kinds
 using BusBuddy.WPF.Views.Route; // RouteStopEditDialog
+using BusBuddy.WPF.Logging;
 using System.Threading; // For debounce timer
 
 namespace BusBuddy.WPF.ViewModels.Route
@@ -863,7 +864,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = "Refreshing data...";
 
                 await LoadDataFromServiceAsync();
-                Logger.Information("Data refreshed successfully");
+                UiDiagnosticsLog.Write(
+                    Logger,
+                    Serilog.Events.LogEventLevel.Information,
+                    "Data refreshed successfully");
             }
             catch (Exception ex)
             {

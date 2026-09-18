@@ -41,4 +41,50 @@ public class RouteAssignmentViewTests
         Assert.That(xaml, Does.Not.Contain("Command=\"{Binding PrintMapCommand}\""));
         Assert.That(xaml, Does.Not.Contain("Command=\"{Binding GenerateReportCommand}\""));
     }
+
+    [Test]
+    public void RouteAssignmentViewXaml_SeparatesPickersFromLabeledButtonRibbon()
+    {
+        var xaml = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
+
+        Assert.That(xaml, Does.Contain("Style=\"{StaticResource RouteToolbarCaption}\""));
+        Assert.That(xaml, Does.Contain("Text=\"Fleet\""));
+        Assert.That(xaml, Does.Contain("Text=\"Publish\""));
+        Assert.That(xaml, Does.Contain("MinWidth=\"200\""));
+        Assert.That(xaml, Does.Contain("x:Name=\"RoutePicker\""));
+        Assert.That(xaml, Does.Contain("x:Name=\"StartTimeInput\""));
+        Assert.That(xaml, Does.Not.Contain("Grid.Column=\"5\"\n                           Orientation=\"Horizontal\""));
+    }
+
+    [Test]
+    public void RouteAssignmentViewXaml_StudentGridsFillHostAndShareStarRows()
+    {
+        var xaml = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
+        Assert.That(xaml, Does.Contain("ButtonAdvTextOnly.xaml"));
+        Assert.That(xaml, Does.Contain("GridSplitter"));
+        Assert.That(xaml, Does.Contain("Height=\"2*\" MinHeight=\"180\""));
+        Assert.That(xaml, Does.Contain("Header=\"Unassigned Students\""));
+        Assert.That(xaml, Does.Contain("Header=\"Assigned to Route\""));
+        Assert.That(xaml, Does.Contain("Header=\"Route Stops\""));
+        Assert.That(xaml, Does.Not.Contain("📚"));
+        Assert.That(xaml, Does.Not.Contain("✅"));
+        Assert.That(xaml, Does.Contain("ShowGroupDropArea=\"False\""));
+        Assert.That(xaml, Does.Contain("MinimumWidth=\"120\""));
+        Assert.That(xaml, Does.Contain("MinimumWidth=\"140\""));
+        Assert.That(xaml, Does.Not.Contain("MappingName=\"StudentName\"\n                                                       Width=\"150\""));
+        Assert.That(xaml, Does.Contain("IsEditable=\"False\""));
+        var stops = XamlViewFile.Read("Views/Route/RouteStopsEditor.xaml");
+        Assert.That(stops, Does.Contain("ColumnSizer=\"Star\""));
+        Assert.That(stops, Does.Contain("ShowGroupDropArea=\"False\""));
+        Assert.That(stops, Does.Contain("MinimumWidth=\"140\""));
+        Assert.That(stops, Does.Not.Contain("Width=\"180\""));
+        var code = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml.cs");
+        Assert.That(code, Does.Contain("IsVisibleChanged"));
+        Assert.That(code, Does.Contain("RelayoutHostedGrids"));
+        Assert.That(code, Does.Contain("RouteAssignmentView visible"));
+        Assert.That(code, Does.Contain("UiDiagnosticsLog.Write"));
+        var vm = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.cs");
+        Assert.That(vm, Does.Contain("GenerateReportCommand = ExportRouteSheetCommand"));
+        Assert.That(vm, Does.Contain("PrintMapCommand = PrintRouteSheetCommand"));
+    }
 }

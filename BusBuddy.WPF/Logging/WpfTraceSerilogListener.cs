@@ -30,6 +30,11 @@ public static class WpfTraceSerilogListener
             return false;
         }
 
+        if (IsVendorAnimationTrace(message))
+        {
+            return false;
+        }
+
         if (message.Contains(BindingErrorMarker, StringComparison.OrdinalIgnoreCase)
             || message.Contains(CannotFindSourceMarker, StringComparison.OrdinalIgnoreCase)
             || message.Contains("BindingExpression", StringComparison.OrdinalIgnoreCase)
@@ -51,6 +56,22 @@ public static class WpfTraceSerilogListener
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Syncfusion ComboBoxAdv popup animations bind ElementName=PanelPresenter / ItemsPresenter
+    /// before the template namescope exists (VM 2026-09-17 Activity Timeline flood).
+    /// </summary>
+    internal static bool IsVendorAnimationTrace(string message)
+    {
+        if (!message.Contains("DoubleAnimation", StringComparison.OrdinalIgnoreCase)
+            || !message.Contains("Duration", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return message.Contains("ElementName=PanelPresenter", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("ElementName=ItemsPresenter", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Attach once. Safe to call before MainWindow exists.</summary>
