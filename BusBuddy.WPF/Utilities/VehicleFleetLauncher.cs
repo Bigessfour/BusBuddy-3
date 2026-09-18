@@ -5,7 +5,10 @@ using Serilog;
 
 namespace BusBuddy.WPF.Utilities;
 
-/// <summary>Single entry point for fleet CRUD — always opens <see cref="VehicleForm"/> hosting <see cref="VehiclesView"/>.</summary>
+/// <summary>
+/// Fleet CRUD chrome. Persist type is <c>BusBuddy.Core.Models.Bus</c> (specs/buses.md).
+/// Window filenames still say Vehicle; do not introduce a Vehicle entity.
+/// </summary>
 public static class VehicleFleetLauncher
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(VehicleFleetLauncher));

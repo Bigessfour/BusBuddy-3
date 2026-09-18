@@ -12,7 +12,7 @@ using Serilog; // Logging per project standards
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics; // Conditional/DEBUG — https://learn.microsoft.com/dotnet/api/system.diagnostics.conditionalattribute
 using BusBuddy.Core.Data; // For IBusBuddyDbContextFactory
-using BusBuddy.Core.Services; // For AddressService fallback when DI unavailable
+using BusBuddy.Core.Services;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -62,8 +62,7 @@ namespace BusBuddy.WPF.Views.Student
                     var factory = sp.GetService<IBusBuddyDbContextFactory>() ?? new BusBuddyDbContextFactory();
                     DataContext = new StudentsViewModel(
                         factory,
-                        sp.GetService<IStudentService>(),
-                        sp.GetService<AddressService>() ?? new AddressService());
+                        sp.GetService<IStudentService>());
                     Logger.Information("StudentsView DataContext constructed via factory fallback");
                 }
                 else

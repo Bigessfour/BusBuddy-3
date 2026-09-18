@@ -181,17 +181,3 @@ public interface IStudentService
 #endif
 
 }
-
-/// <summary>
-/// Result of a data seeding operation. Kept here (rather than removed with the retired
-/// <c>SeedDistrictDataAsync</c>) because it is the shared seed-outcome DTO for the namespace.
-/// </summary>
-public class SeedResult
-{
-    public bool Success { get; set; }
-    public int RecordsProcessed { get; set; }
-    public int RecordsSeeded { get; set; }
-    public string? ErrorMessage { get; set; }
-    public TimeSpan Duration { get; set; }
-    public DateTime CompletedAt { get; set; }
-}

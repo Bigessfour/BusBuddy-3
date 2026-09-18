@@ -79,7 +79,7 @@ public class UiRuntimeLoggingTests
     [Test]
     public void AppStartup_WiresUiDiagnosticsAndCapabilitySnapshot()
     {
-        var source = XamlViewFile.Read("App.xaml.cs");
+        var source = XamlViewFile.Read("App.xaml.cs") + "\n" + XamlViewFile.Read("App.Exceptions.cs");
         Assert.That(source, Does.Contain("WpfTraceSerilogListener.Attach"));
         Assert.That(source, Does.Contain("UiSurfaceProbe.Register"));
         Assert.That(source, Does.Contain("RuntimeCapabilityLogger.WriteStartupSnapshot"));

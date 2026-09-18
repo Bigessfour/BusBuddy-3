@@ -14,12 +14,10 @@ public sealed class StudentsGridAddressCoordinator
 {
     private static readonly ILogger Logger = Log.ForContext<StudentsGridAddressCoordinator>();
 
-    private readonly AddressService _addressService;
     private readonly IStudentService? _studentService;
 
-    public StudentsGridAddressCoordinator(AddressService addressService, IStudentService? studentService = null)
+    public StudentsGridAddressCoordinator(IStudentService? studentService = null)
     {
-        _addressService = addressService ?? throw new ArgumentNullException(nameof(addressService));
         _studentService = studentService;
     }
 
@@ -105,14 +103,12 @@ public sealed class StudentsGridAddressCoordinator
             }
         }
 
-        var validation = _addressService.ValidateAddress(student.HomeAddress);
-        Logger.Information(
-            "Address validation performed for student {StudentId}: {IsValid}",
-            student.StudentId,
-            validation.IsValid);
-        return validation.IsValid
-            ? WithStoredPinNote(student, "Address format is valid (GPS unavailable)")
-            : $"Address validation failed: {validation.Error}";
+        Logger.Warning(
+            "Address not validated for student {StudentId} — Google Address Validation unavailable",
+            student.StudentId);
+        return WithStoredPinNote(
+            student,
+            "Address could not be validated. Set GOOGLE_MAPS_API_KEY or use View on Map after a successful validate.");
     }
 
     private static string WithStoredPinNote(StudentModel student, string message)

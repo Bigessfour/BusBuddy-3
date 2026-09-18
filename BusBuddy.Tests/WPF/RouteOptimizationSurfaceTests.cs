@@ -61,8 +61,12 @@ public class RouteOptimizationSurfaceTests
 
         var trips = CoreSourceFile.Read("Services/TripEventService.cs");
         Assert.That(trips, Does.Contain("HasConflictsAsync"));
-        Assert.That(trips, Does.Contain("skippedConflicts"));
-        Assert.That(trips, Does.Contain("unassigned"));
-        Assert.That(trips, Does.Contain("Pickup times were not changed"));
+        Assert.That(trips, Does.Contain("TripFleetOptimizer"));
+        Assert.That(trips, Does.Contain("SuggestSameDayAsync"));
+
+        var fleet = CoreSourceFile.Read("Services/Trips/TripFleetOptimizer.cs");
+        Assert.That(fleet, Does.Contain("skippedConflicts"));
+        Assert.That(fleet, Does.Contain("unassigned"));
+        Assert.That(fleet, Does.Contain("Pickup times were not changed"));
     }
 }

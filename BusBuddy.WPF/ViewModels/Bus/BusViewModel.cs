@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace BusBuddy.WPF.ViewModels.Bus
 {
     /// <summary>
-    /// View model for Bus/Vehicle data with validation
+    /// Clerk/view DTO for <see cref="Bus"/>. AutoMapper and BusEditDialog share this type.
     /// </summary>
     public class BusViewModel : BaseViewModel
     {
@@ -30,6 +30,10 @@ namespace BusBuddy.WPF.ViewModels.Bus
         private bool _isInUse;
         private bool _isRented;
         private bool _isUnderWarranty;
+        private string _lastMaintenanceDateFormatted = string.Empty;
+        private int? _milesSinceLastMaintenance;
+        private string _maintenanceStatus = "Unknown";
+        private string _notes = string.Empty;
 
         [Key]
         public int BusId
@@ -193,8 +197,53 @@ namespace BusBuddy.WPF.ViewModels.Bus
         [Display(Name = "Age")]
         public int Age => DateTime.Now.Year - Year;
 
+        [Display(Name = "Capacity")]
+        public int Capacity
+        {
+            get => SeatingCapacity;
+            set => SeatingCapacity = value;
+        }
+
+        [Display(Name = "License Plate")]
+        public string LicensePlate
+        {
+            get => LicenseNumber;
+            set => LicenseNumber = value;
+        }
+
+        [Display(Name = "Last Maintenance")]
+        public string LastMaintenanceDateFormatted
+        {
+            get => _lastMaintenanceDateFormatted;
+            set => SetProperty(ref _lastMaintenanceDateFormatted, value);
+        }
+
+        [Display(Name = "Miles Since Maintenance")]
+        public int? MilesSinceLastMaintenance
+        {
+            get => _milesSinceLastMaintenance;
+            set => SetProperty(ref _milesSinceLastMaintenance, value);
+        }
+
+        [Display(Name = "Maintenance Status")]
+        public string MaintenanceStatus
+        {
+            get => _maintenanceStatus;
+            set => SetProperty(ref _maintenanceStatus, value);
+        }
+
+        [Display(Name = "Notes")]
+        public string Notes
+        {
+            get => _notes;
+            set => SetProperty(ref _notes, value);
+        }
+
         [Display(Name = "Full Description")]
         public string FullDescription => $"{Year} {Make} {Model} (#{BusNumber})";
+
+        [Display(Name = "Bus Info")]
+        public string DisplayName => $"{BusNumber} - {Make} {Model} ({Year})";
 
         [Display(Name = "Inspection Status")]
         public string InspectionStatus

@@ -62,8 +62,9 @@ Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
 Parked hygiene (from PR #92 audit; not this pass):
 
-- [ ] **AddressService DI:** `StudentsViewModel` / `StudentsView` still `new AddressService()` (with a `GetService` fallback). Register it or merge into `AddressValidationService`.
+- [x] **AddressService DI:** Retired `AddressService`. Grid validate uses Google Maps / geocode only (`IAddressValidationService`); format-only is not success.
 - [ ] **IStudentScheduleService:** registered in `AddDataServices`, no consumer. Wire a clerk surface or drop the registration.
+- [ ] **Fleet chrome filenames:** persist type is `Bus`; `VehicleForm` / `VehiclesView` / `AssignVehicleCommand` / SQL `Vehicles` are leftover names. Rename UI/SQL in a dedicated pass — do not add a `Vehicle` entity.
 
 ### Maps coupling checklist (harden / test)
 

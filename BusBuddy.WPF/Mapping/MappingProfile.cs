@@ -2,6 +2,7 @@ using AutoMapper;
 using BusBuddy.Core.Models;
 using BusBuddy.WPF.Models;
 using System;
+using BusViewModel = BusBuddy.WPF.ViewModels.Bus.BusViewModel;
 
 namespace BusBuddy.WPF.Mapping
 {
