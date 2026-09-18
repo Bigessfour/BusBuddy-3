@@ -58,7 +58,7 @@ Optional:
 
 - [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
 
-Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
+Do **not** explode `MainWindow.xaml.cs` / `StudentsViewModel.cs`. Button a11y audit is `ButtonAccessibilityAudit`. Ribbon click handlers stay on the shell.
 
 Parked hygiene (from PR #92 audit; not this pass):
 

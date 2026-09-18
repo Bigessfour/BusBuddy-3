@@ -166,7 +166,7 @@ namespace BusBuddy.WPF.Views.Student
             {
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    try { AuditButtonsAccessibility(); } catch (System.Exception ex2) { Logger.Warning(ex2, "StudentsView: accessibility audit failed"); }
+                    ButtonAccessibilityAudit.Run(this, Logger, "StudentsView");
                 }), System.Windows.Threading.DispatcherPriority.Background);
             }
             catch { }
@@ -262,44 +262,6 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentsView: validation logging failed");
-            }
-        }
-
-        private void AuditButtonsAccessibility()
-        {
-            int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
-            foreach (var d in Traverse(this))
-            {
-                if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
-                {
-                    total++; adv++;
-                    var label = badv.Label; var autoName = AutomationProperties.GetName(badv);
-                    bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
-                    if (string.IsNullOrWhiteSpace(label)) missingLabel++;
-                    if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                }
-                else if (d is Button btn)
-                {
-                    total++;
-                    var content = btn.Content?.ToString(); var autoName = AutomationProperties.GetName(btn);
-                    bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
-                    if (string.IsNullOrWhiteSpace(content)) missingLabel++;
-                    if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                }
-            }
-            Logger.Information("StudentsView Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
-        }
-
-        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
-        {
-            if (root == null) yield break;
-            var count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child == null) continue;
-                yield return child;
-                foreach (var g in Traverse(child)) yield return g;
             }
         }
 

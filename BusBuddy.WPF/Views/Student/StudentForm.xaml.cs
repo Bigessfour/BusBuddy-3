@@ -375,8 +375,7 @@ namespace BusBuddy.WPF.Views.Student
             Logger.Information("StudentForm ContentRendered — Ready for user interaction");
             InputCaretHelper.RefreshCaretsInSubtree(this);
             // One-time UI audit after visual tree is ready
-            try { AuditButtonsAccessibility(); }
-            catch (System.Exception ex) { Logger.Warning(ex, "StudentForm: UI audit failed"); }
+            ButtonAccessibilityAudit.Run(this, Logger, "UI");
         }
 
         private void StudentForm_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -433,79 +432,6 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: button click logging failed");
-            }
-        }
-
-        /// <summary>
-        /// Audits Button and ButtonAdv elements for missing labels/names and basic command wiring.
-        /// Runs once after ContentRendered when the visual tree is ready.
-        /// </summary>
-        private void AuditButtonsAccessibility()
-        {
-            int total = 0, advCount = 0, missingLabel = 0, missingName = 0, noCommand = 0;
-
-            foreach (var d in Traverse(this))
-            {
-                if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
-                {
-                    total++; advCount++;
-                    var label = badv.Label;
-                    var autoName = AutomationProperties.GetName(badv);
-                    var help = AutomationProperties.GetHelpText(badv);
-                    bool hasCommand = badv.Command != null;
-                    bool? canExec = null; try { if (hasCommand) canExec = badv.Command?.CanExecute(badv.CommandParameter); } catch { }
-
-                    if (string.IsNullOrWhiteSpace(label)) missingLabel++;
-                    if (string.IsNullOrWhiteSpace(autoName)) missingName++;
-                    if (!hasCommand) noCommand++;
-
-                    Logger.Information(
-                        "UI Audit — ButtonAdv Name={Name} Label={Label} AutoName={AutoName} Help={Help} IsEnabled={IsEnabled} HasCommand={HasCommand} CanExecute={CanExecute}",
-                        (badv as FrameworkElement)?.Name ?? "(unnamed)", label, autoName, help, badv.IsEnabled, hasCommand, canExec);
-
-                    if (string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(autoName))
-                    {
-                        Logger.Warning("UI Audit — ButtonAdv missing both Label and AutomationProperties.Name: {Name}", (badv as FrameworkElement)?.Name ?? "(unnamed)");
-                    }
-                }
-                else if (d is Button btn)
-                {
-                    total++;
-                    var contentText = btn.Content?.ToString();
-                    var autoName = AutomationProperties.GetName(btn);
-                    var help = AutomationProperties.GetHelpText(btn);
-                    bool hasCommand = btn.Command != null;
-                    bool? canExec = null; try { if (hasCommand) canExec = btn.Command?.CanExecute(btn.CommandParameter); } catch { }
-
-                    if (string.IsNullOrWhiteSpace(contentText)) missingLabel++;
-                    if (string.IsNullOrWhiteSpace(autoName)) missingName++;
-                    if (!hasCommand) noCommand++;
-
-                    Logger.Information(
-                        "UI Audit — Button Name={Name} Content={Content} AutoName={AutoName} Help={Help} IsEnabled={IsEnabled} HasCommand={HasCommand} CanExecute={CanExecute}",
-                        btn.Name ?? "(unnamed)", contentText, autoName, help, btn.IsEnabled, hasCommand, canExec);
-
-                    if (string.IsNullOrWhiteSpace(contentText) && string.IsNullOrWhiteSpace(autoName))
-                    {
-                        Logger.Warning("UI Audit — Button missing both Content and AutomationProperties.Name: {Name}", btn.Name ?? "(unnamed)");
-                    }
-                }
-            }
-
-            Logger.Information("UI Audit Summary — Buttons={Total}, ButtonAdv={AdvCount}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingName}, NoCommand={NoCommand}",
-                total, advCount, missingLabel, missingName, noCommand);
-        }
-
-        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
-        {
-            if (root == null) yield break;
-            var count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child == null) continue;
-                yield return child;
-                foreach (var g in Traverse(child)) yield return g;
             }
         }
 

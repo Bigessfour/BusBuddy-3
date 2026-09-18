@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Vehicle;
 
 namespace BusBuddy.WPF.Views.Vehicle
@@ -75,7 +76,7 @@ namespace BusBuddy.WPF.Views.Vehicle
                 _ = vm.ApplyStartupAsync(_startup);
             }
 
-            try { Dispatcher.BeginInvoke(new Action(AuditButtonsAccessibility), DispatcherPriority.Loaded); } catch (Exception ex) { Logger.Warning(ex, "VehicleManagementView: audit scheduling failed"); }
+            try { Dispatcher.BeginInvoke(new Action(() => ButtonAccessibilityAudit.Run(this, Logger, "VehicleMgmt")), DispatcherPriority.Loaded); } catch (Exception ex) { Logger.Warning(ex, "VehicleManagementView: audit scheduling failed"); }
         }
 
         private void OnUnloaded(object? sender, RoutedEventArgs e)
@@ -172,46 +173,5 @@ namespace BusBuddy.WPF.Views.Vehicle
             }
         }
 
-        private void AuditButtonsAccessibility()
-        {
-            int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
-            foreach (var d in Traverse(this))
-            {
-                if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
-                {
-                    total++; adv++;
-                    var label = badv.Label; var autoName = AutomationProperties.GetName(badv);
-                    bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
-                    if (string.IsNullOrWhiteSpace(label)) missingLabel++;
-                    if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                    if (string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(autoName))
-                        Logger.Warning("VehicleMgmt Audit — ButtonAdv missing label and AutomationProperties.Name: {Name}", (badv as FrameworkElement)?.Name ?? "(unnamed)");
-                }
-                else if (d is Button btn)
-                {
-                    total++;
-                    var content = btn.Content?.ToString(); var autoName = AutomationProperties.GetName(btn);
-                    bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
-                    if (string.IsNullOrWhiteSpace(content)) missingLabel++;
-                    if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                    if (string.IsNullOrWhiteSpace(content) && string.IsNullOrWhiteSpace(autoName))
-                        Logger.Warning("VehicleMgmt Audit — Button missing Content and AutomationProperties.Name: {Name}", btn.Name ?? "(unnamed)");
-                }
-            }
-            Logger.Information("VehicleMgmt Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
-        }
-
-        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
-        {
-            if (root == null) yield break;
-            var count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child == null) continue;
-                yield return child;
-                foreach (var g in Traverse(child)) yield return g;
-            }
-        }
     }
 }

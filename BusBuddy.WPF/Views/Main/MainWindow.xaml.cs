@@ -157,7 +157,7 @@ namespace BusBuddy.WPF.Views.Main
                 TryShowDashboardOnStartup();
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    try { AuditButtonsAccessibility(); } catch (Exception ex2) { Logger.Warning(ex2, "MainWindow: post-load audit failed"); }
+                    ButtonAccessibilityAudit.Run(this, Logger, "MainWindow");
                 }), System.Windows.Threading.DispatcherPriority.Background);
             }
             catch (Exception ex)
@@ -450,52 +450,6 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Warning(ex, "MainWindow: validation logging failed");
-            }
-        }
-
-        // Accessibility / command readiness audit for Buttons & ButtonAdv controls
-        private void AuditButtonsAccessibility()
-        {
-            try
-            {
-                int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
-                foreach (var d in Traverse(this))
-                {
-                    if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
-                    {
-                        total++; adv++;
-                        var label = badv.Label; var autoName = System.Windows.Automation.AutomationProperties.GetName(badv);
-                        bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
-                        if (string.IsNullOrWhiteSpace(label)) missingLabel++;
-                        if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                    }
-                    else if (d is Button btn)
-                    {
-                        total++;
-                        var content = btn.Content?.ToString(); var autoName = System.Windows.Automation.AutomationProperties.GetName(btn);
-                        bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
-                        if (string.IsNullOrWhiteSpace(content)) missingLabel++;
-                        if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                    }
-                }
-                Logger.Information("MainWindow Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "MainWindow: accessibility audit failed");
-            }
-        }
-
-        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
-        {
-            if (root == null) yield break;
-            var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-                if (child == null) continue;
-                yield return child;
-                foreach (var g in Traverse(child)) yield return g;
             }
         }
 
