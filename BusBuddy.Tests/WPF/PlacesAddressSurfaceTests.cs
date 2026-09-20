@@ -16,6 +16,7 @@ public class PlacesAddressSurfaceTests
         var student = XamlViewFile.Read("Views/Student/StudentForm.xaml");
         Assert.That(student, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(student, Does.Contain("AddressApplied=\"HomeAddress_Applied\""));
+        Assert.That(student, Does.Contain("AddCatalogStopCommand"));
 
         var school = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml");
         Assert.That(school, Does.Contain("controls:PlacesAddressBox"));
@@ -113,6 +114,28 @@ public class PlacesAddressSurfaceTests
         Assert.That(applied.Street, Is.EqualTo("100 Main St"));
         Assert.That(applied.SingleLine(), Is.EqualTo("100 Main St, Wiley, CO 81092, USA"));
         Assert.That(applied.Latitude, Is.EqualTo(38.15));
+    }
+
+    [Test]
+    public void PlaceAddressApplier_FillsCityZipFromFormattedWhenComponentsMissing()
+    {
+        var suggestion = new PlaceAutocompleteSuggestion
+        {
+            PlaceId = "ChIJ",
+            PrimaryText = "804 E Oak St",
+            DisplayText = "804 E Oak St, Lamar, CO 81052, USA",
+            SecondaryText = "Lamar, CO 81052, USA",
+        };
+        var details = new PlaceAddressDetails
+        {
+            StreetLine = "804 E Oak St",
+            FormattedAddress = "804 E Oak St, Lamar, CO 81052, USA",
+        };
+
+        var applied = PlaceAddressApplier.Apply(suggestion, details);
+        Assert.That(applied.City, Is.EqualTo("Lamar"));
+        Assert.That(applied.State, Is.EqualTo("CO"));
+        Assert.That(applied.Zip, Is.EqualTo("81052"));
     }
 
     [Test]

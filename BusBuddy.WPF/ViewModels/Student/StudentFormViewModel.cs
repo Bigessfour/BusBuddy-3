@@ -106,7 +106,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                 AvailableRoutes,
                 AvailablePickupStops,
                 AvailableSchools,
-                school => SelectedSchoolDestination = school);
+                school => SelectedSchoolDestination = school,
+                studentService,
+                services?.GetService<IPickupStopService>());
             _validation = new StudentFormValidationCoordinator(
                 () => Student,
                 studentService,
@@ -212,7 +214,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             set => _address.DisableValidation = value;
         }
 
-        // --- Catalog coordinator surface (PickupMode stays derived: no stop means home pickup) ---
+        // --- Catalog coordinator surface (PickupMode is Home when no catalog stop; SN stays Home) ---
         public PickupStop? SelectedPickupStop
         {
             get => _catalog.SelectedPickupStop;
@@ -260,6 +262,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand ClearGlobalErrorCommand { get; private set; } = null!;
         public ICommand SuggestNearestPickupStopCommand { get; private set; } = null!;
         public ICommand UseHomeAsPickupStopCommand { get; private set; } = null!;
+        public ICommand AddCatalogStopCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
@@ -277,14 +280,18 @@ namespace BusBuddy.WPF.ViewModels.Student
             ClearGlobalErrorCommand = new RelayCommand(_validation.ClearGlobalError);
             SuggestNearestPickupStopCommand = new AsyncRelayCommand(_catalog.SuggestNearestPickupStopAsync);
             UseHomeAsPickupStopCommand = new RelayCommand(_catalog.UseHomeAsPickupStop);
+            AddCatalogStopCommand = new AsyncRelayCommand(AddCatalogStopAsync);
         }
 
         #endregion
 
         #region Code-behind entry points
 
-        public Task ApplyAppliedAddressAsync(PlaceAddressApplier.AppliedAddress applied) =>
-            _address.ApplyAppliedAsync(Student, applied);
+        public async Task ApplyAppliedAddressAsync(PlaceAddressApplier.AppliedAddress applied)
+        {
+            await _address.ApplyAppliedAsync(Student, applied).ConfigureAwait(true);
+            OnPropertyChanged(nameof(Student));
+        }
 
         /// <summary>Clear one field error when the operator edits that control.</summary>
         public void ClearFieldError(string fieldKey) => _validation.ClearFieldError(fieldKey);
@@ -302,7 +309,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 nameof(StudentFormAddressCoordinator.DisableValidation) => nameof(DisableAddressValidation),
                 _ => null,
             });
-            _address.CoordinatesUpdated += (_, _) => _ = _catalog.SuggestNearestPickupStopAsync();
+            _address.CoordinatesUpdated += (_, _) => _ = _catalog.RefreshPickupSuggestionAsync();
 
             // Catalog and validation property names already match the bound names on this view model.
             _catalog.PropertyChanged += (_, e) => OnPropertyChanged(e.PropertyName);
@@ -311,7 +318,11 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             WeakReferenceMessenger.Default.Register<StudentFormViewModel, PickupStopCatalogChangedMessage>(
                 this,
-                async (r, _) => await r._catalog.LoadPickupStopsAsync().ConfigureAwait(true));
+                async (r, _) =>
+                {
+                    await r._catalog.LoadPickupStopsAsync().ConfigureAwait(true);
+                    await r._catalog.RefreshPickupSuggestionAsync().ConfigureAwait(true);
+                });
             WeakReferenceMessenger.Default.Register<StudentFormViewModel, SchoolCatalogChangedMessage>(
                 this,
                 async (r, _) => await r._catalog.LoadSchoolsAsync().ConfigureAwait(true));
@@ -334,9 +345,23 @@ namespace BusBuddy.WPF.ViewModels.Student
             if (e.PropertyName == nameof(Core.Models.Student.RequiresSpecialNeedsBus))
             {
                 _catalog.RefreshAvailableRoutes();
+                _catalog.EnforceHomePickupIfSpecialNeeds();
             }
 
             _validation.SetCanSave(StudentFormSaveCoordinator.HasMinimumFields(Student));
+        }
+
+        private async Task AddCatalogStopAsync()
+        {
+            Logger.Information("Add catalog stop from student form");
+            var outcome = new StudentsDialogCoordinator().AddPickupStop();
+            if (!outcome.PickupStopCatalogChanged && !string.IsNullOrWhiteSpace(outcome.StatusMessage))
+            {
+                _validation.SetGlobalError(outcome.StatusMessage);
+            }
+
+            await _catalog.LoadPickupStopsAsync().ConfigureAwait(true);
+            await _catalog.RefreshPickupSuggestionAsync().ConfigureAwait(true);
         }
 
         private void ExecuteCancel()

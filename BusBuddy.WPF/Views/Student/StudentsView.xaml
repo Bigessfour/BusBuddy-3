@@ -131,6 +131,13 @@
                                 ToolTip="Delete after choosing a reason. Archive if they may return."/>
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <syncfusion:ButtonAdv Name="ColumnsChooserButton"
+                                Label="Columns"
+                                Click="ColumnsChooserButton_Click"
+                                Style="{StaticResource StudentsToolbarButton}"
+                                AutomationProperties.Name="Choose roster columns"
+                                AutomationProperties.HelpText="Show or hide columns from the student roster. Preferences stay for this session."
+                                ToolTip="Add or hide roster columns"/>
                         <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="180" Margin="0,0,8,0"
                                                   Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
                                                   Watermark="Quick search..."
@@ -225,12 +232,14 @@
                                SelectionUnit="Row"
                                GridLinesVisibility="Both"
                                HeaderLinesVisibility="Both"
-                               ColumnSizer="Star"
+                               ColumnSizer="None"
+                               FrozenColumnCount="2"
                                AutomationProperties.Name="Students Data Grid"
                                AutomationProperties.HelpText="Grid displaying all students with their route assignments and contact information"
                                ShowBusyIndicator="True"
                                NavigationMode="Cell"
-                               AllowResizingColumns="True">
+                               AllowResizingColumns="True"
+                               AllowDraggingColumns="True">
 
             <syncfusion:SfDataGrid.TableSummaryRows>
                 <syncfusion:GridTableSummaryRow ShowSummaryInRow="False">

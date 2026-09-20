@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 using System.Windows.Documents;
 using System.Windows.Media.TextFormatting;
 using System.Windows.Automation; // AutomationProperties for accessibility checks
@@ -526,6 +527,31 @@ namespace BusBuddy.WPF.Views.Student
             {
                 Logger.Warning(ex, "StudentForm: validation logging failed");
             }
+        }
+
+        private async void ViewOnMapButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information(
+                "View on Map clicked StudentId={StudentId} HasPin={HasPin}",
+                ViewModel.Student.StudentId,
+                ViewModel.Student.HasValidatedHomeCoordinates);
+            if (ViewModel.ViewOnMapCommand is not IAsyncRelayCommand asyncCmd)
+            {
+                return;
+            }
+
+            if (asyncCmd.IsRunning)
+            {
+                return;
+            }
+
+            if (!asyncCmd.CanExecute(null))
+            {
+                Logger.Warning("View on Map CanExecute=false");
+                return;
+            }
+
+            await asyncCmd.ExecuteAsync(null).ConfigureAwait(true);
         }
 
         private async void HomeAddress_Applied(object sender, PlaceAddressAppliedEventArgs e)

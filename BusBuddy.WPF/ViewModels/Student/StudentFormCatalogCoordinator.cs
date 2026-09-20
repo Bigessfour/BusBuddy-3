@@ -3,7 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.WPF.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,8 +15,8 @@ namespace BusBuddy.WPF.ViewModels.Student;
 
 /// <summary>
 /// Loads the route, pickup-stop, and school catalogs for the student form, and owns which pickup
-/// stop the student boards at. specs/students.md keeps <c>PickupMode</c> derived: there is no mode
-/// field here, only a catalog stop or the absence of one, which means home pickup.
+/// stop the student boards at. specs/students.md records <c>PickupMode</c> as Home vs CatalogStop
+/// by whether a published stop is attached; special needs always stays Home.
 /// </summary>
 public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
 {
@@ -27,6 +29,8 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
     private readonly System.Collections.ObjectModel.ObservableCollection<PickupStop> _availablePickupStops;
     private readonly System.Collections.ObjectModel.ObservableCollection<Destination> _availableSchools;
     private readonly Action<Destination?> _syncSelectedSchool;
+    private readonly IStudentService? _studentService;
+    private readonly IPickupStopService? _pickupStops;
 
     private PickupStop? _selectedPickupStop;
     private string _pickupStopHint =
@@ -39,7 +43,9 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
         System.Collections.ObjectModel.ObservableCollection<string> availableRoutes,
         System.Collections.ObjectModel.ObservableCollection<PickupStop> availablePickupStops,
         System.Collections.ObjectModel.ObservableCollection<Destination> availableSchools,
-        Action<Destination?> syncSelectedSchool)
+        Action<Destination?> syncSelectedSchool,
+        IStudentService? studentService = null,
+        IPickupStopService? pickupStops = null)
     {
         _context = context;
         _student = student;
@@ -48,6 +54,8 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
         _availablePickupStops = availablePickupStops;
         _availableSchools = availableSchools;
         _syncSelectedSchool = syncSelectedSchool;
+        _studentService = studentService;
+        _pickupStops = pickupStops;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -58,6 +66,13 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
         get => _selectedPickupStop;
         set
         {
+            if (value is not null && IsSpecialNeedsHomePickup)
+            {
+                Logger.Information(
+                    "Blocked catalog stop for special-needs student — PickupMode stays Home");
+                value = null;
+            }
+
             if (!SetProperty(ref _selectedPickupStop, value))
             {
                 return;
@@ -68,16 +83,29 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
             {
                 _student.BusStop = value.Name;
             }
+            else
+            {
+                ApplyHomePickupFields();
+            }
 
             OnPropertyChanged(nameof(UsesHomeAsPickupStop));
             PickupStopHint = value is null
-                ? "No catalog stop selected — home address will be used when generating routes."
+                ? IsSpecialNeedsHomePickup
+                    ? "Special needs requires home pickup on a special-needs route — catalog stop not assigned."
+                    : "No catalog stop selected — home address will be used when generating routes."
                 : $"Boarding at {value.Name}.";
         }
     }
 
     /// <summary>Derived, never stored: no catalog stop means home pickup.</summary>
     public bool UsesHomeAsPickupStop => !_student.PickupStopId.HasValue;
+
+    /// <summary>
+    /// specs/students.md: special needs forces home pickup on a special-needs route.
+    /// A catalog stop must not be assigned, including via suggest-nearest after geocode.
+    /// </summary>
+    public bool IsSpecialNeedsHomePickup =>
+        StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(_student);
 
     public string PickupStopHint
     {
@@ -86,18 +114,76 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Offers the nearest catalog stop within the district's walk radius. Requires validated
-    /// coordinates: an unvalidated address has no position to measure from.
+    /// After a home geocode: hint a nearby catalog stop without assigning it, or keep Home
+    /// pickup when none is in range. May hint that other Home students are nearby.
     /// </summary>
-    public async Task SuggestNearestPickupStopAsync()
+    public async Task RefreshPickupSuggestionAsync()
     {
-        if (_student.Latitude is not decimal lat || _student.Longitude is not decimal lon)
+        if (EnforceHomePickupIfSpecialNeeds())
         {
-            PickupStopHint = "Validate the home address first to suggest a nearby catalog stop.";
             return;
         }
 
-        var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
+        if (_student.Latitude is not decimal lat || _student.Longitude is not decimal lon
+            || !LocationCoordinate.IsValidated(lat, lon))
+        {
+            PublishPickupHint("Validate the home address first to suggest a nearby catalog stop.");
+            return;
+        }
+
+        var stopService = ResolvePickupStops();
+        var maxMeters = DistrictCameraUi.CurrentSettings()?.StopSuggestMaxMeters ?? 400;
+        var clusterMin = DistrictCameraUi.CurrentSettings()?.CatalogStopClusterMinHomes ?? 2;
+        PickupStop? nearest = null;
+        if (stopService is not null)
+        {
+            nearest = await stopService
+                .FindNearestAsync((double)lat, (double)lon, maxMeters)
+                .ConfigureAwait(true);
+        }
+
+        if (nearest is null)
+        {
+            PublishPickupHint(await HomePickupHintAsync(maxMeters, clusterMin).ConfigureAwait(true));
+            return;
+        }
+
+        if (_student.PickupStopId is int assignedId)
+        {
+            var assigned = _availablePickupStops.FirstOrDefault(s => s.PickupStopId == assignedId)
+                ?? nearest;
+            if (assigned.PickupStopId == assignedId
+                && assigned.HasValidatedCoordinates
+                && IsWithinMeters((double)lat, (double)lon, assigned.Latitude, assigned.Longitude, maxMeters))
+            {
+                PublishPickupHint(StudentPickupHint.AssignedCatalogStillInRange(assigned.Name, maxMeters));
+                return;
+            }
+
+            UseHomeAsPickupStop();
+        }
+
+        PublishPickupHint(StudentPickupHint.NearbyCatalog(nearest.Name, maxMeters));
+    }
+
+    /// <summary>
+    /// Clerk chose Suggest nearest: assign the catalog stop if one is in range; otherwise Home.
+    /// </summary>
+    public async Task SuggestNearestPickupStopAsync()
+    {
+        if (EnforceHomePickupIfSpecialNeeds())
+        {
+            return;
+        }
+
+        if (_student.Latitude is not decimal lat || _student.Longitude is not decimal lon
+            || !LocationCoordinate.IsValidated(lat, lon))
+        {
+            PublishPickupHint("Validate the home address first to suggest a nearby catalog stop.");
+            return;
+        }
+
+        var stopService = ResolvePickupStops();
         if (stopService is null)
         {
             PickupStopHint = "Pickup stop service is not available.";
@@ -110,22 +196,98 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
             .ConfigureAwait(true);
         if (nearest is null)
         {
-            PickupStopHint = $"No catalog stop within {maxMeters:F0} m — use home as stop or add a pickup stop.";
+            UseHomeAsPickupStop();
+            var clusterMin = DistrictCameraUi.CurrentSettings()?.CatalogStopClusterMinHomes ?? 2;
+            PickupStopHint = await HomePickupHintAsync(maxMeters, clusterMin).ConfigureAwait(true);
             return;
         }
 
         SelectedPickupStop = nearest;
-        PickupStopHint = $"Suggested {nearest.Name} (within {maxMeters:F0} m of home).";
+        PickupStopHint = $"Assigned {nearest.Name} (within {maxMeters:F0} m of home).";
     }
 
     /// <summary>Rural / driveway pickup: clear the catalog stop so routing uses the home address.</summary>
     public void UseHomeAsPickupStop()
     {
         SelectedPickupStop = null;
+        ApplyHomePickupFields();
+        PickupStopHint = IsSpecialNeedsHomePickup
+            ? "Special needs requires home pickup on a special-needs route — catalog stop not assigned."
+            : "Using home address as pickup stop (rural / driveway).";
+        OnPropertyChanged(nameof(UsesHomeAsPickupStop));
+    }
+
+    /// <summary>
+    /// Clears any catalog stop when special needs is on. Returns true when home pickup was forced.
+    /// </summary>
+    public bool EnforceHomePickupIfSpecialNeeds()
+    {
+        if (!IsSpecialNeedsHomePickup)
+        {
+            return false;
+        }
+
+        UseHomeAsPickupStop();
+        return true;
+    }
+
+    private void ApplyHomePickupFields()
+    {
         _student.PickupStopId = null;
         _student.BusStop = "Home address";
-        PickupStopHint = "Using home address as pickup stop (rural / driveway).";
-        OnPropertyChanged(nameof(UsesHomeAsPickupStop));
+    }
+
+    private async Task<string> HomePickupHintAsync(double maxMeters, int clusterMin)
+    {
+        var others = 0;
+        var students = ResolveStudents();
+        if (students is not null
+            && LocationCoordinate.IsValidated(_student.Latitude, _student.Longitude))
+        {
+            var nearby = await students.GetNearbyHomePickupStudentsAsync(
+                    (double)_student.Latitude!,
+                    (double)_student.Longitude!,
+                    maxMeters,
+                    excludeStudentId: _student.StudentId > 0 ? _student.StudentId : null)
+                .ConfigureAwait(true);
+            others = nearby?.Count ?? 0;
+        }
+
+        if (StudentPickupHint.ShouldHintCatalogCluster(others, clusterMin))
+        {
+            return StudentPickupHint.HomeWithCluster(others, maxMeters);
+        }
+
+        return _availablePickupStops.Count == 0
+            ? StudentPickupHint.NoPublishedCatalog(maxMeters)
+            : StudentPickupHint.HomeOnly(maxMeters);
+    }
+
+    private void PublishPickupHint(string text)
+    {
+        PickupStopHint = text;
+        Logger.Information(
+            "Pickup hint StudentId={StudentId} HasPin={HasPin} Text={Hint}",
+            _student.StudentId,
+            _student.HasValidatedHomeCoordinates,
+            text);
+    }
+
+    private IPickupStopService? ResolvePickupStops() =>
+        _pickupStops ?? App.ServiceProvider?.GetService<IPickupStopService>();
+
+    private IStudentService? ResolveStudents() =>
+        _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
+
+    private static bool IsWithinMeters(
+        double lat,
+        double lon,
+        decimal stopLat,
+        decimal stopLon,
+        double maxMeters)
+    {
+        var meters = RoutePacker.HaversineMiles(lat, lon, (double)stopLat, (double)stopLon) * 1609.344;
+        return meters <= maxMeters;
     }
 
     public async Task LoadAllAsync()
@@ -184,6 +346,7 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
 
             await LoadPickupStopsAsync().ConfigureAwait(true);
             await LoadSchoolsAsync().ConfigureAwait(true);
+            await RefreshPickupSuggestionAsync().ConfigureAwait(true);
 
             Logger.Information(
                 "Form data loaded: {RouteCount} routes, {PickupStopCount} pickup stops, {SchoolCount} schools",
@@ -252,7 +415,7 @@ public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
     {
         try
         {
-            var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
+            var stopService = ResolvePickupStops();
             IReadOnlyList<PickupStop> stops;
             if (stopService is not null)
             {

@@ -74,6 +74,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
             MaxRideMinutes = source.MaxRideMinutes,
             AllowSeatingOverride = source.AllowSeatingOverride,
             StopSuggestMaxMeters = source.StopSuggestMaxMeters,
+            CatalogStopClusterMinHomes = source.CatalogStopClusterMinHomes,
             DepotName = source.DepotName,
             DepotAddress = source.DepotAddress,
             DepotCity = source.DepotCity,

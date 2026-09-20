@@ -13,14 +13,14 @@ namespace BusBuddy.WPF.ViewModels.Student;
 
 /// <summary>
 /// District-map launching from the students grid. Plotting uses stored validated coordinates
-/// (or a catalog stop pin); 0,0 pins are never invented here.
+/// (or a catalog stop pin). The map does not geocode here — validate the address first.
 /// </summary>
 public sealed class StudentsMapCoordinator
 {
     private static readonly ILogger Logger = Log.ForContext<StudentsMapCoordinator>();
 
     /// <summary>
-    /// Plots one student on the district map. Returns a clerk-facing status line.
+    /// Opens the district map and plots one student from stored coords. Returns a clerk-facing status line.
     /// </summary>
     public async Task<string> ViewOnMapAsync(StudentModel? student)
     {
@@ -41,13 +41,8 @@ public sealed class StudentsMapCoordinator
             }
 
             var sp = App.ServiceProvider;
-            if (sp is null)
-            {
-                return "Mapping not available";
-            }
-
             IReadOnlyDictionary<int, PickupStop>? pickups = null;
-            if (student.PickupStopId is int stopId)
+            if (student.PickupStopId is int stopId && sp is not null)
             {
                 var stopService = sp.GetService<IPickupStopService>();
                 var stop = stopService is not null
@@ -62,26 +57,7 @@ public sealed class StudentsMapCoordinator
             var pins = StudentPlotLocation.PinsFromStored(student, pickups);
             if (pins.Count == 0)
             {
-                var geocoder = sp.GetService<IGeocodingService>();
-                if (geocoder is null)
-                {
-                    return "Geocoding not available";
-                }
-
-                var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                if (result is null)
-                {
-                    return "Could not locate address";
-                }
-
-                pins =
-                [
-                    new StudentPlotPoint(
-                        result.Value.latitude,
-                        result.Value.longitude,
-                        AtPickup: false,
-                        PickupName: null)
-                ];
+                return $"Cannot plot {student.StudentName ?? "student"} — address needs validation";
             }
 
             var studentName = student.StudentName ?? "Student";
@@ -106,24 +82,13 @@ public sealed class StudentsMapCoordinator
         }
     }
 
-    /// <summary>Opens the district map and bulk-plots eligible student homes.</summary>
+    /// <summary>Opens the district map. Overlay comes from stored coordinates, not a geocode pass.</summary>
     public string ViewMap()
     {
         try
         {
-            Logger.Information("View map command executed (bulk plot)");
-            MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
-            {
-                if (vm.BulkPlotEligibleStudentsCommand is IAsyncRelayCommand plotCmd)
-                {
-                    _ = plotCmd.ExecuteAsync(null);
-                }
-                else if (vm.BulkPlotEligibleStudentsCommand.CanExecute(null))
-                {
-                    vm.BulkPlotEligibleStudentsCommand.Execute(null);
-                }
-            });
-
+            Logger.Information("View map command executed (district overlay)");
+            MapViewLauncher.Show(Application.Current?.MainWindow as Window);
             return "District Map opened — student homes plot as pins";
         }
         catch (Exception ex)

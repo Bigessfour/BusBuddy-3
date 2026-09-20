@@ -84,7 +84,10 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         /// <summary>
         /// DI-friendly constructor — ensures we use the same DbContext factory as the rest of the app.
+        /// Marked for ActivatorUtilities so the parameterless XAML ctor and the DbContext test ctor
+        /// are not treated as equally valid when both factory and BusBuddyDbContext are registered.
         /// </summary>
+        [ActivatorUtilitiesConstructor]
         public StudentsViewModel(
             IBusBuddyDbContextFactory contextFactory,
             IStudentService? studentService = null)

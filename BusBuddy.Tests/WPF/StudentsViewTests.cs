@@ -41,7 +41,10 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Not.Contain("AddNewRowPosition"));
         Assert.That(xaml, Does.Contain("AllowEditing=\"False\""));
         Assert.That(xaml, Does.Not.Contain("EditTrigger=\"OnTap\""));
-        Assert.That(xaml, Does.Contain("IsHidden=\"True\""));
+        Assert.That(xaml, Does.Contain("ColumnSizer=\"None\""));
+        Assert.That(xaml, Does.Contain("FrozenColumnCount=\"2\""));
+        Assert.That(xaml, Does.Contain("Name=\"ColumnsChooserButton\""));
+        Assert.That(xaml, Does.Contain("Click=\"ColumnsChooserButton_Click\""));
         Assert.That(xaml, Does.Contain("Name=\"ActiveFilterCombo\""));
         var roster = xaml.IndexOf("Text=\"Roster\"", StringComparison.Ordinal);
         var filter = xaml.IndexOf("Name=\"ActiveFilterCombo\"", StringComparison.Ordinal);
@@ -56,6 +59,11 @@ public class StudentsViewTests
         var xaml = File.ReadAllText(FindView("Views/Student/StudentDeletionReasonDialog.xaml"));
 
         Assert.That(xaml, Does.Contain("Command=\"{Binding ConfirmCommand}\""));
+        Assert.That(xaml, Does.Contain("ResizeMode=\"CanResizeWithGrip\""));
+        Assert.That(xaml, Does.Contain("MinHeight=\"520\""));
+        Assert.That(xaml, Does.Contain("Height=\"580\""));
+        Assert.That(xaml, Does.Contain("SizeChanged=\"DeletionDialog_SizeChanged\""));
+        Assert.That(xaml, Does.Contain("VerticalScrollBarVisibility=\"Auto\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Reasons}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedReason, Mode=TwoWay}\""));
     }
@@ -68,6 +76,26 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Schools}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedSchool, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("DisplayMemberPath=\"Name\""));
+    }
+
+    [Test]
+    public void StudentGridColumnChooserDialogXaml_BindsVisibilityCheckboxes()
+    {
+        var xaml = File.ReadAllText(FindView("Views/Student/StudentGridColumnChooserDialog.xaml"));
+
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Columns}\""));
+        Assert.That(xaml, Does.Contain("IsChecked=\"{Binding IsVisible, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ApplyCommand}\""));
+        Assert.That(xaml, Does.Contain("ResizeMode=\"CanResizeWithGrip\""));
+    }
+
+    [Test]
+    public void AppComposition_RegistersStudentsViewModelWithExplicitFactory()
+    {
+        var src = File.ReadAllText(FindView("App.Composition.cs"));
+        Assert.That(src, Does.Contain("new BusBuddy.WPF.ViewModels.Student.StudentsViewModel("));
+        Assert.That(src, Does.Contain("GetRequiredService<IBusBuddyDbContextFactory>()"));
+        Assert.That(src, Does.Not.Contain("services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();"));
     }
 
     private static string FindView(string relative)

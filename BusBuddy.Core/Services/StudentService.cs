@@ -8,6 +8,7 @@ using Serilog;
 using System.Globalization;
 using System.Linq; // Added for FirstOrDefault in seeding path resolution
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services.RouteDetermination;
 
 namespace BusBuddy.Core.Services;
 
@@ -609,6 +610,10 @@ public class StudentService : IStudentService
             {
                 row.PlaceId = placeId;
             }
+            else if (!LocationCoordinate.IsValidated(latitude, longitude))
+            {
+                row.PlaceId = null;
+            }
 
             row.UpdatedDate = DateTime.UtcNow;
             if (LocationCoordinate.IsValidated(latitude, longitude))
@@ -994,6 +999,76 @@ public class StudentService : IStudentService
         {
             DatabaseUserMessage.LogFailure(Logger, ex, "Error calculating student statistics");
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Active Home-pickup students with validated coordinates inside a walk radius.
+    /// Hints a shared catalog stop; does not change PickupStopId. Logs counts only.
+    /// </summary>
+    public async Task<IReadOnlyList<Student>> GetNearbyHomePickupStudentsAsync(
+        double latitude,
+        double longitude,
+        double maxMeters,
+        int? excludeStudentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!LocationCoordinate.IsValidated(latitude, longitude) || maxMeters <= 0)
+        {
+            return Array.Empty<Student>();
+        }
+
+        var (context, dispose) = GetReadContext();
+        try
+        {
+            var rows = await context.Students
+                .AsNoTracking()
+                .Where(s => s.Active && s.PickupStopId == null)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var nearby = new List<Student>();
+            foreach (var row in rows)
+            {
+                if (excludeStudentId is int skip && row.StudentId == skip)
+                {
+                    continue;
+                }
+
+                if (StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(row))
+                {
+                    continue;
+                }
+
+                if (!LocationCoordinate.IsValidated(row.Latitude, row.Longitude))
+                {
+                    continue;
+                }
+
+                var meters = RoutePacker.HaversineMiles(
+                    latitude,
+                    longitude,
+                    (double)row.Latitude!,
+                    (double)row.Longitude!) * 1609.344;
+                if (meters <= maxMeters)
+                {
+                    nearby.Add(row);
+                }
+            }
+
+            Logger.Information(
+                "Nearby home pickups Count={Count} RadiusM={RadiusM} ExcludeStudentId={ExcludeStudentId}",
+                nearby.Count,
+                maxMeters,
+                excludeStudentId);
+            return nearby;
+        }
+        finally
+        {
+            if (dispose)
+            {
+                await context.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 

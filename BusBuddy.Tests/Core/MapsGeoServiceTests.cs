@@ -54,6 +54,47 @@ public class MapsAddressCacheTests
     }
 
     [Test]
+    public void Set_DoesNotStoreOtherPrecision()
+    {
+        var cache = new MapsAddressCache();
+        var key = MapsAddressCache.BuildCacheKey("12200 BenVerified Ave", "Lamar", "CO", "81052");
+        cache.Set(key, new MapsGeocodeResult
+        {
+            Ok = true,
+            Latitude = 38.0872,
+            Longitude = -102.6208,
+            Precision = "OTHER",
+        });
+        cache.TryGet(key, out _).Should().BeFalse();
+    }
+
+    [Test]
+    public void TryGet_DropsCachedOtherPrecision()
+    {
+        var now = DateTimeOffset.Parse("2026-09-20T18:00:00Z");
+        var path = Path.Combine(Path.GetTempPath(), $"bb-maps-cache-{Guid.NewGuid():N}.json");
+        try
+        {
+            var json = """
+                {"DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF":{"Ok":true,"Latitude":38.0872,"Longitude":-102.6208,"Precision":"OTHER","CachedAtUtc":"2026-09-20T18:00:00+00:00"}}
+                """;
+            File.WriteAllText(path, json);
+            var cache = new MapsAddressCache(path, new FixedTimeProvider(now));
+            cache.TryGet(
+                "DEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF",
+                out _).Should().BeFalse();
+            File.ReadAllText(path).Should().NotContain("38.0872");
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Test]
     public void TryGet_ExpiresCoordinatesAfterThirtyDays()
     {
         var t0 = DateTimeOffset.Parse("2026-08-01T12:00:00Z");
@@ -69,6 +110,7 @@ public class MapsAddressCacheTests
                 Latitude = 37.1,
                 Longitude = -102.7,
                 PlaceId = "ChIJ_keep",
+                Precision = "ROOFTOP",
             });
 
             var later = new MapsAddressCache(path, new FixedTimeProvider(t1));

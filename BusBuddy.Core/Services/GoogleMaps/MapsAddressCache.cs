@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using BusBuddy.Core.Models;
 using Serilog;
 
 namespace BusBuddy.Core.Services.GoogleMaps;
@@ -69,8 +70,10 @@ public sealed class MapsAddressCache : IMapsAddressCache
             return false;
         }
 
-        if (!hit.Ok || !hit.Latitude.HasValue || !hit.Longitude.HasValue)
+        if (!hit.Ok || !hit.Latitude.HasValue || !hit.Longitude.HasValue
+            || !LocationCoordinate.IsPlotPrecision(hit.Precision))
         {
+            ExpireCoordinates(cacheKey);
             result = null;
             return false;
         }
@@ -82,7 +85,8 @@ public sealed class MapsAddressCache : IMapsAddressCache
 
     public void Set(string cacheKey, MapsGeocodeResult result)
     {
-        if (!result.Ok || !result.Latitude.HasValue || !result.Longitude.HasValue)
+        if (!result.Ok || !result.Latitude.HasValue || !result.Longitude.HasValue
+            || !LocationCoordinate.IsPlotPrecision(result.Precision))
         {
             return;
         }
@@ -149,10 +153,10 @@ public sealed class MapsAddressCache : IMapsAddressCache
                 _memory[key] = value;
             }
 
-            // Drop expired coordinates immediately so shared district cache stays policy-clean.
             foreach (var key in _memory.Keys.ToList())
             {
-                if (_memory.TryGetValue(key, out var entry) && IsCoordinateExpired(entry))
+                if (_memory.TryGetValue(key, out var entry)
+                    && (IsCoordinateExpired(entry) || !LocationCoordinate.IsPlotPrecision(entry.Precision)))
                 {
                     ExpireCoordinates(key);
                 }

@@ -101,6 +101,27 @@ public class GooglePlacesAutocompleteServiceTests
     }
 
     [Test]
+    public async Task GetPlaceDetails_FormattedAddressOnly_FillsCityStateZip()
+    {
+        var json = """
+            {
+              "formattedAddress": "804 E Oak St, Lamar, CO 81052, USA",
+              "location": { "latitude": 38.0901, "longitude": -102.6189 }
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var svc = new GooglePlacesAutocompleteService(http, Options.Create(TestOptions));
+
+        var details = await svc.GetPlaceDetailsAsync("places/ChIJ_oak");
+
+        Assert.That(details, Is.Not.Null);
+        Assert.That(details!.StreetLine, Is.EqualTo("804 E Oak St"));
+        Assert.That(details.City, Is.EqualTo("Lamar"));
+        Assert.That(details.State, Is.EqualTo("CO"));
+        Assert.That(details.Zip, Is.EqualTo("81052"));
+    }
+
+    [Test]
     public async Task GetSuggestions_SendsPlacesNewHeadersAndFivePrimaryTypes()
     {
         var handler = new StubHandler(HttpStatusCode.OK, """{"suggestions":[]}""");

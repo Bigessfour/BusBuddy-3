@@ -42,7 +42,10 @@ public sealed class StudentsGridAddressCoordinator
                 student.State,
                 student.Zip).ConfigureAwait(true);
 
-            if (maps.Ok && maps.Latitude.HasValue && maps.Longitude.HasValue)
+            if (maps.Ok
+                && LocationCoordinate.IsPlotPrecision(maps.Precision)
+                && maps.Latitude.HasValue
+                && maps.Longitude.HasValue)
             {
                 student.Latitude = (decimal)maps.Latitude.Value;
                 student.Longitude = (decimal)maps.Longitude.Value;
@@ -78,7 +81,15 @@ public sealed class StudentsGridAddressCoordinator
                 "Address validation failed for student {StudentId}: {Error}",
                 student.StudentId,
                 maps.ErrorMessage);
-            return WithStoredPinNote(student, maps.ErrorMessage ?? "Address could not be validated.");
+            student.Latitude = null;
+            student.Longitude = null;
+            student.PlaceId = null;
+            await PersistCoordinatesAsync(student).ConfigureAwait(true);
+            var failed = maps.ErrorMessage ?? "Address could not be validated.";
+            return AddressValidationPinPolicy.IsClerkRejectCopy(failed)
+                || failed.Contains(LocationCoordinate.NeedsValidation, StringComparison.OrdinalIgnoreCase)
+                ? failed
+                : $"Address validation failed: {failed}";
         }
 
         var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();

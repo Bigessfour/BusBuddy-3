@@ -28,22 +28,28 @@ internal static class PlaceAddressComponentParser
             }
         }
 
-        if (!root.TryGetProperty("addressComponents", out var components) ||
-            components.ValueKind != JsonValueKind.Array)
-        {
-            return new PlaceAddressDetails
-            {
-                FormattedAddress = formatted,
-                Latitude = lat,
-                Longitude = lon,
-            };
-        }
-
         string? streetNumber = null;
         string? route = null;
         string? city = null;
         string? state = null;
         string? zip = null;
+        string? streetLine = null;
+
+        if (!root.TryGetProperty("addressComponents", out var components) ||
+            components.ValueKind != JsonValueKind.Array)
+        {
+            PlaceAddressFill.FillMissing(ref streetLine, ref city, ref state, ref zip, formatted);
+            return new PlaceAddressDetails
+            {
+                StreetLine = streetLine,
+                City = city,
+                State = state,
+                Zip = zip,
+                FormattedAddress = formatted,
+                Latitude = lat,
+                Longitude = lon,
+            };
+        }
 
         foreach (var component in components.EnumerateArray())
         {
@@ -55,7 +61,7 @@ internal static class PlaceAddressComponentParser
             var types = typesEl.EnumerateArray()
                 .Select(t => t.GetString())
                 .Where(t => !string.IsNullOrWhiteSpace(t))
-                .ToHashSet(StringComparer.Ordinal);
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var shortText = component.TryGetProperty("shortText", out var st) && st.ValueKind == JsonValueKind.String
                 ? st.GetString()
@@ -63,40 +69,50 @@ internal static class PlaceAddressComponentParser
             var longText = component.TryGetProperty("longText", out var lt) && lt.ValueKind == JsonValueKind.String
                 ? lt.GetString()
                 : null;
+            var text = component.TryGetProperty("text", out var tx) && tx.ValueKind == JsonValueKind.String
+                ? tx.GetString()
+                : null;
+            var label = longText ?? shortText ?? text;
 
             if (types.Contains("street_number"))
             {
-                streetNumber = shortText ?? longText;
+                streetNumber = shortText ?? longText ?? text;
             }
             else if (types.Contains("route"))
             {
-                route = longText ?? shortText;
+                route = longText ?? shortText ?? text;
             }
-            else if (types.Contains("locality"))
+            else if (types.Contains("locality")
+                || (string.IsNullOrWhiteSpace(city)
+                    && (types.Contains("postal_town")
+                        || types.Contains("sublocality")
+                        || types.Contains("sublocality_level_1"))))
             {
-                city = longText ?? shortText;
-            }
-            else if (types.Contains("postal_town") && string.IsNullOrWhiteSpace(city))
-            {
-                city = longText ?? shortText;
+                city = label;
             }
             else if (types.Contains("administrative_area_level_1"))
             {
-                state = shortText ?? longText;
+                state = shortText ?? longText ?? text;
             }
             else if (types.Contains("postal_code"))
             {
-                zip = shortText ?? longText;
+                zip = shortText ?? longText ?? text;
             }
         }
 
-        var streetLine = string.Join(
+        streetLine = string.Join(
             " ",
             new[] { streetNumber, route }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        if (string.IsNullOrWhiteSpace(streetLine))
+        {
+            streetLine = null;
+        }
+
+        PlaceAddressFill.FillMissing(ref streetLine, ref city, ref state, ref zip, formatted);
 
         return new PlaceAddressDetails
         {
-            StreetLine = string.IsNullOrWhiteSpace(streetLine) ? null : streetLine,
+            StreetLine = streetLine,
             City = city,
             State = state,
             Zip = zip,

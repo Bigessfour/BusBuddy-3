@@ -54,16 +54,48 @@ public class Student : INotifyPropertyChanged
 
     [StringLength(200, ErrorMessage = "Home address cannot exceed 200 characters")]
     [Display(Name = "Home Address")]
-    public string? HomeAddress { get; set; }
+    public string? HomeAddress
+    {
+        get => _homeAddress;
+        set => SetField(ref _homeAddress, value);
+    }
+
+    private string? _homeAddress;
 
     // Geo coordinates for mapping (WGS84). Use decimal for SQL precision.
     [Column(TypeName = "decimal(10,8)")]
     [Display(Name = "Latitude")]
-    public decimal? Latitude { get; set; }
+    public decimal? Latitude
+    {
+        get => _latitude;
+        set
+        {
+            if (SetField(ref _latitude, value))
+            {
+                OnPropertyChanged(nameof(HasValidatedHomeCoordinates));
+                OnPropertyChanged(nameof(HasUnvalidatedHomeAddress));
+            }
+        }
+    }
+
+    private decimal? _latitude;
 
     [Column(TypeName = "decimal(11,8)")]
     [Display(Name = "Longitude")]
-    public decimal? Longitude { get; set; }
+    public decimal? Longitude
+    {
+        get => _longitude;
+        set
+        {
+            if (SetField(ref _longitude, value))
+            {
+                OnPropertyChanged(nameof(HasValidatedHomeCoordinates));
+                OnPropertyChanged(nameof(HasUnvalidatedHomeAddress));
+            }
+        }
+    }
+
+    private decimal? _longitude;
 
     /// <summary>
     /// Google place id for this home address (Address Validation / Places). May be stored indefinitely;
@@ -75,15 +107,33 @@ public class Student : INotifyPropertyChanged
 
     [StringLength(50, ErrorMessage = "City cannot exceed 50 characters")]
     [Display(Name = "City")]
-    public string? City { get; set; }
+    public string? City
+    {
+        get => _city;
+        set => SetField(ref _city, value);
+    }
+
+    private string? _city;
 
     [StringLength(2, ErrorMessage = "State cannot exceed 2 characters")]
     [Display(Name = "State")]
-    public string? State { get; set; }
+    public string? State
+    {
+        get => _state;
+        set => SetField(ref _state, value);
+    }
+
+    private string? _state;
 
     [StringLength(10, ErrorMessage = "ZIP code cannot exceed 10 characters")]
     [Display(Name = "Zip Code")]
-    public string? Zip { get; set; }
+    public string? Zip
+    {
+        get => _zip;
+        set => SetField(ref _zip, value);
+    }
+
+    private string? _zip;
 
     [StringLength(20, ErrorMessage = "Home phone cannot exceed 20 characters")]
     [Display(Name = "Home Phone")]
@@ -383,5 +433,17 @@ public class Student : INotifyPropertyChanged
     protected virtual void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private bool SetField<T>(ref T field, T value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
+        {
+            return false;
+        }
+
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
     }
 }

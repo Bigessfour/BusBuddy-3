@@ -3,10 +3,14 @@
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
                              Title="Delete student"
-                             Height="360"
-                             Width="480"
+                             Height="580"
+                             Width="520"
+                             MinHeight="520"
+                             MinWidth="460"
                              WindowStartupLocation="CenterOwner"
-                             ResizeMode="NoResize">
+                             ResizeMode="CanResizeWithGrip"
+                             UseNativeChrome="False"
+                             SizeChanged="DeletionDialog_SizeChanged">
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -34,29 +38,33 @@
                        Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
         </Border>
 
-        <StackPanel Grid.Row="1">
-            <TextBlock Text="{Binding Prompt}" TextWrapping="Wrap" Margin="0,0,0,10"/>
-            <TextBlock Text="{Binding Warning}"
-                       TextWrapping="Wrap"
-                       Margin="0,0,0,12"
-                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <TextBlock Text="{Binding Prompt}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                <TextBlock Text="{Binding Warning}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,12"
+                           Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
 
-            <TextBlock Text="Reason *" Margin="0,0,0,4"/>
-            <syncfusion:ComboBoxAdv ItemsSource="{Binding Reasons}"
-                                    SelectedItem="{Binding SelectedReason, Mode=TwoWay}"
-                                    DisplayMemberPath="Label"
-                                    IsEditable="False"
-                                    Height="40"
-                                    Margin="0,0,0,12"
-                                    AutomationProperties.Name="Deletion reason"
-                                    AutomationProperties.HelpText="Mistake, Moved, or Not attending"/>
+                <TextBlock Text="Reason *" Margin="0,0,0,4"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding Reasons}"
+                                        SelectedItem="{Binding SelectedReason, Mode=TwoWay}"
+                                        DisplayMemberPath="Label"
+                                        IsEditable="False"
+                                        Height="40"
+                                        Margin="0,0,0,12"
+                                        AutomationProperties.Name="Deletion reason"
+                                        AutomationProperties.HelpText="Mistake, Moved, or Not attending"/>
 
-            <TextBlock Text="Brief note (optional)" Margin="0,0,0,4"/>
-            <syncfusion:SfTextBoxExt Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                                     Watermark="Optional extra detail"
-                                     Height="40"
-                                     AutomationProperties.Name="Deletion note"/>
-        </StackPanel>
+                <TextBlock Text="Brief note (optional)" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                         Watermark="Optional extra detail"
+                                         Height="72"
+                                         AutomationProperties.Name="Deletion note"/>
+            </StackPanel>
+        </ScrollViewer>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <syncfusion:ButtonAdv Label="Cancel"

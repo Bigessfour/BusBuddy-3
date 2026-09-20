@@ -1,9 +1,11 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Automation;
 using System.Windows.Media.TextFormatting;
+using GridColumn = Syncfusion.UI.Xaml.Grid.GridColumn;
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion docs
 using Syncfusion.SfSkinManager; // For Syncfusion theming
 using BusBuddy.WPF.ViewModels.Student;
@@ -73,9 +75,8 @@ namespace BusBuddy.WPF.Views.Student
             }
             catch (System.Exception ex)
             {
-                // Serilog exception logging per project standards
-                Logger.Warning(ex, "StudentsView: DI resolve failed — falling back to default StudentsViewModel");
-                DataContext = new StudentsViewModel();
+                Logger.Warning(ex, "StudentsView: DI resolve failed — constructing via factory when available");
+                DataContext = CreateStudentsViewModelFallback(App.ServiceProvider);
             }
 
             if (DataContext is StudentsViewModel viewModel && _editStudentId.HasValue)
@@ -129,6 +130,8 @@ namespace BusBuddy.WPF.Views.Student
                     }
 
                     // If no selection yet, select first row to enable edit/archive
+                    ApplyRememberedStudentGridColumns();
+
                     if (vm.SelectedStudent == null && vm.Students.Count > 0)
                     {
                         Dispatcher.BeginInvoke(new Action(() =>
@@ -286,6 +289,7 @@ namespace BusBuddy.WPF.Views.Student
         {
             try
             {
+                RememberStudentGridColumns();
                 RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
                 RemoveHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged));
                 RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
@@ -293,6 +297,118 @@ namespace BusBuddy.WPF.Views.Student
             }
             catch { }
             base.OnClosed(e);
+        }
+
+        private static StudentsViewModel CreateStudentsViewModelFallback(System.IServiceProvider? sp)
+        {
+            try
+            {
+                if (sp is null)
+                {
+                    return new StudentsViewModel();
+                }
+
+                var factory = sp.GetService<IBusBuddyDbContextFactory>();
+                if (factory is not null)
+                {
+                    return new StudentsViewModel(factory, sp.GetService<IStudentService>());
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: factory fallback failed — using default constructor");
+            }
+
+            return new StudentsViewModel();
+        }
+
+        private void ColumnsChooserButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var choices = StudentsDataGrid.Columns
+                    .Select(column => new StudentGridColumnChoice(
+                        ColumnKey(column),
+                        string.IsNullOrWhiteSpace(column.HeaderText) ? ColumnKey(column) : column.HeaderText,
+                        !column.IsHidden,
+                        CanHideColumn(column)))
+                    .ToList();
+                var chooserVm = new StudentGridColumnChooserViewModel(choices);
+                var dialog = new StudentGridColumnChooserDialog(chooserVm)
+                {
+                    Owner = this
+                };
+                var accepted = dialog.ShowDialog() == true && chooserVm.Applied;
+                if (!accepted)
+                {
+                    return;
+                }
+
+                foreach (var choice in chooserVm.Columns)
+                {
+                    var column = StudentsDataGrid.Columns.FirstOrDefault(c => ColumnKey(c) == choice.Key);
+                    if (column is null || !choice.CanHide)
+                    {
+                        continue;
+                    }
+
+                    column.IsHidden = !choice.IsVisible;
+                }
+
+                RememberStudentGridColumns();
+                Logger.Information("StudentsView: clerk applied roster column visibility HiddenCount={HiddenCount}",
+                    StudentsDataGrid.Columns.Count(c => c.IsHidden));
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: column chooser failed");
+            }
+        }
+
+        private void ApplyRememberedStudentGridColumns()
+        {
+            if (!ClerkSessionLayout.HasStudentGridColumnPrefs)
+            {
+                return;
+            }
+
+            foreach (var column in StudentsDataGrid.Columns)
+            {
+                if (!CanHideColumn(column))
+                {
+                    column.IsHidden = false;
+                    continue;
+                }
+
+                if (ClerkSessionLayout.TryGetStudentGridColumnHidden(ColumnKey(column), out var hidden))
+                {
+                    column.IsHidden = hidden;
+                }
+            }
+        }
+
+        private void RememberStudentGridColumns()
+        {
+            ClerkSessionLayout.RememberStudentGridColumnHidden(
+                StudentsDataGrid.Columns.Select(column =>
+                    new System.Collections.Generic.KeyValuePair<string, bool>(ColumnKey(column), column.IsHidden)));
+        }
+
+        private static string ColumnKey(GridColumn column)
+        {
+            if (!string.IsNullOrWhiteSpace(column.MappingName))
+            {
+                return column.MappingName;
+            }
+
+            return string.IsNullOrWhiteSpace(column.HeaderText) ? "Actions" : column.HeaderText;
+        }
+
+        private static bool CanHideColumn(GridColumn column)
+        {
+            var key = ColumnKey(column);
+            return !string.Equals(key, "StudentName", System.StringComparison.Ordinal)
+                   && !string.Equals(key, "StudentId", System.StringComparison.Ordinal);
         }
     }
 }

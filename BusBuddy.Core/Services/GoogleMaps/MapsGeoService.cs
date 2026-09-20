@@ -1,3 +1,4 @@
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using Serilog;
 using Serilog.Context;
@@ -32,11 +33,20 @@ public sealed class MapsGeoService : IMapsGeoService
         var cacheKey = MapsAddressCache.BuildCacheKey(street, city, state, zip);
         if (_cache.TryGet(cacheKey, out var cached) && cached is not null)
         {
+            if (cached.Ok && LocationCoordinate.IsPlotPrecision(cached.Precision))
+            {
+                Logger.Information(
+                    "Maps validate/geocode cache hit ViaService={ViaService} Precision={Precision}",
+                    true,
+                    cached.Precision);
+                return cached;
+            }
+
             Logger.Information(
-                "Maps validate/geocode cache hit ViaService={ViaService} Precision={Precision}",
+                "Maps validate/geocode cache skip ViaService={ViaService} Precision={Precision} Ok={Ok}",
                 true,
-                cached.Precision);
-            return cached;
+                cached.Precision,
+                cached.Ok);
         }
 
         using (LogContext.PushProperty("Operation", "MapsValidateGeocode"))

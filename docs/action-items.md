@@ -5,6 +5,7 @@
 | Companion                                                                                                    | Role                                                                                   |
 | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | [clerk-path.md](./clerk-path.md)                                                                             | Clerk write path (school → kids → generate → bus/driver → schedule → fuel/maintenance) |
+| [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md)                                               | Prod walk: nine items, one at a time, guest proof required                             |
 | [specs/README.md](../specs/README.md)                                                                        | Domain contract                                                                        |
 | [../Documentation/diagrams/busbuddy-3-architecture.md](../Documentation/diagrams/busbuddy-3-architecture.md) | Architecture map                                                                       |
 | [function-tree.md](./function-tree.md)                                                                       | Surface overview (optional)                                                            |
@@ -18,7 +19,7 @@
 
 ### Status snapshot (2026-09-20)
 
-Branch `feature/utm-agent-cli`. Guest remediations (Postgres pin, RouteStop editor, Settings save, TripEvent empty combos, Schedule smoke) are in git. Next live work is District Map Export + Move.
+Branch `feature/utm-agent-cli`. Prod walk is [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now: Item 1** (student intake). Do not start Item 2 until Item 1 guest proof is pasted.
 
 | Criterion               | Status                                                                                                                                                         |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,7 +31,7 @@ Branch `feature/utm-agent-cli`. Guest remediations (Postgres pin, RouteStop edit
 | a11y Phase 2 / wishlist | Out of scope                                                                                                                                                   |
 | Project-done checker    | **Not 0** — B14 still wants hops 1–3 live UI boxes; B10 until leftover clicks / parked prefixes; B05 DI leftovers; B12 stale inventory. Ship-ready ≠ checker 0 |
 
-**Verdict:** Ship-ready for clerk Core. Next **live** work is District Map Export/Move, then Student home-pin confirm. Hygiene and `AMRoute` string drop stay parked.
+**Verdict:** Ship-ready for clerk Core. Live proof continues with **Item 1** of the prod walk (student intake). Maps slices 1–4 are walk Item 7 (and must not start until Items 1–6 guest proof is back).
 
 ---
 
@@ -40,20 +41,27 @@ Branch `feature/utm-agent-cli`. Guest remediations (Postgres pin, RouteStop edit
 
 Do in this order. Do not start parked campaigns from this table.
 
-| Order | Item                                                                                  | Why this slot                                                                                       |
-| ----- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1     | District Map leftover: **Export Route** toast (no route) + **Move to selected route** | Marker-host Debug relaunch passed 2026-09-17 11:20. Remaining clerk clicks only                     |
-| 2     | Student form map live confirm                                                         | Code + testhost already open `StudentHomePinWindow` (PR #91). Needs VM eye after rebuild            |
-| —     | `AMRoute` / `PMRoute` name-string drop                                                | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
-| —     | `IRouteRepository`                                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub                                              |
-| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                           | Parked. Do not “finish” `RouteAssignments`                                                          |
-| —     | Generate also assign roster keys                                                      | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only |
+| Order | Item                                                                                                                                                                                                                   | Why this slot                                                                                       |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1     | **Prod walk Item 1 — student intake.** PlacesAddressBox + pickup mode Home/CatalogStop; SN stays home; no pin without validated coords. Guest proof in [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). | One item at a time. Do not start Item 2 until guest logs are pasted.                                |
+| 2     | Prod walk Items 2–6 (schools/stops, Bus 5 AM clocks, assign/remove/not-riding, refresh, print sheet)                                                                                                                   | After Item 1 guest proof only.                                                                      |
+| 3     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Wiley center. No OSM.                        | After Items 1–6. Competing tile strategies blanked the map. Contract: `specs/maps.md`.              |
+| —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                                             | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                              |
+| —     | Student form map live confirm                                                                                                                                                                                          | Parked. `StudentHomePinWindow` already uses `MapTileBootstrap` + `MapMarkerHost`.                   |
+| —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                                                 | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
+| —     | `IRouteRepository`                                                                                                                                                                                                     | **Keep.** Address Validation `GetAllAsync`. Not a stub                                              |
+| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                                                                                                                                                            | Parked. Do not “finish” `RouteAssignments`                                                          |
+| —     | Generate also assign roster keys                                                                                                                                                                                       | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
-- [ ] **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route** on a plotted student pin. Testhost `MapToolbarSmokeTests` (3 passed, 2026-09-17) covers both commands. Live proof still needs `Scripts\run-map-diag-smoke.cmd` on the VM desktop + `Scripts/score-map-logs.ps1`. Do not SSH `Start-Process`. **Do not treat the 2026-09-18 guest log as a new map-tile failure.** Startup **Dashboard** is an owned window that covers the dock — close it before toolbar clicks.
+- [ ] **Prod walk Item 1 (live, guest):** Students → Add/Edit Student. Places fill street+city+ZIP, Validate. Pickup stop combo lists **published catalog stops** (empty until Add catalog stop). After a pin, hint is nearby stop, cluster (two Oak homes both saved with lat/lng), or “No published catalog stops”. View on Map opens the home pin window. Testhost `StudentFormCatalogCoordinatorTests` + `PlacesAddressSurfaceTests`. Do not start Item 2 until logs are pasted (`Pickup hint`, `Opening home pin map` / `View on Map clicked`).
 
-- [ ] **Student form map (live):** Edit student → **View on Map** / **Adjust pin** opens `StudentHomePinWindow` (not District Map behind the modal). Gold = validated address, blue = pickup. Testhost `StudentFormViewOnMap_UsesPickupThenHomePlotRule` already asserts the wiring. Confirm after rebuild on the VM.
+- [ ] **Maps slice 1 (live, guest):** parked until prod walk Item 7. `MapsConnectionProbe` session 200, `SfMapTileProbe google-urltemplate` paints Wiley, District Map logs `MapTileBootstrap Host=DistrictMap Outcome=ok`. Fail-closed empty basemap if no key — never OSM.
+
+- [ ] Parked (not slice-blocking) **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route**. Testhost `MapToolbarSmokeTests` covers both. Do not start until slices 1–3 pass.
+
+- [ ] Parked (not slice-blocking) **Student form map (live):** Edit student → **View on Map** / **Adjust pin** opens `StudentHomePinWindow`. Testhost `StudentFormViewOnMap_UsesPickupThenHomePlotRule` already asserts the wiring.
 
 Do **not** explode `MainWindow.xaml.cs` / `StudentsViewModel.cs`. Button a11y audit is `ButtonAccessibilityAudit`. Ribbon **Route Assignment** opens Route Management (blocks the dock) — clerk Schedule/Add Stop is dock **Route Assignments**.
 
@@ -68,13 +76,13 @@ Parked (not ship-blocking) — hops 1–3 ribbon and hygiene (from PR #92 audit;
 
 Lightly coupled surfaces that must stay Google-only:
 
-| Coupling          | Harden                                                                                                                                                            | Test                                                                                                           |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys                                                             | Capability log; session create 200 without quota header                                                        |
-| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM)                                                                                        | `MapViewTests` + `LogTileHealth` after 2s                                                                      |
-| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap` + `MapMarkerHost` (no XAML `Markers=` / `MarkerTemplateSelector=`) | XAML asserts; form Loaded bootstrap; `MapViewTests`                                                            |
-| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor` (boot overlay from `%AppData%/BusBuddy/user-settings.json`; Settings Save flushes SfTextBoxExt)                        | Testhost Settings persist + live: Save barn → restart → capability `DepotLat` + `DistrictSource=user-settings` |
-| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product                                                                                    | Do not copy probe OSM into WPF views                                                                           |
+| Coupling          | Harden                                                                                                                                                                                                          | Test                                                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys                                                                                                           | Capability log; session create 200 without quota header                                                        |
+| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM). `GetUri` must resolve `2dtiles` while Google tiles are active (never `mt1`, never empty-while-live). Cache clear on session rotate. | `MapViewTests` + `LogTileHealth` after 2s; `SfMapTileProbe google-urltemplate`                                 |
+| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap` + `MapMarkerHost` (no XAML `Markers=` / `MarkerTemplateSelector=`)                                               | XAML asserts; form Loaded bootstrap; `MapViewTests`                                                            |
+| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor` (boot overlay from `%AppData%/BusBuddy/user-settings.json`; Settings Save flushes SfTextBoxExt)                                                                      | Testhost Settings persist + live: Save barn → restart → capability `DepotLat` + `DistrictSource=user-settings` |
+| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product. Competing writers archived under `Documentation/Archive/2026-09-Maps-Competing-Writers/` (do not restore).                      | Do not copy probe OSM into WPF views                                                                           |
 
 After map path stabilizes: incremental `/code-review` or `/check-work` on tile + settings coupling.
 
@@ -172,8 +180,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - Guest testhost filter `MapViewTests|MapViewModelTests|UiRuntimeLogging`: **69 passed**, 0 failed (was 68; fixture grew).
 - Added `MapToolbarSmokeTests` (no SfMap session): Zoom In/Out clamp, Show Schools, Refresh+Home overlay, Plot Pickup (gold/catalog + empty toast), Export no-route status, `MapRouteExporter.ExportAsync` write, ApplyClerkOverride reason `District Map`, PrintRequested + snapshot hook, zoom `CanExecute` after zoom. XAML lock: no `MarkerTemplateSelector=`, no pick-map `Markers=`, `MapMarkerHost.TryAssignAndLayout` present.
 - Guest: **3 passed**. `[Apartment(STA)]` omitted — NUnit STA + `ResetView` fire-and-forget crashes `SingleThreadedTestSynchronizationContext`.
-- Log gate script: `Scripts/score-map-logs.ps1` (exit 1 on ancestor / CustomDataSymbol bind / unhandled TransformToVisual / missing `QuotaSource=none` or `WithSource`). Canonical file: `bin\Debug\net9.0-windows\logs\runtime-errors.log` (`App.xaml.cs` BaseDirectory). Rotated empty 0-byte file at 11:57 guest. Preconditions: API key set, billing project unset, `BUSBUDDY_CONNECTION` set, `BUSBUDDY_MAP_DIAGNOSTICS` user=`0` until desktop smoke.
-- **Human step still required:** double-click `Scripts\run-map-diag-smoke.cmd`, open District Map ~15s, then Cursor harvest + score.
+- Log gate script (historical): `score-map-logs.ps1` / `run-map-diag-smoke.cmd` moved to `Documentation/Archive/2026-09-Maps-Competing-Writers/scripts/` — do not restore. Live tile proof is `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate`.
 
 ### 2026-09-17 — Strict /code-review remediations (maps leftover still desktop)
 
@@ -453,7 +460,7 @@ _Updated 2026-09-09: Settings district save closed; Now = District Map VM intera
 ### 2026-09-09 — PR #64 merged + District Map interaction proof
 
 - **Merge:** https://github.com/Bigessfour/BusBuddy-3/pull/64 (`56ce078`) — clerk hops 1–6, Settings→map, SfMap/PDF fixes. CI fix: service-path student save no longer gated on unused form `DbContext.CanConnectAsync`.
-- **Map interactions:** Zoom In/Out toggle `ShowDetailLabels` at zoom 12; `CenterOnFleetCommand` span-fits markers (not US overview); `ResetView` recenters to configured depot. Diagnostics gate covered by `MapInteractionDiagnostics_*` tests.
+- **Map interactions:** Zoom In/Out toggle `ShowDetailLabels` at zoom 12; `CenterOnFleetCommand` span-fits markers (not US overview); `ResetView` recenters to configured depot. `MapInteractionDiagnostics_*` tests were archived 2026-09 with the class (`Documentation/Archive/2026-09-Maps-Competing-Writers/`).
 - **Harness:** `./Scripts/utm-wpf-test.sh --filter "FullyQualifiedName~MapViewModelTests|…MapCoordinateFormatterTests|…MapViewTests"` → **65 passed**; new Reset/Center tests **6/6**.
 - **Not proved this session:** live pan/wheel feel + pulling `map-interactions-*.log` (optional; same as clerk ribbon clicks).
 
@@ -484,7 +491,7 @@ _Updated 2026-09-09: Map/Settings P1 ship items closed; Now = optional live smok
 
 ### 2026-09-10 — Live District Map smoke (Windows VM)
 
-- **Env:** User `BUSBUDDY_MAP_DIAGNOSTICS=1` via `Scripts/run-map-diag-smoke.cmd` (Explorer does not pick up registry User env until relaunch; launcher forces process env). Capability line `MapDiagnostics=1`.
+- **Env:** User `BUSBUDDY_MAP_DIAGNOSTICS=1` via `run-map-diag-smoke.cmd` (now archived under `Documentation/Archive/2026-09-Maps-Competing-Writers/scripts/`). Capability line `MapDiagnostics=1`.
 - **Basemap:** Google Map Tiles after quota-header retry — `Map Tiles session created` + `District map using Google Map Tiles API roadmap` (not OSM).
 - **Clerk clicks (Map toolbar):** Serilog `Map zoom in to 14`, `Map zoom out to 13`, `Reset view requested` (diag session ~16:25). Markers plotted: `HOME …` students + schools; `InitializeMapDataAsync completed … Students=20`.
 - **Logs pulled (guest → Mac `/tmp/busbuddy-map-smoke-20260910/`):**

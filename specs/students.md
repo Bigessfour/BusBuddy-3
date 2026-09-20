@@ -59,6 +59,8 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 ## Behaviors / UI
 
 - Clerk adds or edits a student on a form. Saving an address runs Address Validation + geocoding before the record is complete.
+- After a home validates, **hint** the nearest published catalog stop inside the walk radius (`StopSuggestMaxMeters`). Do not auto-assign it. The clerk selects the stop if that corner is a safe pickup.
+- If no catalog stop is in range, pickup mode stays **Home**. If other Home students with validated coordinates sit in the same radius, **hint** the clerk to publish a catalog stop and then assign those riders — do not create the stop automatically. Generate already shares one waypoint per catalog stop; home riders stay on the published list until the clerk attaches them.
 - Map plots a student only after lat/lng exist. Unvalidated addresses show as incomplete, not as pins at 0,0 or the US centroid.
 - District map center for clerks is Lamar/Wiley CO (~38.0872, -102.6208) until a route or student extent is chosen.
 - AM-only and PM-only students appear on the matching session roster and map only.
@@ -85,7 +87,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 | In-town gathering point             | `IPickupStopService`                                                       |
 | Map plot of homes / schools / stops | `IGeoDataService`, `IMapsGeoService`, `MapViewModel`                       |
 | Address → coordinates               | Google Address Validation + Geocoding                                      |
-| Object mapping (DTO ↔ VM)          | `MappingService` (AutoMapper — not maps)                                   |
+| Object mapping (DTO ↔ VM)           | `MappingService` (AutoMapper — not maps)                                   |
 | Worked roster (local only)          | `artifacts/rosters/AM-Bus-5-Special-Needs-2026-2027.*` — do not commit PII |
 
 ## Pickup rules (do not collapse these)

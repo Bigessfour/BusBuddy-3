@@ -7,11 +7,13 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Student;
@@ -23,6 +25,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
     public const int DefaultMapZoom = MapDefaults.SchoolZoomLevel;
 
     private readonly IPickupStopService _pickupStops;
+    private readonly IStudentService? _students;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -36,9 +39,10 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
     public event EventHandler<bool?>? RequestClose;
 
-    public PickupStopFormViewModel(IPickupStopService pickupStops)
+    public PickupStopFormViewModel(IPickupStopService pickupStops, IStudentService? students = null)
     {
         _pickupStops = pickupStops ?? throw new ArgumentNullException(nameof(pickupStops));
+        _students = students;
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
@@ -124,6 +128,9 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
     public int? SavedPickupStopId { get; private set; }
 
+    /// <summary>Count of Home pickups near the new stop. Clerk assigns them; we do not auto-attach.</summary>
+    public string NearbyHomePickupHint { get; private set; } = string.Empty;
+
     public string ValidationMessage
     {
         get => _validationMessage;
@@ -201,6 +208,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
                 string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()).ConfigureAwait(true);
 
             SavedPickupStopId = stop.PickupStopId;
+            NearbyHomePickupHint = await BuildNearbyHomeHintAsync().ConfigureAwait(true);
             Logger.Information("Pickup stop saved PickupStopId={Id} Name={Name}", stop.PickupStopId, stop.Name);
             RequestClose?.Invoke(this, true);
         }
@@ -209,5 +217,22 @@ public sealed class PickupStopFormViewModel : BaseViewModel
             Logger.Warning(ex, "Pickup stop save failed");
             ValidationMessage = ex.Message;
         }
+    }
+
+    private async Task<string> BuildNearbyHomeHintAsync()
+    {
+        var students = _students ?? App.ServiceProvider?.GetService<IStudentService>();
+        if (students is null)
+        {
+            return string.Empty;
+        }
+
+        var maxMeters = DistrictCameraUi.CurrentSettings()?.StopSuggestMaxMeters ?? 400;
+        var nearby = await students.GetNearbyHomePickupStudentsAsync(
+                LatitudeValue,
+                LongitudeValue,
+                maxMeters)
+            .ConfigureAwait(true);
+        return StudentPickupHint.NewCatalogNearbyHomes(nearby?.Count ?? 0, maxMeters);
     }
 }
