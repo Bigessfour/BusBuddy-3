@@ -265,17 +265,36 @@ namespace BusBuddy.Core.Services
                 return parts[0];
             }
 
-            using var output = new Syncfusion.Pdf.PdfDocument();
-            foreach (var part in parts)
+            var inputs = new List<MemoryStream>(parts.Count);
+            var loadedDocs = new List<Syncfusion.Pdf.Parsing.PdfLoadedDocument>(parts.Count);
+            try
             {
-                using var input = new MemoryStream(part);
-                using var loaded = new Syncfusion.Pdf.Parsing.PdfLoadedDocument(input);
-                output.Append(loaded);
-            }
+                using var output = new Syncfusion.Pdf.PdfDocument();
+                foreach (var part in parts)
+                {
+                    var input = new MemoryStream(part);
+                    inputs.Add(input);
+                    var loaded = new Syncfusion.Pdf.Parsing.PdfLoadedDocument(input);
+                    loadedDocs.Add(loaded);
+                    output.Append(loaded);
+                }
 
-            using var stream = new MemoryStream();
-            output.Save(stream);
-            return stream.ToArray();
+                using var stream = new MemoryStream();
+                output.Save(stream);
+                return stream.ToArray();
+            }
+            finally
+            {
+                foreach (var loaded in loadedDocs)
+                {
+                    loaded.Dispose();
+                }
+
+                foreach (var input in inputs)
+                {
+                    input.Dispose();
+                }
+            }
         }
 
         private static (IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> Rows, string Facts) BuildTable(
