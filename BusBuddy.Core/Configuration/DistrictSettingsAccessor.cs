@@ -44,7 +44,9 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
 
         lock (_gate)
         {
-            ApplyUserOverlay(_current, userSettings);
+            var next = Copy(_current);
+            ApplyUserOverlay(next, userSettings);
+            _current = next;
         }
     }
 
@@ -72,6 +74,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
             MaxRideMinutes = source.MaxRideMinutes,
             AllowSeatingOverride = source.AllowSeatingOverride,
             StopSuggestMaxMeters = source.StopSuggestMaxMeters,
+            CatalogStopClusterMinHomes = source.CatalogStopClusterMinHomes,
             DepotName = source.DepotName,
             DepotAddress = source.DepotAddress,
             DepotCity = source.DepotCity,

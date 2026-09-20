@@ -84,6 +84,16 @@ public class LocationContractTests
             (decimal)MapDefaults.UnconfiguredLongitude), Is.False);
         Assert.That(LocationCoordinate.IsValidated(38.0872m, -102.6208m), Is.True);
         Assert.That(LocationTypes.ValidationStatus(false), Is.EqualTo("needs validation"));
+        Assert.That(LocationCoordinate.IsPlotPrecision("PREMISE"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("SUB_PREMISE"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("PREMISE_PROXIMITY"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("ROOFTOP"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("RANGE_INTERPOLATED"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("OTHER"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("ROUTE"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("APPROXIMATE"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("GEOMETRIC_CENTER"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision(null), Is.False);
     }
 
     [Test]

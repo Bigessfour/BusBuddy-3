@@ -510,7 +510,13 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Maintenance.MaintenanceViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverScheduleViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Reports.ReportsViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
+                // Explicit factory: StudentsViewModel also has a parameterless XAML ctor and a
+                // BusBuddyDbContext test ctor. Both DbContext and IBusBuddyDbContextFactory are
+                // registered, so AddTransient<T>() hits "constructors are ambiguous" at runtime.
+                services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Student.StudentsViewModel(
+                        sp.GetRequiredService<IBusBuddyDbContextFactory>(),
+                        sp.GetService<IStudentService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentFormViewModel>(sp =>
                     new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(
                         sp.GetRequiredService<IStudentService>()));

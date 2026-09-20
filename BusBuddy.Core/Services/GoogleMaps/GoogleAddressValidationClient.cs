@@ -218,7 +218,9 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
         }
 
         var complete = false;
-        var precision = "unknown";
+        string? possibleNextAction = null;
+        var validationGranularity = "unknown";
+        var geocodeGranularity = "unknown";
         if (result.TryGetProperty("verdict", out var verdict))
         {
             if (verdict.TryGetProperty("addressComplete", out var ac) && ac.ValueKind == JsonValueKind.True)
@@ -226,34 +228,41 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
                 complete = true;
             }
 
-            if (verdict.TryGetProperty("validationGranularity", out var g) && g.ValueKind == JsonValueKind.String)
-            {
-                precision = g.GetString() ?? precision;
-            }
-            else if (verdict.TryGetProperty("geocodeGranularity", out var gg) && gg.ValueKind == JsonValueKind.String)
-            {
-                precision = gg.GetString() ?? precision;
-            }
+            possibleNextAction = ReadString(verdict, "possibleNextAction");
+            validationGranularity = ReadString(verdict, "validationGranularity") ?? validationGranularity;
+            geocodeGranularity = ReadString(verdict, "geocodeGranularity") ?? geocodeGranularity;
         }
 
         string? formatted = null;
-        if (result.TryGetProperty("address", out var address) &&
-            address.TryGetProperty("formattedAddress", out var fa) &&
-            fa.ValueKind == JsonValueKind.String)
+        List<string>? missingTypes = null;
+        if (result.TryGetProperty("address", out var address))
         {
-            formatted = fa.GetString();
+            formatted = ReadString(address, "formattedAddress");
+            missingTypes = ReadStringArray(address, "missingComponentTypes");
+        }
+
+        string? street = null;
+        string? city = null;
+        string? state = null;
+        string? zip = null;
+        if (result.TryGetProperty("address", out address)
+            && address.TryGetProperty("postalAddress", out var postal)
+            && postal.ValueKind == JsonValueKind.Object)
+        {
+            street = ReadFirstAddressLine(postal);
+            city = ReadString(postal, "locality");
+            state = ReadString(postal, "administrativeArea");
+            zip = ReadString(postal, "postalCode");
         }
 
         double? lat = null;
         double? lon = null;
         string? placeId = null;
+        List<string>? placeTypes = null;
         if (result.TryGetProperty("geocode", out var geocode))
         {
-            if (geocode.TryGetProperty("placeId", out var placeEl) && placeEl.ValueKind == JsonValueKind.String)
-            {
-                placeId = placeEl.GetString();
-            }
-
+            placeId = ReadString(geocode, "placeId");
+            placeTypes = ReadStringArray(geocode, "placeTypes");
             if (geocode.TryGetProperty("location", out var location))
             {
                 if (location.TryGetProperty("latitude", out var latEl) && latEl.TryGetDouble(out var latVal))
@@ -268,22 +277,52 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             }
         }
 
-        var deliverable = complete && lat.HasValue && lon.HasValue;
+        var dpv = ReadUspsDpv(result);
+        var poBox = ReadMetadataPoBox(result);
+        var unconfirmedTypes = result.TryGetProperty("address", out address)
+            ? ReadStringArray(address, "unconfirmedComponentTypes")
+            : null;
+        var accepted = AddressValidationPinPolicy.TryAcceptAddressValidationPin(
+            possibleNextAction,
+            validationGranularity,
+            geocodeGranularity,
+            complete,
+            dpv,
+            missingTypes,
+            poBox,
+            unconfirmedTypes,
+            placeTypes,
+            out var rejectReason);
+
         Logger.Information(
-            "Address validated Deliverable={Deliverable} Precision={Precision} ElapsedMs={ElapsedMs}",
-            deliverable,
-            precision,
+            "Address validated Complete={Complete} NextAction={NextAction} ValidationGranularity={ValidationGranularity} GeocodeGranularity={GeocodeGranularity} Dpv={Dpv} Accepted={Accepted} ElapsedMs={ElapsedMs}",
+            complete,
+            possibleNextAction,
+            validationGranularity,
+            geocodeGranularity,
+            dpv,
+            accepted,
             elapsedMs);
 
-        if (!deliverable)
+        if (!accepted || !lat.HasValue || !lon.HasValue)
         {
             return new MapsGeocodeResult
             {
                 Ok = false,
                 FormattedAddress = formatted,
                 PlaceId = placeId,
-                Precision = precision,
-                ErrorMessage = "Address could not be confirmed as deliverable."
+                Precision = geocodeGranularity,
+                ValidationGranularity = validationGranularity,
+                GeocodeGranularity = geocodeGranularity,
+                PossibleNextAction = possibleNextAction,
+                DpvConfirmation = dpv,
+                Street = street,
+                City = city,
+                State = state,
+                Zip = zip,
+                ErrorMessage = string.IsNullOrWhiteSpace(rejectReason)
+                    ? "Address could not be confirmed as deliverable."
+                    : rejectReason
             };
         }
 
@@ -294,8 +333,91 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             Latitude = lat,
             Longitude = lon,
             PlaceId = placeId,
-            Precision = precision
+            Precision = geocodeGranularity,
+            ValidationGranularity = validationGranularity,
+            GeocodeGranularity = geocodeGranularity,
+            PossibleNextAction = possibleNextAction,
+            DpvConfirmation = dpv,
+            Street = street,
+            City = city,
+            State = state,
+            Zip = zip
         };
+    }
+
+    private static string? ReadString(JsonElement parent, string name)
+    {
+        if (parent.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.String)
+        {
+            return el.GetString();
+        }
+
+        return null;
+    }
+
+    private static List<string>? ReadStringArray(JsonElement parent, string name)
+    {
+        if (!parent.TryGetProperty(name, out var el) || el.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var list = new List<string>();
+        foreach (var item in el.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String)
+            {
+                var value = item.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    list.Add(value);
+                }
+            }
+        }
+
+        return list.Count == 0 ? null : list;
+    }
+
+    private static string? ReadFirstAddressLine(JsonElement postal)
+    {
+        if (!postal.TryGetProperty("addressLines", out var lines) || lines.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var line in lines.EnumerateArray())
+        {
+            if (line.ValueKind == JsonValueKind.String)
+            {
+                var value = line.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ReadUspsDpv(JsonElement result)
+    {
+        if (!result.TryGetProperty("uspsData", out var usps) || usps.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return ReadString(usps, "dpvConfirmation");
+    }
+
+    private static bool ReadMetadataPoBox(JsonElement result)
+    {
+        if (!result.TryGetProperty("metadata", out var metadata) || metadata.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+
+        return metadata.TryGetProperty("poBox", out var poBox) && poBox.ValueKind == JsonValueKind.True;
     }
 
     /// <summary>
@@ -500,7 +622,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
     /// <summary>Only the fields the clerk record needs (Geocoding v4 "Choose fields to return").</summary>
     internal const string GeocodeV4FieldMask =
-        "results.placeId,results.location,results.formattedAddress,results.granularity";
+        "results.placeId,results.location,results.formattedAddress,results.granularity,results.types,results.postalAddress";
 
     /// <summary>
     /// v4 returns HTTP errors as <c>{"error":{code,status,message,details}}</c> (no legacy <c>status</c> field).
@@ -542,7 +664,8 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
     /// <summary>
     /// Parses a Geocoding API v4 <c>GeocodeAddressResponse</c>:
     /// <c>results[].placeId</c>, <c>results[].location.{latitude,longitude}</c>, <c>results[].formattedAddress</c>,
-    /// <c>results[].granularity</c> (ROOFTOP / RANGE_INTERPOLATED / GEOMETRIC_CENTER / APPROXIMATE).
+    /// <c>results[].granularity</c> (ROOFTOP / RANGE_INTERPOLATED / GEOMETRIC_CENTER / APPROXIMATE),
+    /// <c>results[].types</c>.
     /// </summary>
     internal static MapsGeocodeResult ParseGeocodeJson(string json, long elapsedMs)
     {
@@ -576,6 +699,8 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             precision = granularityEl.GetString() ?? precision;
         }
 
+        var types = ReadStringArray(first, "types") ?? new List<string>();
+
         double? lat = null;
         double? lon = null;
         if (first.TryGetProperty("location", out var location))
@@ -600,6 +725,23 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
                 PlaceId = placeId,
                 Precision = precision,
                 ErrorMessage = "Geocode response missing coordinates."
+            };
+        }
+
+        if (!AddressValidationPinPolicy.TryAcceptGeocodeFallbackPin(precision, types, out var rejectReason))
+        {
+            Logger.Information(
+                "Geocoding v4 fallback rejected Precision={Precision} Types={Types} ElapsedMs={ElapsedMs}",
+                precision,
+                string.Join(",", types),
+                elapsedMs);
+            return new MapsGeocodeResult
+            {
+                Ok = false,
+                FormattedAddress = formatted,
+                PlaceId = placeId,
+                Precision = precision,
+                ErrorMessage = rejectReason
             };
         }
 

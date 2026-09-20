@@ -477,7 +477,7 @@
                                     BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    MinHeight="36">
+                                    MinHeight="56">
                                 <TextBlock Name="AddressValidationMessage"
                                            Text="{Binding AddressValidationMessage}"
                                            Foreground="{Binding AddressValidationColor}"
@@ -613,7 +613,7 @@
                                           ItemsSource="{Binding AvailablePickupStops}"
                                           SelectedItem="{Binding SelectedPickupStop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           DisplayMemberPath="Name"
-                                          DefaultText="Assign a catalog stop"
+                                          DefaultText="No catalog stop — home pickup"
                                           IsEditable="False"
                                           MinWidth="280"
                                           HorizontalAlignment="Stretch"
@@ -624,9 +624,17 @@
                                        Text="{Binding PickupStopHint}"
                                        TextWrapping="Wrap"
                                        Margin="0,4,0,0"
-                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
-                                       FontSize="12"/>
+                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       AutomationProperties.Name="Pickup stop hint"/>
                             <WrapPanel Grid.Row="3" Margin="0,8,0,0">
+                                <syncfusion:ButtonAdv Label="Add catalog stop"
+                                                      Command="{Binding AddCatalogStopCommand}"
+                                                      Style="{StaticResource StudentFormActionButtonStyle}"
+                                                      Margin="0,0,8,0"
+                                                      ToolTip="Publish a shared corner stop (Address Validation required), then pick it in the list. Does not auto-assign."
+                                                      AutomationProperties.Name="Add catalog stop"/>
                                 <syncfusion:ButtonAdv Label="Suggest nearest"
                                                       Command="{Binding SuggestNearestPickupStopCommand}"
                                                       Style="{StaticResource StudentFormActionButtonStyle}"
@@ -652,6 +660,7 @@
                 <syncfusion:ButtonAdv Name="ViewOnMapButton"
                     Label="View on Map"
                                     Command="{Binding ViewOnMapCommand}"
+                                    Click="ViewOnMapButton_Click"
                                     Style="{StaticResource StudentFormActionButtonStyle}"
                                     SizeMode="Normal"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"

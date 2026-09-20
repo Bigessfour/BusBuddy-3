@@ -36,12 +36,18 @@ public static class PlaceAddressApplier
         var street = !string.IsNullOrWhiteSpace(details.StreetLine)
             ? details.StreetLine
             : string.IsNullOrWhiteSpace(suggestion.PrimaryText) ? null : suggestion.PrimaryText;
+        var city = details.City;
+        var state = details.State;
+        var zip = details.Zip;
+        PlaceAddressFill.FillMissing(ref street, ref city, ref state, ref zip, details.FormattedAddress);
+        PlaceAddressFill.FillMissing(ref street, ref city, ref state, ref zip, suggestion.DisplayText);
+        PlaceAddressFill.FillMissing(ref street, ref city, ref state, ref zip, suggestion.SecondaryText);
 
         return new AppliedAddress(
             street,
-            details.City,
-            details.State,
-            details.Zip,
+            city,
+            state,
+            zip,
             details.Latitude,
             details.Longitude,
             details.FormattedAddress,

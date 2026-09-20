@@ -53,12 +53,15 @@ namespace BusBuddy.Tests.Core
             _dbContext.Dispose();
         }
 
-        private async Task<Student> SeedStudentAsync(string name = "TEST_STUDENT_01", bool active = true)
+        private async Task<Student> SeedStudentAsync(
+            string name = "TEST_STUDENT_01",
+            bool active = true,
+            string studentNumber = "TEST-0001")
         {
             var student = new Student
             {
                 StudentName = name,
-                StudentNumber = "TEST-0001",
+                StudentNumber = studentNumber,
                 Grade = "3",
                 HomeAddress = "100 Test St",
                 City = "Testville",
@@ -72,6 +75,61 @@ namespace BusBuddy.Tests.Core
             await _dbContext.SaveChangesAsync();
             _dbContext.ChangeTracker.Clear();
             return student;
+        }
+
+        [Test]
+        public async Task GetNearbyHomePickupStudentsAsync_ReturnsHomeRidersInsideRadius()
+        {
+            var near = await SeedStudentAsync("TEST_STUDENT_NEAR", studentNumber: "TEST-NEAR");
+            await _studentService.UpdateHomeGeocodeAsync(near.StudentId, 38.0872m, -102.6208m, null);
+            var other = await SeedStudentAsync("TEST_STUDENT_OTHER", studentNumber: "TEST-OTHER");
+            await _studentService.UpdateHomeGeocodeAsync(other.StudentId, 38.08725m, -102.62085m, null);
+            var far = await SeedStudentAsync("TEST_STUDENT_FAR", studentNumber: "TEST-FAR");
+            await _studentService.UpdateHomeGeocodeAsync(far.StudentId, 39.7m, -104.9m, null);
+            var sn = await SeedStudentAsync("TEST_STUDENT_SN", studentNumber: "TEST-SN");
+            sn.RequiresSpecialNeedsBus = true;
+            _dbContext.Students.Update(sn);
+            await _dbContext.SaveChangesAsync();
+            await _studentService.UpdateHomeGeocodeAsync(sn.StudentId, 38.0872m, -102.6208m, null);
+
+            var catalogStop = new PickupStop
+            {
+                Name = "TEST_CATALOG",
+                Latitude = 38.0872m,
+                Longitude = -102.6208m,
+                StopType = PickupStopTypes.Corner,
+                Active = true,
+            };
+            _dbContext.PickupStops.Add(catalogStop);
+            await _dbContext.SaveChangesAsync();
+            catalogStop.PickupStopId.Should().BeGreaterThan(0);
+
+            _dbContext.Students.Add(new Student
+            {
+                StudentName = "TEST_STUDENT_CATALOG",
+                StudentNumber = "TEST-CAT",
+                Grade = "3",
+                HomeAddress = "100 Test St",
+                City = "Testville",
+                State = "CO",
+                Zip = "81000",
+                Active = true,
+                SchoolYear = "2026-2027",
+                Latitude = 38.08725m,
+                Longitude = -102.62085m,
+                PickupStopId = catalogStop.PickupStopId,
+            });
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var nearby = await _studentService.GetNearbyHomePickupStudentsAsync(
+                38.0872, -102.6208, maxMeters: 400, excludeStudentId: near.StudentId);
+
+            nearby.Should().ContainSingle(s => s.StudentName == "TEST_STUDENT_OTHER");
+            nearby.Should().NotContain(s => s.StudentName == "TEST_STUDENT_FAR");
+            nearby.Should().NotContain(s => s.StudentName == "TEST_STUDENT_SN");
+            nearby.Should().NotContain(s => s.StudentName == "TEST_STUDENT_CATALOG");
+            nearby.Should().NotContain(s => s.StudentId == near.StudentId);
         }
 
         #region Item 1 — archive and logged delete
@@ -569,6 +627,26 @@ namespace BusBuddy.Tests.Core
 
             first.Should().BeTrue();
             again.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task UpdateHomeGeocodeAsync_NullCoordinates_ClearsPinAndPlaceId()
+        {
+            var seeded = await SeedStudentAsync();
+            _dbContext.ChangeTracker.Clear();
+            await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId, 38.0872m, -102.6208m, "ChIJ_TEST_PLACE");
+            _dbContext.ChangeTracker.Clear();
+
+            var ok = await _studentService.UpdateHomeGeocodeAsync(seeded.StudentId, null, null, null);
+
+            ok.Should().BeTrue();
+            var reloaded = await _dbContext.Students.AsNoTracking()
+                .FirstAsync(s => s.StudentId == seeded.StudentId);
+            reloaded.Latitude.Should().BeNull();
+            reloaded.Longitude.Should().BeNull();
+            reloaded.PlaceId.Should().BeNull();
+            reloaded.HasValidatedHomeCoordinates.Should().BeFalse();
         }
 
         [Test]

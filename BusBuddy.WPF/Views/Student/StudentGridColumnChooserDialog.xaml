@@ -1,0 +1,67 @@
+<syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Student.StudentGridColumnChooserDialog"
+                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             Title="Roster columns"
+                             Height="520"
+                             Width="420"
+                             MinHeight="360"
+                             MinWidth="360"
+                             WindowStartupLocation="CenterOwner"
+                             ResizeMode="CanResizeWithGrip"
+                             UseNativeChrome="False">
+    <syncfusion:ChromelessWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </syncfusion:ChromelessWindow.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{DynamicResource BusBuddy.Brush.Primary}"
+                CornerRadius="5"
+                Padding="12,10"
+                Margin="0,0,0,12">
+            <TextBlock Text="Show or hide roster columns"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Columns}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <CheckBox Content="{Binding Header}"
+                                  IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanHide}"
+                                  Margin="0,0,0,8"
+                                  AutomationProperties.Name="{Binding Header}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <syncfusion:ButtonAdv Label="Cancel"
+                                  Command="{Binding CancelCommand}"
+                                  Margin="0,0,10,0"
+                                  AutomationProperties.Name="Cancel column chooser"/>
+            <syncfusion:ButtonAdv Label="Apply"
+                                  Command="{Binding ApplyCommand}"
+                                  Background="{DynamicResource BusBuddy.Brush.Primary}"
+                                  Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                  AutomationProperties.Name="Apply column chooser"/>
+        </StackPanel>
+    </Grid>
+</syncfusion:ChromelessWindow>

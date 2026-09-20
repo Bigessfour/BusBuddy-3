@@ -57,9 +57,10 @@ public sealed class StudentFormMapCoordinator
     private async Task OpenHomePinAsync()
     {
         var student = _student();
-        if (string.IsNullOrWhiteSpace(student.HomeAddress) && !student.HasValidatedHomeCoordinates)
+        if (!student.HasValidatedHomeCoordinates
+            && string.IsNullOrWhiteSpace(student.HomeAddress))
         {
-            _validation.SetGlobalError("Enter and validate the home address, then adjust the pin.");
+            _validation.SetGlobalError("Enter and validate the home address, then view it on the map.");
             return;
         }
 
@@ -67,8 +68,22 @@ public sealed class StudentFormMapCoordinator
         _validation.SetStatus("Loading map preview...", Brushes.Blue);
         try
         {
-            var validated = await TryGeocodeAddressAsync(student).ConfigureAwait(true);
+            (double Latitude, double Longitude)? validated = student.HasValidatedHomeCoordinates
+                ? ((double)student.Latitude!, (double)student.Longitude!)
+                : await TryGeocodeAddressAsync(student).ConfigureAwait(true);
+            if (validated is null && !student.HasValidatedHomeCoordinates)
+            {
+                _validation.SetGlobalError(
+                    "Validate Address first so the map has a pin. View on Map does not invent coordinates.");
+                _validation.SetStatus("No validated pin to show.", Brushes.Orange);
+                return;
+            }
+
             var catalog = ResolveSelectedCatalogStop(student);
+            Logger.Information(
+                "Opening home pin map StudentId={StudentId} HasPin={HasPin}",
+                student.StudentId,
+                student.HasValidatedHomeCoordinates);
             var pinVm = new StudentHomePinViewModel(student, validated, catalog);
             var window = new StudentHomePinWindow(pinVm);
             DialogOwner.Assign(window);

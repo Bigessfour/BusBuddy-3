@@ -12,6 +12,14 @@ public sealed class MapsGeocodeResult
     public string? PlaceId { get; set; }
 
     public string? Precision { get; set; }
+    public string? ValidationGranularity { get; set; }
+    public string? GeocodeGranularity { get; set; }
+    public string? PossibleNextAction { get; set; }
+    public string? DpvConfirmation { get; set; }
+    public string? Street { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? Zip { get; set; }
     public string? ErrorMessage { get; set; }
     public bool MappingUnconfigured { get; set; }
 
