@@ -6,7 +6,8 @@
         Title="PDF" Height="800" Width="1000"
     WindowStartupLocation="CenterOwner"
     ResizeMode="CanResize"
-    MinWidth="600" MinHeight="400">
+    MinWidth="600" MinHeight="400"
+    AutomationProperties.Name="PDF preview">
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

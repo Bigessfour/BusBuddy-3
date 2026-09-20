@@ -11,6 +11,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -24,24 +25,27 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Stop name" Margin="0,0,0,4"/>
-            <syncfusion:SfTextBoxExt x:Name="StopNameBox" Height="40"
+            <syncfusion:SfTextBoxExt Height="40"
+                                     Text="{Binding StopName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      AutomationProperties.Name="Stop name"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,0,0,12">
             <TextBlock Text="Address" Margin="0,0,0,4"/>
             <controls:PlacesAddressBox x:Name="StopAddressBox"
+                                        AddressText="{Binding StopAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         UseFormattedAddress="True"
                                         FieldAutomationName="Stop address"
                                         AddressApplied="StopAddressBox_AddressApplied"/>
         </StackPanel>
-        <TextBlock x:Name="CoordinateStatusText" Grid.Row="2" TextWrapping="Wrap"
+        <TextBlock Grid.Row="2" TextWrapping="Wrap"
                    VerticalAlignment="Top"
+                   Text="{Binding CoordinateStatus}"
                    AutomationProperties.Name="Stop coordinate status"/>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="40" Margin="0,0,8,0"
-                                  Click="Save_Click" AutomationProperties.Name="Save stop"/>
+                                  Command="{Binding SaveCommand}" AutomationProperties.Name="Save stop"/>
             <syncfusion:ButtonAdv Label="Cancel" MinWidth="80" Height="40"
-                                  Click="Cancel_Click" AutomationProperties.Name="Cancel stop"/>
+                                  Command="{Binding CancelCommand}" AutomationProperties.Name="Cancel stop"/>
         </StackPanel>
     </Grid>
 </Window>

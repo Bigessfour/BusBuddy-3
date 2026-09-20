@@ -36,6 +36,12 @@ public static class EnvFileLoader
                     continue;
                 }
 
+                if (string.Equals(key, "DatabaseProvider", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(value, "Azure", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (!overwrite && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
                 {
                     continue;

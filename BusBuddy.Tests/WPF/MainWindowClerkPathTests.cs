@@ -183,6 +183,9 @@ public class MainWindowClerkPathTests
         Assert.That(vm, Does.Not.Contain("EnableRouteGeoExport"));
         Assert.That(vm, Does.Contain("DistrictSettingsAccessor.WriteToUserAsync"));
         Assert.That(vm, Does.Contain("ApplyDepotAddress"));
+        Assert.That(vm, Does.Contain("CaptureViewFields"));
+        var settingsCode = XamlViewFile.Read("Views/Settings/SettingsView.xaml.cs");
+        Assert.That(settingsCode, Does.Contain("CaptureViewFields"));
         Assert.That(vm, Does.Contain("Log.ForContext<SettingsViewModel>"));
 
         var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");

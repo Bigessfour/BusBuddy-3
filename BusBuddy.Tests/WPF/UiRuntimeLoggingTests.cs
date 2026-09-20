@@ -35,6 +35,33 @@ public class UiRuntimeLoggingTests
             WpfTraceSerilogListener.IsMisconfigurationTrace(
                 "Cannot find source for binding with reference 'ElementName=ItemsPresenter'. BindingExpression:Path=DesiredSize.Height; DataItem=null; target element is 'DoubleAnimation'; target property is 'Duration'"),
             Is.False);
+
+        var vendorFilter = new WpfTraceSerilogListener.VendorAnimationTraceFilter(null);
+        Assert.That(
+            vendorFilter.ShouldTrace(
+                null,
+                "System.Windows.Data",
+                System.Diagnostics.TraceEventType.Warning,
+                0,
+                "Cannot find source for binding with reference 'ElementName=PanelPresenter'. BindingExpression:Path=SafeHeight; DataItem=null; target element is 'DoubleAnimation'; target property is 'Duration'",
+                null,
+                null,
+                null),
+            Is.False);
+        Assert.That(
+            vendorFilter.ShouldTrace(
+                null,
+                "System.Windows.Data",
+                System.Diagnostics.TraceEventType.Warning,
+                0,
+                "BindingExpression path error: 'StopAddress' property not found",
+                null,
+                null,
+                null),
+            Is.True);
+        Assert.That(
+            XamlViewFile.Read("Logging/WpfTraceSerilogListener.cs"),
+            Does.Contain("SuppressVendorAnimationListeners"));
     }
 
     [Test]
@@ -67,6 +94,10 @@ public class UiRuntimeLoggingTests
             Is.EqualTo(Serilog.Events.LogEventLevel.Information));
         Assert.That(UiSurfaceProbe.IsEmbeddedControl(typeof(BusBuddy.WPF.Controls.PlacesAddressBox)), Is.True);
         Assert.That(UiSurfaceProbe.IsEmbeddedControl(typeof(SettingsView)), Is.False);
+        Assert.That(UiSurfaceProbe.IsDialogSurface(typeof(BusBuddy.WPF.Views.Route.RouteStopEditDialog)), Is.True);
+        Assert.That(UiSurfaceProbe.IsDialogSurface(typeof(SettingsView)), Is.False);
+        var probe = XamlViewFile.Read("Logging/UiSurfaceProbe.cs");
+        Assert.That(probe, Does.Contain("fe.Visibility == Visibility.Collapsed"));
         Assert.That(
             UiSurfaceProbe.ClassifyDataContextLevel(
                 null,
@@ -74,6 +105,13 @@ public class UiRuntimeLoggingTests
                 isWindow: false,
                 isEmbeddedControl: true),
             Is.EqualTo(Serilog.Events.LogEventLevel.Information));
+        Assert.That(
+            UiSurfaceProbe.ClassifyDataContextLevel(
+                null,
+                descendantHasDataContext: false,
+                isWindow: true,
+                isDialog: true),
+            Is.EqualTo(Serilog.Events.LogEventLevel.Warning));
     }
 
     [Test]
@@ -83,6 +121,7 @@ public class UiRuntimeLoggingTests
         Assert.That(source, Does.Contain("WpfTraceSerilogListener.Attach"));
         Assert.That(source, Does.Contain("UiSurfaceProbe.Register"));
         Assert.That(source, Does.Contain("RuntimeCapabilityLogger.WriteStartupSnapshot"));
+        Assert.That(source, Does.Contain("PostgresConnectionResolver.ResolveAndApply"));
         Assert.That(source, Does.Contain("LoggingModeManager.Initialize"));
         Assert.That(source, Does.Contain("OnUnobservedTaskException"));
         Assert.That(source, Does.Contain("IsLayoutTransientException"));
@@ -119,5 +158,34 @@ public class UiRuntimeLoggingTests
         Assert.That(vm, Does.Contain("IDistrictMapSync"));
         Assert.That(vm, Does.Contain("depot/bbox will not overlay"));
         Assert.That(vm, Does.Contain("save will not recenter"));
+        Assert.That(vm, Does.Contain("CaptureViewFields"));
+        var view = XamlViewFile.Read("Views/Settings/SettingsView.xaml.cs");
+        Assert.That(view, Does.Contain("CaptureViewFields"));
+        Assert.That(view, Does.Contain("DepotLatBox"));
+        var composition = XamlViewFile.Read("App.Composition.cs");
+        Assert.That(composition, Does.Contain("OverlayFromUserSettings"));
+        Assert.That(composition, Does.Contain("HasDepotKey"));
+        var logger = XamlViewFile.Read("Logging/RuntimeCapabilityLogger.cs");
+        Assert.That(logger, Does.Contain("IDistrictSettingsAccessor"));
+        Assert.That(logger, Does.Contain("DistrictSource"));
+        Assert.That(logger, Does.Contain("HasDepotKey"));
+    }
+
+    [Test]
+    public void Capability_DescribesDistrictSourceAndMapDiagnostics()
+    {
+        Assert.That(
+            RuntimeCapabilityLogger.DescribeDistrictSource(null, null),
+            Is.EqualTo("none"));
+        var previous = Environment.GetEnvironmentVariable("BUSBUDDY_MAP_DIAGNOSTICS");
+        try
+        {
+            Environment.SetEnvironmentVariable("BUSBUDDY_MAP_DIAGNOSTICS", "0");
+            Assert.That(RuntimeCapabilityLogger.DescribeMapDiagnostics(null), Is.EqualTo("0(env)"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("BUSBUDDY_MAP_DIAGNOSTICS", previous);
+        }
     }
 }

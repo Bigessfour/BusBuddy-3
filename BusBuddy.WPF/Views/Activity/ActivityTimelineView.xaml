@@ -69,15 +69,16 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Text="Date Range:" VerticalAlignment="Center" Grid.Column="0" Grid.Row="0" Margin="0,0,8,0"/>
-                <syncfusion:ComboBoxAdv Grid.Column="1" Grid.Row="0" SelectedItem="{Binding SelectedDateRange, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        ItemsSource="{Binding DateRanges}" Width="160" Margin="0,0,15,0"
-                                        AutomationProperties.Name="Date range">
-                    <syncfusion:ComboBoxAdv.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding DisplayName}"/>
-                        </DataTemplate>
-                    </syncfusion:ComboBoxAdv.ItemTemplate>
-                </syncfusion:ComboBoxAdv>
+                <!-- ComboBoxAdv 34.2.3 Fluent popup templates bind ElementName PanelPresenter/ItemsPresenter
+                     to DoubleAnimation.Duration before the namescope exists (stalls first open).
+                     Accordion docs animate ExpandableContentControl.Percentage — do not add custom
+                     ElementName Duration storyboards. This filter is a six-item preset list. -->
+                <ComboBox Grid.Column="1" Grid.Row="0"
+                          SelectedItem="{Binding SelectedDateRange, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          ItemsSource="{Binding DateRanges}"
+                          DisplayMemberPath="DisplayName"
+                          Width="160" Margin="0,0,15,0"
+                          AutomationProperties.Name="Date range"/>
 
                 <StackPanel Grid.Column="2" Grid.Row="0" Orientation="Horizontal"
                             Visibility="{Binding IsCustomDateRange, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -111,7 +112,7 @@
                                    ItemsSource="{Binding TimelineEvents}"
                                    AutoGenerateColumns="False"
                                    AllowSorting="True"
-                                   AllowFiltering="True"
+                                   AllowFiltering="False"
                                    ColumnSizer="Star">
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridTextColumn HeaderText="Subject" MappingName="Subject" Width="220"/>

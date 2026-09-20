@@ -1,3 +1,4 @@
+using System;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.WPF.Utilities;
 using NUnit.Framework;
@@ -43,6 +44,24 @@ public class PlacesAddressSurfaceTests
         Assert.That(routeStop, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(routeStop, Does.Contain("UseFormattedAddress=\"True\""));
         Assert.That(routeStop, Does.Contain("AddressApplied=\"StopAddressBox_AddressApplied\""));
+        Assert.That(routeStop, Does.Contain("AddressText=\"{Binding StopAddress"));
+        Assert.That(routeStop, Does.Not.Contain("DataContext=\"{Binding}\""));
+        var routeStopCode = XamlViewFile.Read("Views/Route/RouteStopEditDialog.xaml.cs");
+        Assert.That(
+            routeStopCode.IndexOf("InitializeComponent()", StringComparison.Ordinal),
+            Is.LessThan(routeStopCode.IndexOf("ApplyTheme(this)", StringComparison.Ordinal)));
+        Assert.That(
+            routeStopCode.IndexOf("ApplyTheme(this)", StringComparison.Ordinal),
+            Is.LessThan(routeStopCode.IndexOf("DataContext = ViewModel", StringComparison.Ordinal)));
+        Assert.That(routeStopCode, Does.Contain("StopAddressBox.DataContext = ViewModel"));
+        Assert.That(routeStopCode, Does.Not.Contain("BindViewModel"));
+        var addStop = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.Commands.cs");
+        Assert.That(addStop, Does.Contain("new RouteStopEditDialogViewModel"));
+        Assert.That(addStop, Does.Contain("new RouteStopEditDialog(stopVm)"));
+        Assert.That(addStop, Does.Not.Contain("BindViewModel"));
+        Assert.That(
+            addStop.IndexOf("new RouteStopEditDialog(stopVm)", StringComparison.Ordinal),
+            Is.LessThan(addStop.IndexOf("dialog.ShowDialog()", StringComparison.Ordinal)));
 
         var transfer = XamlViewFile.Read("Views/Student/StudentSchoolTransferForm.xaml");
         Assert.That(transfer, Does.Contain("AddressText=\"{Binding PickupAddress"));

@@ -181,11 +181,15 @@ public partial class RouteAssignmentViewModel
         var window = new RouteScheduleWindow(scheduleVm);
         DialogOwner.Assign(window);
         window.Show();
+        var clocks = string.Join(
+            " ",
+            scheduleVm.Sheet.Stops.Select(s => s.Arrival));
         Logger.Information(
-            "Opened route schedule DisplayName={DisplayName} Stops={Stops} FirstLast={FirstLast}",
+            "Opened route schedule DisplayName={DisplayName} Stops={Stops} FirstLast={FirstLast} Clocks={Clocks}",
             scheduleVm.Sheet.DisplayName,
             scheduleVm.Sheet.Stops.Count,
-            scheduleVm.FirstLastClockText);
+            scheduleVm.FirstLastClockText,
+            clocks);
         StatusMessage = RouteStops.Count == 0
             ? RouteScheduleViewModel.EmptyStopsHint
             : $"Schedule: {scheduleVm.Sheet.DisplayName} {scheduleVm.FirstLastClockText}";

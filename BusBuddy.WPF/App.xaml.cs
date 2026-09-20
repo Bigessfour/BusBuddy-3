@@ -292,6 +292,7 @@ namespace BusBuddy.WPF
             try
             {
                 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                PostgresConnectionResolver.ResolveAndApply();
                 var configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)

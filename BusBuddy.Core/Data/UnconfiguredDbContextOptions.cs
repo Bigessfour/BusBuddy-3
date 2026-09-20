@@ -51,17 +51,9 @@ internal static class UnconfiguredDbContextOptions
             return;
         }
 
-        const string fallback =
-            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
-        logger.Information("Using LocalDB fallback connection");
-        optionsBuilder.UseSqlServer(fallback, sql =>
-        {
-            sql.CommandTimeout(60);
-            sql.EnableRetryOnFailure(
-                5,
-                TimeSpan.FromSeconds(10),
-                new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
-        });
+        var fallback = PostgresConnectionResolver.BuildConnectionString("localhost");
+        logger.Information("Using local Docker Postgres fallback connection");
+        optionsBuilder.UseBusBuddyPostgres(fallback);
         ConfigureEfLogging(optionsBuilder);
     }
 
@@ -92,7 +84,7 @@ internal static class UnconfiguredDbContextOptions
                 logger.Information("Expanded environment variables in connection string");
             }
 
-            var dbProvider = config["DatabaseProvider"] ?? "";
+            var dbProvider = EnvironmentHelper.GetDatabaseProvider(config);
             if (dbProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
                 dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
                 expandedConn.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||

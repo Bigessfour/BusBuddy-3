@@ -31,7 +31,7 @@ USAGE
   utm-dev-bridge.sh sync [--mirror] [--full]
   utm-dev-bridge.sh exec -- <powershell>
   utm-dev-bridge.sh test [--no-sync] [--deps-only] [--full] [--filter EXPR]
-  utm-dev-bridge.sh launch [--no-sync]
+  utm-dev-bridge.sh launch [--no-sync] [--no-build]
   utm-dev-bridge.sh pull-logs
   utm-dev-bridge.sh watch          # human-only; agents must not start this
 
@@ -293,20 +293,22 @@ exit \$LASTEXITCODE
 }
 
 cmd_launch() {
-  local do_sync=1
+  local do_sync=1 do_build=1
   while (( $# )); do
     case "$1" in
       --no-sync) do_sync=0; shift ;;
+      --no-build) do_build=0; shift ;;
       --mirror) SYNC_MIRROR=1; shift ;;
       *) err "Unknown launch flag: $1"; return 2 ;;
     esac
   done
 
   ensure_connected 300 || return 1
-  local win_root exe_ps user_ps
+  local win_root exe_ps user_ps launcher_ps
   win_root="$(posix_to_win_path)"
   win_root=${win_root:gs/\'/\'\'/}
   exe_ps="${win_root}\\BusBuddy.WPF\\bin\\Debug\\net9.0-windows\\BusBuddy.WPF.exe"
+  launcher_ps="${win_root}\\Scripts\\UtmLaunchWpf.ps1"
   user_ps=${SSH_USER:gs/\'/\'\'/}
 
   if (( do_sync )); then
@@ -317,30 +319,62 @@ cmd_launch() {
     write_status_json true
   fi
 
+  info "Stopping leftover BusBuddy.WPF so the guest build can overwrite bin/"
+  ssh_ps "${CURRENT_HOST}" "
+Get-Process -Name 'BusBuddy.WPF' -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
+Get-Process -Name 'BusBuddy.WPF' -ErrorAction SilentlyContinue | ForEach-Object { \$_.Kill(); Start-Sleep -Seconds 1 }
+" || true
+
+  if (( do_build )); then
+    info "Building WPF on guest (bin/ is not synced from Mac)"
+    ssh_ps "${CURRENT_HOST}" "
+\$ErrorActionPreference = 'Stop'
+Set-Location '${win_root}'
+& dotnet build 'BusBuddy.WPF\\BusBuddy.WPF.csproj' -c Debug -p:EnableWindowsTargeting=true --nologo
+exit \$LASTEXITCODE
+" || { err "guest WPF build failed"; return 1; }
+  fi
+
   info "Launching WPF on interactive session ${user_ps} from ${win_root}"
   ssh_ps "${CURRENT_HOST}" "
 \$ErrorActionPreference = 'Continue'
 \$winRoot = '${win_root}'
 \$exe = '${exe_ps}'
-Set-Location \$winRoot
-if (-not (Test-Path -LiteralPath \$exe)) {
-  Write-Output 'BUILD needed'
-  & dotnet build 'BusBuddy.WPF\\BusBuddy.WPF.csproj' -c Debug -p:EnableWindowsTargeting=true --nologo
-  Write-Output ('BUILD_EXIT=' + \$LASTEXITCODE)
-  if (\$LASTEXITCODE -ne 0) { exit \$LASTEXITCODE }
+\$launcher = '${launcher_ps}'
+\$statusFile = Join-Path \$winRoot 'artifacts\\utm-launch-last.txt'
+if (-not (Test-Path -LiteralPath \$launcher)) {
+  Write-Output 'LAUNCH_FAIL missing Scripts\\UtmLaunchWpf.ps1'
+  exit 3
 }
 if (-not (Test-Path -LiteralPath \$exe)) {
   Write-Output 'LAUNCH_FAIL no exe'
   exit 3
 }
+Get-Process -Name 'BusBuddy.WPF' -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 1
+if (Test-Path -LiteralPath \$statusFile) { Remove-Item -LiteralPath \$statusFile -Force }
 \$tn = 'BusBuddyUtmLaunch'
 schtasks /Delete /TN \$tn /F 2>\$null | Out-Null
-schtasks /Create /TN \$tn /SC ONCE /ST 23:59 /RL LIMITED /IT /F /TR ('\"' + \$exe + '\"') /RU '${user_ps}' | Out-Null
-schtasks /Run /TN \$tn | Out-Null
-Start-Sleep -Seconds 5
-\$p = Get-Process -Name 'BusBuddy.WPF' -ErrorAction SilentlyContinue | Select-Object -First 1
-if (\$null -eq \$p) { Write-Output 'LAUNCH_FAIL'; exit 3 }
-Write-Output ('LAUNCH pid=' + \$p.Id + ' session=' + \$p.SessionId)
+\$tr = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"' + \$launcher + '\"'
+\$createOut = schtasks /Create /TN \$tn /SC ONCE /ST 23:59 /RL LIMITED /IT /F /TR \$tr /RU '${user_ps}'
+Write-Output \$createOut
+\$runOut = schtasks /Run /TN \$tn
+Write-Output \$runOut
+for (\$i = 0; \$i -lt 40; \$i++) {
+  Start-Sleep -Seconds 1
+  \$p = Get-Process -Name 'BusBuddy.WPF' -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (\$null -eq \$p) { continue }
+  if (Test-Path -LiteralPath \$statusFile) {
+    Get-Content -LiteralPath \$statusFile
+  }
+  Write-Output ('LAUNCH pid=' + \$p.Id + ' session=' + \$p.SessionId)
+  if ((Get-Content -LiteralPath \$statusFile -ErrorAction SilentlyContinue) -match 'LAUNCH_FAIL') { exit 3 }
+  exit 0
+}
+Write-Output 'LAUNCH_FAIL no process after wait'
+if (Test-Path -LiteralPath \$statusFile) { Get-Content -LiteralPath \$statusFile }
+exit 3
 "
 }
 

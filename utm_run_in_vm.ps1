@@ -97,7 +97,6 @@ function Set-BusBuddyPostgresConnection {
 
     $conn = "Host=$HostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true;Timeout=5"
     $env:BUSBUDDY_CONNECTION = $conn
-    $env:DatabaseProvider = 'Postgres'
 
     $current = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'User')
     if ($current -ne $conn) {
@@ -105,6 +104,17 @@ function Set-BusBuddyPostgresConnection {
         Write-Host "Updated BUSBUDDY_CONNECTION -> Host=$HostIp" -ForegroundColor Cyan
     } else {
         Write-Host "BUSBUDDY_CONNECTION -> Host=$HostIp" -ForegroundColor Cyan
+    }
+}
+
+function Set-BusBuddyPostgresProvider {
+    $env:DatabaseProvider = 'Postgres'
+    $current = [Environment]::GetEnvironmentVariable('DatabaseProvider', 'User')
+    if ($current -ne 'Postgres') {
+        [Environment]::SetEnvironmentVariable('DatabaseProvider', 'Postgres', 'User')
+        Write-Host "Pinned DatabaseProvider=Postgres (User) — leftover Azure is not a provider" -ForegroundColor Cyan
+    } else {
+        Write-Host "DatabaseProvider=Postgres" -ForegroundColor Cyan
     }
 }
 
@@ -314,14 +324,16 @@ try {
             if ($eq -le 0) { continue }
             $name = $line.Substring(0, $eq).Trim()
             $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
-            if ($name.Length -gt 0) {
-                Set-Item -Path "env:$name" -Value $value
-            }
+            if ($name.Length -eq 0) { continue }
+            if ($name -eq 'DatabaseProvider' -and $value -eq 'Azure') { continue }
+            Set-Item -Path "env:$name" -Value $value
         }
         Write-Host "Loaded keys/.env from share." -ForegroundColor Cyan
     } else {
         Write-Host "WARNING: keys\.env not found — create from Documentation/keys-dotenv.example" -ForegroundColor Yellow
     }
+
+    Set-BusBuddyPostgresProvider
 
     Write-Host ""
     Write-Host "Restoring..." -ForegroundColor Cyan

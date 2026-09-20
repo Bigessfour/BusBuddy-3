@@ -167,4 +167,4 @@ echo "   \$env:BUSBUDDY_CONNECTION = \"Host=${HOST_IP};Port=5432;Database=busbud
 echo ""
 echo "Done. Re-run ./run-wpf.sh after the desktop is fully up if you want another launch attempt."
 
-exit 0
+exit 1

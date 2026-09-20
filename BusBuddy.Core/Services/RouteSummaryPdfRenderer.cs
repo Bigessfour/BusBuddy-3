@@ -134,6 +134,12 @@ public static class RouteSummaryPdfRenderer
 
             using var stream = new MemoryStream();
             pdf.Save(stream);
+            Logger.Information(
+                "Rendered PdfGrid route sheet Route={Route} Stops={Stops} MapEmbedded={MapEmbedded} Bytes={Bytes}",
+                route.RouteName,
+                sheet.Stops.Count,
+                mapImagePng is { Length: > 0 },
+                stream.Length);
             return stream.ToArray();
         }
         catch (Exception ex)

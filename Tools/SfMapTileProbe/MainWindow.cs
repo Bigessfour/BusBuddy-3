@@ -70,7 +70,7 @@ public sealed class MainWindow : Window
                 _layer.LayerType = LayerType.OSM;
                 break;
             case "osm-https":
-                // Documented custom tiles path (same as Azure Maps on map-providers page).
+                // Documented custom tiles path (Syncfusion map-providers page).
                 _layer.UrlTemplate = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
                 break;
             case "google-urltemplate":

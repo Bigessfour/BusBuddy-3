@@ -455,7 +455,8 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             try
             {
-                var dialog = new RouteStopEditDialog($"Stop {RouteStops.Count + 1}", string.Empty)
+                var stopVm = new RouteStopEditDialogViewModel($"Stop {RouteStops.Count + 1}", string.Empty);
+                var dialog = new RouteStopEditDialog(stopVm)
                 {
                     Owner = Application.Current?.MainWindow
                 };

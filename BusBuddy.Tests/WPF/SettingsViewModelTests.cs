@@ -144,6 +144,81 @@ public class SettingsViewModelTests
     }
 
     [Test]
+    public async Task SaveSettingsAsync_AfterApplyDepotAddress_PersistsCoordinates()
+    {
+        var settings = CreateSettingsMock();
+        settings.Setup(s => s.SaveSettingsAsync()).ReturnsAsync(true);
+        var accessor = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings()));
+        var vm = new SettingsViewModel(
+            settings.Object,
+            new Mock<ISkinManagerService>().Object,
+            accessor);
+
+        await Task.Delay(100);
+        vm.ApplyDepotAddress(new PlaceAddressApplier.AppliedAddress(
+            Street: "210 West Pearl",
+            City: "Lamar",
+            State: "CO",
+            Zip: "81052",
+            Latitude: 38.0872,
+            Longitude: -102.6208,
+            FormattedAddress: "210 West Pearl, Lamar, CO 81052",
+            PlaceId: "test"));
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLatitude, "38.0872"), Times.Once);
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLongitude, "-102.6208"), Times.Once);
+        Assert.That(DistrictDepot.TryGetCoordinates(accessor.Current, out var lat, out var lon), Is.True);
+        Assert.That(lat, Is.EqualTo(38.0872).Within(0.0001));
+    }
+
+    [Test]
+    public async Task LoadSettingsAsync_DoesNotOverwritePlacesApply()
+    {
+        var gate = new TaskCompletionSource<bool>();
+        var settings = CreateSettingsMock();
+        settings.Setup(s => s.LoadSettingsAsync()).Returns(gate.Task);
+        var vm = new SettingsViewModel(settings.Object, new Mock<ISkinManagerService>().Object);
+
+        vm.ApplyDepotAddress(new PlaceAddressApplier.AppliedAddress(
+            Street: "210 West Pearl",
+            City: "Lamar",
+            State: "CO",
+            Zip: "81052",
+            Latitude: 38.0872,
+            Longitude: -102.6208,
+            FormattedAddress: "210 West Pearl, Lamar, CO 81052",
+            PlaceId: "test"));
+
+        gate.SetResult(true);
+        await Task.Delay(150);
+
+        vm.DepotLatitudeText.Should().Contain("38.0872");
+        vm.DepotLongitudeText.Should().Contain("-102.6208");
+        vm.DepotCity.Should().Be("Lamar");
+    }
+
+    [Test]
+    public async Task SaveSettingsAsync_CaptureViewFieldsRunsBeforePersist()
+    {
+        var settings = CreateSettingsMock();
+        settings.Setup(s => s.SaveSettingsAsync()).ReturnsAsync(true);
+        var vm = new SettingsViewModel(settings.Object, new Mock<ISkinManagerService>().Object);
+        await Task.Delay(50);
+        vm.CaptureViewFields = () =>
+        {
+            vm.DepotLatitudeText = "38.1541";
+            vm.DepotLongitudeText = "-102.7201";
+        };
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLatitude, "38.1541"), Times.Once);
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLongitude, "-102.7201"), Times.Once);
+    }
+
+    [Test]
     public async Task ResetSettingsAsync_ReloadsDefaults()
     {
         var settings = new Mock<IUserSettingsService>();

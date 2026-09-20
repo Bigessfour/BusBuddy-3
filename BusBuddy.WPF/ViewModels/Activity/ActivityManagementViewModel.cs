@@ -266,6 +266,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
             }
 
             var editor = new TripEventEditDialogViewModel(existing, _trips, _routes, _destinations, _reasons);
+            await editor.LoadAvailableDataAsync().ConfigureAwait(true);
             var dialog = new TripEventEditDialog(editor);
             DialogOwner.Assign(dialog);
             if (dialog.ShowDialog() != true || editor.Result is null)

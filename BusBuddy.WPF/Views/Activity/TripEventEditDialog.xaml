@@ -113,12 +113,14 @@
                                          Height="40" Margin="0,0,0,10"
                                          AutomationProperties.Name="Trip point of contact"/>
 
-                <TextBlock Text="Origin" Margin="0,0,0,4"/>
+                <TextBlock Text="Origin" Margin="0,0,0,4"
+                           Visibility="{Binding HasOrigins, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Origins}"
                                         SelectedItem="{Binding SelectedOrigin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="Name"
                                         IsEditable="False"
                                         Height="40" Margin="0,0,0,10"
+                                        Visibility="{Binding HasOrigins, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         AutomationProperties.Name="Trip origin"/>
 
                 <TextBlock Text="Pickup point" Margin="0,0,0,4"/>
@@ -158,20 +160,24 @@
                                           Height="40" Margin="0,0,0,10"
                                           AutomationProperties.Name="Actual riders"/>
 
-                <TextBlock Text="Driver" Margin="0,0,0,4"/>
+                <TextBlock Text="Driver" Margin="0,0,0,4"
+                           Visibility="{Binding HasAssignableDrivers, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
                                         SelectedItem="{Binding SelectedDriver, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="DriverName"
                                         IsEditable="False"
                                         Height="40" Margin="0,0,0,10"
+                                        Visibility="{Binding HasAssignableDrivers, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         AutomationProperties.Name="Driver"/>
 
-                <TextBlock Text="Bus" Margin="0,0,0,4"/>
+                <TextBlock Text="Bus" Margin="0,0,0,4"
+                           Visibility="{Binding HasAssignableVehicles, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableVehicles}"
                                         SelectedItem="{Binding SelectedVehicle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="BusNumber"
                                         IsEditable="False"
                                         Height="40" Margin="0,0,0,10"
+                                        Visibility="{Binding HasAssignableVehicles, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         AutomationProperties.Name="Bus"/>
 
                 <TextBlock Text="{Binding PathMilesDisplay, Mode=OneWay}" Margin="0,0,0,4"/>

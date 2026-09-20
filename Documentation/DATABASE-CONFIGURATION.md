@@ -1,20 +1,26 @@
 # Database Configuration
 
-BusBuddy supports local SQL Server / LocalDB, SQLite, and **Postgres via Docker** (recommended for hybrid Mac + VM dev).
+BusBuddy’s database is **Postgres** (Mac Docker → UTM guest). SQL Server / LocalDB and SQLite remain explicit opt-in only.
 
 ## Priority order
 
-1. **`BUSBUDDY_CONNECTION` environment variable** (highest — overrides appsettings)
-2. **`DatabaseProvider`** in appsettings + matching connection string
-3. LocalDB fallback when placeholders are unresolved
+1. **`BUSBUDDY_CONNECTION`** (highest — a `Host=` string is Postgres)
+2. **`DatabaseProvider`** in appsettings (`Postgres` by default) + matching connection string
+3. Local Docker Postgres (`Host=localhost`) when no env override is set
+
+Launchers (`utm_run_in_vm.ps1`, `run-wpf.sh`) write `BUSBUDDY_CONNECTION` only. The app calls `PostgresConnectionResolver.ResolveAndApply()` at startup.
+
+Environment variables override JSON ([ASP.NET Core configuration](https://learn.microsoft.com/aspnet/core/fundamentals/configuration)).
 
 ## Providers
 
-| Provider                | When to use                                      | Connection key                                |
-| ----------------------- | ------------------------------------------------ | --------------------------------------------- |
-| `LocalDB` / `SqlServer` | Windows VM, SQL Express / LocalDB                | `LocalConnection` or `DefaultConnection`      |
-| `Postgres`              | Mac Docker (`docker compose --profile db up -d`) | `PostgresConnection` or `BUSBUDDY_CONNECTION` |
-| `Local`                 | SQLite file                                      | `BusBuddyDatabase`                            |
+| Provider                | When to use                         | Connection key                                |
+| ----------------------- | ----------------------------------- | --------------------------------------------- |
+| `Postgres`              | Default. Mac Docker → UTM guest     | `PostgresConnection` or `BUSBUDDY_CONNECTION` |
+| `LocalDB` / `SqlServer` | Explicit SQL Express / LocalDB only | `LocalConnection` or `DefaultConnection`      |
+| `Local`                 | SQLite file                         | `BusBuddyDatabase`                            |
+
+Unknown or empty `DatabaseProvider` is Postgres.
 
 ## Postgres (Mac Docker → VM)
 
@@ -30,13 +36,13 @@ From Windows VM (use Mac host IP from `./run-wpf.sh`):
 $env:BUSBUDDY_CONNECTION = "Host=192.168.x.x;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev"
 ```
 
-## Local Windows VM default
+## Opt-in SQL Server
 
-`BusBuddy.WPF/appsettings.json` defaults to SQL Server Express on `localhost\SQLEXPRESS`.
+Set `DatabaseProvider` to `SqlServer` or `LocalDB` and do not set a `Host=` `BUSBUDDY_CONNECTION`. `DefaultConnection` in appsettings is SQL Express for that switch only.
 
 ## Migrations (design-time)
 
-Postgres (Mac Docker) is the hybrid-dev path. From the repo root:
+From the repo root:
 
 ```bash
 docker compose --profile db up -d
@@ -50,4 +56,4 @@ dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.Cor
 
 The WPF app applies the same chain at startup via `RelationalSchemaApplier` (`Database.Migrate()`), not `EnsureCreated()`. Catalogs created with `EnsureCreated()` have tables but no `__EFMigrationsHistory` — the app will refuse to start against those. Drop/recreate that catalog or use a new database name.
 
-Windows VM SQL Server still works with the same `dotnet ef database update` command when `BUSBUDDY_CONNECTION` is a SQL Server string.
+Windows VM SQL Server still works with the same `dotnet ef database update` command when `BUSBUDDY_CONNECTION` is a SQL Server string and `DatabaseProvider` is `SqlServer`.

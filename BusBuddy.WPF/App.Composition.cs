@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Windows;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Configuration;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
@@ -49,14 +50,7 @@ namespace BusBuddy.WPF
 
                 var services = new ServiceCollection();
 
-                // Add configuration to resolve appsettings.json
-                var env2 = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-                var configuration = new ConfigurationBuilder()
-                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile($"appsettings.{env2}.json", optional: true, reloadOnChange: true)
-                    .AddEnvironmentVariables()
-                    .Build();
+                var configuration = BuildConfiguration();
 
                 // Register configuration for DI
                 services.AddSingleton<IConfiguration>(configuration);
@@ -80,7 +74,7 @@ namespace BusBuddy.WPF
                     BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
                 services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                     configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
-                services.AddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
+                services.TryAddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
                     BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
                 services.AddScoped<IDriverService, DriverService>();
                 services.AddScoped<IRouteService, RouteService>();
@@ -197,11 +191,7 @@ namespace BusBuddy.WPF
                 try
                 {
                     var fallbackServices = new ServiceCollection();
-                    var configuration = new ConfigurationBuilder()
-                        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                        .AddEnvironmentVariables()
-                        .Build();
+                    var configuration = BuildConfiguration();
 
                     fallbackServices.AddSingleton<IConfiguration>(configuration);
                     ServiceProvider = fallbackServices.BuildServiceProvider();
@@ -228,7 +218,15 @@ namespace BusBuddy.WPF
 
                 settings.LoadSettingsAsync().GetAwaiter().GetResult();
                 district.OverlayFromUserSettings(settings);
-                Log.Information("Applied persisted district geography from user settings");
+                var applied = district.Current;
+                Log.Information(
+                    "Applied persisted district geography Path={Path} HasDepotKey={HasDepotKey} DepotLat={DepotLat} DepotLon={DepotLon} BBoxMinLat={BBoxMinLat} BBoxMaxLat={BBoxMaxLat}",
+                    settings.FilePath,
+                    settings.HasKey(UserSettingsKeys.DistrictDepotLatitude),
+                    applied.DepotLatitude,
+                    applied.DepotLongitude,
+                    applied.BoundingBoxMinLat,
+                    applied.BoundingBoxMaxLat);
             }
             catch (Exception ex)
             {

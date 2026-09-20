@@ -1,6 +1,11 @@
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
+using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Activity;
 using CommunityToolkit.Mvvm.Input;
+using Moq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.WPF;
@@ -130,5 +135,46 @@ public class TripEventEditDialogViewModelTests
         Assert.That(trip.IsMultiAsset, Is.True);
         Assert.That(trip.VehicleId, Is.Null);
         Assert.That(trip.AssignedBusNumber, Is.EqualTo("25, 23"));
+    }
+
+    [Test]
+    public async Task LoadAvailableDataAsync_HidesEmptyOriginAndFleetCombos()
+    {
+        var vm = new TripEventEditDialogViewModel(null, null, null, null, null);
+        await vm.LoadAvailableDataAsync();
+        Assert.That(vm.HasOrigins, Is.False);
+        Assert.That(vm.HasAssignableDrivers, Is.False);
+        Assert.That(vm.HasAssignableVehicles, Is.False);
+        Assert.That(vm.ListsReady, Is.True);
+    }
+
+    [Test]
+    public async Task LoadAvailableDataAsync_ShowsOriginAndFleetWhenCatalogHasRows()
+    {
+        var destinations = new Mock<IDestinationService>();
+        destinations.Setup(d => d.GetActiveSchoolsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                new Destination { DestinationId = 6, Name = "Wiley School", DestinationType = LocationTypes.School }
+            ]);
+        destinations.Setup(d => d.GetActiveDestinationsAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Destination>());
+
+        var routes = new Mock<IRouteService>();
+        routes.Setup(r => r.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver> { new() { DriverId = 2, DriverName = "Pat" } }));
+        routes.Setup(r => r.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>
+            {
+                new() { BusId = 2, BusNumber = "5", Status = "Active" }
+            }));
+
+        var vm = new TripEventEditDialogViewModel(null, null, routes.Object, destinations.Object, null);
+        await vm.LoadAvailableDataAsync();
+
+        Assert.That(vm.HasOrigins, Is.True);
+        Assert.That(vm.Origins, Has.Count.EqualTo(1));
+        Assert.That(vm.HasAssignableDrivers, Is.True);
+        Assert.That(vm.HasAssignableVehicles, Is.True);
     }
 }

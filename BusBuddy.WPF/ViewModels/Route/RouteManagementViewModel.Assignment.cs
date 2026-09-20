@@ -370,6 +370,12 @@ namespace BusBuddy.WPF.ViewModels.Route
                     RouteSummarySheetBuilder.DisplayNameFor(SelectedRoute) + " schedule");
                 DialogOwner.Assign(preview);
                 preview.Show();
+                Logger.Information(
+                    "Route schedule preview DisplayName={DisplayName} Stops={Stops} Size={SizeBytes} bytes Grid=PdfGrid Preview=true Verb=none File={File}",
+                    RouteSummarySheetBuilder.DisplayNameFor(SelectedRoute),
+                    stops.Count,
+                    pdfBytes.Length,
+                    fullPath);
                 StatusMessage = $"Schedule preview: {stops.Count} stops, {students.Count} students ({fileName})";
             }
             catch (Exception ex)

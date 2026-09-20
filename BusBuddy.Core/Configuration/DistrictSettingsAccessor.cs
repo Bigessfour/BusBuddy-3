@@ -44,7 +44,9 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
 
         lock (_gate)
         {
-            ApplyUserOverlay(_current, userSettings);
+            var next = Copy(_current);
+            ApplyUserOverlay(next, userSettings);
+            _current = next;
         }
     }
 

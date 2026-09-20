@@ -16,67 +16,65 @@
 
 **Project-done:** [done-checklist.md](./done-checklist.md) — `python3 .github/scripts/check-project-done.py`. Ship-ready is a subset. The project is done only when the checker exits 0.
 
-### Ship readiness (2026-09-10)
+### Status snapshot (2026-09-20)
 
-| Criterion               | Status                                                                                                       |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Clerk hops 1–6          | **Met** — DbPrep on Docker Postgres + PR #64                                                                 |
-| Windows VM proof        | **Met (hybrid)** — UTM testhost + live District Map smoke 2026-09-10; optional ribbon hops 1–6 UI still open |
-| District Map / Settings | **In progress** — Debug relaunch 2026-09-17 11:20 passed marker-host gate; leftover Export toast + Move pin  |
-| a11y Phase 2 / wishlist | Out of scope                                                                                                 |
+Branch `feature/utm-agent-cli`. Guest remediations (Postgres pin, RouteStop editor, Settings save, TripEvent empty combos, Schedule smoke) are in git. Next live work is District Map Export + Move.
 
-**Verdict:** Ship-ready. Remaining open boxes are optional ribbon UI clicks, schema hygiene, or decide-later — not blockers.
+| Criterion               | Status                                                                                                                                                         |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Clerk hops 1–6          | **Met** — DbPrep on Docker Postgres + PR #64                                                                                                                   |
+| Windows VM proof        | **Met (hybrid)** — UTM testhost + live District Map 2026-09-10 / 09-17; hops 1–3 ribbon clicks still optional                                                  |
+| District Map / Settings | **Camera met** (2026-09-18 relaunch `DistrictSource=user-settings HasDepotKey=true`). Leftover: Export toast + Move pin live clicks                            |
+| Schedule / Print        | **Met** — 2026-09-18 AM Special Needs Bus 5: 14 clocks 07:30–07:43 + PdfGrid preview (`Verb=none`). Queue #1 Schedule box is closed                            |
+| Follow-up PR #65        | **Merged** 2026-09-10 (`District Map interaction proof and Google Maps attribution logo`)                                                                      |
+| a11y Phase 2 / wishlist | Out of scope                                                                                                                                                   |
+| Project-done checker    | **Not 0** — B14 still wants hops 1–3 live UI boxes; B10 until leftover clicks / parked prefixes; B05 DI leftovers; B12 stale inventory. Ship-ready ≠ checker 0 |
 
-Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
+**Verdict:** Ship-ready for clerk Core. Next **live** work is District Map Export/Move, then Student home-pin confirm. Hygiene and `AMRoute` string drop stay parked.
 
 ---
 
 ## Now
 
-### Routes leftover queue (ordered)
+### Live leftover queue (ordered)
 
-Do in this order so parked work is not forgotten and is not started out of sequence.
+Do in this order. Do not start parked campaigns from this table.
 
-| Order | Item                                                                                  | Why this slot                                                                                                                                              |
-| ----- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | AM Special Needs **Schedule** smoke                                                   | Ribbon bind + published clocks are on this branch. Live Schedule window / re-print after caption still open.                                               |
-| 1b    | District Map leftover: **Export Route** toast (no route) + **Move to selected route** | Marker-host Debug relaunch passed 2026-09-17 11:20. Remaining clerk clicks only.                                                                           |
-| 2     | `AMRoute` / `PMRoute` name-string drop                                                | Phased campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.**                                                        |
-| —     | `IRouteRepository`                                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub.                                                                                                    |
-| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                           | Parked. Do not “finish” `RouteAssignments`. Later wrap onto `AssignStudentToRouteAsync` or leave. Not this pass.                                           |
-| —     | Generate also assign roster keys                                                      | Decide **after** Special Needs smoke. Generate-stops-only (`StudentIds=` notes, empty `AmRouteId`/`PmRouteId`) is a clerk-path gap, not an unbound button. |
+| Order | Item                                                                                  | Why this slot                                                                                       |
+| ----- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1     | District Map leftover: **Export Route** toast (no route) + **Move to selected route** | Marker-host Debug relaunch passed 2026-09-17 11:20. Remaining clerk clicks only                     |
+| 2     | Student form map live confirm                                                         | Code + testhost already open `StudentHomePinWindow` (PR #91). Needs VM eye after rebuild            |
+| —     | `AMRoute` / `PMRoute` name-string drop                                                | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
+| —     | `IRouteRepository`                                                                    | **Keep.** Address Validation `GetAllAsync`. Not a stub                                              |
+| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                           | Parked. Do not “finish” `RouteAssignments`                                                          |
+| —     | Generate also assign roster keys                                                      | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only |
 
-- [ ] **Route schedule smoke (AM Special Needs):** Assignment **Schedule** opens `RouteScheduleWindow` (published `RouteStop` clocks, not `DriverScheduleView`). Title from `DisplayNameFor`, clocks `ScheduledArrival`/`ScheduledDeparture` (not `EstimatedDuration` / UTC `Estimated*`). Re-time confirms before overwrite; Print = `RouteSummaryPdfRenderer` PdfGrid. Report = `ExportRouteSheetCommand`; Print Map = `PrintRouteSheetCommand` (map-embedded sheet). Assignment **Drive Path** + Route Management Drive Path skip empty copies (guest 2026-09-17: `Copy of Route 174632` then SN Bus 5 refreshed). Route Management **Print Schedule** uses PdfGrid preview (no `print` verb). Stops grid binds `PublishedArrivalText`. Testhost: `RouteScheduleViewModelTests` + `RouteAssignmentViewTests` + `RouteManagementViewModelTests`. Live: quit Debug, rebuild this branch, Bus 5 AM — 14 stops in clock order.
+- [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
-- [ ] **Schedule sheet formatting (re-print after rebuild):** Helvetica Standard was collapsing spaces; renderer now uses Arial TTF. Stop column prefers roster / `StudentId=` names over `Home pickup` place kinds; Riders is matched count. Session label is `Special Needs`. Live: quit Debug, rebuild, Print Bus 5 AM again.
+- [ ] **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route** on a plotted student pin. Testhost `MapToolbarSmokeTests` (3 passed, 2026-09-17) covers both commands. Live proof still needs `Scripts\run-map-diag-smoke.cmd` on the VM desktop + `Scripts/score-map-logs.ps1`. Do not SSH `Start-Process`. **Do not treat the 2026-09-18 guest log as a new map-tile failure.** Startup **Dashboard** is an owned window that covers the dock — close it before toolbar clicks.
 
-- [ ] **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route** on a plotted student pin. Testhost `MapToolbarSmokeTests` (3 passed, 2026-09-17) covers both commands. Live proof still needs `Scripts\run-map-diag-smoke.cmd` on the VM desktop + `Scripts/score-map-logs.ps1`. Do not SSH `Start-Process`.
+- [ ] **Student form map (live):** Edit student → **View on Map** / **Adjust pin** opens `StudentHomePinWindow` (not District Map behind the modal). Gold = validated address, blue = pickup. Testhost `StudentFormViewOnMap_UsesPickupThenHomePlotRule` already asserts the wiring. Confirm after rebuild on the VM.
 
-- [ ] **Student form map (live):** Edit student → **View on Map** / **Adjust pin** now opens the home-pin window (not District Map behind the modal). Gold = validated address, blue = pickup. Confirm after rebuild on the VM.
+Do **not** explode `MainWindow.xaml.cs` / `StudentsViewModel.cs`. Button a11y audit is `ButtonAccessibilityAudit`. Ribbon **Route Assignment** opens Route Management (blocks the dock) — clerk Schedule/Add Stop is dock **Route Assignments**.
 
-Optional:
-
-- [ ] Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
-
-Do **not** explode `MainWindow.xaml.cs` / `StudentsViewModel.cs`. Button a11y audit is `ButtonAccessibilityAudit`. Ribbon click handlers stay on the shell.
-
-Parked hygiene (from PR #92 audit; not this pass):
+Parked (not ship-blocking) — hops 1–3 ribbon and hygiene (from PR #92 audit; not this pass):
 
 - [x] **AddressService DI:** Retired `AddressService`. Grid validate uses Google Maps / geocode only (`IAddressValidationService`); format-only is not success.
-- [ ] **IStudentScheduleService:** registered in `AddDataServices`, no consumer. Wire a clerk surface or drop the registration.
-- [ ] **Fleet chrome filenames:** persist type is `Bus`; `VehicleForm` / `VehiclesView` / `AssignVehicleCommand` / SQL `Vehicles` are leftover names. Rename UI/SQL in a dedicated pass — do not add a `Vehicle` entity.
+- [ ] Parked (not ship-blocking) Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
+- [ ] Parked (not ship-blocking) **IStudentScheduleService:** registered in `AddDataServices`, no consumer. Wire a clerk surface or drop the registration.
+- [ ] Parked (not ship-blocking) **Fleet chrome filenames:** persist type is `Bus`; `VehicleForm` / `VehiclesView` / `AssignVehicleCommand` / SQL `Vehicles` are leftover names. Rename UI/SQL in a dedicated pass — do not add a `Vehicle` entity.
 
 ### Maps coupling checklist (harden / test)
 
 Lightly coupled surfaces that must stay Google-only:
 
-| Coupling          | Harden                                                                                                                                                            | Test                                                    |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys                                                             | Capability log; session create 200 without quota header |
-| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM)                                                                                        | `MapViewTests` + `LogTileHealth` after 2s               |
-| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap` + `MapMarkerHost` (no XAML `Markers=` / `MarkerTemplateSelector=`) | XAML asserts; form Loaded bootstrap; `MapViewTests`     |
-| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor`                                                                                                                        | Settings recenter unit + live smoke                     |
-| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product                                                                                    | Do not copy probe OSM into WPF views                    |
+| Coupling          | Harden                                                                                                                                                            | Test                                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Secrets → options | `GOOGLE_MAPS_API_KEY` set; leave `GCP_BILLING_PROJECT` / `GoogleMaps:QuotaProject` empty for API keys                                                             | Capability log; session create 200 without quota header                                                        |
+| Bootstrap order   | No UrlTemplate until Google session; Bing placeholder (not Syncfusion OSM)                                                                                        | `MapViewTests` + `LogTileHealth` after 2s                                                                      |
+| Three SfMap hosts | District Map + school pick + stop pick share `GoogleMapTilesImageryLayer` + `MapTileBootstrap` + `MapMarkerHost` (no XAML `Markers=` / `MarkerTemplateSelector=`) | XAML asserts; form Loaded bootstrap; `MapViewTests`                                                            |
+| Settings → camera | Depot/bbox via `IDistrictSettingsAccessor` (boot overlay from `%AppData%/BusBuddy/user-settings.json`; Settings Save flushes SfTextBoxExt)                        | Testhost Settings persist + live: Save barn → restart → capability `DepotLat` + `DistrictSource=user-settings` |
+| Probe quarantine  | `Tools/SfMapTileProbe` may use OSM for Syncfusion isolation only — not product                                                                                    | Do not copy probe OSM into WPF views                                                                           |
 
 After map path stabilizes: incremental `/code-review` or `/check-work` on tile + settings coupling.
 
@@ -97,23 +95,24 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 **After hops (not during proof):**
 
 - [x] Windows test pass for WPF Students suites (`./Scripts/utm-wpf-test.sh`) — 2026-09-09 guest: **27/27 passed** (StudentsList/ViewModel/FormSave/View + PostgresConnectionResolver + DestinationService)
-- [ ] Optional Hop 1 UI click on VM: Students → Add School (same `DestinationService.AddSchoolAsync` as DbPrep) — only if you want ribbon confirmation beyond Core+Postgres. Pull `logs/ui-diagnostics-*.log` after the session.
-- [ ] Optional Hop 2 UI click on VM: Students → Add Student with school + Maps validate (same `IStudentService.AddStudentAsync` as DbPrep)
-- [ ] Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
+- [ ] Parked (not ship-blocking) Optional Hop 1 UI click on VM: Students → Add School (same `DestinationService.AddSchoolAsync` as DbPrep) — only if you want ribbon confirmation beyond Core+Postgres. Pull `logs/ui-diagnostics-*.log` after the session.
+- [ ] Parked (not ship-blocking) Optional Hop 2 UI click on VM: Students → Add Student with school + Maps validate (same `IStudentService.AddStudentAsync` as DbPrep)
+- [ ] Parked (not ship-blocking) Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
 - [x] Optional Hop 4 UI: Assign Vehicle/Driver — testhost `AssignVehicleCommand_UsesSelectedBusId` / `AssignDriverCommand_UsesSelectedDriverId` (same `RouteService.Assign*ToRouteAsync`). Live ribbon click still optional.
 - [x] Optional Hop 5 UI: Route Management Generate Schedule — testhost `GenerateScheduleCommand_PersistsScheduleRow` (same `IScheduleService.AddScheduleAsync`). Live ribbon click still optional.
-- [ ] Route FK follow-up — **phase 1 done, leftover writers wrap RouteService, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` added and backfilled; `IStudentService.GetStudentsByRouteAsync(int)` is the keyed roster read (name overload unique-resolves or returns empty); name-assign and `IDriverService.AssignDriverToRouteAsync` call `RouteService.Assign*`. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
+- [ ] Parked (not ship-blocking) Route FK follow-up — **phase 1 done, leftover writers wrap RouteService, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` added and backfilled; `IStudentService.GetStudentsByRouteAsync(int)` is the keyed roster read (name overload unique-resolves or returns empty); name-assign and `IDriverService.AssignDriverToRouteAsync` call `RouteService.Assign*`. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
 
 ---
 
 ## Map / Settings (P1)
 
 - [x] **Settings VM:** save depot lat/lng + bbox → Serilog district write → District Map recenters (not US-centroid fallback) (see Done log)
-- [x] **District Map VM:** Zoom In/Out/Center/Reset + county fit + HOME/PK captions at zoom≥12 (see Done log)
+- [x] **District Map VM re-smoke:** Zoom In/Out/Center/Reset + county fit + HOME/PK captions at zoom≥12 (see Done log 2026-09-09 VM + 2026-09-17 Debug relaunch / harvest)
 - [x] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0` (see Done log 2026-09-10)
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
 - [x] Windows VM env: `GOOGLE_MAPS_API_KEY` set; `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` unset (`QuotaSource=none`) (see Done log 2026-09-17)
+- [x] **District camera on boot:** Settings Save persists depot/bbox into `%AppData%/BusBuddy/user-settings.json`. Live 2026-09-18: Save 10:53 `District write DepotLat=38.0872` then relaunch 10:58 `DistrictSource=user-settings HasDepotKey=true`. Testhost: `SettingsViewModelTests` persist + Places-apply-not-wiped. `MapDiagnostics=0(env)` is the smoke-off override, not a missing camera.
 
 ---
 
@@ -125,6 +124,41 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-09-20 — Action-items listing catch-up
+
+- Closed **District camera on boot** (live 2026-09-18 relaunch). Added **District Map VM re-smoke** `[x]` so the project-done marker matches the 09-10 / 09-17 harvest.
+- Recorded PR **#65 merged**. Schedule/Print stays in the 09-18 Done log (not Now).
+- Prefixed hops 1–3 UI, Route FK string-drop, `IStudentScheduleService`, and fleet filenames with **Parked (not ship-blocking)**.
+- Landed the uncommitted 09-18 guest remediations in git. Next live work: District Map Export/Move.
+
+### 2026-09-18 — AM Special Needs Schedule smoke + sheet reprint (queue #1)
+
+- **Close criteria:** 14 published clocks in order + PdfGrid preview (no print verb).
+- **Launch:** quit Debug pid leftover, guest Debug rebuild, `launch` pid 1408 session 1 (`UtmLaunchWpf.ps1`). Testhost `RouteScheduleViewModelTests` + `RouteAssignmentViewTests` + `RouteManagementViewModelTests` + `RouteManagementViewTests`: **30 passed**, 0 failed.
+- **Live (11:19 guest):** closed covering startup **Dashboard** owned window, dock **Route Assignments**, **Schedule** on AM Special Needs Bus 5. `RouteScheduleWindow` BindingErrors=0. `Opened route schedule DisplayName=AM Special Needs Bus 5 Stops=14 FirstLast=07:30 → 07:43 Clocks=07:30 … 07:43`. Print opened `PdfPreviewWindow` (`PDF loaded into internal viewer`, `Grid=PdfGrid Preview=true Verb=none`, 63765 bytes). Did not click Re-time (testhost covers confirm-before-overwrite) or Print PDF.
+- **Sheet formatting (same pass):** Session label `Special Needs`; stop column used roster names over `Home pickup`; rider counts matched. Rebuild + Print was the formatting live step. Renderer already uses Arial TTF (`PdfSheetFonts`), not Helvetica Standard.
+- **Score:** `Scripts/score-route-schedule-logs.ps1` exit 0.
+- **Evidence:** `artifacts/utm-runtime-logs-20260918T182107Z` (`Debug-logs/logs/application20260918.log`, `ui-diagnostics-20260918.log`). UIA stayed on the guest (`%TEMP%\busbuddy-uia-schedule.log`) — not copied (roster names).
+- **Next (as of 2026-09-20 listing):** land uncommitted tree, then District Map Export/Move leftover clicks.
+
+### 2026-09-18 — Guest log remediations (tiles unchanged)
+
+- **Postgres pin:** `DatabaseProvider` JSON default is Postgres. Live `Host=` connection wins. Leftover `Azure` from `keys/.env` is skipped (`EnvFileLoader` + `utm_run_in_vm.ps1`). User env pinned after `.env` load (`Set-BusBuddyPostgresProvider`) and in `Scripts/UtmLaunchWpf.ps1`. Testhost: `ResolveProvider_*` + `LoadIntoEnvironment_SkipsLeftoverAzureProvider`.
+- **Route stop DC:** `RouteStopEditDialogViewModel` + `BindViewModel` on window and `StopAddressBox` after theme and on Loaded, before `ShowDialog`. Testhost: `PlacesAddressSurfaceTests` + `RouteStopEditDialogViewModelTests`.
+- **Settings → capability:** Save flushes SfTextBoxExt (`CaptureViewFields`) then `WriteToUserAsync`. Boot overlay runs before `RuntimeCapabilityLogger` (`DistrictSource` / `HasDepotKey`). Testhost: `SettingsViewModelTests` persist + Places-apply-not-wiped. Live 10:53 write + 10:58 relaunch: `DepotLat=38.0872` `DistrictSource=user-settings` `HasDepotKey=true`.
+- **TripEvent empty combo:** Origin / Driver / Bus hide when lists are empty (`HasOrigins` / `HasAssignableDrivers` / `HasAssignableVehicles`). Trip Board loads lists before `ShowDialog`. Probe skips `Visibility.Collapsed`. Testhost: `TripEventEditDialogViewModelTests` + `ActivityOperationalSurfaceTests`.
+- **Guest testhost 2026-09-18:** **53 passed**, 0 failed (`TripEventEditDialog*` + `ActivityOperationalSurface` + `EnvFileLoader` + `ConfigurationTests` + `UiRuntimeLogging` + `PlacesAddressSurface` + `RouteStopEditDialogViewModel` + `SettingsViewModel` + `PostgresConnectionResolver`).
+- **Not this log:** Generate-0 roster keys and District Map leftover clicks stay in Now. No new map-tile failure (`QuotaSource=none` / `WithSource` from 2026-09-17 still stand).
+
+### 2026-09-18 — Live UIA harvest (Debug pid 10068 / relaunch 8872)
+
+- **Launch:** `./Scripts/utm-dev-bridge.sh launch` then `schtasks /IT` `Scripts/utm-log-harvest-mouse.ps1` (session 1). Postgres `busbuddy-3-postgres-1` healthy. Did not click Generate Routes or Map Export/Move.
+- **Postgres:** Capability `DatabaseProvider=Postgres` `PostgresEndpoint=192.168.64.1:5432` at 10:45:31 and 10:58:03. Morning 10:25 `Azure` line is the pre-pin leftover, not this rebuild.
+- **Settings:** Modal `ShowDialog` must close before other ribbon clicks. Save at 10:53:06 `District write DepotLat=38.0872 DepotLon=-102.6208`. Relaunch `--no-sync --no-build` 10:58:03 `Applied persisted … HasDepotKey=true` then `DistrictSource=user-settings`.
+- **Add Stop:** Ribbon Automation Name `Route Assignment` opens **Route Management** (blocks the dock). Use dock `Route Assignments` then `Add Stop`. 10:56:07 `RouteStopEditDialog` + nested `PlacesAddressBox` DataContext=`RouteStopEditDialogViewModel` BindingErrors=0. Cancelled (did not persist Stop 15).
+- **New trip:** Timeline → Open trip board → New trip. `Trip origin` hidden (empty origins). Driver/Bus present. Probe still reports 2 empty unnamed `ComboBoxAdv` (Purpose/Sport catalogs), not Origin/Driver/Bus. `PlacesAddressBox` DC=`TripEventEditDialogViewModel`.
+- **Logs:** `artifacts/utm-runtime-logs-20260918T175433Z`, `…T175730Z`, `…T175822Z` (`Debug-logs/logs/application20260918.log`). UIA: `%TEMP%\busbuddy-uia-harvest-5696.log` + `6372.log`.
 
 ### 2026-09-17 — Live District Map harvest (PID 11296, 12:00 guest)
 

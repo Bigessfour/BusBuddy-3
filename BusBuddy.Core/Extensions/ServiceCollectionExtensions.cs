@@ -8,6 +8,7 @@ using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -55,7 +56,7 @@ namespace BusBuddy.Core.Extensions
                 }
                 else
                 {
-                    optionsBuilder.UseInMemoryDatabase("BusBuddyDb");
+                    optionsBuilder.UseBusBuddyPostgres(connectionString);
                 }
 
                 return new BusBuddyDbContext(optionsBuilder.Options);
@@ -111,7 +112,7 @@ namespace BusBuddy.Core.Extensions
             services.AddGoogleMapsOptions(configuration);
             services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                 configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
-            services.AddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
+            services.TryAddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
                 BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
             services.AddSingleton(sp =>
             {

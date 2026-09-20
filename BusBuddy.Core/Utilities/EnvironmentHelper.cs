@@ -79,9 +79,23 @@ namespace BusBuddy.Core.Utilities
         /// <returns>True if using LocalDB, false otherwise</returns>
         public static bool IsUsingLocalDb(IConfiguration? configuration = null)
         {
-            var provider = configuration?["DatabaseProvider"] ?? "LocalDB";
+            var provider = GetDatabaseProvider(configuration);
             return provider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase) ||
                    provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Effective provider. Default is Postgres — see
+        /// <see cref="PostgresConnectionResolver.ResolveProvider"/>.
+        /// </summary>
+        public static string GetDatabaseProvider(IConfiguration? configuration = null)
+        {
+            var declared = configuration?["DatabaseProvider"]
+                ?? Environment.GetEnvironmentVariable("DatabaseProvider");
+            var connection = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION")
+                ?? configuration?.GetConnectionString("DefaultConnection")
+                ?? configuration?.GetConnectionString("PostgresConnection");
+            return PostgresConnectionResolver.ResolveProvider(declared, connection);
         }
 
         /// <summary>
@@ -89,7 +103,7 @@ namespace BusBuddy.Core.Utilities
         /// </summary>
         public static bool IsUsingPostgres(IConfiguration? configuration = null)
         {
-            var provider = configuration?["DatabaseProvider"] ?? "LocalDB";
+            var provider = GetDatabaseProvider(configuration);
             return provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
                    provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase);
         }
@@ -101,7 +115,7 @@ namespace BusBuddy.Core.Utilities
         /// <returns>True if using SQLite, false otherwise</returns>
         public static bool IsUsingSqlite(IConfiguration? configuration = null)
         {
-            var provider = configuration?["DatabaseProvider"] ?? "LocalDB";
+            var provider = GetDatabaseProvider(configuration);
             return provider.Equals("Local", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -136,18 +150,17 @@ namespace BusBuddy.Core.Utilities
             // Expand any ${ENV_VAR} placeholders
             var expanded = ExpandEnvironmentPlaceholders(raw);
 
-            // If placeholders remain unresolved, fall back to LocalDB for local/dev usage.
             if (!string.IsNullOrWhiteSpace(expanded) && expanded.Contains("${"))
             {
-                try
+                if (IsUsingPostgres(configuration))
                 {
-                    Logger?.Warning("Connection string contains unresolved placeholders. Falling back to LocalDB for reliability.");
+                    Logger?.Warning("Connection string contains unresolved placeholders. Using local Docker Postgres.");
+                    return "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Timeout=5";
                 }
-                catch { /* logging is best-effort here */ }
 
-                var localDbFallback = configuration.GetConnectionString("LocalConnection")
+                Logger?.Warning("Connection string contains unresolved placeholders. Falling back to LocalDB.");
+                return configuration.GetConnectionString("LocalConnection")
                     ?? "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
-                return localDbFallback;
             }
 
             return expanded;

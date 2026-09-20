@@ -43,6 +43,24 @@ public class RouteAssignmentViewTests
     }
 
     [Test]
+    public void ViewSchedule_LogsPublishedClocksAndOpensPdfGridPreview()
+    {
+        var schedule = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.Schedule.cs");
+        Assert.That(schedule, Does.Contain("Opened route schedule"));
+        Assert.That(schedule, Does.Contain("Clocks={Clocks}"));
+        Assert.That(schedule, Does.Contain("PrintSelectedRouteSheetPreview"));
+        Assert.That(schedule, Does.Contain("preview: true"));
+        Assert.That(schedule, Does.Contain("new RouteScheduleWindow"));
+        Assert.That(schedule, Does.Not.Contain("new DriverScheduleView"));
+
+        var reports = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.Reports.cs");
+        Assert.That(reports, Does.Contain("new PdfPreviewWindow("));
+        Assert.That(reports, Does.Contain("Grid=PdfGrid"));
+        Assert.That(reports, Does.Contain("Verb=none"));
+        Assert.That(reports, Does.Not.Contain("UseShellExecute"));
+    }
+
+    [Test]
     public void RouteAssignmentViewXaml_SeparatesPickersFromLabeledButtonRibbon()
     {
         var xaml = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
