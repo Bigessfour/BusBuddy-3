@@ -1,3 +1,4 @@
+using System;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Tests.WPF;
@@ -30,6 +31,11 @@ public class ActivityOperationalSurfaceTests
         Assert.That(xaml, Does.Contain("Click=\"TripBoardButton_Click\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding TimelineEvents}\""));
+        Assert.That(xaml, Does.Contain("AllowFiltering=\"False\""));
+        Assert.That(xaml, Does.Not.Contain("ElementName=ItemsPresenter"));
+        Assert.That(xaml, Does.Not.Contain("ElementName=PanelPresenter"));
+        Assert.That(xaml, Does.Not.Contain("<syncfusion:ComboBoxAdv"));
+        Assert.That(xaml, Does.Contain("DisplayMemberPath=\"DisplayName\""));
         Assert.That(xaml, Does.Not.Contain("ShortDateTime"));
         Assert.That(xaml, Does.Contain("Pattern=\"CustomPattern\""));
         Assert.That(xaml, Does.Contain("CustomPattern=\"MM/dd/yyyy h:mm tt\""));
@@ -71,6 +77,13 @@ public class ActivityOperationalSurfaceTests
         var dialogVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
         Assert.That(dialogVm, Does.Contain("ITripReasonCatalog"));
         Assert.That(dialogVm, Does.Contain("never sets RouteId"));
+        Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasOrigins"));
+        Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasAssignableDrivers"));
+        Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasAssignableVehicles"));
+        var boardVm = XamlViewFile.Read("ViewModels/Activity/ActivityManagementViewModel.cs");
+        Assert.That(
+            boardVm.IndexOf("await editor.LoadAvailableDataAsync()", StringComparison.Ordinal),
+            Is.LessThan(boardVm.IndexOf("new TripEventEditDialog(editor)", StringComparison.Ordinal)));
     }
 
     [Test]

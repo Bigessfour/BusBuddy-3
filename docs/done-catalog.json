@@ -50,7 +50,7 @@
         "GuardianService",
         "IGuardianService"
       ],
-      "reason": "docs/clerk-path.md: tables exist; FamilyService is not in DI; not the clerk spine. Keep until a Spec-Kit feature or a drop migration."
+      "reason": "docs/clerk-path.md: tables exist; FamilyService and GuardianService are in DI; no clerk UI. Keep until a Spec-Kit family feature or a drop migration."
     },
     {
       "id": "dead-aiinsights",

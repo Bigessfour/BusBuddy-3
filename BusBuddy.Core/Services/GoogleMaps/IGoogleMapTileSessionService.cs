@@ -2,7 +2,7 @@ using BusBuddy.Core.Mapping;
 
 namespace BusBuddy.Core.Services.GoogleMaps;
 
-/// <summary>Map Tiles API session used by the district imagery layer <c>UrlTemplate</c> / <c>GetUri</c>.</summary>
+/// <summary>Map Tiles API session used by the district imagery layer <c>UrlTemplate</c>.</summary>
 public sealed record GoogleMapTileSession(
     string MapType,
     string SessionToken,

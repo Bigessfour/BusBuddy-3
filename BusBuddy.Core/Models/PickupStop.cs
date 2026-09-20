@@ -76,3 +76,49 @@ public static class PickupStopTypes
 
     public static IReadOnlyList<string> All { get; } = [Corner, Intersection];
 }
+
+/// <summary>
+/// Short clerk label for a catalog stop. Watermarks like "Oak and 4th" are examples only —
+/// this builds the name from a Places street, formatted address, or reverse geocode.
+/// </summary>
+public static class CatalogStopName
+{
+    public const int MaxLength = 100;
+
+    public static string? Suggest(string? street, string? formattedAddress)
+    {
+        var suggested = FirstLine(street) ?? FirstLine(formattedAddress);
+        if (string.IsNullOrWhiteSpace(suggested))
+        {
+            return null;
+        }
+
+        return suggested.Length <= MaxLength ? suggested : suggested[..MaxLength].Trim();
+    }
+
+    private static string? FirstLine(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var parts = value.Split(',')
+            .Select(part => part.Trim())
+            .Where(part => part.Length > 0)
+            .ToList();
+        if (parts.Count == 0)
+        {
+            return null;
+        }
+
+        if (parts[^1].Equals("USA", StringComparison.OrdinalIgnoreCase)
+            || parts[^1].Equals("United States", StringComparison.OrdinalIgnoreCase)
+            || parts[^1].Equals("US", StringComparison.OrdinalIgnoreCase))
+        {
+            parts.RemoveAt(parts.Count - 1);
+        }
+
+        return parts.Count == 0 ? null : parts[0];
+    }
+}

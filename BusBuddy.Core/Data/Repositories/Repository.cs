@@ -1,5 +1,4 @@
 using BusBuddy.Core.Data.Interfaces;
-using BusBuddy.Core.Models.Base;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -25,8 +24,7 @@ public class Repository<T> : IRepository<T> where T : class
         Context = context ?? throw new ArgumentNullException(nameof(context));
         UserContextService = userContextService ?? throw new ArgumentNullException(nameof(userContextService));
         DbSet = Context.Set<T>();
-        _supportsSoftDelete = typeof(BaseEntity).IsAssignableFrom(typeof(T)) ||
-                             typeof(T).GetProperty("Active")?.PropertyType == typeof(bool);
+        _supportsSoftDelete = typeof(T).GetProperty("Active")?.PropertyType == typeof(bool);
     }
 
     #region Async Query Operations
@@ -39,13 +37,6 @@ public class Repository<T> : IRepository<T> where T : class
 
             if (entity != null && _supportsSoftDelete)
             {
-                // Check if entity is soft deleted using reflection
-                if (entity is BaseEntity baseEntity && baseEntity.IsDeleted)
-                {
-                    return null; // Entity is soft deleted
-                }
-
-                // Check Active property for Student/Driver entities
                 var activeProperty = typeof(T).GetProperty("Active");
                 if (activeProperty?.PropertyType == typeof(bool))
                 {
@@ -72,13 +63,6 @@ public class Repository<T> : IRepository<T> where T : class
 
         if (entity != null && _supportsSoftDelete)
         {
-            // Check if entity is soft deleted using reflection
-            if (entity is BaseEntity baseEntity && baseEntity.IsDeleted)
-            {
-                return null; // Entity is soft deleted
-            }
-
-            // Check Active property for Student/Driver entities
             var activeProperty = typeof(T).GetProperty("Active");
             if (activeProperty?.PropertyType == typeof(bool))
             {
@@ -99,28 +83,7 @@ public class Repository<T> : IRepository<T> where T : class
         try
         {
             // Create a query with appropriate filters
-            IQueryable<T> query = DbSet.AsNoTracking(); // Use AsNoTracking for better concurrency
-
-            if (_supportsSoftDelete)
-            {
-                // Handle BaseEntity pattern (IsDeleted property)
-                if (typeof(BaseEntity).IsAssignableFrom(typeof(T)))
-                {
-                    query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-                }
-                // Handle Student/Driver pattern (Active property)
-                else if (typeof(T).GetProperty("Active")?.PropertyType == typeof(bool))
-                {
-                    // Create expression: e => ((T)e).Active == true
-                    var parameter = Expression.Parameter(typeof(T), "e");
-                    var property = Expression.Property(parameter, "Active");
-                    var constant = Expression.Constant(true);
-                    var equal = Expression.Equal(property, constant);
-                    var lambda = Expression.Lambda<Func<T, bool>>(equal, parameter);
-
-                    query = query.Where(lambda);
-                }
-            }
+            IQueryable<T> query = QueryNoTracking();
 
             // Materialize the query to avoid context sharing issues
             var result = await query.ToListAsync();
@@ -141,10 +104,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.ToListAsync();
     }
@@ -153,10 +112,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.FirstOrDefaultAsync();
     }
@@ -165,10 +120,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.AnyAsync();
     }
@@ -177,10 +128,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.CountAsync();
     }
@@ -189,10 +136,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.CountAsync();
     }
@@ -215,10 +158,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return query;
     }
@@ -232,10 +171,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return query.ToList();
     }
@@ -244,10 +179,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return query.FirstOrDefault();
     }
@@ -256,10 +187,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return query.Any();
     }
@@ -268,10 +195,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return query.Count();
     }
@@ -280,10 +203,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(expression);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return query.Count();
     }
@@ -420,16 +339,7 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual void SoftDelete(T entity)
     {
-        // Handle BaseEntity pattern (IsDeleted property)
-        if (entity is BaseEntity baseEntity)
-        {
-            baseEntity.IsDeleted = true;
-            SetAuditFields(entity, isUpdate: true);
-            DbSet.Update(entity);
-            return;
-        }
-
-        // Handle Student/Driver pattern (Active property)
+        // Per-aggregate Active (Student/Driver); no shared BaseEntity.IsDeleted.
         var activeProperty = typeof(T).GetProperty("Active");
         if (activeProperty != null && activeProperty.PropertyType == typeof(bool))
         {
@@ -476,14 +386,6 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual void Restore(T entity)
     {
-        // Handle BaseEntity pattern (IsDeleted property)
-        if (entity is BaseEntity baseEntity)
-        {
-            baseEntity.IsDeleted = false;
-            SetAuditFields(entity, isUpdate: true);
-            DbSet.Update(entity);
-            return;
-        }
 
         // Handle Student/Driver pattern (Active property)
         var activeProperty = typeof(T).GetProperty("Active");
@@ -506,10 +408,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         var totalCount = await query.CountAsync();
         var items = await query
@@ -528,10 +426,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         if (filter != null)
         {
@@ -561,25 +455,12 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
+        if (_supportsSoftDelete && typeof(T).GetProperty("Active")?.PropertyType == typeof(bool))
         {
-            // Handle BaseEntity pattern (IsDeleted property)
-            if (typeof(BaseEntity).IsAssignableFrom(typeof(T)))
-            {
-                query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-            }
-            // Handle Student/Driver pattern (Active property)
-            else if (typeof(T).GetProperty("Active")?.PropertyType == typeof(bool))
-            {
-                // Create expression: e => ((T)e).Active == true
-                var parameter = Expression.Parameter(typeof(T), "e");
-                var property = Expression.Property(parameter, "Active");
-                var constant = Expression.Constant(true);
-                var equal = Expression.Equal(property, constant);
-                var lambda = Expression.Lambda<Func<T, bool>>(equal, parameter);
-
-                query = query.Where(lambda);
-            }
+            var parameter = Expression.Parameter(typeof(T), "e");
+            var property = Expression.Property(parameter, "Active");
+            var equal = Expression.Equal(property, Expression.Constant(true));
+            query = query.Where(Expression.Lambda<Func<T, bool>>(equal, parameter));
         }
 
         return query;
@@ -589,25 +470,12 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.AsNoTracking();
 
-        if (_supportsSoftDelete)
+        if (_supportsSoftDelete && typeof(T).GetProperty("Active")?.PropertyType == typeof(bool))
         {
-            // Handle BaseEntity pattern (IsDeleted property)
-            if (typeof(BaseEntity).IsAssignableFrom(typeof(T)))
-            {
-                query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-            }
-            // Handle Student/Driver pattern (Active property)
-            else if (typeof(T).GetProperty("Active")?.PropertyType == typeof(bool))
-            {
-                // Create expression: e => ((T)e).Active == true
-                var parameter = Expression.Parameter(typeof(T), "e");
-                var property = Expression.Property(parameter, "Active");
-                var constant = Expression.Constant(true);
-                var equal = Expression.Equal(property, constant);
-                var lambda = Expression.Lambda<Func<T, bool>>(equal, parameter);
-
-                query = query.Where(lambda);
-            }
+            var parameter = Expression.Parameter(typeof(T), "e");
+            var property = Expression.Property(parameter, "Active");
+            var equal = Expression.Equal(property, Expression.Constant(true));
+            query = query.Where(Expression.Lambda<Func<T, bool>>(equal, parameter));
         }
 
         return query;
@@ -617,10 +485,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet;
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.Select(selector).ToListAsync();
     }
@@ -631,10 +495,6 @@ public class Repository<T> : IRepository<T> where T : class
     {
         IQueryable<T> query = DbSet.Where(filter);
 
-        if (_supportsSoftDelete)
-        {
-            query = query.Where(e => !((BaseEntity)(object)e).IsDeleted);
-        }
 
         return await query.Select(selector).ToListAsync();
     }
@@ -648,24 +508,7 @@ public class Repository<T> : IRepository<T> where T : class
         var currentUser = GetCurrentUser();
         var currentTime = DateTime.UtcNow;
 
-        // Handle BaseEntity pattern
-        if (entity is BaseEntity baseEntity)
-        {
-            if (!isUpdate)
-            {
-                baseEntity.CreatedDate = currentTime;
-                baseEntity.CreatedBy = currentUser;
-            }
-            else
-            {
-                baseEntity.UpdatedDate = currentTime;
-                baseEntity.UpdatedBy = currentUser;
-            }
-            baseEntity.OnSaving();
-            return;
-        }
-
-        // Handle Student/Driver pattern (audit fields as separate properties)
+        // Per-aggregate audit fields when present (Student/Driver).
         var entityType = typeof(T);
 
         if (!isUpdate)

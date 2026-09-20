@@ -8,6 +8,8 @@ using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -37,7 +39,7 @@ namespace BusBuddy.Core.Extensions
                 }
 
                 var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(configuration);
-                var databaseProvider = configuration["DatabaseProvider"] ?? "LocalDB";
+                var databaseProvider = EnvironmentHelper.GetDatabaseProvider(configuration);
                 if (databaseProvider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase) ||
                     databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
                 {
@@ -54,14 +56,13 @@ namespace BusBuddy.Core.Extensions
                 }
                 else
                 {
-                    optionsBuilder.UseInMemoryDatabase("BusBuddyDb");
+                    optionsBuilder.UseBusBuddyPostgres(connectionString);
                 }
 
                 return new BusBuddyDbContext(optionsBuilder.Options);
             });
 
             services.AddSingleton<IBusBuddyDbContextFactory>(sp => new BusBuddyDbContextFactory(sp));
-            services.AddScoped<IVehicleRepository, BusBuddy.Core.Data.Repositories.VehicleRepository>();
             services.AddScoped<IActivityRepository, BusBuddy.Core.Data.Repositories.ActivityRepository>();
             services.AddScoped<IBusRepository, BusBuddy.Core.Data.Repositories.BusRepository>();
             services.AddScoped<IDriverRepository, BusBuddy.Core.Data.Repositories.DriverRepository>();
@@ -86,6 +87,14 @@ namespace BusBuddy.Core.Extensions
             services.AddSingleton<PdfReportService>();
             services.AddScoped<IOperationalReportService, OperationalReportService>();
             services.AddScoped<IStudentService, StudentService>();
+            services.AddScoped<IFamilyService>(sp =>
+                new FamilyService(
+                    sp.GetRequiredService<BusBuddyDbContext>(),
+                    sp.GetService<Serilog.ILogger>() ?? Serilog.Log.ForContext<FamilyService>()));
+            services.AddScoped<IGuardianService>(sp =>
+                new GuardianService(
+                    sp.GetRequiredService<BusBuddyDbContext>(),
+                    sp.GetService<Serilog.ILogger>() ?? Serilog.Log.ForContext<GuardianService>()));
             services.AddScoped<IDestinationService, DestinationService>();
             services.AddScoped<IPickupStopService, PickupStopService>();
             services.AddScoped<IStudentSchoolTransferService, StudentSchoolTransferService>();
@@ -103,7 +112,7 @@ namespace BusBuddy.Core.Extensions
             services.AddGoogleMapsOptions(configuration);
             services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                 configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
-            services.AddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
+            services.TryAddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
                 BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
             services.AddSingleton(sp =>
             {
@@ -163,7 +172,6 @@ namespace BusBuddy.Core.Extensions
 
             services.AddScoped<IAddressValidationService>(sp =>
                 new AddressValidationService(
-                    sp.GetRequiredService<IUnitOfWork>(),
                     sp.GetService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>()));
             services.AddScoped<IActivityLogService>(sp =>
                 new ActivityLogService(

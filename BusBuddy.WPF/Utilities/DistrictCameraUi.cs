@@ -46,4 +46,30 @@ internal static class DistrictCameraUi
             ?? CurrentSettings();
         return DistrictMapAnchor.ResolveCamera(settings, schoolLat, schoolLon);
     }
+
+    /// <summary>District Map Home: depot/bbox before the first school pin.</summary>
+    public static async Task<(double Latitude, double Longitude, int ZoomLevel)> ResolveHomeAsync(
+        IServiceProvider? services,
+        RoutingDistrictSettings? settingsOverride = null)
+    {
+        double? schoolLat = null;
+        double? schoolLon = null;
+        var dest = services?.GetService<IDestinationService>();
+        if (dest is not null)
+        {
+            var school = (await dest.GetActiveSchoolsAsync().ConfigureAwait(false))
+                .FirstOrDefault(s => s.HasGpsCoordinates);
+            if (school is not null)
+            {
+                schoolLat = (double)school.Latitude!;
+                schoolLon = (double)school.Longitude!;
+            }
+        }
+
+        var settings = settingsOverride
+            ?? services?.GetService<IDistrictSettingsAccessor>()?.Current
+            ?? services?.GetService<IOptions<RoutingDistrictSettings>>()?.Value
+            ?? CurrentSettings();
+        return DistrictMapAnchor.ResolveHomeCamera(settings, schoolLat, schoolLon);
+    }
 }

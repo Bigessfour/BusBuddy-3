@@ -84,6 +84,54 @@ public class LocationContractTests
             (decimal)MapDefaults.UnconfiguredLongitude), Is.False);
         Assert.That(LocationCoordinate.IsValidated(38.0872m, -102.6208m), Is.True);
         Assert.That(LocationTypes.ValidationStatus(false), Is.EqualTo("needs validation"));
+        Assert.That(LocationCoordinate.IsPlotPrecision("PREMISE"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("SUB_PREMISE"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("PREMISE_PROXIMITY"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("ROOFTOP"), Is.True);
+        Assert.That(LocationCoordinate.IsPlotPrecision("RANGE_INTERPOLATED"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("OTHER"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("ROUTE"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("APPROXIMATE"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision("GEOMETRIC_CENTER"), Is.False);
+        Assert.That(LocationCoordinate.IsPlotPrecision(null), Is.False);
+    }
+
+    [Test]
+    public void LocationCoordinate_TryInterpretLatLon_AcceptsEitherSyncfusionPair()
+    {
+        Assert.That(
+            LocationCoordinate.TryInterpretLatLon(-102.6208, 38.0872, out var latFromClick, out var lonFromClick),
+            Is.True);
+        Assert.That(latFromClick, Is.EqualTo(38.0872).Within(0.0001));
+        Assert.That(lonFromClick, Is.EqualTo(-102.6208).Within(0.0001));
+
+        Assert.That(
+            LocationCoordinate.TryInterpretLatLon(38.0872, -102.6208, out var latFromCenter, out var lonFromCenter),
+            Is.True);
+        Assert.That(latFromCenter, Is.EqualTo(38.0872).Within(0.0001));
+        Assert.That(lonFromCenter, Is.EqualTo(-102.6208).Within(0.0001));
+
+        Assert.That(LocationCoordinate.TryInterpretLatLon(0, 0, out _, out _), Is.False);
+        Assert.That(
+            LocationCoordinate.TryInterpretLatLon(
+                MapDefaults.UnconfiguredLatitude,
+                MapDefaults.UnconfiguredLongitude,
+                out _,
+                out _),
+            Is.False);
+    }
+
+    [Test]
+    public void CatalogStopName_SuggestsFirstStreetLine()
+    {
+        Assert.That(
+            CatalogStopName.Suggest("Oak & 4th", "Oak & 4th, Wiley, CO 81092, USA"),
+            Is.EqualTo("Oak & 4th"));
+        Assert.That(
+            CatalogStopName.Suggest(null, "Oak Ave & 4th St, Wiley, CO 81092, USA"),
+            Is.EqualTo("Oak Ave & 4th St"));
+        Assert.That(CatalogStopName.Suggest(null, null), Is.Null);
+        Assert.That(CatalogStopName.Suggest("  ", ""), Is.Null);
     }
 
     [Test]

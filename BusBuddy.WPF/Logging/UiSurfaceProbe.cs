@@ -53,18 +53,31 @@ public static class UiSurfaceProbe
             && ns.Equals("BusBuddy.WPF.Controls", StringComparison.Ordinal);
     }
 
+    public static bool IsDialogSurface(Type? type)
+    {
+        var name = type?.Name;
+        return !string.IsNullOrEmpty(name)
+            && name.Contains("Dialog", StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Chrome hosts (VehicleForm → VehiclesView → VehicleManagementView) and document windows
-    /// (PdfPreviewWindow) load with a null DataContext by design. Warn only when a feature
-    /// UserControl has neither its own nor a descendant view-model.
+    /// (PdfPreviewWindow) load with a null DataContext by design. Feature dialogs and UserControls
+    /// with neither their own nor a descendant view-model are a miswire.
     /// </summary>
     public static LogEventLevel ClassifyDataContextLevel(
         object? dataContext,
         bool descendantHasDataContext,
         bool isWindow,
-        bool isEmbeddedControl = false)
+        bool isEmbeddedControl = false,
+        bool isDialog = false)
     {
-        if (dataContext is not null || descendantHasDataContext || isWindow || isEmbeddedControl)
+        if (dataContext is not null || descendantHasDataContext || isEmbeddedControl)
+        {
+            return LogEventLevel.Information;
+        }
+
+        if (isWindow && !isDialog)
         {
             return LogEventLevel.Information;
         }
@@ -141,7 +154,8 @@ public static class UiSurfaceProbe
             root.DataContext,
             HasDescendantDataContext(root),
             root is Window,
-            IsEmbeddedControl(root.GetType()));
+            IsEmbeddedControl(root.GetType()),
+            IsDialogSurface(root.GetType()));
         UiDiagnosticsLog.Write(
             Logger,
             level,
@@ -217,6 +231,11 @@ public static class UiSurfaceProbe
 
         if (current is FrameworkElement fe)
         {
+            if (fe.Visibility == Visibility.Collapsed)
+            {
+                return;
+            }
+
             CollectElementFindings(fe, warnings, emptySources);
         }
 

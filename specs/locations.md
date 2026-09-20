@@ -10,7 +10,8 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 
 - MUST classify every location with exactly one type: `School`, `PickupStop`, `StudentHome`, `Depot`, `Maintenance`, `Fuel`, `TripDestination`.
 - MUST persist a validated street address plus lat/lng before a location can be a route waypoint, map pin, or trip origin/destination.
-- MUST use Google Address Validation + Geocoding as the source of coordinates. Clerks do not type lat/lng as truth.
+- MUST use Google Address Validation as the source of “this address exists,” and that result’s `geocode.location` for the pin. Clerks do not type lat/lng as truth. Places Autocomplete fills the form; it does not place the pin.
+- MUST plot only building-level geocodes (`geocodeGranularity` PREMISE / SUB_PREMISE / PREMISE_PROXIMITY) with a confirmed street. Unconfirmed `route`/`street_number`, or a geocode whose `placeTypes` are only locality/political, is city-level and is not a pin. ROUTE and OTHER are not pins. Geocoding fallback (when Address Validation is 403) may pin ROOFTOP `street_address` / `premise` only — not RANGE_INTERPOLATED, APPROXIMATE, or locality.
 - MUST treat district-owned facilities (`School`, `Depot`, `Maintenance`, `Fuel`, published `PickupStop`) as stable for the school year by default.
 - MUST allow `StudentHome` to change mid-year (family move). Keep the student; replace or version the home location.
 - MUST NOT use an unvalidated address as a map pin (no 0,0, no US centroid, no “close enough” guess).
@@ -53,11 +54,11 @@ Do not store student names on a location. Homes point _from_ the student record.
 
 - Clerk records a place on a location form. Save is incomplete until Address Validation + geocode succeed.
 - Clerk can add, edit, or remove a school campus from Student Management. Edit covers name, address, GPS, and bell times. Unused campuses may be deleted; campuses still referenced by students, transfers, activities, or trips are retired (`Active=false`) instead of deleted.
-- Failed validation stays editable and is not plotted.
+- Failed validation stays editable and is not plotted. The clerk message must start with **Rejected**, say **no map pin**, and name the next step (correct house number/street, or pick a Google suggestion, then click Validate Address). Do not use “needs validation” as the only signal on the Validate result — that phrase is the saved-record incomplete badge, not a next action.
 - District Map plots schools, catalog stops, and geocoded student homes. Depots may plot as operational markers.
 - Route builder adds locations as ordered stops; those stops become Google Routes waypoints.
 - Substitute drivers use the same published locations and times. Do not give them a shadow set of “unofficial” pins.
-- Mid-year new catalog stop: new `PickupStop`, validate, then clerk attaches students and updates the route version.
+- Mid-year new catalog stop: new `PickupStop`, validate, then clerk attaches students and updates the route version. The student form may **hint** that several Home pickups sit near each other; it must not publish the stop for the clerk.
 - Mid-year student move: new or updated `StudentHome`, validate, re-attach student; do not silently move the old pin.
 
 ## Pickup and drop-off use

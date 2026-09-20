@@ -41,15 +41,14 @@
                 Padding="4">
             <Grid>
                 <utils:DistrictSfMap x:Name="HomePickMap"
-                            ZoomLevel="{Binding MapZoomLevel}"
                             EnableZoom="True"
                             EnablePan="True"
-                            MouseLeftButtonUp="HomePickMap_MouseLeftButtonUp"
+                            PreviewMouseLeftButtonDown="HomePickMap_MouseLeftButtonDown"
+                            PreviewMouseLeftButtonUp="HomePickMap_MouseLeftButtonUp"
                             AutomationProperties.Name="Home pickup location map">
                     <utils:DistrictSfMap.Layers>
                         <utils:GoogleMapTilesImageryLayer x:Name="HomePickLayer"
-                                           LayerType="Bing"
-                                           Center="{Binding MapCenter}"/>
+                                           LayerType="Bing"/>
                     </utils:DistrictSfMap.Layers>
                 </utils:DistrictSfMap>
                 <Border x:Name="HomePickAttribution"

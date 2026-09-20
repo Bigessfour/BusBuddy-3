@@ -16,6 +16,8 @@ public partial class StudentHomePinWindow : ChromelessWindow
     private static readonly ILogger Logger = Log.ForContext<StudentHomePinWindow>();
     private readonly StudentHomePinViewModel _vm;
     private MapMarkerHost.RetryScheduler? _markerRetry;
+    private Point? _pickMouseDown;
+    private bool _cameraApplied;
 
     public StudentHomePinWindow(StudentHomePinViewModel viewModel)
     {
@@ -25,7 +27,6 @@ public partial class StudentHomePinWindow : ChromelessWindow
         DataContext = _vm;
 
         _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
-        HomePickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -60,20 +61,31 @@ public partial class StudentHomePinWindow : ChromelessWindow
                         HomePickMap,
                         App.ServiceProvider).ConfigureAwait(true);
                 }
-
-                HomePickLayer.Center = _vm.MapCenter;
-                HomePickMap.ZoomLevel = (int)_vm.MapZoomLevel;
             }
 
-            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
-            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
+            _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.ContextIdle);
         };
     }
 
     private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
 
-    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+    private void TryApplyCameraThenMarkers()
+    {
+        if (!_cameraApplied)
+        {
+            if (!MapCameraHost.TryApply(HomePickMap, HomePickLayer, _vm.MapCenter, (int)_vm.MapZoomLevel))
+            {
+                ArmMarkerRetry();
+                return;
+            }
+
+            _cameraApplied = true;
+        }
+
+        AssignPickMarkers();
+    }
 
     private void AssignPickMarkers()
     {
@@ -83,11 +95,37 @@ public partial class StudentHomePinWindow : ChromelessWindow
             return;
         }
 
+        ArmMarkerRetry();
+    }
+
+    private void ArmMarkerRetry()
+    {
         _markerRetry ??= new MapMarkerHost.RetryScheduler(
             Dispatcher,
-            () => MapMarkerHost.TryAssignAndLayout(HomePickMap, HomePickLayer, _vm.MapMarkers),
+            () =>
+            {
+                if (!_cameraApplied)
+                {
+                    if (!MapCameraHost.TryApply(HomePickMap, HomePickLayer, _vm.MapCenter, (int)_vm.MapZoomLevel))
+                    {
+                        return false;
+                    }
+
+                    _cameraApplied = true;
+                }
+
+                return MapMarkerHost.TryAssignAndLayout(HomePickMap, HomePickLayer, _vm.MapMarkers);
+            },
             retries => Logger.Warning("Home pick markers still pending after {Retries} host retries", retries));
         _markerRetry.Arm();
+    }
+
+    private void HomePickMap_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (HomePickLayer is not null)
+        {
+            _pickMouseDown = e.GetPosition(HomePickLayer);
+        }
     }
 
     private void HomePickMap_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -99,19 +137,15 @@ public partial class StudentHomePinWindow : ChromelessWindow
                 return;
             }
 
-            var pos = e.GetPosition(HomePickMap);
-            var geo = HomePickLayer.GetLatLonFromPoint(pos);
-            var lon = geo.X;
-            var lat = geo.Y;
-            if (lat is < -90 or > 90 || lon is < -180 or > 180)
+            var up = e.GetPosition(HomePickLayer);
+            var down = _pickMouseDown ?? up;
+            _pickMouseDown = null;
+            if (!MapCameraHost.TryReadClick(HomePickLayer, down, up, out var lat, out var lon))
             {
-                Logger.Warning("Ignored out-of-range home pick Lat={Lat} Lon={Lon}", lat, lon);
                 return;
             }
 
             _vm.ApplyMapClick(lat, lon);
-            HomePickLayer.Center = new Point(lat, lon);
-            e.Handled = true;
         }
         catch (Exception ex)
         {
@@ -122,7 +156,6 @@ public partial class StudentHomePinWindow : ChromelessWindow
     protected override void OnClosed(EventArgs e)
     {
         _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
-        HomePickMap.SizeChanged -= OnPickMapSizeChanged;
         _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);

@@ -59,4 +59,31 @@ public class DistrictSettingsAccessorTests
         Assert.That(lon, Is.EqualTo(-102.70).Within(0.0001));
         Assert.That(DistrictDepot.TryGetCoordinates(accessor.Current, out _, out _), Is.False);
     }
+
+    [Test]
+    public async Task OverlayFromUserSettings_ReadsNumericJsonCoords()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"busbuddy-district-num-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(path, """{"DistrictDepotLatitude":38.0866,"DistrictDepotLongitude":-102.6201}""");
+            var loaded = new UserSettingsService(path);
+            await loaded.LoadSettingsAsync();
+
+            var accessor = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings()));
+            accessor.OverlayFromUserSettings(loaded);
+
+            Assert.That(DistrictDepot.TryGetCoordinates(accessor.Current, out var lat, out var lon), Is.True);
+            Assert.That(lat, Is.EqualTo(38.0866).Within(0.0001));
+            Assert.That(lon, Is.EqualTo(-102.6201).Within(0.0001));
+            Assert.That(loaded.FilePath, Is.EqualTo(path));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
 }

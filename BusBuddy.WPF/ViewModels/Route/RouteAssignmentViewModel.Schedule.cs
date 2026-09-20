@@ -67,8 +67,8 @@ public partial class RouteAssignmentViewModel
     }
 
     /// <summary>
-    /// Sequential timing from StartTimeString. Arrival = cursor; departure = arrival + dwell
-    /// (StopDuration minutes, default 2). Persisted via UpdateRouteStopsTimingAsync.
+    /// Clerk Time Route: published clocks from StartTimeString plus drive-path travel
+    /// (route EstimatedDuration), not a dwell-only staircase.
     /// </summary>
     private async Task TimeRouteStopsAsync()
     {
@@ -99,21 +99,22 @@ public partial class RouteAssignmentViewModel
                 OnPropertyChanged(nameof(StartTimeString));
             }
 
-            // Face clock on a UTC-labelled calendar day — matches Route.Date / timestamptz converters.
-            var runDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
-            var stampedUtc = DateTime.UtcNow;
-            var cursor = startOfRun;
+            var stamp = DateTime.UtcNow;
+            var plan = PublishedStopClockPlanner.Apply(
+                RouteStops,
+                startOfRun,
+                SelectedRoute.EstimatedDuration,
+                stamp);
 
-            foreach (var stop in RouteStops.OrderBy(s => s.StopOrder))
-            {
-                var dwell = TimeSpan.FromMinutes(stop.StopDuration > 0 ? stop.StopDuration : 2);
-                stop.ScheduledArrival = cursor;
-                stop.ScheduledDeparture = cursor + dwell;
-                stop.EstimatedArrivalTime = runDate + stop.ScheduledArrival;
-                stop.EstimatedDepartureTime = runDate + stop.ScheduledDeparture;
-                stop.UpdatedDate = stampedUtc;
-                cursor = stop.ScheduledDeparture;
-            }
+            Logger.Information(
+                "Published clocks RouteId={RouteId} Stops={Stops} TravelMinutes={Travel} DwellMinutes={Dwell} Source={Source} First={First} Last={Last}",
+                SelectedRoute.RouteId,
+                plan.StopCount,
+                plan.TravelMinutes,
+                plan.DwellMinutes,
+                plan.TravelSource,
+                plan.FirstArrival,
+                plan.LastArrival);
 
             var persistResult = await _routeService.UpdateRouteStopsTimingAsync(SelectedRoute.RouteId, RouteStops);
             if (!persistResult.IsSuccess)
@@ -123,7 +124,9 @@ public partial class RouteAssignmentViewModel
             }
             else
             {
-                StatusMessage = $"Timing updated for {RouteStops.Count} stops (Start {StartTimeString})";
+                var lastClock = plan.LastArrival.ToString(@"hh\:mm", CultureInfo.InvariantCulture);
+                StatusMessage =
+                    $"Timing updated for {plan.StopCount} stops (Start {StartTimeString}, {plan.TravelMinutes} min travel via {plan.TravelSource}, last {lastClock})";
             }
 
             OnPropertyChanged(nameof(RouteStops));
@@ -181,11 +184,15 @@ public partial class RouteAssignmentViewModel
         var window = new RouteScheduleWindow(scheduleVm);
         DialogOwner.Assign(window);
         window.Show();
+        var clocks = string.Join(
+            " ",
+            scheduleVm.Sheet.Stops.Select(s => s.Arrival));
         Logger.Information(
-            "Opened route schedule DisplayName={DisplayName} Stops={Stops} FirstLast={FirstLast}",
+            "Opened route schedule DisplayName={DisplayName} Stops={Stops} FirstLast={FirstLast} Clocks={Clocks}",
             scheduleVm.Sheet.DisplayName,
             scheduleVm.Sheet.Stops.Count,
-            scheduleVm.FirstLastClockText);
+            scheduleVm.FirstLastClockText,
+            clocks);
         StatusMessage = RouteStops.Count == 0
             ? RouteScheduleViewModel.EmptyStopsHint
             : $"Schedule: {scheduleVm.Sheet.DisplayName} {scheduleVm.FirstLastClockText}";
@@ -197,6 +204,18 @@ public partial class RouteAssignmentViewModel
             "Re-time route",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+    /// <summary>
+    /// Structural stop edits keep existing clocks. Clerk Time Route / schedule Re-time publishes new ones.
+    /// </summary>
+    private void MarkPublishedClocksStale(string reason)
+    {
+        Logger.Information(
+            "Published clocks left unchanged after {Reason} RouteId={RouteId}; Time Route to republish",
+            reason,
+            SelectedRoute?.RouteId);
+        StatusMessage = $"{StatusMessage} Times unchanged — Time Route to republish.";
+    }
 
     private async Task<RouteSummarySheet?> ReTimeSelectedRouteSheetAsync()
     {

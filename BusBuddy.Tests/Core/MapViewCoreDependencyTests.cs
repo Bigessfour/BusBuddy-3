@@ -22,6 +22,9 @@ public class MapViewCoreDependencyTests
         Assert.That(
             type.GetMethods().Any(m => m.Name == nameof(IMapsGeoService.GeocodeAsync)),
             Is.True);
+        Assert.That(
+            type.GetMethods().Any(m => m.Name == nameof(IMapsGeoService.ReverseGeocodeAsync)),
+            Is.True);
     }
 
     [Test]

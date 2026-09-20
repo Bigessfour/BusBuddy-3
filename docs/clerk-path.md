@@ -69,7 +69,7 @@ Hop **4b (2026-09-09):** keep `Route.AM*` / `PM*` as the year-default bus/driver
 
 Do not wire these until the hops above are proved. Do not drop tables without a migration decision.
 
-- `Families` / `Guardians` (`FamilyService` is not in DI)
+- `Families` / `Guardians` (`FamilyService` / `GuardianService` are in DI; no clerk UI yet)
 - `AIInsights`
 - `SchoolCalendar`
 - `VehiclesViewModel` sample loader (unused; `VehiclesView` is excluded from compile)

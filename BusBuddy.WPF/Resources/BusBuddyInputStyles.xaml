@@ -91,4 +91,37 @@
         <Setter Property="TextAlignment" Value="Left"/>
         <Setter Property="CaretBrush" Value="{DynamicResource BusBuddy.Brush.Text.Accent}"/>
     </Style>
+
+    <Style TargetType="syncfusion:DoubleTextBox" BasedOn="{StaticResource {x:Type syncfusion:DoubleTextBox}}">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="MinHeight" Value="42"/>
+        <Setter Property="Padding" Value="12,0,10,0"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+        <Setter Property="Foreground" Value="{DynamicResource FormInputForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource FormInputBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource FormInputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style TargetType="syncfusion:SfTimePicker" BasedOn="{StaticResource {x:Type syncfusion:SfTimePicker}}">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="MinHeight" Value="42"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FormatString" Value="HH:mm"/>
+        <Setter Property="SelectorFormatString" Value="HH:mm"/>
+        <Setter Property="Foreground" Value="{DynamicResource FormInputForegroundBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource FormInputBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource FormInputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="AccentBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+    </Style>
 </ResourceDictionary>

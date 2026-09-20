@@ -60,7 +60,7 @@ Microsoft documents `-EncodedCommand` as a Base64 **UTF-16LE** command string ([
 
 ### 5. Interactive GUI launch (`schtasks /IT`)
 
-A key-authenticated SSH session is not the logged-in desktop. [schtasks /IT](https://learn.microsoft.com/windows-server/administration/windows-commands/schtasks-create) runs the task only when `/RU` is logged on. `launch` creates `BusBuddyUtmLaunch` as `Macbook` with `/IT /RL LIMITED` and `/Run`s it against `C:\dev\BusBuddy-3\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.exe`.
+A key-authenticated SSH session is not the logged-in desktop. [schtasks /IT](https://learn.microsoft.com/windows-server/administration/windows-commands/schtasks-create) runs the task only when `/RU` is logged on. `launch` rebuilds on the guest (`bin/` is not synced from Mac), stops any leftover `BusBuddy.WPF` process, then creates `BusBuddyUtmLaunch` as `Macbook` with `/IT /RL LIMITED` and `/Run`s [`Scripts/UtmLaunchWpf.ps1`](../Scripts/UtmLaunchWpf.ps1). That script starts the exe with the correct working directory (raw `/TR` on the exe inherits `System32`, and a later `launch` can report success from a window-less leftover process).
 
 ## BusBuddy-only rules (not in vendor docs)
 

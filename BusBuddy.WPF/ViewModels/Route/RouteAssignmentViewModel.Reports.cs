@@ -122,6 +122,11 @@ public partial class RouteAssignmentViewModel
                 var previewWindow = new PdfPreviewWindow(pdfBytes, GetRouteDisplayName(SelectedRoute) + " schedule");
                 DialogOwner.Assign(previewWindow);
                 previewWindow.Show();
+                Logger.Information(
+                    "Route schedule preview DisplayName={DisplayName} Stops={Stops} Size={SizeBytes} bytes Grid=PdfGrid Preview=true Verb=none",
+                    GetRouteDisplayName(SelectedRoute),
+                    RouteStops.Count,
+                    pdfBytes.Length);
                 StatusMessage = $"Schedule preview: {RouteStops.Count} stops, {AssignedStudentCount} students";
                 return;
             }

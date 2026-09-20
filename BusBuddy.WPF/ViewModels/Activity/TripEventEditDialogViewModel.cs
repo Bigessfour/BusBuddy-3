@@ -454,6 +454,23 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
             HasValidationErrors = true;
             ListsReady = true;
         }
+        finally
+        {
+            NotifyAssignableLists();
+        }
+    }
+
+    public bool HasOrigins => Origins.Count > 0;
+
+    public bool HasAssignableDrivers => AvailableDrivers.Count > 0;
+
+    public bool HasAssignableVehicles => AvailableVehicles.Count > 0;
+
+    private void NotifyAssignableLists()
+    {
+        OnPropertyChanged(nameof(HasOrigins));
+        OnPropertyChanged(nameof(HasAssignableDrivers));
+        OnPropertyChanged(nameof(HasAssignableVehicles));
     }
 
     public bool ValidateTrip()

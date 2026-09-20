@@ -38,6 +38,12 @@ public sealed class RoutingDistrictSettings
     /// <summary>Max walk distance (meters) when suggesting a catalog pickup stop from a geocoded home.</summary>
     public double StopSuggestMaxMeters { get; set; } = 400;
 
+    /// <summary>
+    /// Minimum Home pickups (including the student on the form) inside
+    /// <see cref="StopSuggestMaxMeters"/> before hinting the clerk to publish a catalog stop.
+    /// </summary>
+    public int CatalogStopClusterMinHomes { get; set; } = 2;
+
     /// <summary>Bus barn / depot display name (not a school destination).</summary>
     public string? DepotName { get; set; }
 

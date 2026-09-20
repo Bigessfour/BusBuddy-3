@@ -7,11 +7,14 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Student;
@@ -23,6 +26,9 @@ public sealed class PickupStopFormViewModel : BaseViewModel
     public const int DefaultMapZoom = MapDefaults.SchoolZoomLevel;
 
     private readonly IPickupStopService _pickupStops;
+    private readonly IStudentService? _students;
+    private readonly IMapsGeoService? _mapsGeo;
+    private int _nameSuggestSeq;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -36,9 +42,14 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
     public event EventHandler<bool?>? RequestClose;
 
-    public PickupStopFormViewModel(IPickupStopService pickupStops)
+    public PickupStopFormViewModel(
+        IPickupStopService pickupStops,
+        IStudentService? students = null,
+        IMapsGeoService? mapsGeo = null)
     {
         _pickupStops = pickupStops ?? throw new ArgumentNullException(nameof(pickupStops));
+        _students = students;
+        _mapsGeo = mapsGeo;
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
@@ -124,6 +135,9 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
     public int? SavedPickupStopId { get; private set; }
 
+    /// <summary>Count of Home pickups near the new stop. Clerk assigns them; we do not auto-attach.</summary>
+    public string NearbyHomePickupHint { get; private set; } = string.Empty;
+
     public string ValidationMessage
     {
         get => _validationMessage;
@@ -144,6 +158,76 @@ public sealed class PickupStopFormViewModel : BaseViewModel
         RefreshMapMarker();
         MapHint = $"Pinned {LatitudeValue:F5}, {LongitudeValue:F5} — shared stop for students on this block.";
         Logger.Information("Pickup stop map pick Lat={Lat} Lon={Lon}", LatitudeValue, LongitudeValue);
+    }
+
+    /// <summary>
+    /// Fills Name (and Address if empty) from Places or a reverse-geocoded pin. Does not overwrite a typed name.
+    /// </summary>
+    public bool TrySuggestName(string? street, string? formattedAddress)
+    {
+        if (!string.IsNullOrWhiteSpace(Name))
+        {
+            return false;
+        }
+
+        var suggested = CatalogStopName.Suggest(street, formattedAddress);
+        if (string.IsNullOrWhiteSpace(suggested))
+        {
+            return false;
+        }
+
+        Name = suggested;
+        if (string.IsNullOrWhiteSpace(Address) && !string.IsNullOrWhiteSpace(formattedAddress))
+        {
+            Address = formattedAddress.Trim();
+        }
+
+        RefreshMapMarker();
+        Logger.Information("Pickup stop name suggested Name={Name}", Name);
+        return true;
+    }
+
+    public async Task SuggestNameFromMapAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Name) || !HasMapPick)
+        {
+            return;
+        }
+
+        if (TrySuggestName(null, Address))
+        {
+            return;
+        }
+
+        var maps = _mapsGeo ?? App.ServiceProvider?.GetService<IMapsGeoService>();
+        if (maps is null || !maps.IsConfigured)
+        {
+            return;
+        }
+
+        var seq = System.Threading.Interlocked.Increment(ref _nameSuggestSeq);
+        MapsGeocodeResult result;
+        try
+        {
+            result = await maps.ReverseGeocodeAsync(LatitudeValue, LongitudeValue).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Pickup stop reverse geocode failed");
+            return;
+        }
+
+        if (seq != _nameSuggestSeq)
+        {
+            return;
+        }
+
+        if (!result.Ok)
+        {
+            return;
+        }
+
+        TrySuggestName(result.Street, result.FormattedAddress);
     }
 
     private void ClearMapPick()
@@ -171,8 +255,6 @@ public sealed class PickupStopFormViewModel : BaseViewModel
             _longitudeValue,
             label,
             MapMarkerLabels.Kind.Pickup));
-        MapCenter = new Point(_latitudeValue, _longitudeValue);
-        OnPropertyChanged(nameof(MapCenter));
     }
 
     private async Task SaveAsync()
@@ -180,7 +262,17 @@ public sealed class PickupStopFormViewModel : BaseViewModel
         ValidationMessage = string.Empty;
         if (string.IsNullOrWhiteSpace(Name))
         {
-            ValidationMessage = "Stop name is required (e.g. Oak & 4th).";
+            TrySuggestName(null, Address);
+        }
+
+        if (string.IsNullOrWhiteSpace(Name) && HasMapPick)
+        {
+            await SuggestNameFromMapAsync().ConfigureAwait(true);
+        }
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            ValidationMessage = "Stop name is required. Pin the map or pick a Google address so we can suggest one, or type a name (for example Oak & 4th).";
             return;
         }
 
@@ -201,6 +293,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
                 string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()).ConfigureAwait(true);
 
             SavedPickupStopId = stop.PickupStopId;
+            NearbyHomePickupHint = await BuildNearbyHomeHintAsync().ConfigureAwait(true);
             Logger.Information("Pickup stop saved PickupStopId={Id} Name={Name}", stop.PickupStopId, stop.Name);
             RequestClose?.Invoke(this, true);
         }
@@ -209,5 +302,22 @@ public sealed class PickupStopFormViewModel : BaseViewModel
             Logger.Warning(ex, "Pickup stop save failed");
             ValidationMessage = ex.Message;
         }
+    }
+
+    private async Task<string> BuildNearbyHomeHintAsync()
+    {
+        var students = _students ?? App.ServiceProvider?.GetService<IStudentService>();
+        if (students is null)
+        {
+            return string.Empty;
+        }
+
+        var maxMeters = DistrictCameraUi.CurrentSettings()?.StopSuggestMaxMeters ?? 400;
+        var nearby = await students.GetNearbyHomePickupStudentsAsync(
+                LatitudeValue,
+                LongitudeValue,
+                maxMeters)
+            .ConfigureAwait(true);
+        return StudentPickupHint.NewCatalogNearbyHomes(nearby?.Count ?? 0, maxMeters);
     }
 }

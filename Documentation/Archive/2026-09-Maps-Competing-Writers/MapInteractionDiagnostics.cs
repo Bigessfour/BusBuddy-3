@@ -183,13 +183,13 @@ public sealed class MapInteractionDiagnostics : IDisposable
             "Map runtime error from {Source} at zoom={Zoom} center=({Lat:F5},{Lon:F5}) google={Google}; last {Count} interactions:{NewLine}{Breadcrumbs}",
             source,
             zoom,
-            center.Y,
             center.X,
+            center.Y,
             _layer?.IsGoogleTilesActive ?? false,
             crumbs.Count,
             Environment.NewLine,
             sb.ToString());
-        _fileLogger?.Error(exception, "ERROR {Source} zoom={Zoom} center=({Lat:F5},{Lon:F5}){NewLine}{Breadcrumbs}", source, zoom, center.Y, center.X, Environment.NewLine, sb.ToString());
+        _fileLogger?.Error(exception, "ERROR {Source} zoom={Zoom} center=({Lat:F5},{Lon:F5}){NewLine}{Breadcrumbs}", source, zoom, center.X, center.Y, Environment.NewLine, sb.ToString());
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)

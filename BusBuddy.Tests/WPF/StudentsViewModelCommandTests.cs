@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services;
 using BusBuddy.WPF.ViewModels.Student;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +25,7 @@ public class StudentsViewModelCommandTests
             .UseInMemoryDatabase($"delete_can_{Guid.NewGuid():N}")
             .Options;
         using var context = new BusBuddyDbContext(options);
-        using var vm = new StudentsViewModel(context, new AddressService());
+        using var vm = new StudentsViewModel(context);
 
         vm.DeleteStudentCommand.CanExecute(null).Should().BeFalse();
 
@@ -76,7 +75,7 @@ public class StudentsViewModelCommandTests
             .UseInMemoryDatabase($"select_status_{Guid.NewGuid():N}")
             .Options;
         using var context = new BusBuddyDbContext(options);
-        using var vm = new StudentsViewModel(context, new AddressService());
+        using var vm = new StudentsViewModel(context);
 
         vm.StatusMessage = "Student deleted";
         vm.SelectedStudent = new Student
@@ -96,7 +95,7 @@ public class StudentsViewModelCommandTests
             .UseInMemoryDatabase($"route_counts_{Guid.NewGuid():N}")
             .Options;
         using var context = new BusBuddyDbContext(options);
-        using var vm = new StudentsViewModel(context, new AddressService());
+        using var vm = new StudentsViewModel(context);
 
         vm.Students.Add(new Student
         {

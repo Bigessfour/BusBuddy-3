@@ -39,7 +39,7 @@ ROOT="$(cd "$(dirname "${0}")" && pwd)"
 cd "${ROOT}"
 
 VM_NAME="Windows"
-VM_UUID="394EDB53-19DC-4E99-A325-9FCDFD0B6F62"   # fallback; name is usually sufficient
+VM_UUID="394EDB53-19DC-4E99-A325-9FCDFD0B6F62" # fallback; name is usually sufficient
 
 PFX="==>"
 
@@ -48,20 +48,20 @@ echo "${PFX} Project root: ${ROOT}"
 
 echo "${PFX} Ensuring Mac Docker Postgres is up..."
 if ! "${ROOT}/Scripts/ensure-postgres-docker.sh"; then
-  echo "ERROR: Could not start Postgres. Start Docker Desktop on the Mac, then re-run ./run-wpf.sh" >&2
-  exit 1
+	echo "ERROR: Could not start Postgres. Start Docker Desktop on the Mac, then re-run ./run-wpf.sh" >&2
+	exit 1
 fi
 
 # Cursor/PowerShell sessions often put /usr/local/share/dotnet first. That install
 # currently has only the .NET 11 preview SDK, so global.json (9.0.303 + latestMinor)
 # cannot resolve. Prefer the user-local 9.x SDK used by this repo.
 if [[ -x "${HOME}/.dotnet/dotnet" ]]; then
-  export DOTNET_ROOT="${HOME}/.dotnet"
-  export PATH="${DOTNET_ROOT}:${PATH}"
+	export DOTNET_ROOT="${HOME}/.dotnet"
+	export PATH="${DOTNET_ROOT}:${PATH}"
 fi
 if ! command -v dotnet >/dev/null 2>&1; then
-  echo "ERROR: dotnet not found. Install .NET 9 SDK (https://aka.ms/dotnet/download)." >&2
-  exit 1
+	echo "ERROR: dotnet not found. Install .NET 9 SDK (https://aka.ms/dotnet/download)." >&2
+	exit 1
 fi
 echo "${PFX} Using $(command -v dotnet)  (DOTNET_ROOT=${DOTNET_ROOT:-unset})"
 dotnet --list-sdks | sed 's/^/    /'
@@ -75,8 +75,8 @@ dotnet restore "BusBuddy.sln" -p:EnableWindowsTargeting=true --verbosity minimal
 dotnet build "BusBuddy.WPF/BusBuddy.WPF.csproj" -c Debug --no-restore -p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false /p:WarningLevel=1
 
 if [[ $? -ne 0 ]]; then
-  echo "ERROR: Preflight build failed. Fix errors above, then re-run ./run-wpf.sh" >&2
-  exit 1
+	echo "ERROR: Preflight build failed. Fix errors above, then re-run ./run-wpf.sh" >&2
+	exit 1
 fi
 echo "${PFX} Preflight build OK (WPF project compiles under the Windows TFM)."
 
@@ -87,63 +87,63 @@ echo "${PFX} Checking UTM VM status (${VM_NAME})..."
 STATUS="$(utmctl status "${VM_NAME}" 2>/dev/null || utmctl status "${VM_UUID}" 2>/dev/null || echo 'stopped')"
 echo "${PFX} Current status: ${STATUS}"
 
-if [[ "${STATUS}" == "started" || "${STATUS}" == "running" ]]; then
-  echo "${PFX} VM is already started — using the open session (no start command sent)."
+if [[ ${STATUS} == "started" || ${STATUS} == "running" ]]; then
+	echo "${PFX} VM is already started — using the open session (no start command sent)."
 else
-  echo "${PFX} Starting VM '${VM_NAME}' (will open/show the Windows desktop)..."
-  # Do NOT use --hide: user wants to see / interact with the WPF UI in the VM window.
-  if ! utmctl start "${VM_NAME}" 2>/dev/null && ! utmctl start "${VM_UUID}" 2>/dev/null; then
-    echo "Note: start command returned non-zero (this is often harmless if the VM is already in the process of starting)."
-  fi
+	echo "${PFX} Starting VM '${VM_NAME}' (will open/show the Windows desktop)..."
+	# Do NOT use --hide: user wants to see / interact with the WPF UI in the VM window.
+	if ! utmctl start "${VM_NAME}" 2>/dev/null && ! utmctl start "${VM_UUID}" 2>/dev/null; then
+		echo "Note: start command returned non-zero (this is often harmless if the VM is already in the process of starting)."
+	fi
 
-  # Poll until the VM reports a ready state ("started" or "running").
-  # First boot + user login inside Windows can easily take 45-120s.
-  echo -n "${PFX} Waiting for VM to become usable (started/running)"
-  for i in {1..120}; do
-    STATUS="$(utmctl status "${VM_NAME}" 2>/dev/null || utmctl status "${VM_UUID}" 2>/dev/null || echo 'stopped')"
-    if [[ "${STATUS}" == "started" || "${STATUS}" == "running" ]]; then
-      echo " OK (${STATUS})"
-      break
-    fi
-    echo -n "."
-    sleep 2
-  done
-  if [[ "${STATUS}" != "started" && "${STATUS}" != "running" ]]; then
-    echo ""
-    echo "VM did not report 'started' or 'running' after timeout."
-    echo "Open UTM.app, make sure the Windows desktop is visible and you are logged in, then re-run this script."
-    echo "You can also just switch to the VM and run the manual command shown at the end."
-  fi
+	# Poll until the VM reports a ready state ("started" or "running").
+	# First boot + user login inside Windows can easily take 45-120s.
+	echo -n "${PFX} Waiting for VM to become usable (started/running)"
+	for i in {1..120}; do
+		STATUS="$(utmctl status "${VM_NAME}" 2>/dev/null || utmctl status "${VM_UUID}" 2>/dev/null || echo 'stopped')"
+		if [[ ${STATUS} == "started" || ${STATUS} == "running" ]]; then
+			echo " OK (${STATUS})"
+			break
+		fi
+		echo -n "."
+		sleep 2
+	done
+	if [[ ${STATUS} != "started" && ${STATUS} != "running" ]]; then
+		echo ""
+		echo "VM did not report 'started' or 'running' after timeout."
+		echo "Open UTM.app, make sure the Windows desktop is visible and you are logged in, then re-run this script."
+		echo "You can also just switch to the VM and run the manual command shown at the end."
+	fi
 fi
 
 # Helpful host IP for when the guest needs to reach Mac-hosted Docker Postgres.
 # UTM shared network: Mac is 192.168.64.1 (stable). Fall back to en0 for bridged/other VMs.
 if ifconfig 2>/dev/null | grep -q 'inet 192.168.64.1 '; then
-  HOST_IP="192.168.64.1"
+	HOST_IP="192.168.64.1"
 else
-  HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
+	HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
 fi
 echo "${PFX} Mac host IP for VM (Postgres etc.): ${HOST_IP}   (example BUSBUDDY_CONNECTION: Host=${HOST_IP};...)"
-if [[ "${HOST_IP}" != "unknown" ]]; then
-  mkdir -p "${ROOT}/keys"
-  printf '%s\n' "${HOST_IP}" > "${ROOT}/keys/mac-host-ip.txt"
-  echo "${PFX} Wrote keys/mac-host-ip.txt for the VM launcher."
+if [[ ${HOST_IP} != "unknown" ]]; then
+	mkdir -p "${ROOT}/keys"
+	printf '%s\n' "${HOST_IP}" >"${ROOT}/keys/mac-host-ip.txt"
+	echo "${PFX} Wrote keys/mac-host-ip.txt for the VM launcher."
 fi
 
 # 3. Sync NTFS copy + launch in the logged-in Macbook session (SSH, not utmctl exec).
 BRIDGE="${ROOT}/Scripts/utm-dev-bridge.sh"
 echo "${PFX} Syncing + launching WPF via ${BRIDGE} (C:\\dev\\BusBuddy-3, interactive session)..."
-if [[ -x "${BRIDGE}" || -f "${BRIDGE}" ]]; then
-  if "${BRIDGE}" launch; then
-    echo ""
-    echo "Launched from C:\\dev\\BusBuddy-3 in the Macbook desktop session."
-    echo "The BusBuddy WPF window should appear on the Windows desktop in UTM."
-    echo "If you need guest logs on the Mac: ./Scripts/utm-dev-bridge.sh pull-logs"
-    exit 0
-  fi
-  echo "${PFX} Bridge launch failed — print manual steps (VM may still be logging in)."
+if [[ -x ${BRIDGE} || -f ${BRIDGE} ]]; then
+	if "${BRIDGE}" launch; then
+		echo ""
+		echo 'Launched from C:\dev\BusBuddy-3 in the Macbook desktop session.'
+		echo "The BusBuddy WPF window should appear on the Windows desktop in UTM."
+		echo "If you need guest logs on the Mac: ./Scripts/utm-dev-bridge.sh pull-logs"
+		exit 0
+	fi
+	echo "${PFX} Bridge launch failed — print manual steps (VM may still be logging in)."
 else
-  echo "ERROR: missing ${BRIDGE}" >&2
+	echo "ERROR: missing ${BRIDGE}" >&2
 fi
 
 # 4. Fallback: VM is up, SSH launch did not succeed.
@@ -155,8 +155,8 @@ echo "  ./Scripts/utm-dev-bridge.sh doctor"
 echo "  ./Scripts/utm-dev-bridge.sh launch"
 echo ""
 echo "  # Inside the VM, from the NTFS copy only:"
-echo "  cd C:\\dev\\BusBuddy-3"
-echo "  powershell -NoProfile -ExecutionPolicy Bypass -File .\\utm_run_in_vm.ps1"
+echo '  cd C:\dev\BusBuddy-3'
+echo '  powershell -NoProfile -ExecutionPolicy Bypass -File .\utm_run_in_vm.ps1'
 echo ""
 echo "  # First-time OpenSSH bootstrap (guest agent / utmctl exec only):"
 echo "  # Scripts/Enable-BusBuddyOpenSSH.ps1"
@@ -167,4 +167,4 @@ echo "   \$env:BUSBUDDY_CONNECTION = \"Host=${HOST_IP};Port=5432;Database=busbud
 echo ""
 echo "Done. Re-run ./run-wpf.sh after the desktop is fully up if you want another launch attempt."
 
-exit 0
+exit 1

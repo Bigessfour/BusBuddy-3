@@ -38,18 +38,6 @@ namespace BusBuddy.Core.Services.Interfaces
         Task<bool> IsDriverAvailableForActivityAsync(int driverId, DateTime activityDate, TimeSpan startTime, TimeSpan endTime);
         Task<bool> IsVehicleAvailableForActivityAsync(int vehicleId, DateTime activityDate, TimeSpan startTime, TimeSpan endTime);
 
-        // Recurring Activities
-        Task<List<Activity>> CreateRecurringActivitiesAsync(Activity baseActivity, DateTime startDate, DateTime endDate, RecurrenceType recurrenceType, int recurrenceInterval, List<DayOfWeek>? daysOfWeek = null);
-        Task<IEnumerable<Activity>> GetRecurringSeriesAsync(int activityId);
-        Task<bool> UpdateRecurringSeriesAsync(Activity updatedActivity, bool updateAll);
-        Task<bool> DeleteRecurringSeriesAsync(int activityId, bool deleteAll);
-
-        // Activity Trip Approval Workflow
-        Task<bool> SubmitActivityForApprovalAsync(int activityId);
-        Task<bool> ApproveActivityAsync(int activityId, string approvedBy);
-        Task<bool> RejectActivityAsync(int activityId, string rejectedBy, string rejectionReason);
-        Task<IEnumerable<Activity>> GetPendingApprovalActivitiesAsync();
-
         // Conflict Detection and Resolution
         Task<List<Activity>> DetectScheduleConflictsAsync(Activity newActivity);
         Task<List<string>> ValidateActivityAsync(Activity activity);

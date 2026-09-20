@@ -53,6 +53,8 @@ public class RouteManagementViewTests
         var print = assignment[start..];
         Assert.That(print, Does.Contain("new PdfPreviewWindow("));
         Assert.That(print, Does.Contain("preview.Show()"));
+        Assert.That(print, Does.Contain("Grid=PdfGrid"));
+        Assert.That(print, Does.Contain("Verb=none"));
         Assert.That(print, Does.Not.Contain("WriteSchedulePdfAsync"));
         Assert.That(print, Does.Not.Contain("RevealOrOpen"));
         var helper = XamlViewFile.Read("ViewModels/Route/RouteManagementExportHelper.cs");

@@ -13,6 +13,8 @@ namespace BusBuddy.Core.Services
         bool ShowDashboardOnStartup { get; }
         string CachedTheme { get; }
 
+        string FilePath { get; }
+
         Task<T> GetSettingAsync<T>(string key, T defaultValue = default!);
         Task SetSettingAsync<T>(string key, T value);
         bool HasKey(string key);
@@ -61,6 +63,8 @@ namespace BusBuddy.Core.Services
             Logger.Debug("UserSettingsService initialized with settings file: {SettingsFilePath}", _settingsFilePath);
         }
 
+        public string FilePath => _settingsFilePath;
+
         public bool EnableActivityLogging { get; private set; } = true;
         public bool ShowDashboardOnStartup { get; private set; } = true;
         public string CachedTheme { get; private set; } = "FluentDark";
@@ -75,7 +79,8 @@ namespace BusBuddy.Core.Services
                     {
                         if (typeof(T) == typeof(string))
                         {
-                            return Task.FromResult((T)(object)jsonElement.GetString()!);
+                            var text = ReadJsonElementString(jsonElement);
+                            return Task.FromResult((T)(object)(text ?? (defaultValue as string) ?? string.Empty));
                         }
 
                         if (typeof(T) == typeof(bool))
@@ -231,6 +236,17 @@ namespace BusBuddy.Core.Services
                 return Task.FromResult(false);
             }
         }
+
+        private static string? ReadJsonElementString(JsonElement jsonElement) =>
+            jsonElement.ValueKind switch
+            {
+                JsonValueKind.String => jsonElement.GetString(),
+                JsonValueKind.Number => jsonElement.GetRawText(),
+                JsonValueKind.True => bool.TrueString,
+                JsonValueKind.False => bool.FalseString,
+                JsonValueKind.Null => null,
+                _ => jsonElement.GetRawText()
+            };
 
         private void RefreshCachedPreferences()
         {

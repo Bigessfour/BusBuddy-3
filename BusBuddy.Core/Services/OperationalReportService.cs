@@ -99,36 +99,51 @@ namespace BusBuddy.Core.Services
             var (headers, rows, facts) = BuildTable(kind, students, routes, drivers, buses, fuel, maintenance);
             var ai = await TryCommentaryAsync(title, facts).ConfigureAwait(false);
             var isCsv = request.AsCsv || kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
-            var writeSingleRoutePdf = !isCsv
-                && request.RouteId.HasValue
-                && route is not null
+            var writeRouteSheets = !isCsv
                 && kind is OperationalReportKind.RouteSummary
                     or OperationalReportKind.DailySchedule
                     or OperationalReportKind.PrintSchedules;
-            IReadOnlyList<RouteStop> stops = Array.Empty<RouteStop>();
-            if (writeSingleRoutePdf)
+            var sheetRoutes = new List<Route>();
+            if (writeRouteSheets)
+            {
+                if (request.RouteId.HasValue)
+                {
+                    if (route is not null)
+                    {
+                        sheetRoutes.Add(route);
+                    }
+                }
+                else
+                {
+                    sheetRoutes.AddRange(routes);
+                }
+            }
+
+            var stopsByRoute = new Dictionary<int, IReadOnlyList<RouteStop>>();
+            foreach (var sheetRoute in sheetRoutes)
             {
                 try
                 {
-                    var stopsResult = await _routes.GetRouteStopsAsync(route!.RouteId).ConfigureAwait(false);
+                    var stopsResult = await _routes.GetRouteStopsAsync(sheetRoute.RouteId).ConfigureAwait(false);
                     if (stopsResult is { IsSuccess: true } && stopsResult.Value is not null)
                     {
-                        stops = stopsResult.Value.ToList();
+                        stopsByRoute[sheetRoute.RouteId] = stopsResult.Value.ToList();
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warning(ex, "Route stops unavailable for report RouteId={RouteId}", route!.RouteId);
+                    Logger.Warning(ex, "Route stops unavailable for report RouteId={RouteId}", sheetRoute.RouteId);
                 }
             }
 
             var bytes = isCsv
                 ? Encoding.UTF8.GetBytes(ToCsv(headers, rows))
-                : writeSingleRoutePdf
-                    ? BuildRouteSummaryPdf(route!, students, buses, drivers, ai.Text, stops)
+                : sheetRoutes.Count > 0
+                    ? BuildRouteSummaryPdfs(sheetRoutes, students, buses, drivers, ai.Text, stopsByRoute)
                     : _pdf.GenerateTabularReport(title, headers, rows, ai.Text);
-            var reportedRows = writeSingleRoutePdf
-                ? students.Count(s => StudentRouteAssignment.MatchesEither(s, route!))
+            var reportedRows = sheetRoutes.Count > 0
+                ? sheetRoutes.Sum(r =>
+                    stopsByRoute.TryGetValue(r.RouteId, out var routeStops) ? routeStops.Count : 0)
                 : rows.Count;
 
             var path = ResolveOutputPath(request, kind, isCsv);
@@ -141,7 +156,12 @@ namespace BusBuddy.Core.Services
             await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(false);
 
             var prefix = kind.ToString().StartsWith("Print", StringComparison.Ordinal) ? "Saved PDF for print" : "Wrote";
-            var routeNote = writeSingleRoutePdf ? $", route {route!.RouteName}" : string.Empty;
+            var routeNote = sheetRoutes.Count switch
+            {
+                0 => string.Empty,
+                1 => $", route {sheetRoutes[0].RouteName}",
+                _ => $", {sheetRoutes.Count} route sheets"
+            };
             var status = $"{prefix} {title} ({reportedRows} row(s){routeNote}, {bytes.Length} bytes) → {path}";
             Logger.Information(
                 "Operational report {Kind} written to {Path} bytes={Bytes} rows={Rows} students={Students} routes={Routes} mockAi={MockAi}",
@@ -218,6 +238,63 @@ namespace BusBuddy.Core.Services
                 new[] { "Student", "AM", "PM" },
                 assigned.Select(s => (IReadOnlyList<string>)new[] { s.StudentName, s.AMRoute ?? "", s.PMRoute ?? "" }).ToList(),
                 notes);
+        }
+
+        private byte[] BuildRouteSummaryPdfs(
+            IReadOnlyList<Route> routes,
+            IReadOnlyList<Student> students,
+            IReadOnlyList<Bus> buses,
+            IReadOnlyList<Driver> drivers,
+            string? notes,
+            IReadOnlyDictionary<int, IReadOnlyList<RouteStop>> stopsByRoute)
+        {
+            var parts = new List<byte[]>(routes.Count);
+            foreach (var sheetRoute in routes)
+            {
+                stopsByRoute.TryGetValue(sheetRoute.RouteId, out var stops);
+                parts.Add(BuildRouteSummaryPdf(sheetRoute, students, buses, drivers, notes, stops));
+            }
+
+            return ConcatenatePdfs(parts);
+        }
+
+        private static byte[] ConcatenatePdfs(IReadOnlyList<byte[]> parts)
+        {
+            if (parts.Count == 1)
+            {
+                return parts[0];
+            }
+
+            var inputs = new List<MemoryStream>(parts.Count);
+            var loadedDocs = new List<Syncfusion.Pdf.Parsing.PdfLoadedDocument>(parts.Count);
+            try
+            {
+                using var output = new Syncfusion.Pdf.PdfDocument();
+                foreach (var part in parts)
+                {
+                    var input = new MemoryStream(part);
+                    inputs.Add(input);
+                    var loaded = new Syncfusion.Pdf.Parsing.PdfLoadedDocument(input);
+                    loadedDocs.Add(loaded);
+                    output.Append(loaded);
+                }
+
+                using var stream = new MemoryStream();
+                output.Save(stream);
+                return stream.ToArray();
+            }
+            finally
+            {
+                foreach (var loaded in loadedDocs)
+                {
+                    loaded.Dispose();
+                }
+
+                foreach (var input in inputs)
+                {
+                    input.Dispose();
+                }
+            }
         }
 
         private static (IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> Rows, string Facts) BuildTable(

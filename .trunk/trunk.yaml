@@ -9,14 +9,14 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.2
+      ref: v1.11.0
       uri: https://github.com/trunk-io/plugins
 
 # Runtime versions matching BusBuddy project standards
 runtimes:
   enabled:
     - node@22.16.0 # For Prettier and other JS-based tools
-    - python@3.10.8 # For SQLFluff and other Python-based tools
+    - python@3.14.4 # For SQLFluff and other Python-based tools
 
 # Core linting and formatting configuration
 lint:
@@ -31,14 +31,25 @@ lint:
     - codespell
   enabled:
     # Security and infrastructure scanning
-    - checkov@3.2.464 # Infrastructure as code security
+    - actionlint@1.7.8
+    - bandit@1.9.4
+    - black@26.5.1
+    - grype@0.119.0
+    - hadolint@2.14.0
+    - isort@9.0.1
+    - oxipng@9.1.5
+    - pinact@4.0.0
+    - ruff@0.16.8
+    - shellcheck@0.11.0
+    - shfmt@3.13.1
+    - checkov@3.3.19 # Infrastructure as code security
     - git-diff-check # Git hygiene
-    - osv-scanner@2.2.1 # Vulnerability scanning
-    - trufflehog@3.90.5 # Secret detection
+    - osv-scanner@2.6.0 # Vulnerability scanning
+    - trufflehog@3.97.5 # Secret detection
 
     # Code formatting and quality
-    - prettier@3.6.2 # JSON, YAML formatting
-    - yamllint@1.37.1 # YAML linting
+    - prettier@3.9.8 # JSON, YAML formatting
+    - yamllint@1.38.0 # YAML linting
 
   # File path ignores for build artifacts and logs
   ignore:

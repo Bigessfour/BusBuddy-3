@@ -14,7 +14,6 @@ using BusBuddy.WPF.ViewModels.Map; // Map markers
 using BusBuddy.WPF.Utilities; // MapMarkerLabels pin kinds
 using BusBuddy.WPF.Views.Route; // RouteStopEditDialog
 using BusBuddy.WPF.Logging;
-using System.Threading; // For debounce timer
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -455,7 +454,8 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             try
             {
-                var dialog = new RouteStopEditDialog($"Stop {RouteStops.Count + 1}", string.Empty)
+                var stopVm = new RouteStopEditDialogViewModel($"Stop {RouteStops.Count + 1}", string.Empty);
+                var dialog = new RouteStopEditDialog(stopVm)
                 {
                     Owner = Application.Current?.MainWindow
                 };
@@ -490,8 +490,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(RouteStopCount));
                 StatusMessage = $"Successfully added stop '{stopName}' to {SelectedRoute.RouteName}";
                 Logger.Information("Added stop {StopName} to route {RouteName}", stopName, SelectedRoute.RouteName);
-                // Schedule auto-retime
-                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
+                MarkPublishedClocksStale("add stop");
             }
             catch (Exception ex)
             {
@@ -531,8 +530,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Information("Removed stop {StopName} from route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
 
                 SelectedRouteStop = null;
-                // Schedule auto-retime
-                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
+                MarkPublishedClocksStale("remove stop");
             }
             catch (Exception ex)
             {
@@ -581,7 +579,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteStops.Move(currentIndex, currentIndex - 1);
                 StatusMessage = $"Successfully moved stop '{SelectedRouteStop.StopName}' up";
                 Logger.Information("Moved stop {StopName} up in route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
-                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
+                MarkPublishedClocksStale("reorder stop");
             }
             catch (Exception ex)
             {
@@ -630,7 +628,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteStops.Move(currentIndex, currentIndex + 1);
                 StatusMessage = $"Successfully moved stop '{SelectedRouteStop.StopName}' down";
                 Logger.Information("Moved stop {StopName} down in route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
-                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
+                MarkPublishedClocksStale("reorder stop");
             }
             catch (Exception ex)
             {
@@ -858,26 +856,40 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         private async Task RefreshDataAsync()
         {
+            Logger.Information("Refresh Route Data started");
+            UiDiagnosticsLog.Write(
+                Logger,
+                Serilog.Events.LogEventLevel.Information,
+                "Refresh Route Data started");
+
             try
             {
-                IsLoading = true;
                 StatusMessage = "Refreshing data...";
-
                 await LoadDataFromServiceAsync();
+
+                if (StatusMessage.StartsWith("Could not load", StringComparison.Ordinal))
+                {
+                    UiDiagnosticsLog.Write(
+                        Logger,
+                        Serilog.Events.LogEventLevel.Warning,
+                        "Data refresh completed with errors Status={Status}",
+                        StatusMessage);
+                    return;
+                }
+
+                StatusMessage = $"Data refreshed successfully — {AvailableRoutes.Count} routes";
                 UiDiagnosticsLog.Write(
                     Logger,
                     Serilog.Events.LogEventLevel.Information,
-                    "Data refreshed successfully");
+                    "Data refreshed successfully Routes={RouteCount} Stops={StopCount}",
+                    AvailableRoutes.Count,
+                    RouteStops.Count);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to refresh data");
                 StatusMessage = $"Failed to refresh data: {ex.Message}";
                 MessageBox.Show($"Failed to refresh data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsLoading = false;
             }
         }
 

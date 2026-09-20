@@ -1,6 +1,7 @@
 using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
@@ -218,7 +219,10 @@ public sealed class StudentsDialogCoordinator
                 return new StudentsDialogOutcome("Pickup stop service is not available.");
             }
 
-            var vm = new PickupStopFormViewModel(stopService);
+            var vm = new PickupStopFormViewModel(
+                stopService,
+                App.ServiceProvider?.GetService<IStudentService>(),
+                App.ServiceProvider?.GetService<IMapsGeoService>());
             var form = new BusBuddy.WPF.Views.Student.PickupStopForm(vm);
             DialogOwner.Assign(form);
             if (form.ShowDialog() != true)
@@ -226,8 +230,11 @@ public sealed class StudentsDialogCoordinator
                 return StudentsDialogOutcome.None;
             }
 
+            var nearby = string.IsNullOrWhiteSpace(vm.NearbyHomePickupHint)
+                ? string.Empty
+                : " " + vm.NearbyHomePickupHint;
             return new StudentsDialogOutcome(
-                $"Pickup stop saved (Id={vm.SavedPickupStopId}). Assign it on the student form.",
+                $"Pickup stop saved (Id={vm.SavedPickupStopId}).{nearby} Assign it on the student form if this corner is a safe pickup.",
                 PickupStopCatalogChanged: true,
                 SavedCatalogId: vm.SavedPickupStopId);
         }

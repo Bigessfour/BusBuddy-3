@@ -4,7 +4,7 @@
 - Don't use Microsoft.Extensions.Logging
 - Don't write DB queries via PowerShell
 - Don't invent Syncfusion APIs; use documented patterns only
-- Don't hardcode secrets in PowerShell scripts; always use environment variables or Azure Key Vault)
+- Don't hardcode secrets in PowerShell scripts; always use environment variables)
 
 - Clean build; EF Core aligned
 - UI buttons/forms validated across Students, Drivers, Vehicles, Activities
@@ -29,26 +29,13 @@ dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 ## ⚙️ Config overlays (what to edit)
 
 - The app merges configuration at runtime (App.xaml.cs):
-    - appsettings.json (base, required)
-    - appsettings.azure.json (optional Azure/cloud overlay)
-    - Environment variables (for secrets)
-- Keep Azure-specific settings in `appsettings.azure.json`. Don’t merge into base.
+    - appsettings.json (base, required) — `DatabaseProvider` is Postgres
+    - Environment variables (for secrets and `BUSBUDDY_CONNECTION`)
 
-## 🔐 Azure SQL (default): AZ CLI + sqlcmd
+## 🔐 Postgres (default)
 
-- Policy: Use Azure CLI authentication + sqlcmd. PowerShell DB querying is deprecated.
-
-```powershell
-# Verify Azure login context
-az account show --output table
-
-# Query students (uses your Azure CLI login)
-sqlcmd -S tcp:busbuddy-server-sm2.database.windows.net,1433 `
-       -d BusBuddyDB `
-       --authentication-method ActiveDirectoryAzCli `
-       -Q "SELECT TOP 10 * FROM dbo.Students ORDER BY 1;" `
-       -W -s ","
-```
+- Mac Docker Postgres (`docker compose --profile db up -d`). Guest uses `BUSBUDDY_CONNECTION` with the Mac host IP.
+- See `Documentation/DATABASE-CONFIGURATION.md`.
 
 ## ✅ Current snapshot (Aug 10, 2025)
 
@@ -71,7 +58,7 @@ Do
 
 - Use Syncfusion controls (SfDataGrid, SfMap) with FluentDark/FluentLight themes
 - Log with Serilog only (structured logging)
-- Query Azure SQL via AZ CLI + `sqlcmd --authentication-method ActiveDirectoryAzCli`
+- Query Postgres via `BUSBUDDY_CONNECTION` / Docker, not ad-hoc PowerShell SQL
 - Follow official docs (Syncfusion WPF, .NET, EF Core)
 - Use Trunk for all formatting and linting to enforce consistency
 
@@ -90,4 +77,4 @@ Don’t
 - Syncfusion WPF docs: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
 - Syncfusion API (WPF): https://help.syncfusion.com/cr/wpf/Syncfusion.html
 - EF Core docs: https://learn.microsoft.com/ef/core/
-- Azure SQL docs: https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql
+- Postgres / EF Core: https://learn.microsoft.com/ef/core/providers/npgsql/

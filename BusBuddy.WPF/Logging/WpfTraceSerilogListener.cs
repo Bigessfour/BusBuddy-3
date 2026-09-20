@@ -89,6 +89,7 @@ public static class WpfTraceSerilogListener
         AttachSource(PresentationTraceSources.DataBindingSource, SourceLevels.Warning);
         AttachSource(PresentationTraceSources.MarkupSource, SourceLevels.Warning);
         AttachSource(PresentationTraceSources.ResourceDictionarySource, SourceLevels.Warning);
+        SuppressVendorAnimationListeners(PresentationTraceSources.AnimationSource);
 
         UiDiagnosticsLog.Write(
             Logger,
@@ -107,6 +108,25 @@ public static class WpfTraceSerilogListener
         if (_listener is not null && !source.Listeners.Contains(_listener))
         {
             source.Listeners.Add(_listener);
+        }
+
+        SuppressVendorAnimationListeners(source);
+    }
+
+    /// <summary>
+    /// app.config TextWriterTraceListener still receives PresentationTrace warnings. ComboBoxAdv
+    /// Fluent templates flood XamlDiagnostics.log and stall first open unless listeners skip them.
+    /// </summary>
+    internal static void SuppressVendorAnimationListeners(TraceSource source)
+    {
+        foreach (TraceListener listener in source.Listeners)
+        {
+            if (listener.Filter is VendorAnimationTraceFilter)
+            {
+                continue;
+            }
+
+            listener.Filter = new VendorAnimationTraceFilter(listener.Filter);
         }
     }
 
@@ -136,6 +156,40 @@ public static class WpfTraceSerilogListener
             "WPF misconfiguration{Repeat}: {Trace}",
             suffix,
             trimmed);
+    }
+
+    internal sealed class VendorAnimationTraceFilter : TraceFilter
+    {
+        private readonly TraceFilter? _inner;
+
+        public VendorAnimationTraceFilter(TraceFilter? inner)
+        {
+            _inner = inner;
+        }
+
+        public override bool ShouldTrace(
+            TraceEventCache? cache,
+            string source,
+            TraceEventType eventType,
+            int id,
+            string? formatOrMessage,
+            object?[]? args,
+            object? data1,
+            object?[]? data)
+        {
+            var message = formatOrMessage;
+            if (string.IsNullOrEmpty(message) && data1 is string dataMessage)
+            {
+                message = dataMessage;
+            }
+
+            if (!string.IsNullOrEmpty(message) && IsVendorAnimationTrace(message))
+            {
+                return false;
+            }
+
+            return _inner?.ShouldTrace(cache, source, eventType, id, formatOrMessage, args, data1, data) ?? true;
+        }
     }
 
     private sealed class SerilogTraceListener : TraceListener

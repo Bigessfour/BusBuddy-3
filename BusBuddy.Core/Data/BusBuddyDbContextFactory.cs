@@ -17,8 +17,8 @@ namespace BusBuddy.Core.Data
         private readonly IConfiguration? _configuration;
         private static readonly ILogger Logger = Log.ForContext<BusBuddyDbContextFactory>();
 
-        private const string DefaultConnectionString =
-            "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
+        private static readonly string DefaultPostgresConnection =
+            PostgresConnectionResolver.BuildConnectionString("localhost");
 
         // Parameterless constructor for design-time tooling
         public BusBuddyDbContextFactory()
@@ -64,7 +64,7 @@ namespace BusBuddy.Core.Data
             }
 
             var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(_configuration);
-            var provider = _configuration["DatabaseProvider"] ?? "LocalDB";
+            var provider = EnvironmentHelper.GetDatabaseProvider(_configuration);
 
             var configuredOptionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
             ConfigureProvider(configuredOptionsBuilder, provider, connectionString);
@@ -108,7 +108,7 @@ namespace BusBuddy.Core.Data
             }
 
             var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(_configuration);
-            var provider = _configuration["DatabaseProvider"] ?? "LocalDB";
+            var provider = EnvironmentHelper.GetDatabaseProvider(_configuration);
 
             var optionsBuilderConfigured = new DbContextOptionsBuilder<BusBuddyDbContext>();
             ConfigureProvider(optionsBuilderConfigured, provider, connectionString);
@@ -121,7 +121,7 @@ namespace BusBuddy.Core.Data
         /// <summary>
         /// Design-time creation (migrations / scaffolding). Fallback order:
         /// 1) BUSBUDDY_CONNECTION env override
-        /// 2) LocalDB default
+        /// 2) local Docker Postgres
         /// </summary>
         public BusBuddyDbContext CreateDbContext(string[] args)
         {
@@ -147,9 +147,8 @@ namespace BusBuddy.Core.Data
                 return new BusBuddyDbContext(optionsBuilder.Options);
             }
 
-            // 2. LocalDB final fallback
-            Logger.Information("Using LocalDB default fallback for design-time context");
-            optionsBuilder.UseSqlServer(DefaultConnectionString, sql => sql.EnableRetryOnFailure());
+            Logger.Information("Using local Docker Postgres for design-time context");
+            optionsBuilder.UseBusBuddyPostgres(DefaultPostgresConnection);
             return new BusBuddyDbContext(optionsBuilder.Options);
         }
 
@@ -172,7 +171,7 @@ namespace BusBuddy.Core.Data
             }
             else
             {
-                optionsBuilder.UseInMemoryDatabase("BusBuddyDb");
+                optionsBuilder.UseBusBuddyPostgres(connection);
             }
         }
     }

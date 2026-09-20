@@ -14,12 +14,10 @@ public sealed class StudentsGridAddressCoordinator
 {
     private static readonly ILogger Logger = Log.ForContext<StudentsGridAddressCoordinator>();
 
-    private readonly AddressService _addressService;
     private readonly IStudentService? _studentService;
 
-    public StudentsGridAddressCoordinator(AddressService addressService, IStudentService? studentService = null)
+    public StudentsGridAddressCoordinator(IStudentService? studentService = null)
     {
-        _addressService = addressService ?? throw new ArgumentNullException(nameof(addressService));
         _studentService = studentService;
     }
 
@@ -44,7 +42,10 @@ public sealed class StudentsGridAddressCoordinator
                 student.State,
                 student.Zip).ConfigureAwait(true);
 
-            if (maps.Ok && maps.Latitude.HasValue && maps.Longitude.HasValue)
+            if (maps.Ok
+                && LocationCoordinate.IsPlotPrecision(maps.Precision)
+                && maps.Latitude.HasValue
+                && maps.Longitude.HasValue)
             {
                 student.Latitude = (decimal)maps.Latitude.Value;
                 student.Longitude = (decimal)maps.Longitude.Value;
@@ -80,7 +81,15 @@ public sealed class StudentsGridAddressCoordinator
                 "Address validation failed for student {StudentId}: {Error}",
                 student.StudentId,
                 maps.ErrorMessage);
-            return WithStoredPinNote(student, maps.ErrorMessage ?? "Address could not be validated.");
+            student.Latitude = null;
+            student.Longitude = null;
+            student.PlaceId = null;
+            await PersistCoordinatesAsync(student).ConfigureAwait(true);
+            var failed = maps.ErrorMessage ?? "Address could not be validated.";
+            return AddressValidationPinPolicy.IsClerkRejectCopy(failed)
+                || failed.Contains(LocationCoordinate.NeedsValidation, StringComparison.OrdinalIgnoreCase)
+                ? failed
+                : $"Address validation failed: {failed}";
         }
 
         var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
@@ -105,14 +114,12 @@ public sealed class StudentsGridAddressCoordinator
             }
         }
 
-        var validation = _addressService.ValidateAddress(student.HomeAddress);
-        Logger.Information(
-            "Address validation performed for student {StudentId}: {IsValid}",
-            student.StudentId,
-            validation.IsValid);
-        return validation.IsValid
-            ? WithStoredPinNote(student, "Address format is valid (GPS unavailable)")
-            : $"Address validation failed: {validation.Error}";
+        Logger.Warning(
+            "Address not validated for student {StudentId} — Google Address Validation unavailable",
+            student.StudentId);
+        return WithStoredPinNote(
+            student,
+            "Address could not be validated. Set GOOGLE_MAPS_API_KEY or use View on Map after a successful validate.");
     }
 
     private static string WithStoredPinNote(StudentModel student, string message)

@@ -32,7 +32,6 @@ namespace BusBuddy.WPF.ViewModels.Student
         private static readonly ILogger Logger = Log.ForContext<StudentsViewModel>();
 
         private readonly IBusBuddyDbContextFactory _contextFactory;
-        private readonly AddressService _addressService;
         private readonly IStudentService? _studentService;
         private readonly StudentsGridAddressCoordinator _gridAddress;
         private readonly StudentsReferenceDataCoordinator _referenceData;
@@ -63,8 +62,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             // Fallback for XAML new StudentsViewModel(); prefer DI constructor below.
             _contextFactory = new BusBuddyDbContextFactory();
-            _addressService = new AddressService();
-            _gridAddress = new StudentsGridAddressCoordinator(_addressService);
+            _gridAddress = new StudentsGridAddressCoordinator();
             _referenceData = new StudentsReferenceDataCoordinator(_contextFactory);
             _list = new StudentsListCoordinator(_contextFactory);
             _bulkRoute = new StudentsBulkRouteCoordinator(_contextFactory);
@@ -86,16 +84,17 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         /// <summary>
         /// DI-friendly constructor — ensures we use the same DbContext factory as the rest of the app.
+        /// Marked for ActivatorUtilities so the parameterless XAML ctor and the DbContext test ctor
+        /// are not treated as equally valid when both factory and BusBuddyDbContext are registered.
         /// </summary>
+        [ActivatorUtilitiesConstructor]
         public StudentsViewModel(
             IBusBuddyDbContextFactory contextFactory,
-            IStudentService? studentService = null,
-            AddressService? addressService = null)
+            IStudentService? studentService = null)
         {
             _contextFactory = contextFactory;
             _studentService = studentService;
-            _addressService = addressService ?? new AddressService();
-            _gridAddress = new StudentsGridAddressCoordinator(_addressService, _studentService);
+            _gridAddress = new StudentsGridAddressCoordinator(_studentService);
             _referenceData = new StudentsReferenceDataCoordinator(_contextFactory);
             _list = new StudentsListCoordinator(_contextFactory, _studentService);
             _bulkRoute = new StudentsBulkRouteCoordinator(_contextFactory, _studentService);
@@ -116,14 +115,13 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Testing constructor allowing dependency injection of a DbContext and AddressService.
+        /// Testing constructor allowing dependency injection of a DbContext.
         /// </summary>
-        public StudentsViewModel(BusBuddyDbContext context, AddressService addressService)
+        public StudentsViewModel(BusBuddyDbContext context)
         {
             // Wrap provided context in a simple factory that returns the same instance without disposing in tests
             _contextFactory = new TestContextFactory(context);
-            _addressService = addressService;
-            _gridAddress = new StudentsGridAddressCoordinator(_addressService);
+            _gridAddress = new StudentsGridAddressCoordinator();
             _referenceData = new StudentsReferenceDataCoordinator(_contextFactory);
             _list = new StudentsListCoordinator(_contextFactory);
             _bulkRoute = new StudentsBulkRouteCoordinator(_contextFactory);

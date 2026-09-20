@@ -123,13 +123,15 @@
                            Style="{StaticResource SettingsHelpText}"/>
 
                 <TextBlock x:Name="DepotNameLabel" Text="Bus barn name" Style="{StaticResource SettingsFieldLabel}"/>
-                <syncfusion:SfTextBoxExt Text="{Binding DepotName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <syncfusion:SfTextBoxExt x:Name="DepotNameBox"
+                                         Text="{Binding DepotName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Watermark="Transportation Office"
                                          Style="{StaticResource SettingsFieldInput}"
                                          AutomationProperties.Name="Bus barn name"
                                          AutomationProperties.LabeledBy="{Binding ElementName=DepotNameLabel}"/>
                 <TextBlock x:Name="DepotAddressLabel" Text="Bus barn address" Style="{StaticResource SettingsFieldLabel}"/>
-                <controls:PlacesAddressBox AddressText="{Binding DepotAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <controls:PlacesAddressBox x:Name="DepotAddressBox"
+                                           AddressText="{Binding DepotAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            FieldAutomationName="Bus barn address"
                                            AddressApplied="DepotAddress_Applied"
                                            Margin="0,0,0,10"/>
@@ -147,19 +149,19 @@
                     <TextBlock x:Name="DepotCityLabel" Grid.Row="0" Grid.Column="0" Text="City" Style="{StaticResource SettingsFieldLabel}"/>
                     <TextBlock x:Name="DepotStateLabel" Grid.Row="0" Grid.Column="1" Text="State" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,8,6"/>
                     <TextBlock x:Name="DepotZipLabel" Grid.Row="0" Grid.Column="2" Text="ZIP" Style="{StaticResource SettingsFieldLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
+                    <syncfusion:SfTextBoxExt x:Name="DepotCityBox" Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
                                              Text="{Binding DepotCity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="City"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="Bus barn city"
                                              AutomationProperties.LabeledBy="{Binding ElementName=DepotCityLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1" Margin="0,0,8,10"
+                    <syncfusion:SfTextBoxExt x:Name="DepotStateBox" Grid.Row="1" Grid.Column="1" Margin="0,0,8,10"
                                              Text="{Binding DepotState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="ST"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="Bus barn state"
                                              AutomationProperties.LabeledBy="{Binding ElementName=DepotStateLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="2" Margin="0,0,0,10"
+                    <syncfusion:SfTextBoxExt x:Name="DepotZipBox" Grid.Row="1" Grid.Column="2" Margin="0,0,0,10"
                                              Text="{Binding DepotZipCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="ZIP"
                                              Height="40" Padding="8,5"
@@ -177,13 +179,13 @@
                     </Grid.RowDefinitions>
                     <TextBlock x:Name="DepotLatLabel" Grid.Row="0" Grid.Column="0" Text="Latitude" Style="{StaticResource SettingsFieldLabel}"/>
                     <TextBlock x:Name="DepotLonLabel" Grid.Row="0" Grid.Column="1" Text="Longitude" Style="{StaticResource SettingsFieldLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
+                    <syncfusion:SfTextBoxExt x:Name="DepotLatBox" Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
                                              Text="{Binding DepotLatitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="e.g. 38.0872"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="Bus barn latitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=DepotLatLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
+                    <syncfusion:SfTextBoxExt x:Name="DepotLonBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
                                              Text="{Binding DepotLongitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="e.g. -102.6208"
                                              Height="40" Padding="8,5"
@@ -207,25 +209,25 @@
                     <TextBlock x:Name="BBoxWestLabel" Grid.Row="0" Grid.Column="1" Text="West" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,6,6"/>
                     <TextBlock x:Name="BBoxNorthLabel" Grid.Row="0" Grid.Column="2" Text="North" Style="{StaticResource SettingsFieldLabel}" Margin="0,0,6,6"/>
                     <TextBlock x:Name="BBoxEastLabel" Grid.Row="0" Grid.Column="3" Text="East" Style="{StaticResource SettingsFieldLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="0" Margin="0,0,6,10"
+                    <syncfusion:SfTextBoxExt x:Name="BBoxSouthBox" Grid.Row="1" Grid.Column="0" Margin="0,0,6,10"
                                              Text="{Binding BoundingBoxMinLatText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="South lat"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="District bounding box south latitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=BBoxSouthLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1" Margin="0,0,6,10"
+                    <syncfusion:SfTextBoxExt x:Name="BBoxWestBox" Grid.Row="1" Grid.Column="1" Margin="0,0,6,10"
                                              Text="{Binding BoundingBoxMinLonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="West lon"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="District bounding box west longitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=BBoxWestLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="2" Margin="0,0,6,10"
+                    <syncfusion:SfTextBoxExt x:Name="BBoxNorthBox" Grid.Row="1" Grid.Column="2" Margin="0,0,6,10"
                                              Text="{Binding BoundingBoxMaxLatText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="North lat"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="District bounding box north latitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=BBoxNorthLabel}"/>
-                    <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="3" Margin="0,0,0,10"
+                    <syncfusion:SfTextBoxExt x:Name="BBoxEastBox" Grid.Row="1" Grid.Column="3" Margin="0,0,0,10"
                                              Text="{Binding BoundingBoxMaxLonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Watermark="East lon"
                                              Height="40" Padding="8,5"

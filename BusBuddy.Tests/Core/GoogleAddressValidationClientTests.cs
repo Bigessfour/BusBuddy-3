@@ -27,7 +27,7 @@ public class GoogleAddressValidationClientTests
         var json = """
             {
               "result": {
-                "verdict": { "addressComplete": true, "validationGranularity": "PREMISE" },
+                "verdict": { "addressComplete": true, "validationGranularity": "PREMISE", "geocodeGranularity": "PREMISE", "possibleNextAction": "ACCEPT" },
                 "address": { "formattedAddress": "100 Main St, Oakridge, CO 80000, USA" },
                 "geocode": {
                   "placeId": "ChIJtestplace",
@@ -70,6 +70,187 @@ public class GoogleAddressValidationClientTests
     }
 
     [Test]
+    public async Task ValidateAndGeocode_OtherGranularityWithCoords_IsNotOk()
+    {
+        var json = """
+            {
+              "result": {
+                "verdict": {
+                  "addressComplete": true,
+                  "validationGranularity": "OTHER",
+                  "geocodeGranularity": "OTHER",
+                  "possibleNextAction": "FIX"
+                },
+                "address": { "formattedAddress": "Lamar, CO 81052, USA" },
+                "geocode": {
+                  "placeId": "ChIJcitycenter",
+                  "location": { "latitude": 38.0872, "longitude": -102.6208 }
+                }
+              }
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("12200 BenVerified Ave", "Lamar", "CO", "81052");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Latitude, Is.Null);
+        Assert.That(result.Precision, Is.EqualTo("OTHER"));
+        Assert.That(result.ErrorMessage, Does.StartWith("Rejected."));
+        Assert.That(result.ErrorMessage, Does.Contain("No map pin."));
+        Assert.That(await client.GeocodeAsync("12200 BenVerified Ave", "Lamar", "CO", "81052"), Is.Null);
+    }
+
+    [Test]
+    public async Task ValidateAndGeocode_PremiseAddressWithOtherGeocode_IsNotOk()
+    {
+        var json = """
+            {
+              "result": {
+                "verdict": {
+                  "addressComplete": true,
+                  "validationGranularity": "PREMISE",
+                  "geocodeGranularity": "OTHER",
+                  "possibleNextAction": "ACCEPT"
+                },
+                "address": { "formattedAddress": "Lamar, CO 81052, USA" },
+                "geocode": {
+                  "placeId": "ChIJcitycenter",
+                  "location": { "latitude": 38.0872, "longitude": -102.6208 }
+                }
+              }
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("12200 BenVerified Ave", "Lamar", "CO", "81052");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Latitude, Is.Null);
+        Assert.That(result.ErrorMessage, Does.StartWith("Rejected."));
+        Assert.That(result.ErrorMessage, Does.Contain("did not place this at a building"));
+    }
+
+    [Test]
+    public async Task ValidateAndGeocode_UspsDpvN_IsNotOk()
+    {
+        var json = """
+            {
+              "result": {
+                "verdict": {
+                  "addressComplete": true,
+                  "validationGranularity": "PREMISE",
+                  "geocodeGranularity": "PREMISE",
+                  "possibleNextAction": "FIX"
+                },
+                "address": { "formattedAddress": "12200 BenVerified Ave, Lamar, CO 81052, USA" },
+                "geocode": {
+                  "placeId": "ChIJx",
+                  "location": { "latitude": 38.0872, "longitude": -102.6208 }
+                },
+                "uspsData": { "dpvConfirmation": "N" }
+              }
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("12200 BenVerified Ave", "Lamar", "CO", "81052");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Latitude, Is.Null);
+        Assert.That(result.ErrorMessage, Does.StartWith("Rejected."));
+    }
+
+    [Test]
+    public async Task ValidateAndGeocode_ConfirmAddSubpremises_IsNotOk()
+    {
+        var json = """
+            {
+              "result": {
+                "verdict": {
+                  "addressComplete": true,
+                  "validationGranularity": "PREMISE",
+                  "geocodeGranularity": "PREMISE",
+                  "possibleNextAction": "CONFIRM_ADD_SUBPREMISES"
+                },
+                "address": {
+                  "formattedAddress": "100 Main St, Lamar, CO 81052, USA",
+                  "missingComponentTypes": ["subpremise"]
+                },
+                "geocode": {
+                  "placeId": "ChIJbuilding",
+                  "location": { "latitude": 38.0872, "longitude": -102.6207 }
+                },
+                "uspsData": { "dpvConfirmation": "D" }
+              }
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("100 Main St", "Lamar", "CO", "81052");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.ErrorMessage, Does.Contain("apartment"));
+    }
+
+    [Test]
+    public async Task ValidateAndGeocode_LiveBenVerifiedShape_IsNotOk()
+    {
+        var json = """
+            {
+              "result": {
+                "verdict": {
+                  "inputGranularity": "PREMISE",
+                  "validationGranularity": "OTHER",
+                  "geocodeGranularity": "OTHER",
+                  "addressComplete": true,
+                  "hasUnconfirmedComponents": true,
+                  "possibleNextAction": "FIX"
+                },
+                "address": {
+                  "formattedAddress": "12200 BenVerified Ave, Lamar, CO 81052, USA",
+                  "unconfirmedComponentTypes": ["street_number", "route"]
+                },
+                "geocode": {
+                  "placeId": "ChIJcitycenter",
+                  "placeTypes": ["locality", "political"],
+                  "location": { "latitude": 38.0872307, "longitude": -102.6207496 }
+                }
+              }
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("12200 BenVerified Ave", "Lamar", "CO", "81052");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Latitude, Is.Null);
+        Assert.That(result.Precision, Is.EqualTo("OTHER"));
+        Assert.That(result.ErrorMessage, Does.StartWith("Rejected."));
+        Assert.That(result.ErrorMessage, Does.Contain("No map pin."));
+        Assert.That(result.ErrorMessage, Does.Contain("not a real deliverable address"));
+        Assert.That(result.ErrorMessage, Does.Contain("Validate Address"));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_ApproximateWithCoords_IsNotOk()
+    {
+        var result = GoogleAddressValidationClient.ParseGeocodeJson(
+            """{"results":[{"placeId":"ChIJapprox","formattedAddress":"Lamar, CO","location":{"latitude":38.0872,"longitude":-102.6208},"granularity":"APPROXIMATE"}]}""",
+            1);
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.Latitude, Is.Null);
+        Assert.That(result.Precision, Is.EqualTo("APPROXIMATE"));
+        Assert.That(result.ErrorMessage, Does.StartWith("Rejected."));
+    }
+
+    [Test]
     public async Task ValidateAndGeocode_MissingKey_ReturnsMappingUnconfigured()
     {
         var previous = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY");
@@ -102,7 +283,8 @@ public class GoogleAddressValidationClientTests
                 "placeId": "ChIJgeocode",
                 "formattedAddress": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
                 "location": { "latitude": 37.422, "longitude": -122.084 },
-                "granularity": "ROOFTOP"
+                "granularity": "ROOFTOP",
+                "types": ["street_address"]
               }]
             }
             """;
@@ -150,6 +332,31 @@ public class GoogleAddressValidationClientTests
     }
 
     [Test]
+    public void BuildReverseGeocodeV4Uri_UsesLocationQueryAndNoKey()
+    {
+        var uri = GoogleAddressValidationClient.BuildReverseGeocodeV4Uri(38.0872, -102.6208, null);
+
+        Assert.That(uri.Host, Is.EqualTo("geocode.googleapis.com"));
+        Assert.That(uri.AbsolutePath, Is.EqualTo("/v4/geocode/location"));
+        Assert.That(uri.Query, Does.Contain("locationQuery=38.0872%2C-102.6208"));
+        Assert.That(uri.Query, Does.Contain("regionCode=US"));
+        Assert.That(uri.Query, Does.Not.Contain("key="));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_ReverseAllowsIntersectionWithoutPlotPrecision()
+    {
+        var json = """{"results":[{"placeId":"ChIJint","formattedAddress":"Oak Ave & 4th St, Wiley, CO 81092, USA","location":{"latitude":38.0872,"longitude":-102.6208},"granularity":"GEOMETRIC_CENTER","types":["intersection"]}]}""";
+
+        var plot = GoogleAddressValidationClient.ParseGeocodeJson(json, 1);
+        Assert.That(plot.Ok, Is.False);
+
+        var name = GoogleAddressValidationClient.ParseGeocodeJson(json, 1, requirePlotPrecision: false);
+        Assert.That(name.Ok, Is.True);
+        Assert.That(name.FormattedAddress, Does.Contain("Oak Ave"));
+    }
+
+    [Test]
     public void ParseGeocodeJson_V4EmptyResults_IsNoMatch()
     {
         var result = GoogleAddressValidationClient.ParseGeocodeJson("""{"results":[]}""", 1);
@@ -169,6 +376,28 @@ public class GoogleAddressValidationClientTests
         Assert.That(result.PlaceId, Is.EqualTo("ChIJx"));
         Assert.That(result.Precision, Is.EqualTo("APPROXIMATE"));
         Assert.That(result.ErrorMessage, Does.Contain("missing coordinates"));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_RooftopLocality_IsNotOk()
+    {
+        var result = GoogleAddressValidationClient.ParseGeocodeJson(
+            """{"results":[{"placeId":"ChIJcity","formattedAddress":"Lamar, CO","location":{"latitude":38.0872,"longitude":-102.6208},"granularity":"ROOFTOP","types":["locality","political"]}]}""",
+            1);
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.ErrorMessage, Does.StartWith("Rejected."));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_RooftopStreetAddress_IsOk()
+    {
+        var result = GoogleAddressValidationClient.ParseGeocodeJson(
+            """{"results":[{"placeId":"ChIJhouse","formattedAddress":"100 Main St","location":{"latitude":38.0872,"longitude":-102.6207},"granularity":"ROOFTOP","types":["street_address"]}]}""",
+            1);
+
+        Assert.That(result.Ok, Is.True);
+        Assert.That(result.Latitude, Is.EqualTo(38.0872).Within(0.0001));
     }
 
     [Test]

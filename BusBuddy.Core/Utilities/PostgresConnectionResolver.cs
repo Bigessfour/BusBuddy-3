@@ -35,17 +35,20 @@ public static class PostgresConnectionResolver
         {
             if (string.IsNullOrWhiteSpace(macHostIp))
             {
+                ApplyDatabaseProvider(null);
                 return null;
             }
 
             var built = EnsureConnectTimeout(BuildConnectionString(macHostIp));
             Environment.SetEnvironmentVariable("BUSBUDDY_CONNECTION", built);
             Logger.Information("Set BUSBUDDY_CONNECTION from mac-host-ip.txt -> Host={Host}", macHostIp);
+            ApplyDatabaseProvider(built);
             return built;
         }
 
         if (!IsPostgresConnection(current))
         {
+            ApplyDatabaseProvider(current);
             return current;
         }
 
@@ -68,8 +71,59 @@ public static class PostgresConnectionResolver
             Environment.SetEnvironmentVariable("BUSBUDDY_CONNECTION", resolved);
         }
 
+        ApplyDatabaseProvider(resolved);
         return resolved;
     }
+
+    /// <summary>
+    /// Postgres unless the clerk explicitly asked for SQL Server / LocalDB / SQLite.
+    /// A live <c>Host=</c> Npgsql string always wins.
+    /// </summary>
+    public static string ResolveProvider(string? declaredProvider, string? connectionString)
+    {
+        if (IsPostgresConnection(connectionString))
+        {
+            return "Postgres";
+        }
+
+        if (IsExplicitSqlite(declaredProvider))
+        {
+            return "Local";
+        }
+
+        if (IsExplicitSqlServer(declaredProvider))
+        {
+            return declaredProvider!.Equals("SqlServer", StringComparison.OrdinalIgnoreCase)
+                ? "SqlServer"
+                : "LocalDB";
+        }
+
+        return "Postgres";
+    }
+
+    /// <summary>
+    /// Writes the resolved provider into the process environment so
+    /// <c>AddEnvironmentVariables()</c> matches the live connection.
+    /// </summary>
+    public static string ApplyDatabaseProvider(string? connectionString)
+    {
+        var declared = Environment.GetEnvironmentVariable("DatabaseProvider");
+        var effective = ResolveProvider(declared, connectionString);
+        if (!string.Equals(declared, effective, StringComparison.OrdinalIgnoreCase))
+        {
+            Environment.SetEnvironmentVariable("DatabaseProvider", effective);
+            Logger.Information("Set DatabaseProvider={Provider} from live connection", effective);
+        }
+
+        return effective;
+    }
+
+    private static bool IsExplicitSqlite(string? provider) =>
+        string.Equals(provider, "Local", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsExplicitSqlServer(string? provider) =>
+        string.Equals(provider, "LocalDB", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Replaces the Postgres host when it differs from the Mac LAN IP supplied by the launcher.

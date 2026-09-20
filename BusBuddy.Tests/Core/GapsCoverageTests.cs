@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Data.UnitOfWork;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core
@@ -83,9 +81,8 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task AddressValidationService_ValidateAddress_Basic()
         {
-            var mockUnitOfWork = new Mock<IUnitOfWork>();
             // Without Maps client, validation must not succeed via regex alone.
-            var service = new AddressValidationService(mockUnitOfWork.Object);
+            var service = new AddressValidationService();
             var result = await service.ValidateAddressAsync("123 Test St");
 
             Assert.That(result.IsValid, Is.False);

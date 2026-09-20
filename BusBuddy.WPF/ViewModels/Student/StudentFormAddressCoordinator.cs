@@ -157,37 +157,22 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             student.PlaceId = applied.PlaceId;
         }
 
-        var hasPlaceCoordinates = applied.Latitude.HasValue
-            && applied.Longitude.HasValue
-            && LocationCoordinate.IsValidated((decimal)applied.Latitude.Value, (decimal)applied.Longitude.Value);
-
-        if (hasPlaceCoordinates)
-        {
-            student.Latitude = (decimal)applied.Latitude!.Value;
-            student.Longitude = (decimal)applied.Longitude!.Value;
-        }
-        else
-        {
-            student.Latitude = null;
-            student.Longitude = null;
-        }
-
+        student.Latitude = null;
+        student.Longitude = null;
         TrackPinnedAddress(student);
-
-        ValidationFailed = false;
-        ValidationMessage = hasPlaceCoordinates
-            ? "Address selected and coordinates captured from Places."
-            : "Address selected — click Validate Address to capture coordinates before save.";
-        ValidationColor = hasPlaceCoordinates ? Brushes.Green : Brushes.Blue;
         Logger.Information(
-            "Places suggestion applied PlaceIdPrefix={PlaceIdPrefix} CoordinatesCaptured={CoordinatesCaptured}",
+            "Places suggestion applied PlaceIdPrefix={PlaceIdPrefix} City={City} ZipPresent={ZipPresent} — pin waits on Address Validation",
             string.IsNullOrEmpty(applied.PlaceId) ? string.Empty : applied.PlaceId[..Math.Min(8, applied.PlaceId.Length)],
-            hasPlaceCoordinates);
+            applied.City,
+            !string.IsNullOrWhiteSpace(applied.Zip));
 
-        if (hasPlaceCoordinates)
+        await ValidateAsync(student).ConfigureAwait(true);
+        if (!LocationCoordinate.IsValidated(student.Latitude, student.Longitude)
+            && string.IsNullOrWhiteSpace(ValidationMessage))
         {
-            await PersistIfExistingAsync(student).ConfigureAwait(true);
-            CoordinatesUpdated?.Invoke(this, EventArgs.Empty);
+            ValidationFailed = false;
+            ValidationMessage = "Address selected — click Validate Address to capture coordinates before save.";
+            ValidationColor = Brushes.Blue;
         }
     }
 
@@ -209,23 +194,9 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             {
                 var maps = await mapsGeo.ValidateAndGeocodeAsync(
                     student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-                if (maps.Ok)
+                if (maps.Ok && LocationCoordinate.IsPlotPrecision(maps.Precision))
                 {
-                    if (maps.Latitude.HasValue)
-                    {
-                        student.Latitude = (decimal)maps.Latitude.Value;
-                    }
-
-                    if (maps.Longitude.HasValue)
-                    {
-                        student.Longitude = (decimal)maps.Longitude.Value;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(maps.PlaceId))
-                    {
-                        student.PlaceId = maps.PlaceId;
-                    }
-
+                    ApplySuccessfulGeocode(student, maps);
                     ValidationFailed = false;
                     var precisionNote = string.IsNullOrWhiteSpace(maps.Precision)
                         ? string.Empty
@@ -235,7 +206,6 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
                         : $"Address validated{precisionNote}: {maps.FormattedAddress}";
                     ValidationColor = Brushes.Green;
                     Logger.Information("Address validation successful via Maps Platform");
-                    TrackPinnedAddress(student);
                     await PersistIfExistingAsync(student).ConfigureAwait(true);
                     CoordinatesUpdated?.Invoke(this, EventArgs.Empty);
                     return;
@@ -258,7 +228,9 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
                     return;
                 }
 
-                ReportLiveValidationUnavailable(student, maps.ErrorMessage ?? "undeliverable or incomplete");
+                await RejectFailedValidationAsync(
+                    student,
+                    maps.ErrorMessage ?? "undeliverable or incomplete").ConfigureAwait(true);
                 return;
             }
 
@@ -293,16 +265,12 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         {
             var maps = await mapsGeo.ValidateAndGeocodeAsync(
                 student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-            if (maps.Ok && maps.Latitude.HasValue && maps.Longitude.HasValue)
+            if (maps.Ok
+                && LocationCoordinate.IsPlotPrecision(maps.Precision)
+                && maps.Latitude.HasValue
+                && maps.Longitude.HasValue)
             {
-                student.Latitude = (decimal)maps.Latitude.Value;
-                student.Longitude = (decimal)maps.Longitude.Value;
-                if (!string.IsNullOrWhiteSpace(maps.PlaceId))
-                {
-                    student.PlaceId = maps.PlaceId;
-                }
-
-                TrackPinnedAddress(student);
+                ApplySuccessfulGeocode(student, maps);
                 await PersistIfExistingAsync(student).ConfigureAwait(true);
                 return true;
             }
@@ -382,6 +350,64 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
         ValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode unavailable — needs validation.";
         ValidationColor = Brushes.Orange;
         Logger.Warning("Address local format OK; geocoding unavailable — not a pin");
+    }
+
+    private void ApplySuccessfulGeocode(StudentModel student, MapsGeocodeResult maps)
+    {
+        if (maps.Latitude.HasValue)
+        {
+            student.Latitude = (decimal)maps.Latitude.Value;
+        }
+
+        if (maps.Longitude.HasValue)
+        {
+            student.Longitude = (decimal)maps.Longitude.Value;
+        }
+
+        if (!string.IsNullOrWhiteSpace(maps.PlaceId))
+        {
+            student.PlaceId = maps.PlaceId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(maps.Street))
+        {
+            student.HomeAddress = maps.Street;
+        }
+
+        if (!string.IsNullOrWhiteSpace(maps.City))
+        {
+            student.City = maps.City;
+        }
+
+        if (!string.IsNullOrWhiteSpace(maps.State))
+        {
+            student.State = maps.State;
+        }
+
+        if (!string.IsNullOrWhiteSpace(maps.Zip))
+        {
+            student.Zip = maps.Zip;
+        }
+
+        TrackPinnedAddress(student);
+    }
+
+    private async Task RejectFailedValidationAsync(StudentModel student, string liveError)
+    {
+        student.Latitude = null;
+        student.Longitude = null;
+        student.PlaceId = null;
+        TrackPinnedAddress(student);
+        await PersistIfExistingAsync(student).ConfigureAwait(true);
+        CoordinatesUpdated?.Invoke(this, EventArgs.Empty);
+
+        ValidationFailed = true;
+        ValidationMessage = AddressValidationPinPolicy.IsClerkRejectCopy(liveError)
+            || liveError.Contains(LocationCoordinate.NeedsValidation, StringComparison.OrdinalIgnoreCase)
+            ? liveError
+            : $"Address validation failed: {liveError}";
+        ValidationColor = Brushes.Red;
+        Logger.Warning("Address validation failed StudentId={StudentId}: {Error}", student.StudentId, liveError);
     }
 
     private void ReportLiveValidationUnavailable(StudentModel student, string liveError)

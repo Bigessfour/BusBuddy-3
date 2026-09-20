@@ -59,6 +59,34 @@ public static class DistrictMapAnchor
             MapDefaults.UnconfiguredZoomLevel);
     }
 
+    /// <summary>
+    /// District Map Home / first-open camera: depot or bbox, then a school pin, then unconfigured overview.
+    /// Pick-map dialogs keep <see cref="ResolveCamera"/> (school first).
+    /// </summary>
+    public static (double Latitude, double Longitude, int ZoomLevel) ResolveHomeCamera(
+        RoutingDistrictSettings? settings,
+        double? schoolLatitude = null,
+        double? schoolLongitude = null)
+    {
+        if (TryGetConfiguredCenter(settings, out var lat, out var lon))
+        {
+            return (lat, lon, MapDefaults.DistrictZoomLevel);
+        }
+
+        if (schoolLatitude is double schoolLat &&
+            schoolLongitude is double schoolLon &&
+            IsValidLatitude(schoolLat) &&
+            IsValidLongitude(schoolLon))
+        {
+            return (schoolLat, schoolLon, MapDefaults.SchoolZoomLevel);
+        }
+
+        return (
+            MapDefaults.UnconfiguredLatitude,
+            MapDefaults.UnconfiguredLongitude,
+            MapDefaults.UnconfiguredZoomLevel);
+    }
+
     public static bool IsValidLatitude(double latitude) => latitude is >= -90 and <= 90;
 
     public static bool IsValidLongitude(double longitude) => longitude is >= -180 and <= 180;

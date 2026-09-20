@@ -369,24 +369,8 @@ public class UnitOfWork : IUnitOfWork
             var currentTime = DateTime.UtcNow;
             var currentUser = _currentAuditUser ?? "System";
 
-            // Handle BaseEntity pattern
-            if (entry.Entity is Models.Base.BaseEntity baseEntity)
-            {
-                if (entry.State == EntityState.Added)
-                {
-                    baseEntity.CreatedDate = currentTime;
-                    baseEntity.CreatedBy = currentUser;
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    baseEntity.UpdatedDate = currentTime;
-                    baseEntity.UpdatedBy = currentUser;
-                }
-            }
-            else
-            {
-                // Handle entities with audit fields but not inheriting from BaseEntity (like Student)
-                var entityType = entry.Entity.GetType();
+            // Per-aggregate audit fields (Student/Driver CreatedBy, etc.). No shared BaseEntity.
+            var entityType = entry.Entity.GetType();
 
                 if (entry.State == EntityState.Added)
                 {
@@ -421,7 +405,6 @@ public class UnitOfWork : IUnitOfWork
                     }
 
                 }
-            }
         }
     }
 

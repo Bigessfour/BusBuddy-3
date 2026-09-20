@@ -157,7 +157,7 @@ namespace BusBuddy.WPF.Views.Main
                 TryShowDashboardOnStartup();
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    try { AuditButtonsAccessibility(); } catch (Exception ex2) { Logger.Warning(ex2, "MainWindow: post-load audit failed"); }
+                    ButtonAccessibilityAudit.Run(this, Logger, "MainWindow");
                 }), System.Windows.Threading.DispatcherPriority.Background);
             }
             catch (Exception ex)
@@ -307,58 +307,6 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        // Generate eligibility route PDF directly from MainWindow without needing MapView visible.
-        private async void EligibilityPdfButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                using (Serilog.Context.LogContext.PushProperty("UIAction", "EligibilityPdf"))
-                {
-                    Logger.Information("Eligibility PDF button clicked (MainWindow)");
-                    var sp = App.ServiceProvider;
-                    var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
-                    if (vm == null)
-                    {
-                        Logger.Warning("MapViewModel not resolved for eligibility PDF generation");
-                        UserToast.Warning("Map is not available.", "Student Map PDF");
-                        return;
-                    }
-                    await vm.GenerateEligibilityRoutePdfAndPreviewAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Eligibility PDF generation failed from MainWindow");
-                UserToast.Error($"Could not generate the student map PDF: {ex.Message}", "Student Map PDF");
-            }
-        }
-
-        private void PrintEligibilityPdfButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var sp = App.ServiceProvider;
-                var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
-                if (vm == null)
-                {
-                    UserToast.Warning("Map is not available.", "Student Map PDF");
-                    return;
-                }
-
-                using (Serilog.Context.LogContext.PushProperty("UIAction", "PrintEligibilityPdf"))
-                {
-                    Logger.Information("Reopening last student map PDF");
-                }
-
-                vm.PreviewLastEligibilityPdf();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to reopen eligibility PDF");
-                UserToast.Error($"Could not open the PDF: {ex.Message}", "Student Map PDF");
-            }
-        }
-
         // Global button click logger for MainWindow
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
         {
@@ -450,52 +398,6 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Warning(ex, "MainWindow: validation logging failed");
-            }
-        }
-
-        // Accessibility / command readiness audit for Buttons & ButtonAdv controls
-        private void AuditButtonsAccessibility()
-        {
-            try
-            {
-                int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
-                foreach (var d in Traverse(this))
-                {
-                    if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
-                    {
-                        total++; adv++;
-                        var label = badv.Label; var autoName = System.Windows.Automation.AutomationProperties.GetName(badv);
-                        bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
-                        if (string.IsNullOrWhiteSpace(label)) missingLabel++;
-                        if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                    }
-                    else if (d is Button btn)
-                    {
-                        total++;
-                        var content = btn.Content?.ToString(); var autoName = System.Windows.Automation.AutomationProperties.GetName(btn);
-                        bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
-                        if (string.IsNullOrWhiteSpace(content)) missingLabel++;
-                        if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
-                    }
-                }
-                Logger.Information("MainWindow Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "MainWindow: accessibility audit failed");
-            }
-        }
-
-        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
-        {
-            if (root == null) yield break;
-            var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-                if (child == null) continue;
-                yield return child;
-                foreach (var g in Traverse(child)) yield return g;
             }
         }
 

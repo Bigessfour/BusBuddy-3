@@ -36,7 +36,6 @@ namespace BusBuddy.WPF.Views.Map
         private MapLayer? _currentLayer;
         private DispatcherTimer? _attributionTimer;
         private MapMarkerHost.RetryScheduler? _markerHostRetry;
-        private MapInteractionDiagnostics? _diagnostics;
         private bool _pendingCameraSync;
         private bool _pendingMarkerRefresh;
         private bool _placingMarkers;
@@ -69,7 +68,6 @@ namespace BusBuddy.WPF.Views.Map
 
                 Unloaded += MapView_Unloaded;
                 Loaded += MapView_Loaded;
-                Loaded += MapView_ReattachDiagnostics;
                 Logger.Information("MapView initialized");
             }
         }
@@ -103,13 +101,6 @@ namespace BusBuddy.WPF.Views.Map
                     SyncMapControlFromViewModel(DataContext as MapViewModel);
                 }
 
-                // Interaction trace (Map:InteractionDiagnostics / BUSBUDDY_MAP_DIAGNOSTICS) — attached before the
-                // Google tile swap so the first tile burst and any camera error land in the breadcrumbs.
-                _diagnostics ??= MapInteractionDiagnostics.TryAttach(
-                    MapControl,
-                    DistrictTilesLayer,
-                    App.ServiceProvider?.GetService<Microsoft.Extensions.Configuration.IConfiguration>());
-
                 ReplayRouteLineFromViewModel(DataContext as MapViewModel);
                 if (DistrictTilesLayer is not null)
                 {
@@ -127,6 +118,16 @@ namespace BusBuddy.WPF.Views.Map
                         ScheduleAttributionRefresh();
                     }
 
+                    // Camera must land after tiles + visual tree. Default layer center is 0,0
+                    // (Google: ocean zoom paints featureless blue squares).
+                    _mapLayerInitialized = true;
+                    _pendingCameraSync = true;
+                    _pendingMarkerRefresh = true;
+                    if (!TryApplyCameraThenMarkers())
+                    {
+                        ScheduleMarkerHostRetry();
+                    }
+
                     // Tile HttpClient downloads are async; inspect after a short settle.
                     var healthTimer = new DispatcherTimer
                     {
@@ -140,39 +141,25 @@ namespace BusBuddy.WPF.Views.Map
                     healthTimer.Start();
                 }
 
-                _mapLayerInitialized = true;
-                _pendingMarkerRefresh = true;
-                _ = Dispatcher.BeginInvoke(RefreshMarkersOnImageryLayer, DispatcherPriority.Loaded);
-                _ = Dispatcher.BeginInvoke(RefreshMarkersOnImageryLayer, DispatcherPriority.ContextIdle);
+                if (!_mapLayerInitialized)
+                {
+                    _mapLayerInitialized = true;
+                }
+
+                _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.Loaded);
+                _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.ContextIdle);
                 Logger.Information("Map layer ready — pan/zoom enabled");
             }
             catch (Exception ex)
             {
-                _diagnostics?.RecordError("MapView.Loaded", ex);
                 Logger.Error(ex, "Failed to initialize map on Loaded");
             }
-        }
-
-        /// <summary>Tab switches unload/reload the view; the one-shot Loaded handler above has already run by then.</summary>
-        private void MapView_ReattachDiagnostics(object sender, RoutedEventArgs e)
-        {
-            if (!_mapLayerInitialized || _diagnostics is not null)
-            {
-                return;
-            }
-
-            _diagnostics = MapInteractionDiagnostics.TryAttach(
-                MapControl,
-                DistrictTilesLayer,
-                App.ServiceProvider?.GetService<Microsoft.Extensions.Configuration.IConfiguration>());
         }
 
         private void MapView_Unloaded(object sender, RoutedEventArgs e)
         {
             _attributionTimer?.Stop();
             _markerHostRetry?.Stop();
-            _diagnostics?.Dispose();
-            _diagnostics = null;
             if (DistrictTilesLayer is ImageryLayer layer)
             {
                 layer.MarkerSelected -= OnImageryMarkerSelected;
@@ -194,7 +181,7 @@ namespace BusBuddy.WPF.Views.Map
                 AttachViewModel(newViewModel);
                 ApplyDistrictImagery();
                 ReplayRouteLineFromViewModel(newViewModel);
-                RefreshMarkersOnImageryLayer();
+                TryApplyCameraThenMarkers();
             }
         }
 
@@ -311,7 +298,29 @@ namespace BusBuddy.WPF.Views.Map
         }
 
         private void OnMapMarkersChanged(object? sender, EventArgs e) =>
-            Dispatcher.Invoke(RefreshMarkersOnImageryLayer);
+            Dispatcher.Invoke(TryApplyCameraThenMarkers);
+
+        private bool TryApplyCameraThenMarkers()
+        {
+            var cameraOk = true;
+            if (DataContext is MapViewModel vm)
+            {
+                cameraOk = TrySetLayerCenter(DistrictTilesLayer, vm.MapCenter, vm.MapZoomLevel);
+                _pendingCameraSync = !cameraOk;
+                if (cameraOk)
+                {
+                    ScheduleAttributionRefresh();
+                }
+            }
+
+            if (!TryPlaceMarkers())
+            {
+                ScheduleMarkerHostRetry();
+                return false;
+            }
+
+            return cameraOk;
+        }
 
         private void RefreshMarkersOnImageryLayer()
         {
@@ -398,7 +407,7 @@ namespace BusBuddy.WPF.Views.Map
 
             _markerHostRetry ??= new MapMarkerHost.RetryScheduler(
                 Dispatcher,
-                TryPlaceMarkers,
+                TryApplyCameraThenMarkers,
                 retries =>
                 {
                     // Keep _pendingMarkerRefresh so SizeChanged / later layout can still attach pins.
@@ -413,70 +422,27 @@ namespace BusBuddy.WPF.Views.Map
         /// Size + HwndSource gate. Pair with <see cref="CanApplyLayerCenter"/> so templates are not
         /// applied until <c>TransformToVisual</c> between the layer and map succeeds.
         /// </summary>
-        private bool CanHostMarkers()
-        {
-            var map = MapControl;
-            if (map is null || DistrictTilesLayer is null)
-            {
-                return false;
-            }
+        private bool CanHostMarkers() => MapMarkerHost.CanHost(MapControl, DistrictTilesLayer);
 
-            if (map.ActualWidth <= 0 || map.ActualHeight <= 0)
-            {
-                return false;
-            }
-
-            return PresentationSource.FromVisual(map) is not null;
-        }
+        private bool CanApplyLayerCenter() => MapMarkerHost.CanHost(MapControl, DistrictTilesLayer);
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (sender is not MapViewModel vm)
+            if (sender is not MapViewModel)
             {
                 return;
             }
 
-            if (e.PropertyName == nameof(MapViewModel.MapMarkers))
+            if (e.PropertyName == nameof(MapViewModel.MapMarkers)
+                || e.PropertyName == nameof(MapViewModel.MapZoomLevel)
+                || e.PropertyName == nameof(MapViewModel.MapCenter))
             {
-                Dispatcher.Invoke(RefreshMarkersOnImageryLayer);
-                return;
-            }
-
-            if (e.PropertyName == nameof(MapViewModel.MapZoomLevel))
-            {
-                Dispatcher.BeginInvoke(() =>
+                if (e.PropertyName == nameof(MapViewModel.MapCenter) && _syncingCenterFromLayer)
                 {
-                    if (MapControl is not null)
-                    {
-                        MapControl.ZoomLevel = vm.MapZoomLevel;
-                    }
+                    return;
+                }
 
-                    // MarkerTemplate visuals bind Data.MarkerSize / LabelFontSize / ShowCaption.
-                    // Syncfusion CustomDataSymbol does not remeasure when those nested props change —
-                    // re-assign Markers so captions shrink/hide with zoom (UTM clerk report 2026-09-11).
-                    RefreshMarkersOnImageryLayer();
-                    ScheduleAttributionRefresh();
-                }, DispatcherPriority.Background);
-                return;
-            }
-
-            if (e.PropertyName == nameof(MapViewModel.MapCenter))
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    if (_syncingCenterFromLayer)
-                    {
-                        return;
-                    }
-
-                    if (_currentLayer is ImageryLayer imagery
-                        && !TrySetLayerCenter(imagery, vm.MapCenter))
-                    {
-                        _pendingCameraSync = true;
-                    }
-
-                    ScheduleAttributionRefresh();
-                });
+                Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.Background);
             }
         }
 
@@ -529,70 +495,24 @@ namespace BusBuddy.WPF.Views.Map
         /// </summary>
         private void SyncMapControlFromViewModel(MapViewModel? vm)
         {
-            if (vm is null || MapControl is null)
+            if (vm is null)
             {
                 return;
             }
 
-            MapControl.ZoomLevel = vm.MapZoomLevel;
-            if (_currentLayer is ImageryLayer imagery)
-            {
-                _pendingCameraSync = !TrySetLayerCenter(imagery, vm.MapCenter);
-            }
+            _pendingCameraSync = !TrySetLayerCenter(DistrictTilesLayer, vm.MapCenter, vm.MapZoomLevel);
         }
 
-        private bool TrySetLayerCenter(ImageryLayer imagery, Point center)
+        private bool TrySetLayerCenter(ImageryLayer? imagery, Point center, int zoomLevel)
         {
-            if (!CanApplyLayerCenter())
-            {
-                return false;
-            }
-
-            if (imagery.Center == center)
-            {
-                return true;
-            }
-
             _syncingCenterFromLayer = true;
             try
             {
-                imagery.Center = center;
+                return MapCameraHost.TryApply(MapControl, imagery, center, zoomLevel);
             }
             finally
             {
                 _syncingCenterFromLayer = false;
-            }
-
-            return true;
-        }
-
-        private bool CanApplyLayerCenter()
-        {
-            var map = MapControl;
-            var layer = DistrictTilesLayer;
-            if (map is null || layer is null)
-            {
-                return false;
-            }
-
-            if (map.ActualWidth <= 0 || map.ActualHeight <= 0)
-            {
-                return false;
-            }
-
-            if (PresentationSource.FromVisual(map) is null || PresentationSource.FromVisual(layer) is null)
-            {
-                return false;
-            }
-
-            try
-            {
-                _ = layer.TransformToVisual(map);
-                return true;
-            }
-            catch (InvalidOperationException)
-            {
-                return false;
             }
         }
 
@@ -600,14 +520,9 @@ namespace BusBuddy.WPF.Views.Map
         private void GeoMap_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             ReportViewportSize(DataContext as MapViewModel);
-            if (_pendingCameraSync)
+            if (_pendingCameraSync || _pendingMarkerRefresh)
             {
-                SyncMapControlFromViewModel(DataContext as MapViewModel);
-            }
-
-            if (_pendingMarkerRefresh)
-            {
-                RefreshMarkersOnImageryLayer();
+                TryApplyCameraThenMarkers();
             }
         }
 
@@ -707,7 +622,7 @@ namespace BusBuddy.WPF.Views.Map
             }
         }
 
-        private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
-            SyncMapControlFromViewModel(DataContext as MapViewModel));
+        private void OnViewResetRequested(object? sender, EventArgs e) =>
+            Dispatcher.Invoke(TryApplyCameraThenMarkers);
     }
 }

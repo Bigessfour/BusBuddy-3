@@ -33,4 +33,28 @@ public class EnvFileLoaderTests
             }
         }
     }
+
+    [Test]
+    public void LoadIntoEnvironment_SkipsLeftoverAzureProvider()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"busbuddy-env-{Guid.NewGuid()}.env");
+        var previous = Environment.GetEnvironmentVariable("DatabaseProvider");
+        try
+        {
+            Environment.SetEnvironmentVariable("DatabaseProvider", "Postgres");
+            File.WriteAllText(path, "DatabaseProvider=Azure\n");
+
+            var loaded = EnvFileLoader.LoadIntoEnvironment(new[] { path });
+            Assert.That(loaded, Is.EqualTo(0));
+            Assert.That(Environment.GetEnvironmentVariable("DatabaseProvider"), Is.EqualTo("Postgres"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DatabaseProvider", previous);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
 }

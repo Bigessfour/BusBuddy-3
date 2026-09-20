@@ -16,8 +16,5 @@ namespace BusBuddy.Core.Services.Interfaces
         Task<IEnumerable<Bus>> GetBusesByStatusAsync(string status);
         Task<IEnumerable<Bus>> GetBusesByTypeAsync(string type);
         Task<IEnumerable<Bus>> SearchBusesAsync(string searchTerm);
-
-        // Route-related methods
-        Task<List<Route>> GetAllRouteEntitiesAsync();
     }
 }

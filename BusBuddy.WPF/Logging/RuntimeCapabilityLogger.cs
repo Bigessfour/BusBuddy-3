@@ -30,11 +30,38 @@ public static class RuntimeCapabilityLogger
         return "present";
     }
 
+    public static string DescribeMapDiagnostics(IConfiguration? configuration)
+    {
+        _ = configuration;
+        var env = Environment.GetEnvironmentVariable("BUSBUDDY_MAP_DIAGNOSTICS");
+        if (!string.IsNullOrWhiteSpace(env))
+        {
+            return $"{env.Trim()}(env)";
+        }
+
+        return "(default)";
+    }
+
+    public static string DescribeDistrictSource(IUserSettingsService? userSettings, RoutingDistrictSettings? district)
+    {
+        if (DistrictDepot.IsConfigured(district) || district?.TryGetBoundingBox(out _, out _, out _, out _) == true)
+        {
+            return userSettings?.HasKey(UserSettingsKeys.DistrictDepotLatitude) == true
+                ? "user-settings"
+                : "appsettings";
+        }
+
+        return userSettings?.HasKey(UserSettingsKeys.DistrictDepotLatitude) == true
+            ? "user-settings-empty"
+            : "none";
+    }
+
     public static void WriteStartupSnapshot(IServiceProvider? services)
     {
         try
         {
             var configuration = services?.GetService<IConfiguration>();
+            var userSettings = services?.GetService<IUserSettingsService>();
             var district = services?.GetService<IDistrictSettingsAccessor>()?.Current;
             var mapsOptions = services?.GetService<IOptions<GoogleMapsOptions>>()?.Value;
             var mapsKey = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")
@@ -47,16 +74,15 @@ public static class RuntimeCapabilityLogger
                 ?? boundQuota;
             var quotaSource = GoogleMapsOptions.DescribeQuotaSource(boundQuota);
             var keySource = GoogleMapsOptions.DescribeApiKeySource(configuration?["GoogleMaps:ApiKey"]);
-            var provider = configuration?["DatabaseProvider"] ?? "(unset)";
             var connection = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
-            var mapsDiagnostics = Environment.GetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride)
-                ?? configuration?["Map:InteractionDiagnostics"]
-                ?? "(default)";
+            var provider = EnvironmentHelper.GetDatabaseProvider(configuration);
+            var mapsDiagnostics = DescribeMapDiagnostics(configuration);
+            var districtSource = DescribeDistrictSource(userSettings, district);
 
             UiDiagnosticsLog.Write(
                 Logger,
                 LogEventLevel.Information,
-                "Runtime capability SyncfusionLicense={SyncfusionLicense} MapsKey={MapsKey} GcpProject={GcpProject} DatabaseProvider={DatabaseProvider} BusBuddyConnection={Connection} PostgresEndpoint={Endpoint} DepotLat={DepotLat} DepotLon={DepotLon} BBoxMinLat={BBoxMinLat} BBoxMaxLat={BBoxMaxLat} MapDiagnostics={MapDiagnostics} FuelService={Fuel} MaintenanceService={Maint} ScheduleService={Sched} ActivityLogService={ActivityLog} GeocodingService={Geo} RoutingService={Routing}",
+                "Runtime capability SyncfusionLicense={SyncfusionLicense} MapsKey={MapsKey} GcpProject={GcpProject} DatabaseProvider={DatabaseProvider} BusBuddyConnection={Connection} PostgresEndpoint={Endpoint} DepotLat={DepotLat} DepotLon={DepotLon} BBoxMinLat={BBoxMinLat} BBoxMaxLat={BBoxMaxLat} DistrictSource={DistrictSource} HasDepotKey={HasDepotKey} UserSettingsPath={UserSettingsPath} MapDiagnostics={MapDiagnostics} FuelService={Fuel} MaintenanceService={Maint} ScheduleService={Sched} ActivityLogService={ActivityLog} GeocodingService={Geo} RoutingService={Routing}",
                 DescribePresence(license),
                 DescribePresence(mapsKey),
                 string.IsNullOrWhiteSpace(gcp) ? "unset" : gcp,
@@ -67,6 +93,9 @@ public static class RuntimeCapabilityLogger
                 district?.DepotLongitude,
                 district?.BoundingBoxMinLat,
                 district?.BoundingBoxMaxLat,
+                districtSource,
+                userSettings?.HasKey(UserSettingsKeys.DistrictDepotLatitude) ?? false,
+                userSettings?.FilePath ?? "(none)",
                 mapsDiagnostics,
                 services?.GetService<IFuelService>() is not null,
                 services?.GetService<IMaintenanceService>() is not null,

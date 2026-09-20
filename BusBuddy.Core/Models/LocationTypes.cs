@@ -151,4 +151,47 @@ public static class LocationCoordinate
         return Math.Abs(latitude - UsCentroidLatitude) >= 0.01
             || Math.Abs(longitude - UsCentroidLongitude) >= 0.01;
     }
+
+    /// <summary>
+    /// Syncfusion <c>GetLatLonFromPoint</c> documents X=longitude, Y=latitude.
+    /// <c>ImageryLayer.Center</c> is X=latitude, Y=longitude. Accept either pair.
+    /// </summary>
+    public static bool TryInterpretLatLon(double first, double second, out double latitude, out double longitude)
+    {
+        if (IsValidated(second, first))
+        {
+            latitude = second;
+            longitude = first;
+            return true;
+        }
+
+        if (IsValidated(first, second))
+        {
+            latitude = first;
+            longitude = second;
+            return true;
+        }
+
+        latitude = 0;
+        longitude = 0;
+        return false;
+    }
+
+    /// <summary>
+    /// Pin-grade precision only. Address Validation: PREMISE / SUB_PREMISE / PREMISE_PROXIMITY
+    /// (<c>geocodeGranularity</c>). Geocoding v4 fallback: ROOFTOP only. RANGE_INTERPOLATED,
+    /// ROUTE, OTHER, APPROXIMATE, and GEOMETRIC_CENTER are not student-home pins.
+    /// </summary>
+    public static bool IsPlotPrecision(string? precision)
+    {
+        if (string.IsNullOrWhiteSpace(precision))
+        {
+            return false;
+        }
+
+        return precision.Equals("PREMISE", StringComparison.OrdinalIgnoreCase)
+            || precision.Equals("SUB_PREMISE", StringComparison.OrdinalIgnoreCase)
+            || precision.Equals("PREMISE_PROXIMITY", StringComparison.OrdinalIgnoreCase)
+            || precision.Equals("ROOFTOP", StringComparison.OrdinalIgnoreCase);
+    }
 }

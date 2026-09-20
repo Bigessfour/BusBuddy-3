@@ -21,6 +21,8 @@ public partial class PickupStopForm : ChromelessWindow
     private static readonly ILogger Logger = Log.ForContext<PickupStopForm>();
     private readonly PickupStopFormViewModel _vm;
     private MapMarkerHost.RetryScheduler? _markerRetry;
+    private Point? _pickMouseDown;
+    private bool _cameraApplied;
 
     public PickupStopForm(PickupStopFormViewModel viewModel)
     {
@@ -34,7 +36,6 @@ public partial class PickupStopForm : ChromelessWindow
         StopLonBox.Value = _vm.LongitudeValue;
 
         _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
-        StopPickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -65,6 +66,20 @@ public partial class PickupStopForm : ChromelessWindow
                     StopLonBox.Value = _vm.LongitudeValue;
                 }
             }
+
+            if (e.PropertyName is nameof(PickupStopFormViewModel.Name)
+                && string.IsNullOrWhiteSpace(StopNameBox.Text)
+                && !string.IsNullOrWhiteSpace(_vm.Name))
+            {
+                StopNameBox.Text = _vm.Name;
+            }
+
+            if (e.PropertyName is nameof(PickupStopFormViewModel.Address)
+                && string.IsNullOrWhiteSpace(StopAddressBox.AddressText)
+                && !string.IsNullOrWhiteSpace(_vm.Address))
+            {
+                StopAddressBox.AddressText = _vm.Address;
+            }
         };
 
         Loaded += async (_, _) =>
@@ -90,15 +105,29 @@ public partial class PickupStopForm : ChromelessWindow
                 }
             }
 
-            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
-            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
+            _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.ContextIdle);
         };
     }
 
     private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
 
-    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+    private void TryApplyCameraThenMarkers()
+    {
+        if (!_cameraApplied)
+        {
+            if (!MapCameraHost.TryApply(StopPickMap, StopPickLayer, _vm.MapCenter, _vm.MapZoomLevel))
+            {
+                ArmMarkerRetry();
+                return;
+            }
+
+            _cameraApplied = true;
+        }
+
+        AssignPickMarkers();
+    }
 
     private void AssignPickMarkers()
     {
@@ -108,9 +137,27 @@ public partial class PickupStopForm : ChromelessWindow
             return;
         }
 
+        ArmMarkerRetry();
+    }
+
+    private void ArmMarkerRetry()
+    {
         _markerRetry ??= new MapMarkerHost.RetryScheduler(
             Dispatcher,
-            () => MapMarkerHost.TryAssignAndLayout(StopPickMap, StopPickLayer, _vm.MapMarkers),
+            () =>
+            {
+                if (!_cameraApplied)
+                {
+                    if (!MapCameraHost.TryApply(StopPickMap, StopPickLayer, _vm.MapCenter, _vm.MapZoomLevel))
+                    {
+                        return false;
+                    }
+
+                    _cameraApplied = true;
+                }
+
+                return MapMarkerHost.TryAssignAndLayout(StopPickMap, StopPickLayer, _vm.MapMarkers);
+            },
             retries => Logger.Warning("Pickup stop pick markers still pending after {Retries} host retries", retries));
         _markerRetry.Arm();
     }
@@ -138,8 +185,18 @@ public partial class PickupStopForm : ChromelessWindow
 
     private void PushFieldsToViewModel()
     {
-        _vm.Name = StopNameBox.Text?.Trim() ?? string.Empty;
-        _vm.Address = StopAddressBox.AddressText?.Trim() ?? string.Empty;
+        var typedName = StopNameBox.Text?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(typedName))
+        {
+            _vm.Name = typedName;
+        }
+
+        var typedAddress = StopAddressBox.AddressText?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(typedAddress))
+        {
+            _vm.Address = typedAddress;
+        }
+
         _vm.SelectedStopType = StopTypeCombo.SelectedItem as string ?? PickupStopTypes.Corner;
         _vm.Notes = StopNotesBox.Text?.Trim() ?? string.Empty;
         _vm.LatitudeValue = StopLatBox.Value ?? 0d;
@@ -158,12 +215,20 @@ public partial class PickupStopForm : ChromelessWindow
         }
 
         _vm.ApplyMapClick(e.Applied.Latitude.Value, e.Applied.Longitude.Value);
+        _vm.TrySuggestName(e.Applied.Street, e.Applied.FormattedAddress);
+        if (!string.IsNullOrWhiteSpace(_vm.Name) && string.IsNullOrWhiteSpace(StopNameBox.Text))
+        {
+            StopNameBox.Text = _vm.Name;
+        }
         StopLatBox.Value = _vm.LatitudeValue;
         StopLonBox.Value = _vm.LongitudeValue;
-        if (StopPickLayer is not null)
-        {
-            StopPickLayer.Center = new Point(_vm.LatitudeValue, _vm.LongitudeValue);
-        }
+        MapCameraHost.TryApply(
+            StopPickMap,
+            StopPickLayer,
+            MapCameraHost.FromLatLon(_vm.LatitudeValue, _vm.LongitudeValue),
+            _vm.MapZoomLevel);
+        _cameraApplied = true;
+        AssignPickMarkers();
     }
 
     private void PickupStopForm_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -171,7 +236,15 @@ public partial class PickupStopForm : ChromelessWindow
         NumpadInputHelper.HandlePreviewKeyDown(e);
     }
 
-    private void StopPickMap_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void StopPickMap_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (StopPickLayer is not null)
+        {
+            _pickMouseDown = e.GetPosition(StopPickLayer);
+        }
+    }
+
+    private async void StopPickMap_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         try
         {
@@ -180,11 +253,10 @@ public partial class PickupStopForm : ChromelessWindow
                 return;
             }
 
-            var pos = e.GetPosition(StopPickMap);
-            var geo = StopPickLayer.GetLatLonFromPoint(pos);
-            var lon = geo.X;
-            var lat = geo.Y;
-            if (lat is < -90 or > 90 || lon is < -180 or > 180)
+            var up = e.GetPosition(StopPickLayer);
+            var down = _pickMouseDown ?? up;
+            _pickMouseDown = null;
+            if (!MapCameraHost.TryReadClick(StopPickLayer, down, up, out var lat, out var lon))
             {
                 return;
             }
@@ -192,8 +264,11 @@ public partial class PickupStopForm : ChromelessWindow
             _vm.ApplyMapClick(lat, lon);
             StopLatBox.Value = _vm.LatitudeValue;
             StopLonBox.Value = _vm.LongitudeValue;
-            StopPickLayer.Center = new Point(lat, lon);
-            e.Handled = true;
+            await _vm.SuggestNameFromMapAsync().ConfigureAwait(true);
+            if (!string.IsNullOrWhiteSpace(_vm.Name) && string.IsNullOrWhiteSpace(StopNameBox.Text))
+            {
+                StopNameBox.Text = _vm.Name;
+            }
         }
         catch (Exception ex)
         {
@@ -204,7 +279,6 @@ public partial class PickupStopForm : ChromelessWindow
     protected override void OnClosed(EventArgs e)
     {
         _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
-        StopPickMap.SizeChanged -= OnPickMapSizeChanged;
         _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);

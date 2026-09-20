@@ -147,6 +147,18 @@ public interface IStudentService
     Task<List<Student>> GetStudentsWithMissingInfoAsync();
 
     /// <summary>
+    /// Active Home-pickup students (no catalog stop, not special needs) with validated
+    /// coordinates inside <paramref name="maxMeters"/>. Used to hint a shared catalog stop.
+    /// Does not change assignments. Log counts only — no names.
+    /// </summary>
+    Task<IReadOnlyList<Student>> GetNearbyHomePickupStudentsAsync(
+        double latitude,
+        double longitude,
+        double maxMeters,
+        int? excludeStudentId = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Exports student data to CSV format
     /// </summary>
     /// <returns>CSV string containing student data</returns>
@@ -180,18 +192,4 @@ public interface IStudentService
     Task<Dictionary<string, object>> GetStudentOperationMetricsAsync();
 #endif
 
-}
-
-/// <summary>
-/// Result of a data seeding operation. Kept here (rather than removed with the retired
-/// <c>SeedDistrictDataAsync</c>) because it is the shared seed-outcome DTO for the namespace.
-/// </summary>
-public class SeedResult
-{
-    public bool Success { get; set; }
-    public int RecordsProcessed { get; set; }
-    public int RecordsSeeded { get; set; }
-    public string? ErrorMessage { get; set; }
-    public TimeSpan Duration { get; set; }
-    public DateTime CompletedAt { get; set; }
 }

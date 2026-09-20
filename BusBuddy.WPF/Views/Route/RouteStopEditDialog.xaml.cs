@@ -1,6 +1,10 @@
+using System;
 using System.Windows;
 using BusBuddy.WPF.Controls;
+using BusBuddy.WPF.ViewModels.Route;
+using BusBuddy.WPF.Utilities;
 using Serilog;
+using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Route;
 
@@ -8,83 +12,61 @@ public partial class RouteStopEditDialog : Window
 {
     private static readonly ILogger Logger = Log.ForContext<RouteStopEditDialog>();
 
-    public RouteStopEditDialog(
-        string? stopName = null,
-        string? stopAddress = null,
-        decimal? latitude = null,
-        decimal? longitude = null)
+    public RouteStopEditDialog(RouteStopEditDialogViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+        ViewModel = viewModel;
         InitializeComponent();
-        StopNameBox.Text = stopName ?? string.Empty;
-        StopAddressBox.AddressText = stopAddress ?? string.Empty;
-        Latitude = latitude;
-        Longitude = longitude;
-        UpdateCoordinateStatus();
-        StopNameBox.Focus();
-        Logger.Information("RouteStopEditDialog opened StopName={StopName}", StopNameBox.Text);
+        // SetTheme after InitializeComponent; assign DataContext after SetTheme
+        // so Fluent restyle cannot leave the window and PlacesAddressBox unbound.
+        SyncfusionThemeManager.ApplyTheme(this);
+        DataContext = ViewModel;
+        StopAddressBox.DataContext = ViewModel;
+        ViewModel.CloseRequested += OnCloseRequested;
+        Logger.Information("RouteStopEditDialog opened StopName={StopName}", ViewModel.StopName);
     }
 
-    public string StopName => StopNameBox.Text.Trim();
+    public RouteStopEditDialogViewModel ViewModel { get; }
 
-    public string StopAddress => (StopAddressBox.AddressText ?? string.Empty).Trim();
+    public string StopName => ViewModel.StopName.Trim();
 
-    public decimal? Latitude { get; private set; }
+    public string StopAddress => ViewModel.StopAddress.Trim();
 
-    public decimal? Longitude { get; private set; }
+    public decimal? Latitude => ViewModel.Latitude;
+
+    public decimal? Longitude => ViewModel.Longitude;
 
     private void StopAddressBox_AddressApplied(object sender, PlaceAddressAppliedEventArgs e)
     {
-        Latitude = e.Applied.Latitude.HasValue ? (decimal)e.Applied.Latitude.Value : null;
-        Longitude = e.Applied.Longitude.HasValue ? (decimal)e.Applied.Longitude.Value : null;
-        UpdateCoordinateStatus();
-        Logger.Information(
-            "Route stop address applied HasCoordinates={HasCoordinates}",
-            Latitude.HasValue && Longitude.HasValue);
+        ViewModel.ApplyAddress(e.Applied);
     }
 
-    private void UpdateCoordinateStatus()
+    private void OnCloseRequested(bool accepted)
     {
-        CoordinateStatusText.Text = Latitude.HasValue && Longitude.HasValue
-            ? $"Located at {Latitude.Value:0.#####}, {Longitude.Value:0.#####}"
-            : "Pick the address from the suggestion list so the stop can be mapped.";
-    }
-
-    private void Save_Click(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(StopName))
+        try
         {
-            Logger.Warning("Route stop save blocked — empty stop name");
-            MessageBox.Show("Stop name is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            DialogResult = accepted;
+        }
+        catch (InvalidOperationException)
+        {
+            // Not shown as a dialog.
         }
 
-        // Routes only plot validated coordinates, so a stop without them cannot be saved.
-        if (!Latitude.HasValue || !Longitude.HasValue)
-        {
-            Logger.Warning("Route stop save blocked — no validated coordinates for {StopName}", StopName);
-            MessageBox.Show(
-                "Choose the address from the suggestion list so the stop gets map coordinates.\n\n"
-                    + "A stop without validated coordinates cannot be added to a route.",
-                "Address not validated",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
-
-        Logger.Information(
-            "Route stop saved Name={StopName} Address={Address} Lat={Latitude} Lon={Longitude}",
-            StopName,
-            StopAddress,
-            Latitude,
-            Longitude);
-        DialogResult = true;
         Close();
     }
 
-    private void Cancel_Click(object sender, RoutedEventArgs e)
+    protected override void OnClosed(EventArgs e)
     {
-        Logger.Information("Route stop edit cancelled");
-        DialogResult = false;
-        Close();
+        ViewModel.CloseRequested -= OnCloseRequested;
+        try
+        {
+            SfSkinManager.Dispose(this);
+        }
+        catch
+        {
+            // Theme dispose is best-effort.
+        }
+
+        base.OnClosed(e);
     }
 }

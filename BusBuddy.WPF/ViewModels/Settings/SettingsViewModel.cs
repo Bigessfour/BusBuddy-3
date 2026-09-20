@@ -22,7 +22,16 @@ namespace BusBuddy.WPF.ViewModels.Settings
         private readonly IDistrictSettingsAccessor? _districtSettings;
         private readonly IDistrictMapSync? _districtMapSync;
         private readonly RoutingDistrictSettings _appDistrict;
+        private readonly Task _loadTask;
         private bool _suppressThemePreview;
+        private bool _hydratingDistrict;
+        private bool _clerkEditedDistrict;
+
+        /// <summary>
+        /// Settings view assigns this so Save copies SfTextBoxExt / Places values that never
+        /// reached the VM (same Syncfusion Text DP issue as school save).
+        /// </summary>
+        public Action? CaptureViewFields { get; set; }
 
         public SettingsViewModel(
             IUserSettingsService settingsService,
@@ -51,7 +60,7 @@ namespace BusBuddy.WPF.ViewModels.Settings
             SaveCommand = new AsyncRelayCommand(SaveSettingsAsync, CanSave);
             ResetCommand = new AsyncRelayCommand(ResetSettingsAsync, () => !IsBusy);
 
-            _ = LoadSettingsAsync();
+            _loadTask = LoadSettingsAsync();
         }
 
         public ObservableCollection<string> AvailableThemes { get; }
@@ -123,6 +132,7 @@ namespace BusBuddy.WPF.ViewModels.Settings
         public void ApplyDepotAddress(PlaceAddressApplier.AppliedAddress applied)
         {
             ArgumentNullException.ThrowIfNull(applied);
+            _clerkEditedDistrict = true;
             if (!string.IsNullOrWhiteSpace(applied.FormattedAddress) || !string.IsNullOrWhiteSpace(applied.Street))
             {
                 DepotAddress = applied.FormattedAddress ?? applied.Street ?? DepotAddress;
@@ -172,7 +182,10 @@ namespace BusBuddy.WPF.ViewModels.Settings
                     EnableActivityLogging = await _settingsService.GetSettingAsync(UserSettingsKeys.EnableActivityLogging, true).ConfigureAwait(true);
                     ShowDashboardOnStartup = await _settingsService.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, true).ConfigureAwait(true);
                     _districtSettings?.OverlayFromUserSettings(_settingsService);
-                    HydrateDistrictFields(_districtSettings?.Current ?? _appDistrict);
+                    if (!_clerkEditedDistrict)
+                    {
+                        HydrateDistrictFields(_districtSettings?.Current ?? _appDistrict);
+                    }
                     _suppressThemePreview = false;
 
                     SyncfusionThemeManager.ApplyApplicationThemePreview(SelectedTheme);
@@ -202,6 +215,12 @@ namespace BusBuddy.WPF.ViewModels.Settings
             {
                 try
                 {
+                    if (!_loadTask.IsCompleted)
+                    {
+                        await _loadTask.ConfigureAwait(true);
+                    }
+
+                    CaptureViewFields?.Invoke();
                     IsBusy = true;
                     StatusMessage = "Saving settings...";
                     Logger.Information(
@@ -262,6 +281,7 @@ namespace BusBuddy.WPF.ViewModels.Settings
                 {
                     IsBusy = true;
                     Logger.Information("Resetting settings to defaults");
+                    _clerkEditedDistrict = false;
                     await _settingsService.ResetSettingsAsync().ConfigureAwait(true);
                     _districtSettings?.Replace(_appDistrict);
                     await LoadSettingsAsync().ConfigureAwait(true);
@@ -282,17 +302,45 @@ namespace BusBuddy.WPF.ViewModels.Settings
 
         private void HydrateDistrictFields(RoutingDistrictSettings district)
         {
-            DepotName = district.DepotName ?? string.Empty;
-            DepotAddress = district.DepotAddress ?? string.Empty;
-            DepotCity = district.DepotCity ?? string.Empty;
-            DepotState = district.DepotState ?? string.Empty;
-            DepotZipCode = district.DepotZipCode ?? string.Empty;
-            DepotLatitudeText = DistrictSettingsAccessor.FormatCoord(district.DepotLatitude);
-            DepotLongitudeText = DistrictSettingsAccessor.FormatCoord(district.DepotLongitude);
-            BoundingBoxMinLatText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMinLat);
-            BoundingBoxMinLonText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMinLon);
-            BoundingBoxMaxLatText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMaxLat);
-            BoundingBoxMaxLonText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMaxLon);
+            _hydratingDistrict = true;
+            try
+            {
+                DepotName = district.DepotName ?? string.Empty;
+                DepotAddress = district.DepotAddress ?? string.Empty;
+                DepotCity = district.DepotCity ?? string.Empty;
+                DepotState = district.DepotState ?? string.Empty;
+                DepotZipCode = district.DepotZipCode ?? string.Empty;
+                DepotLatitudeText = DistrictSettingsAccessor.FormatCoord(district.DepotLatitude);
+                DepotLongitudeText = DistrictSettingsAccessor.FormatCoord(district.DepotLongitude);
+                BoundingBoxMinLatText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMinLat);
+                BoundingBoxMinLonText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMinLon);
+                BoundingBoxMaxLatText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMaxLat);
+                BoundingBoxMaxLonText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMaxLon);
+            }
+            finally
+            {
+                _hydratingDistrict = false;
+            }
+        }
+
+        partial void OnDepotNameChanged(string value) => MarkDistrictEdited();
+        partial void OnDepotAddressChanged(string value) => MarkDistrictEdited();
+        partial void OnDepotCityChanged(string value) => MarkDistrictEdited();
+        partial void OnDepotStateChanged(string value) => MarkDistrictEdited();
+        partial void OnDepotZipCodeChanged(string value) => MarkDistrictEdited();
+        partial void OnDepotLatitudeTextChanged(string value) => MarkDistrictEdited();
+        partial void OnDepotLongitudeTextChanged(string value) => MarkDistrictEdited();
+        partial void OnBoundingBoxMinLatTextChanged(string value) => MarkDistrictEdited();
+        partial void OnBoundingBoxMinLonTextChanged(string value) => MarkDistrictEdited();
+        partial void OnBoundingBoxMaxLatTextChanged(string value) => MarkDistrictEdited();
+        partial void OnBoundingBoxMaxLonTextChanged(string value) => MarkDistrictEdited();
+
+        private void MarkDistrictEdited()
+        {
+            if (!_hydratingDistrict)
+            {
+                _clerkEditedDistrict = true;
+            }
         }
 
         private RoutingDistrictSettings DistrictFromForm()

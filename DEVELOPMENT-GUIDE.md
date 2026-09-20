@@ -352,19 +352,9 @@ public class StudentService : IStudentService
 ### **Database Configuration**
 
 ```csharp
-// Context Configuration
-protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-{
-    var provider = _configuration["DatabaseProvider"];
-    var connectionString = provider switch
-    {
-        "Azure" => _configuration.GetConnectionString("BusBuddyDb"),
-        "LocalDB" => _configuration.GetConnectionString("DefaultConnection"),
-        _ => _configuration.GetConnectionString("DefaultConnection")
-    };
-
-    optionsBuilder.UseSqlServer(connectionString);
-}
+// Factory / unconfigured fallback — Postgres unless DatabaseProvider is SqlServer, LocalDB, or Local.
+var connection = EnvironmentHelper.GetConnectionString(_configuration);
+var provider = EnvironmentHelper.GetDatabaseProvider(_configuration);
 ```
 
 ## 🐛 **Debugging and Diagnostics**
@@ -491,18 +481,18 @@ The project was originally Windows-only (WPF). On macOS:
 
     - Does a fast preflight build on the Mac using the required flag (targets the WPF app so you get immediate feedback).
     - Starts (or re-uses) the UTM VM named "Windows".
-    - Syncs to `C:\dev\BusBuddy-3` over SSH and launches `BusBuddy.WPF.exe` in the logged-in `Macbook` session (`schtasks /IT`). It does **not** use `utmctl exec` to start the GUI.
+    - Syncs to `C:\dev\BusBuddy-3` over SSH, rebuilds WPF on the guest, and launches via `schtasks /IT` → `Scripts/UtmLaunchWpf.ps1` (logged-in `Macbook` desktop). It does **not** use `utmctl exec` to start the GUI.
     - If SSH isn't ready yet (VM still booting / logging in / sshd), it prints copy-paste commands.
     - The script prints your current Mac host IP (for reaching Docker Postgres from inside the VM).
 
-    When you are already sitting in a PowerShell prompt _inside the VM_:
+    When you are already sitting in a PowerShell 7 prompt _inside the VM_:
 
     ```powershell
-    cd C:\dev\BusBuddy-3
-    .\utm_run_in_vm.ps1
+    cd C:\dev
+    pwsh -NoProfile -File .\Launch-BusBuddy.ps1
     ```
 
-    That script prefers `C:\dev\BusBuddy-3`, may robocopy from `Z:\` if the NTFS copy is missing, then builds and launches the WPF app. Do not `dotnet run` from `Z:\`.
+    Double-click `C:\dev\Launch-BusBuddy.cmd` if you prefer Explorer. That rebuilds Debug WPF on `C:\dev\BusBuddy-3` and starts `BusBuddy.WPF.exe`. Windows PowerShell 5.1 fallback: `.\utm_run_in_vm.ps1` from `C:\dev\BusBuddy-3`. Do not `dotnet run` from `Z:\`.
 
 - **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data).
     - Host (Mac): localhost:5432

@@ -86,14 +86,16 @@ When a student sees their assigned number, they expect that body to run their pu
 
 ## Code anchors
 
-| Spec term             | Existing code                                                     |
-| --------------------- | ----------------------------------------------------------------- |
-| Bus record            | `BusBuddy.Core.Models.Bus`, `IBusService`                         |
-| Map list of buses     | `MapViewModel` active-bus collection — labels only, no live track |
-| Home depot            | `DistrictDepot`, location type `Depot`                            |
-| Route pairing         | `BusBuddy.Core.Models.Route`                                      |
-| Driver inspections    | duty events in `specs/drivers.md`                                 |
-| AutoMapper (not maps) | `MappingService`                                                  |
+| Spec term             | Existing code                                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Bus record            | `BusBuddy.Core.Models.Bus`, `IBusService`, `IBusRepository`                                                           |
+| SQL table             | `Vehicles` / `VehicleId` — legacy names; do not add a `Vehicle` CLR type. Rename table only via a later EF migration. |
+| Fleet clerk chrome    | `VehicleForm` / `VehiclesView` wrap `Bus`. Filenames still say Vehicle.                                               |
+| Map list of buses     | `MapViewModel` active-bus collection — labels only, no live track                                                     |
+| Home depot            | `DistrictDepot`, location type `Depot`                                                                                |
+| Route pairing         | `BusBuddy.Core.Models.Route`                                                                                          |
+| Driver inspections    | duty events in `specs/drivers.md`                                                                                     |
+| AutoMapper (not maps) | `MappingService`                                                                                                      |
 
 ## Worked examples
 
@@ -104,4 +106,4 @@ When a student sees their assigned number, they expect that body to run their pu
 
 ## Agent instructions
 
-When changing bus code, read this file plus `specs/drivers.md`, `specs/routes.md`, `specs/trips.md`, and `specs/maps.md`. Quote the invariant you implemented. Do not attach live coordinates to `Bus`. Do not store inspections only as booleans on the vehicle.
+When changing bus code, read this file plus `specs/drivers.md`, `specs/routes.md`, `specs/trips.md`, and `specs/maps.md`. Quote the invariant you implemented. Do not attach live coordinates to `Bus`. Do not store inspections only as booleans on the vehicle. Do not invent `Vehicle.cs` or `IVehicleRepository`. `AssignVehicleCommand` / `AMVehicleId` are session FKs to `Bus`.
