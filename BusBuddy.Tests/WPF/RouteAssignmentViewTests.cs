@@ -23,6 +23,11 @@ public class RouteAssignmentViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding AssignVehicleCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AssignDriverCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshDataCommand}\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Refresh Route Data\""));
+
+        var codeBehind = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml.cs");
+        Assert.That(codeBehind, Does.Contain("FindAncestor<Syncfusion.Windows.Tools.Controls.ButtonAdv>"));
+        Assert.That(codeBehind, Does.Contain("RouteAssign ButtonAdv"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding MarkNotRidingTodayCommand}\""));
         Assert.That(xaml, Does.Contain("SelectedRouteBusDisplay"));
         Assert.That(xaml, Does.Contain("SelectedRouteDriverDisplay"));

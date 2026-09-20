@@ -307,58 +307,6 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        // Generate eligibility route PDF directly from MainWindow without needing MapView visible.
-        private async void EligibilityPdfButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                using (Serilog.Context.LogContext.PushProperty("UIAction", "EligibilityPdf"))
-                {
-                    Logger.Information("Eligibility PDF button clicked (MainWindow)");
-                    var sp = App.ServiceProvider;
-                    var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
-                    if (vm == null)
-                    {
-                        Logger.Warning("MapViewModel not resolved for eligibility PDF generation");
-                        UserToast.Warning("Map is not available.", "Student Map PDF");
-                        return;
-                    }
-                    await vm.GenerateEligibilityRoutePdfAndPreviewAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Eligibility PDF generation failed from MainWindow");
-                UserToast.Error($"Could not generate the student map PDF: {ex.Message}", "Student Map PDF");
-            }
-        }
-
-        private void PrintEligibilityPdfButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var sp = App.ServiceProvider;
-                var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
-                if (vm == null)
-                {
-                    UserToast.Warning("Map is not available.", "Student Map PDF");
-                    return;
-                }
-
-                using (Serilog.Context.LogContext.PushProperty("UIAction", "PrintEligibilityPdf"))
-                {
-                    Logger.Information("Reopening last student map PDF");
-                }
-
-                vm.PreviewLastEligibilityPdf();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to reopen eligibility PDF");
-                UserToast.Error($"Could not open the PDF: {ex.Message}", "Student Map PDF");
-            }
-        }
-
         // Global button click logger for MainWindow
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
         {

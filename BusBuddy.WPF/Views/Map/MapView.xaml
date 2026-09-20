@@ -237,7 +237,7 @@
 
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                     <syncfusion:ButtonAdv Label="Plot Students"
-                                          ToolTip="Plot catalog pickup stops when assigned, otherwise home; geocode missing homes via Google Address Validation"
+                                          ToolTip="Plot catalog pickup stops when assigned, otherwise validated home coordinates already on the student"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
                                           AutomationProperties.Name="Plot Students"/>
 
@@ -245,11 +245,6 @@
                                       AutomationProperties.Name="Move to selected route"
                                       ToolTip="Move the selected student pin onto the route in the list (clerk override; seating may be exceeded)"
                                       Command="{Binding ApplyClerkOverrideCommand}"/>
-
-                <syncfusion:ButtonAdv Label="Generate Eligibility PDF"
-                              AutomationProperties.Name="Generate Eligibility PDF"
-                              ToolTip="Generate the student map PDF and open it"
-                              Command="{Binding GenerateEligibilityRoutePdfCommand}"/>
                             </StackPanel>
                         </Border>
 

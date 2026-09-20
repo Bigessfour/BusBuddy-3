@@ -44,13 +44,21 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Contain("ColumnSizer=\"None\""));
         Assert.That(xaml, Does.Contain("FrozenColumnCount=\"2\""));
         Assert.That(xaml, Does.Contain("Name=\"ColumnsChooserButton\""));
-        Assert.That(xaml, Does.Contain("Click=\"ColumnsChooserButton_Click\""));
+        Assert.That(xaml, Does.Not.Contain("Click=\"ColumnsChooserButton_Click\""));
+        Assert.That(xaml, Does.Contain("Header=\"Columns...\""));
+        Assert.That(xaml, Does.Contain("Click=\"ColumnsChooserMenu_Click\""));
         Assert.That(xaml, Does.Contain("Name=\"ActiveFilterCombo\""));
         var roster = xaml.IndexOf("Text=\"Roster\"", StringComparison.Ordinal);
         var filter = xaml.IndexOf("Name=\"ActiveFilterCombo\"", StringComparison.Ordinal);
+        var columns = xaml.IndexOf("Name=\"ColumnsChooserButton\"", StringComparison.Ordinal);
         var record = xaml.IndexOf("Text=\"Record\"", StringComparison.Ordinal);
         Assert.That(roster, Is.GreaterThan(record));
         Assert.That(filter, Is.GreaterThan(roster), "Active filter sits on the Roster row so it is not clipped off Record");
+        Assert.That(columns, Is.GreaterThan(roster), "Columns sits on the Roster row so ButtonAdv is not clipped off Record");
+
+        var code = File.ReadAllText(FindView("Views/Student/StudentsView.xaml.cs"));
+        Assert.That(code, Does.Contain("ColumnsChooserButton.Command = new RelayCommand(OpenColumnsChooser)"));
+        Assert.That(code, Does.Contain("private void OpenColumnsChooser()"));
     }
 
     [Test]
@@ -96,6 +104,9 @@ public class StudentsViewTests
         Assert.That(src, Does.Contain("new BusBuddy.WPF.ViewModels.Student.StudentsViewModel("));
         Assert.That(src, Does.Contain("GetRequiredService<IBusBuddyDbContextFactory>()"));
         Assert.That(src, Does.Not.Contain("services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();"));
+        Assert.That(src, Does.Contain("Startup student seed skipped"));
+        Assert.That(src, Does.Not.Contain("await seedSvc.SeedFromJsonAsync()"));
+        Assert.That(src, Does.Not.Contain("await seedSvc.EnsureMapDemoGeoAsync()"));
     }
 
     private static string FindView(string relative)

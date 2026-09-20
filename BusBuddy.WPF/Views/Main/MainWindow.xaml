@@ -48,16 +48,6 @@
 
                 <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <syncfusion:ButtonAdv Label="Student Map PDF" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
-                                          Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Generate a PDF of students with map coordinates and open it"
-                                          AutomationProperties.Name="Generate Student Map PDF"/>
-                    <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
-                                          Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Reopen the last student map PDF to print"
-                                          AutomationProperties.Name="Print Student Map PDF"/>
                     <syncfusion:ButtonAdv Label="Dashboard" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="DashboardButton_Click" FontSize="14" FontWeight="SemiBold"

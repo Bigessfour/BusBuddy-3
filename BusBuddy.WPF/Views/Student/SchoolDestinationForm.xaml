@@ -13,6 +13,7 @@
                              WindowStartupLocation="CenterOwner"
                              ResizeMode="CanResize"
                              UseNativeChrome="False"
+                             FontSize="14"
                              PreviewKeyDown="SchoolForm_PreviewKeyDown">
     <!--
       Input reliability (clerk form):
@@ -24,6 +25,9 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionStyles.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/BusBuddyInputStyles.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -58,27 +62,32 @@
 
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Focusable="False">
                 <StackPanel>
-                    <TextBlock Text="School name *" Margin="0,0,0,4"/>
+                    <TextBlock Text="School name *" Margin="0,0,0,4" FontSize="14"/>
                     <syncfusion:SfTextBoxExt x:Name="SchoolNameBox"
                                              AutoCompleteMode="None"
                                              ShowClearButton="True"
-                                             Height="40" Margin="0,0,0,10"
                                              IsEnabled="{Binding CanEditSchoolDetails}"
                                              AutomationProperties.Name="School name"/>
 
-                    <TextBlock Text="Street address *" Margin="0,0,0,4"/>
+                    <TextBlock Text="Street address *" Margin="0,0,0,4" FontSize="14"/>
                     <controls:PlacesAddressBox x:Name="SchoolAddressBox"
                                                 Watermark="1105 Parkview Ave"
                                                 FieldAutomationName="School street address"
                                                 IsEnabled="{Binding CanEditSchoolDetails}"
                                                 AddressApplied="SchoolAddress_Applied"
-                                                Margin="0,0,0,10"/>
+                                                Margin="0,0,0,6"/>
+                    <syncfusion:ButtonAdv Label="Validate address"
+                                          Click="ValidateSchoolAddressButton_Click"
+                                          SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                          HorizontalAlignment="Left"
+                                          Margin="0,0,0,10"
+                                          IsEnabled="{Binding CanEditSchoolDetails}"
+                                          AutomationProperties.Name="Validate school address"/>
 
-                    <TextBlock Text="City *" Margin="0,0,0,4"/>
+                    <TextBlock Text="City *" Margin="0,0,0,4" FontSize="14"/>
                     <syncfusion:SfTextBoxExt x:Name="SchoolCityBox"
                                              AutoCompleteMode="None"
                                              ShowClearButton="True"
-                                             Height="40" Margin="0,0,0,10"
                                              IsEnabled="{Binding CanEditSchoolDetails}"
                                              AutomationProperties.Name="School city"/>
 
@@ -89,18 +98,16 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="State * (2-letter)" Margin="0,0,0,4"/>
+                            <TextBlock Text="State * (2-letter)" Margin="0,0,0,4" FontSize="14"/>
                             <syncfusion:SfTextBoxExt x:Name="SchoolStateBox"
                                                      AutoCompleteMode="None"
-                                                     Height="40"
                                                      IsEnabled="{Binding CanEditSchoolDetails}"
                                                      AutomationProperties.Name="School state"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="ZIP *" Margin="0,0,0,4"/>
+                            <TextBlock Text="ZIP *" Margin="0,0,0,4" FontSize="14"/>
                             <syncfusion:SfTextBoxExt x:Name="SchoolZipBox"
                                                      AutoCompleteMode="None"
-                                                     Height="40"
                                                      IsEnabled="{Binding CanEditSchoolDetails}"
                                                      AutomationProperties.Name="School ZIP"/>
                         </StackPanel>
@@ -113,19 +120,13 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Start (HH:mm) *" Margin="0,0,0,4"/>
-                            <syncfusion:SfTextBoxExt x:Name="SchoolStartBox"
-                                                     AutoCompleteMode="None"
-                                                     Watermark="08:00"
-                                                     Height="40"
+                            <TextBlock Text="Start *" Margin="0,0,0,4" FontSize="14"/>
+                            <syncfusion:SfTimePicker x:Name="SchoolStartPicker"
                                                      AutomationProperties.Name="School start time"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Dismissal (HH:mm) *" Margin="0,0,0,4"/>
-                            <syncfusion:SfTextBoxExt x:Name="SchoolDismissalBox"
-                                                     AutoCompleteMode="None"
-                                                     Watermark="15:30"
-                                                     Height="40"
+                            <TextBlock Text="Dismissal *" Margin="0,0,0,4" FontSize="14"/>
+                            <syncfusion:SfTimePicker x:Name="SchoolDismissalPicker"
                                                      AutomationProperties.Name="School dismissal time"/>
                         </StackPanel>
                     </Grid>
@@ -145,7 +146,6 @@
                                                   NumberDecimalDigits="6"
                                                   MinValue="-90"
                                                   MaxValue="90"
-                                                  Height="40"
                                                   IsEnabled="{Binding CanEditSchoolDetails}"
                                                   AutomationProperties.Name="School latitude"/>
                         <syncfusion:DoubleTextBox x:Name="SchoolLonBox"
@@ -153,7 +153,6 @@
                                                   NumberDecimalDigits="6"
                                                   MinValue="-180"
                                                   MaxValue="180"
-                                                  Height="40"
                                                   IsEnabled="{Binding CanEditSchoolDetails}"
                                                   AutomationProperties.Name="School longitude"/>
                     </Grid>
@@ -180,16 +179,15 @@
                                Text="Click the map to pin this school. Scroll wheel zooms; drag pans."/>
                     <Grid Grid.Row="1">
                         <utils:DistrictSfMap x:Name="SchoolPickMap"
-                                    ZoomLevel="{Binding MapZoomLevel}"
                                     EnableZoom="True"
                                     EnablePan="True"
-                                    MouseLeftButtonUp="SchoolPickMap_MouseLeftButtonUp"
+                                    PreviewMouseLeftButtonDown="SchoolPickMap_MouseLeftButtonDown"
+                                    PreviewMouseLeftButtonUp="SchoolPickMap_MouseLeftButtonUp"
                                     AutomationProperties.Name="School location map">
-                            <!-- Markers assigned in code-behind after tile bootstrap (MapMarkerHost). -->
+                            <!-- Camera via MapCameraHost.TryApply — do not bind Center/ZoomLevel. -->
                             <utils:DistrictSfMap.Layers>
                                 <utils:GoogleMapTilesImageryLayer x:Name="SchoolPickLayer"
-                                                   LayerType="Bing"
-                                                   Center="{Binding MapCenter}"/>
+                                                   LayerType="Bing"/>
                             </utils:DistrictSfMap.Layers>
                         </utils:DistrictSfMap>
                         <Border x:Name="SchoolPickAttribution"

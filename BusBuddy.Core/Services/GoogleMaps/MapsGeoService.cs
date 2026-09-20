@@ -84,4 +84,10 @@ public sealed class MapsGeoService : IMapsGeoService
 
         return (result.Latitude.Value, result.Longitude.Value);
     }
+
+    public Task<MapsGeocodeResult> ReverseGeocodeAsync(
+        double latitude,
+        double longitude,
+        CancellationToken cancellationToken = default) =>
+        _client.ReverseGeocodeAsync(latitude, longitude, cancellationToken);
 }

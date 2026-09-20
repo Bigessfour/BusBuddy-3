@@ -21,7 +21,10 @@ public class PlacesAddressSurfaceTests
         var school = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml");
         Assert.That(school, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(school, Does.Contain("AddressApplied=\"SchoolAddress_Applied\""));
+        Assert.That(school, Does.Contain("ValidateSchoolAddressButton_Click"));
         Assert.That(school, Does.Not.Contain("SchoolAddressSuggestionsPopup"));
+        var placesBox = XamlViewFile.Read("Controls/PlacesAddressBox.xaml");
+        Assert.That(placesBox, Does.Contain("BusBuddyInputStyles.xaml"));
     }
 
     [Test]
@@ -30,6 +33,7 @@ public class PlacesAddressSurfaceTests
         var pickup = XamlViewFile.Read("Views/Student/PickupStopForm.xaml");
         Assert.That(pickup, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(pickup, Does.Contain("AddressApplied=\"StopAddress_Applied\""));
+        Assert.That(pickup, Does.Contain("Watermark=\"e.g. Oak &amp; 4th\""));
 
         var driver = XamlViewFile.Read("Views/Driver/DriverForm.xaml");
         Assert.That(driver, Does.Contain("controls:PlacesAddressBox"));

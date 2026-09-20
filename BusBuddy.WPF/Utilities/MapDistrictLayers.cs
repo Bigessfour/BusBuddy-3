@@ -2,7 +2,6 @@ using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -23,7 +22,6 @@ internal sealed class MapDistrictLayers
     private readonly IPickupStopService? _pickups;
     private readonly IDestinationService? _destinations;
     private readonly IStudentService? _students;
-    private readonly IGeocodingService? _geocoding;
     private readonly IServiceScopeFactory? _scopes;
     private readonly MapPinPlot _plot;
     private readonly Func<(double Lat, double Lon, string Name)?>? _depot;
@@ -32,7 +30,6 @@ internal sealed class MapDistrictLayers
         IPickupStopService? pickups,
         IDestinationService? destinations,
         IStudentService? students,
-        IGeocodingService? geocoding,
         IServiceScopeFactory? scopes,
         MapPinPlot plot,
         Func<(double Lat, double Lon, string Name)?>? depot = null)
@@ -40,7 +37,6 @@ internal sealed class MapDistrictLayers
         _pickups = pickups;
         _destinations = destinations;
         _students = students;
-        _geocoding = geocoding;
         _scopes = scopes;
         _plot = plot ?? throw new ArgumentNullException(nameof(plot));
         _depot = depot;
@@ -148,77 +144,21 @@ internal sealed class MapDistrictLayers
         return PlotStoredStudents(students, pickups);
     }
 
+    /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
     public async Task<MapStudentBulkPlot> BulkPlotStudentsAsync()
     {
         using var scope = _scopes?.CreateScope();
-        var studentService = Resolve(_students, scope);
-        if (studentService is null)
-        {
-            return new MapStudentBulkPlot(0, 0, 0, "Student service unavailable");
-        }
-
-        List<Student> students;
-        try
-        {
-            students = await studentService.GetAllStudentsAsync().ConfigureAwait(true);
-        }
-        catch (Exception ex)
-        {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Bulk plot: failed loading students");
-            return new MapStudentBulkPlot(0, 0, 0, "Load students failed");
-        }
-
-        if (students.Count == 0)
-        {
-            return new MapStudentBulkPlot(0, 0, 0, "No students");
-        }
-
         var pickups = await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
-        var geocoded = 0;
-        var plotted = 0;
-        foreach (var stu in students)
-        {
-            var points = StudentPlotLocation.PinsFromStored(stu, pickups);
-            if (points.Count == 0)
-            {
-                var geo = await TryGeocodeAsync(stu, scope).ConfigureAwait(true);
-                if (geo is null)
-                {
-                    continue;
-                }
-
-                points = [new StudentPlotPoint(geo.Value.Lat, geo.Value.Lon, AtPickup: false, PickupName: null)];
-                stu.Latitude = (decimal)geo.Value.Lat;
-                stu.Longitude = (decimal)geo.Value.Lon;
-                if (await studentService.UpdateStudentAsync(stu).ConfigureAwait(true))
-                {
-                    geocoded++;
-                }
-                else
-                {
-                    Logger.Warning("Bulk plot: failed persisting geocode for student {Id}", stu.StudentId);
-                }
-            }
-
-            try
-            {
-                plotted += PlotStudentPins(stu, points);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Plot failed for student {Id}", stu.StudentId);
-            }
-        }
-
+        var students = await LoadStudentsAsync(scope).ConfigureAwait(true);
+        var plotted = PlotStoredStudents(students, pickups);
         var status = plotted == 0
-            ? $"Student plotting complete — no locations ({students.Count} in DB; geocoded {geocoded})"
+            ? $"Student plotting complete — no stored locations ({students.Count} in DB)"
             : $"Student plotting complete — {plotted} locations";
         Logger.Information(
-            "Bulk plot complete Geocoded={Geocoded} Plotted={Plotted} Total={Total}",
-            geocoded,
+            "Bulk plot complete Geocoded=0 Plotted={Plotted} Total={Total}",
             plotted,
             students.Count);
-        return new MapStudentBulkPlot(plotted, geocoded, students.Count, status);
+        return new MapStudentBulkPlot(plotted, 0, students.Count, status);
     }
 
     private int PlotSchools(IReadOnlyList<Destination> schools)
@@ -333,31 +273,6 @@ internal sealed class MapDistrictLayers
             Logger.Warning(ex, "LoadStudentsAsync failed");
             return Array.Empty<Student>();
         }
-    }
-
-    private async Task<(double Lat, double Lon)?> TryGeocodeAsync(Student student, IServiceScope? scope)
-    {
-        var geocoding = Resolve(_geocoding, scope);
-        if (geocoding is null)
-        {
-            return null;
-        }
-
-        try
-        {
-            var geo = await geocoding.GeocodeAsync(
-                student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-            if (geo.HasValue && LocationCoordinate.IsValidated(geo.Value.latitude, geo.Value.longitude))
-            {
-                return (geo.Value.latitude, geo.Value.longitude);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "IGeocodingService geocode failed for student {Id}", student.StudentId);
-        }
-
-        return null;
     }
 
     private static T? Resolve<T>(T? injected, IServiceScope? scope) where T : class =>

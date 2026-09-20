@@ -130,14 +130,10 @@ public sealed class StudentHomePinViewModel : INotifyPropertyChanged
         _latitudeValue = Math.Round(latitude, 6);
         _longitudeValue = Math.Round(longitude, 6);
         HasMapPick = true;
-        MapCenter = new Point(_latitudeValue, _longitudeValue);
-        MapZoomLevel = 16;
         MapHint = SameAsValidated(_latitudeValue, _longitudeValue)
             ? $"Pickup matches the validated address ({_latitudeValue:F5}, {_longitudeValue:F5}). Click to nudge the driveway."
             : $"Pickup pin {_latitudeValue:F5}, {_longitudeValue:F5}. Confirm writes this point; the street address is unchanged.";
         RefreshMarkers();
-        OnPropertyChanged(nameof(MapCenter));
-        OnPropertyChanged(nameof(MapZoomLevel));
         OnPropertyChanged(nameof(LatitudeValue));
         OnPropertyChanged(nameof(LongitudeValue));
     }

@@ -32,16 +32,11 @@ public static class RuntimeCapabilityLogger
 
     public static string DescribeMapDiagnostics(IConfiguration? configuration)
     {
-        var env = Environment.GetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride);
+        _ = configuration;
+        var env = Environment.GetEnvironmentVariable("BUSBUDDY_MAP_DIAGNOSTICS");
         if (!string.IsNullOrWhiteSpace(env))
         {
             return $"{env.Trim()}(env)";
-        }
-
-        var config = configuration?["Map:InteractionDiagnostics"];
-        if (!string.IsNullOrWhiteSpace(config))
-        {
-            return $"{config}(config)";
         }
 
         return "(default)";

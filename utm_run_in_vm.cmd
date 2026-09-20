@@ -7,6 +7,7 @@ echo Running BusBuddy launcher from:
 echo   %CD%
 echo.
 
+REM PowerShell 7+ rebuild+launch is Launch-BusBuddy.cmd (also copied to C:\dev).
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0utm_run_in_vm.ps1"
 set EXITCODE=%ERRORLEVEL%
 

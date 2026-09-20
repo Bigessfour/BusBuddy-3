@@ -19,7 +19,7 @@
 
 ### Status snapshot (2026-09-20)
 
-Branch `feature/utm-agent-cli`. Prod walk is [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now: Item 1** (student intake). Do not start Item 2 until Item 1 guest proof is pasted.
+Branch `feature/utm-agent-cli`. Prod walk is [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now: Item 2** (schools + catalog stops). Item 1 guest proof is in `artifacts/utm-runtime-logs-20260920T223422Z`.
 
 | Criterion               | Status                                                                                                                                                         |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -31,7 +31,7 @@ Branch `feature/utm-agent-cli`. Prod walk is [clerk-path-cursor-prompts.md](./cl
 | a11y Phase 2 / wishlist | Out of scope                                                                                                                                                   |
 | Project-done checker    | **Not 0** — B14 still wants hops 1–3 live UI boxes; B10 until leftover clicks / parked prefixes; B05 DI leftovers; B12 stale inventory. Ship-ready ≠ checker 0 |
 
-**Verdict:** Ship-ready for clerk Core. Live proof continues with **Item 1** of the prod walk (student intake). Maps slices 1–4 are walk Item 7 (and must not start until Items 1–6 guest proof is back).
+**Verdict:** Ship-ready for clerk Core. Live proof continues with **Item 2** of the prod walk (schools + catalog stops). Maps slices 1–4 are walk Item 7 (and must not start until Items 1–6 guest proof is back).
 
 ---
 
@@ -41,27 +41,29 @@ Branch `feature/utm-agent-cli`. Prod walk is [clerk-path-cursor-prompts.md](./cl
 
 Do in this order. Do not start parked campaigns from this table.
 
-| Order | Item                                                                                                                                                                                                                   | Why this slot                                                                                       |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1     | **Prod walk Item 1 — student intake.** PlacesAddressBox + pickup mode Home/CatalogStop; SN stays home; no pin without validated coords. Guest proof in [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). | One item at a time. Do not start Item 2 until guest logs are pasted.                                |
-| 2     | Prod walk Items 2–6 (schools/stops, Bus 5 AM clocks, assign/remove/not-riding, refresh, print sheet)                                                                                                                   | After Item 1 guest proof only.                                                                      |
-| 3     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Wiley center. No OSM.                        | After Items 1–6. Competing tile strategies blanked the map. Contract: `specs/maps.md`.              |
-| —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                                             | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                              |
-| —     | Student form map live confirm                                                                                                                                                                                          | Parked. `StudentHomePinWindow` already uses `MapTileBootstrap` + `MapMarkerHost`.                   |
-| —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                                                 | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
-| —     | `IRouteRepository`                                                                                                                                                                                                     | **Keep.** Address Validation `GetAllAsync`. Not a stub                                              |
-| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                                                                                                                                                            | Parked. Do not “finish” `RouteAssignments`                                                          |
-| —     | Generate also assign roster keys                                                                                                                                                                                       | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only |
+| Order | Item                                                                                                                                                                                                     | Why this slot                                                                                       |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1     | **Prod walk Item 2 — schools + catalog stops.** Named places with Address Validation + lat/lng before they are waypoints. Guest proof in [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). | Item 1 closed. One item at a time.                                                                  |
+| 2     | Prod walk Items 3–6 (Bus 5 AM clocks, assign/remove/not-riding, refresh, print sheet)                                                                                                                    | After Item 2 guest proof only.                                                                      |
+| 3     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Wiley center. No OSM.          | After Items 1–6. Competing tile strategies blanked the map. Contract: `specs/maps.md`.              |
+| —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                               | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                              |
+| —     | Student form map live confirm                                                                                                                                                                            | **Met** 2026-09-20 — `Opening home pin map` + `Clerk adjusted home pin` StudentId=65.               |
+| —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                                   | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
+| —     | `IRouteRepository`                                                                                                                                                                                       | **Keep.** Address Validation `GetAllAsync`. Not a stub                                              |
+| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                                                                                                                                              | Parked. Do not “finish” `RouteAssignments`                                                          |
+| —     | Generate also assign roster keys                                                                                                                                                                         | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
-- [ ] **Prod walk Item 1 (live, guest):** Students → Add/Edit Student. Places fill street+city+ZIP, Validate. Pickup stop combo lists **published catalog stops** (empty until Add catalog stop). After a pin, hint is nearby stop, cluster (two Oak homes both saved with lat/lng), or “No published catalog stops”. View on Map opens the home pin window. Testhost `StudentFormCatalogCoordinatorTests` + `PlacesAddressSurfaceTests`. Do not start Item 2 until logs are pasted (`Pickup hint`, `Opening home pin map` / `View on Map clicked`).
+- [x] **Prod walk Item 1 (live, guest):** StudentIds 63–65 in `artifacts/utm-runtime-logs-20260920T223422Z/Debug-logs/logs/log-20260920.txt`. Failed validate: `Address validation failed StudentId=63` + `HasPin=false` / “No map pin.” Success: Places apply → `Student address geocoded / confirmed before save` → `Successfully saved student StudentId=64 DestinationId=5 HasCoordinates=true`. Hint: `Pickup hint StudentId=65 HasPin=true`. Home pin: `Opening home pin map StudentId=65` + `Clerk adjusted home pin`. Delete log: `Student deleted StudentId=61 Reason=Mistake`. Testhost `PlacesAddressSurfaceTests` + `StudentFormCatalogCoordinatorTests`.
+
+- [ ] **Prod walk Item 2 (live, guest):** Add/edit school (`SchoolDestinationForm`) and catalog stop (`PickupStopForm`). Places + Validate; lat/lng only after validation; incomplete rows stay in the grid and are skipped as waypoints. Do not start Item 3 until logs are pasted.
 
 - [ ] **Maps slice 1 (live, guest):** parked until prod walk Item 7. `MapsConnectionProbe` session 200, `SfMapTileProbe google-urltemplate` paints Wiley, District Map logs `MapTileBootstrap Host=DistrictMap Outcome=ok`. Fail-closed empty basemap if no key — never OSM.
 
 - [ ] Parked (not slice-blocking) **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route**. Testhost `MapToolbarSmokeTests` covers both. Do not start until slices 1–3 pass.
 
-- [ ] Parked (not slice-blocking) **Student form map (live):** Edit student → **View on Map** / **Adjust pin** opens `StudentHomePinWindow`. Testhost `StudentFormViewOnMap_UsesPickupThenHomePlotRule` already asserts the wiring.
+- [x] **Student form map (live):** `Opening home pin map StudentId=65 HasPin=true` + `Clerk adjusted home pin StudentId=65 HasCoords=true` (same artifact as Item 1). Testhost `StudentFormViewOnMap_UsesPickupThenHomePlotRule` already asserts the wiring.
 
 Do **not** explode `MainWindow.xaml.cs` / `StudentsViewModel.cs`. Button a11y audit is `ButtonAccessibilityAudit`. Ribbon **Route Assignment** opens Route Management (blocks the dock) — clerk Schedule/Add Stop is dock **Route Assignments**.
 

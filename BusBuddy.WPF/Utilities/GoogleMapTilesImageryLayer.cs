@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using BusBuddy.Core.Mapping;
 using Serilog;
 using Syncfusion.UI.Xaml.Maps;
 
@@ -29,6 +30,11 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
         typeof(ImageryLayer).GetField(
             "imageryPanel",
             BindingFlags.Instance | BindingFlags.NonPublic);
+
+    private static readonly MethodInfo? DeleteTilesFromCacheMethod =
+        typeof(ImageryLayer).GetMethod(
+            "DeleteTilesFromCache",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
     private string? _googleUrlTemplate;
     private bool _loggedVisualTreeSkip;
@@ -167,6 +173,7 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
         _googleUrlTemplate = urlTemplate;
         CanCacheTiles = true;
         ResetTileGenerationGate();
+        ClearTileCache();
         UrlTemplate = urlTemplate;
         Logger.Information("Google Map Tiles UrlTemplate applied (Syncfusion custom imagery path)");
     }
@@ -180,6 +187,7 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
         _googleUrlTemplate = null;
         CanCacheTiles = true;
         ResetTileGenerationGate();
+        ClearTileCache();
         if (!string.IsNullOrEmpty(UrlTemplate))
         {
             UrlTemplate = string.Empty;
@@ -194,14 +202,21 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
     }
 
     /// <summary>
-    /// Returns empty so Syncfusion uses <c>UrlTemplate</c>. Still raises <see cref="TileRequested"/>.
+    /// Expands the official Map Tiles <c>UrlTemplate</c> when Syncfusion still calls <see cref="GetUri"/>.
+    /// Never returns a scraper host. Empty only when Google tiles are not active (Bing placeholder).
     /// </summary>
     protected override string GetUri(int X, int Y, int Scale)
     {
+        var isGoogle = _googleUrlTemplate is not null;
         TileRequested?.Invoke(
             this,
-            new TileRequestedEventArgs(Scale, X, Y, isGoogle: _googleUrlTemplate is not null));
-        return string.Empty;
+            new TileRequestedEventArgs(Scale, X, Y, isGoogle: isGoogle));
+        if (!isGoogle)
+        {
+            return string.Empty;
+        }
+
+        return MapBasemap.ResolveTileUrl(_googleUrlTemplate!, Scale, X, Y);
     }
 
     /// <summary>
@@ -275,6 +290,23 @@ public sealed class GoogleMapTilesImageryLayer : ImageryLayer
         catch (Exception ex)
         {
             Logger.Debug(ex, "Imagery tile health inspect failed");
+        }
+    }
+
+    private void ClearTileCache()
+    {
+        if (DeleteTilesFromCacheMethod is null)
+        {
+            return;
+        }
+
+        try
+        {
+            DeleteTilesFromCacheMethod.Invoke(this, null);
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Could not clear ImageryLayer tile cache");
         }
     }
 

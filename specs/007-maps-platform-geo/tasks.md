@@ -190,8 +190,8 @@
 
 - [x] T042 [P] Add `MapMarkerLabels` prefixes (`SCH `, `PK `, `HOME `, `WP `, `DEPOT `) + `MapMarker.Kind`; merge same-kind only; Syncfusion school vs stop `MarkerTemplateSelector`
 - [x] T043 [US1] Add `PlotPickupStopsCommand` → `IPickupStopService.GetActiveStopsAsync()` in `BusBuddy.WPF/ViewModels/Map/MapViewModel.cs` and **Plot Pickup Stops** in `BusBuddy.WPF/Views/Map/MapView.xaml`
-- [x] T044 [US1] Student plot: PK when assigned `PickupStop` has GPS; optional smaller HOME pin when home GPS differs; else geocode/plot home only (`StudentPlotLocation`, `MapDistrictLayers`, `StudentsViewModel`, `StudentFormViewModel`)
-- [x] T045 [US1] On `InitializeMapDataAsync`, after routes: depot → schools → active pickups → students with stored coords (no network), then refresh selected route drive path
+- [x] T044 [US1] **Superseded by `specs/maps.md`:** plot stored coords only (`StudentPlotLocation.PinsFromStored`). Do **not** geocode inside `MapDistrictLayers` / `StudentsMapCoordinator`. Address Validation stays on the student form (`PlacesAddressBox`).
+- [x] T045 [US1] **Superseded by `specs/maps.md`:** `InitializeMapDataAsync` loads depot → schools → pickups → stored student coords. Do **not** auto-select a route or refresh a drive path on first open.
 - [x] T046 [P] Remove live-tracking chrome (**Show All Buses**, **Track Selected**, interval timer); keep one Fleet GPS status line until AVL exists
 - [x] T047 Tests in `BusBuddy.Tests/WPF/MapViewTests.cs` and `MapViewModelTests.cs` for prefixes, pickup-vs-home, auto-seed, no live-tracking chrome
 - [x] T048 Update `docs/action-items.md` (plot layers + remaining VM smoke / migration)

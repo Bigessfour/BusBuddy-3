@@ -14,19 +14,31 @@ typeset -r FILTER='FullyQualifiedName~RouteScheduleViewModelTests|FullyQualified
 DO_SYNC=1
 TESTHOST_ONLY=0
 
-while (( $# )); do
-  case "$1" in
-    -h|--help)
-      print -r -- "Usage: $0 [--no-sync] [--testhost-only]"
-      exit 0
-      ;;
-    --no-sync) DO_SYNC=0; shift ;;
-    --testhost-only) TESTHOST_ONLY=1; shift ;;
-    *) print -r -- "Unknown: $1" >&2; exit 2 ;;
-  esac
+while (($#)); do
+	case "$1" in
+	-h | --help)
+		print -r -- "Usage: $0 [--no-sync] [--testhost-only]"
+		exit 0
+		;;
+	--no-sync)
+		DO_SYNC=0
+		shift
+		;;
+	--testhost-only)
+		TESTHOST_ONLY=1
+		shift
+		;;
+	*)
+		print -r -- "Unknown: $1" >&2
+		exit 2
+		;;
+	esac
 done
 
-[[ -f "${BRIDGE}" ]] || { print -r -- "missing ${BRIDGE}" >&2; exit 1; }
+[[ -f ${BRIDGE} ]] || {
+	print -r -- "missing ${BRIDGE}" >&2
+	exit 1
+}
 
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/utm-dev-bridge.inc"
@@ -36,8 +48,8 @@ ensure_connected 300 || exit 1
 win_root="$(posix_to_win_path)"
 win_root_ps=${win_root:gs/\'/\'\'/}
 
-if (( DO_SYNC )); then
-  "${BRIDGE}" sync || exit 1
+if ((DO_SYNC)); then
+	"${BRIDGE}" sync || exit 1
 fi
 
 info "close leftover WPF + rebuild Debug"
@@ -57,9 +69,9 @@ if (\$LASTEXITCODE -ne 0) { exit \$LASTEXITCODE }
 info "testhost: ${FILTER}"
 "${BRIDGE}" test --no-sync --filter "${FILTER}" || exit 1
 
-if (( TESTHOST_ONLY )); then
-  ok "testhost-only complete"
-  exit 0
+if ((TESTHOST_ONLY)); then
+	ok "testhost-only complete"
+	exit 0
 fi
 
 info "launch WPF"

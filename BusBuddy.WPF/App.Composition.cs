@@ -162,8 +162,6 @@ namespace BusBuddy.WPF
                     {
                         using var scope = ServiceProvider.CreateScope();
                         var contextFactory = scope.ServiceProvider.GetRequiredService<IBusBuddyDbContextFactory>();
-                        var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-                        var seedSvc = new SeedDataService(contextFactory, cfg);
                         using var context = contextFactory.CreateDbContext();
 
                         await BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync(
@@ -176,17 +174,15 @@ namespace BusBuddy.WPF
                             maxRetries: 3
                         );
 
-                        // Import JSON data if database is empty with retry strategy
-                        // JSON seeding disabled. Use CSV import path.
-                        // await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
-
-                        // Also support plain array JSON via SeedDataService (uses StudentJsonPath)
-                        await seedSvc.SeedFromJsonAsync();
-                        await seedSvc.EnsureMapDemoGeoAsync();
+                        // Do not auto-seed students. EnsureMapDemoGeo / JSON / CSV seed re-inserts
+                        // deleted TEST_STUDENT_* rows on every launch. Roster is clerk-entered
+                        // (Add Student / Import CSV). DbPrep hops may still call seed explicitly.
+                        Log.Information(
+                            "Startup student seed skipped (SeedFromJson/EnsureMapDemoGeo). Use Import CSV to load a roster.");
                     }
-                    catch (Exception seedEx)
+                    catch (Exception schemaEx)
                     {
-                        Log.Warning(seedEx, "Failed to seed database (JSON or map demo geo): {Error}", seedEx.Message);
+                        Log.Warning(schemaEx, "Failed to apply database schema: {Error}", schemaEx.Message);
                     }
                 }); Log.Information("✅ Full DI container configured successfully for UI application");
             }

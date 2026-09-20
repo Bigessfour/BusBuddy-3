@@ -62,9 +62,16 @@ What it does:
 - Preflight `dotnet build ... -p:EnableWindowsTargeting=true` on the Mac (fast compile gate; focuses on the WPF app).
 - Ensures your UTM "Windows" VM is running (starts it if stopped; re-uses if already open).
 - Syncs to `C:\dev\BusBuddy-3` over SSH and launches `BusBuddy.WPF.exe` in the logged-in `Macbook` session. It does **not** use `utmctl exec` to start the GUI.
-- If SSH isn't ready yet (boot/login/sshd), prints the exact manual steps (`cd C:\dev\BusBuddy-3` then `utm_run_in_vm.ps1`).
+- If SSH isn't ready yet (boot/login/sshd), prints the exact manual steps (`cd C:\dev` then `pwsh -File .\Launch-BusBuddy.ps1`).
 
-When you are already inside the VM PowerShell: `cd C:\dev\BusBuddy-3` then `.\utm_run_in_vm.ps1`.
+When you are already inside the VM (PowerShell 7+):
+
+```powershell
+cd C:\dev
+pwsh -NoProfile -File .\Launch-BusBuddy.ps1
+```
+
+Or double-click `C:\dev\Launch-BusBuddy.cmd`. Same files also live in `C:\dev\BusBuddy-3`. That rebuilds Debug WPF on NTFS and starts the window. Windows PowerShell 5.1 fallback: `.\utm_run_in_vm.ps1` from `C:\dev\BusBuddy-3`.
 
 Guest tests from Mac:
 

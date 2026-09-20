@@ -62,12 +62,20 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("AutoCompleteMode=\"None\""));
         Assert.That(xaml, Does.Not.Contain("<syncfusion:SfMaskedEdit"));
         Assert.That(xaml, Does.Not.Contain("MaskType=\"Text\""));
-        Assert.That(xaml, Does.Contain("Height=\"40\""));
+        Assert.That(xaml, Does.Contain("BusBuddyInputStyles.xaml"));
+        Assert.That(xaml, Does.Contain("controls:PlacesAddressBox"));
+        Assert.That(xaml, Does.Contain("SfTimePicker"));
+        Assert.That(xaml, Does.Contain("ValidateSchoolAddressButton_Click"));
+        Assert.That(xaml, Does.Not.Contain("SchoolStartBox"));
         var codeBehind = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml.cs");
-        Assert.That(codeBehind, Does.Contain("GetLatLonFromPoint"));
+        Assert.That(codeBehind, Does.Contain("MapCameraHost.TryReadClick"));
         Assert.That(codeBehind, Does.Contain("ApplyMapClick"));
         Assert.That(codeBehind, Does.Contain("PushFieldsToViewModel"));
+        Assert.That(codeBehind, Does.Contain("ValidateSchoolAddressButton_Click"));
         Assert.That(codeBehind, Does.Contain("NumpadInputHelper"));
+        var vm = XamlViewFile.Read("ViewModels/Student/SchoolDestinationFormViewModel.cs");
+        Assert.That(vm, Does.Contain("ValidateAddressCommand"));
+        Assert.That(vm, Does.Contain("ValidateAndGeocodeAsync"));
     }
 
     [Test]

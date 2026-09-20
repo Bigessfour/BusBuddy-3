@@ -19,19 +19,31 @@ typeset -r FILTER='FullyQualifiedName~RouteAssignmentViewTests|FullyQualifiedNam
 DO_SYNC=1
 TESTHOST_ONLY=0
 
-while (( $# )); do
-  case "$1" in
-    -h|--help)
-      print -r -- "Usage: $0 [--no-sync] [--testhost-only]"
-      exit 0
-      ;;
-    --no-sync) DO_SYNC=0; shift ;;
-    --testhost-only) TESTHOST_ONLY=1; shift ;;
-    *) print -r -- "Unknown: $1" >&2; exit 2 ;;
-  esac
+while (($#)); do
+	case "$1" in
+	-h | --help)
+		print -r -- "Usage: $0 [--no-sync] [--testhost-only]"
+		exit 0
+		;;
+	--no-sync)
+		DO_SYNC=0
+		shift
+		;;
+	--testhost-only)
+		TESTHOST_ONLY=1
+		shift
+		;;
+	*)
+		print -r -- "Unknown: $1" >&2
+		exit 2
+		;;
+	esac
 done
 
-[[ -f "${BRIDGE}" ]] || { print -r -- "missing ${BRIDGE}" >&2; exit 1; }
+[[ -f ${BRIDGE} ]] || {
+	print -r -- "missing ${BRIDGE}" >&2
+	exit 1
+}
 
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/utm-dev-bridge.inc"
@@ -42,13 +54,16 @@ win_root="$(posix_to_win_path)"
 win_root_ps=${win_root:gs/\'/\'\'/}
 ok "guest ${CURRENT_HOST}"
 
-if (( DO_SYNC )); then
-  info "sync Mac → guest"
-  "${BRIDGE}" sync || { err "sync failed"; exit 1; }
+if ((DO_SYNC)); then
+	info "sync Mac → guest"
+	"${BRIDGE}" sync || {
+		err "sync failed"
+		exit 1
+	}
 fi
 
 bridge_exec() {
-  "${BRIDGE}" exec -- "$@"
+	"${BRIDGE}" exec -- "$@"
 }
 
 info "close + rebuild Debug WPF on guest"
@@ -65,18 +80,27 @@ Write-Output ('BUILD_EXIT=' + \$LASTEXITCODE)
 if (\$LASTEXITCODE -ne 0) { exit \$LASTEXITCODE }
 \$exe = '${win_root_ps}\\BusBuddy.WPF\\bin\\Debug\\net9.0-windows\\BusBuddy.WPF.exe'
 Write-Output ('EXE_EXISTS=' + (Test-Path \$exe))
-" || { err "guest rebuild failed"; exit 1; }
+" || {
+	err "guest rebuild failed"
+	exit 1
+}
 
 info "testhost: ${FILTER}"
-"${BRIDGE}" test --no-sync --filter "${FILTER}" || { err "testhost failed"; exit 1; }
+"${BRIDGE}" test --no-sync --filter "${FILTER}" || {
+	err "testhost failed"
+	exit 1
+}
 
-if (( TESTHOST_ONLY )); then
-  ok "testhost-only complete"
-  exit 0
+if ((TESTHOST_ONLY)); then
+	ok "testhost-only complete"
+	exit 0
 fi
 
 info "launch WPF in interactive session"
-"${BRIDGE}" launch --no-sync || { err "interactive launch failed"; exit 1; }
+"${BRIDGE}" launch --no-sync || {
+	err "interactive launch failed"
+	exit 1
+}
 
 info "UIA mouse smoke (schtasks /IT)"
 bridge_exec "
@@ -93,7 +117,10 @@ schtasks /Run /TN BusBuddyRouteUia | Out-Null
 Start-Sleep -Seconds 45
 Get-ChildItem \"\$env:TEMP\\busbuddy-uia-route-*.log\" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object { Get-Content \$_.FullName }
 if (-not (Get-ChildItem \"\$env:TEMP\\busbuddy-uia-route-*.log\" -ErrorAction SilentlyContinue)) { Write-Output 'UIA_OUT_MISSING' }
-" || { err "UIA mouse pass failed"; exit 1; }
+" || {
+	err "UIA mouse pass failed"
+	exit 1
+}
 
 info "score logs"
 bridge_exec "
@@ -101,6 +128,9 @@ bridge_exec "
 \$since = (Get-Date).AddMinutes(-30).ToString('yyyy-MM-dd HH:mm:ss')
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '${win_root_ps}\\Scripts\\score-route-assignment-logs.ps1' -Root '${win_root_ps}' -Since \$since
 Write-Output ('SCORE_EXIT=' + \$LASTEXITCODE)
-" || { err "log score failed"; exit 1; }
+" || {
+	err "log score failed"
+	exit 1
+}
 
 ok "route assignment smoke complete"

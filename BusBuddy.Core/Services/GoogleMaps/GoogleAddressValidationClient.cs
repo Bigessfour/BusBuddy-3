@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -492,6 +494,85 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
         }
     }
 
+    /// <summary>
+    /// Geocoding API v4 reverse geocode. Docs:
+    /// <see href="https://developers.google.com/maps/documentation/geocoding/reference/rest/v4/geocode.location/geocodeLocation"/>.
+    /// Used to suggest a catalog-stop name after a map click — does not move the pin.
+    /// </summary>
+    public async Task<MapsGeocodeResult> ReverseGeocodeAsync(
+        double latitude,
+        double longitude,
+        CancellationToken cancellationToken = default)
+    {
+        var key = ResolvedApiKey;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return new MapsGeocodeResult
+            {
+                Ok = false,
+                MappingUnconfigured = true,
+                ErrorMessage = "Mapping is not configured (missing GOOGLE_MAPS_API_KEY)."
+            };
+        }
+
+        if (!LocationCoordinate.IsValidated(latitude, longitude))
+        {
+            return new MapsGeocodeResult { Ok = false, ErrorMessage = "Pin is not a validated coordinate." };
+        }
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, BuildReverseGeocodeV4Uri(latitude, longitude, _options.RegionCode));
+            request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
+            request.Headers.TryAddWithoutValidation("X-Goog-FieldMask", GeocodeV4FieldMask);
+            if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
+            {
+                request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            sw.Stop();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var forbidden = ClassifyMapsForbidden(json);
+                Logger.Warning(
+                    "Reverse geocode v4 HTTP {Status} Kind={Kind} Reason={Reason} ElapsedMs={ElapsedMs}",
+                    (int)response.StatusCode,
+                    forbidden.Kind,
+                    forbidden.Reason,
+                    sw.ElapsedMilliseconds);
+                return new MapsGeocodeResult
+                {
+                    Ok = false,
+                    ErrorMessage = DescribeGeocodeFailure(response.StatusCode, forbidden, forbidden)
+                };
+            }
+
+            return ParseGeocodeJson(json, sw.ElapsedMilliseconds, requirePlotPrecision: false);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Reverse geocode failed");
+            return new MapsGeocodeResult { Ok = false, ErrorMessage = "Could not name that pin from Google." };
+        }
+    }
+
+    /// <summary>GET <c>/v4/geocode/location?locationQuery=lat,lng</c>.</summary>
+    internal static Uri BuildReverseGeocodeV4Uri(double latitude, double longitude, string? regionCode)
+    {
+        var region = string.IsNullOrWhiteSpace(regionCode) ? "US" : regionCode.Trim();
+        var query = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{latitude},{longitude}");
+        return new Uri(
+            "https://geocode.googleapis.com/v4/geocode/location?locationQuery="
+            + Uri.EscapeDataString(query)
+            + "&regionCode=" + Uri.EscapeDataString(region));
+    }
+
     internal enum MapsForbiddenKind
     {
         PermissionDenied,
@@ -667,7 +748,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
     /// <c>results[].granularity</c> (ROOFTOP / RANGE_INTERPOLATED / GEOMETRIC_CENTER / APPROXIMATE),
     /// <c>results[].types</c>.
     /// </summary>
-    internal static MapsGeocodeResult ParseGeocodeJson(string json, long elapsedMs)
+    internal static MapsGeocodeResult ParseGeocodeJson(string json, long elapsedMs, bool requirePlotPrecision = true)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -718,6 +799,17 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
         if (!lat.HasValue || !lon.HasValue)
         {
+            if (!requirePlotPrecision && !string.IsNullOrWhiteSpace(formatted))
+            {
+                return new MapsGeocodeResult
+                {
+                    Ok = true,
+                    FormattedAddress = formatted,
+                    PlaceId = placeId,
+                    Precision = precision
+                };
+            }
+
             return new MapsGeocodeResult
             {
                 Ok = false,
@@ -728,7 +820,8 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             };
         }
 
-        if (!AddressValidationPinPolicy.TryAcceptGeocodeFallbackPin(precision, types, out var rejectReason))
+        if (requirePlotPrecision
+            && !AddressValidationPinPolicy.TryAcceptGeocodeFallbackPin(precision, types, out var rejectReason))
         {
             Logger.Information(
                 "Geocoding v4 fallback rejected Precision={Precision} Types={Types} ElapsedMs={ElapsedMs}",

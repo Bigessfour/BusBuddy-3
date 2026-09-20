@@ -211,20 +211,27 @@ namespace BusBuddy.WPF.Views.Route
             try
             {
                 var src = e.OriginalSource as DependencyObject;
-                var fe = src as FrameworkElement;
-                var name = fe?.Name ?? "(unnamed)";
-                var type = src?.GetType().Name ?? "(unknown)";
-                if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                var buttonAdv = FindAncestor<Syncfusion.Windows.Tools.Controls.ButtonAdv>(src);
+                if (buttonAdv != null)
                 {
-                    bool? canExec = null; try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { }
-                    var autoName = AutomationProperties.GetName(badv);
+                    bool? canExec = null; try { if (buttonAdv.Command != null) canExec = buttonAdv.Command.CanExecute(buttonAdv.CommandParameter); } catch { }
+                    var autoName = AutomationProperties.GetName(buttonAdv);
                     UiDiagnosticsLog.Write(
                         Logger,
                         Serilog.Events.LogEventLevel.Information,
                         "RouteAssign ButtonAdv: Name={Name} Label={Label} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}",
-                        name, badv.Label, autoName, badv.Command != null, canExec);
+                        string.IsNullOrEmpty(buttonAdv.Name) ? "(unnamed)" : buttonAdv.Name,
+                        buttonAdv.Label,
+                        autoName,
+                        buttonAdv.Command != null,
+                        canExec);
+                    return;
                 }
-                else if (src is Button btn)
+
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src?.GetType().Name ?? "(unknown)";
+                if (src is Button btn)
                 {
                     bool? canExec = null; try { if (btn.Command != null) canExec = btn.Command.CanExecute(btn.CommandParameter); } catch { }
                     var autoName = AutomationProperties.GetName(btn);
@@ -244,6 +251,24 @@ namespace BusBuddy.WPF.Views.Route
             {
                 Logger.Warning(ex, "RouteAssignmentView: button logging failed");
             }
+        }
+
+        private static T? FindAncestor<T>(DependencyObject? start) where T : DependencyObject
+        {
+            var current = start;
+            while (current != null)
+            {
+                if (current is T match)
+                {
+                    return match;
+                }
+
+                current = current is Visual
+                    ? VisualTreeHelper.GetParent(current)
+                    : LogicalTreeHelper.GetParent(current);
+            }
+
+            return null;
         }
 
         private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)

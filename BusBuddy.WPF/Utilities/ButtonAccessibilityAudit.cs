@@ -23,6 +23,11 @@ public static class ButtonAccessibilityAudit
             {
                 if (d is ButtonAdv buttonAdv)
                 {
+                    if (IsVendorChromeName(buttonAdv.Name))
+                    {
+                        continue;
+                    }
+
                     total++;
                     adv++;
                     if (buttonAdv.Command is null)
@@ -46,11 +51,16 @@ public static class ButtonAccessibilityAudit
                         logger.Warning(
                             "{Surface} Audit — ButtonAdv missing label and AutomationProperties.Name: {Name}",
                             surface,
-                            (buttonAdv as FrameworkElement)?.Name ?? "(unnamed)");
+                            buttonAdv.Name ?? "(unnamed)");
                     }
                 }
                 else if (d is Button button)
                 {
+                    if (IsVendorChromeName(button.Name))
+                    {
+                        continue;
+                    }
+
                     total++;
                     if (button.Command is null)
                     {
@@ -92,6 +102,15 @@ public static class ButtonAccessibilityAudit
             logger.Warning(ex, "{Surface}: accessibility audit failed", surface);
         }
     }
+
+    /// <summary>
+    /// Syncfusion / WPF template parts (PART_NewTab, PART_CloseButton, InternalAutoGenerate*).
+    /// Those are vendor chrome, not clerk buttons — do not warn on them.
+    /// </summary>
+    public static bool IsVendorChromeName(string? name) =>
+        !string.IsNullOrEmpty(name) &&
+        (name.StartsWith("PART_", StringComparison.Ordinal) ||
+         name.StartsWith("InternalAutoGenerate", StringComparison.Ordinal));
 
     private static IEnumerable<DependencyObject> Walk(DependencyObject root)
     {

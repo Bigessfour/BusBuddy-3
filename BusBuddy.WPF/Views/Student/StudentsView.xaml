@@ -131,13 +131,6 @@
                                 ToolTip="Delete after choosing a reason. Archive if they may return."/>
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                        <syncfusion:ButtonAdv Name="ColumnsChooserButton"
-                                Label="Columns"
-                                Click="ColumnsChooserButton_Click"
-                                Style="{StaticResource StudentsToolbarButton}"
-                                AutomationProperties.Name="Choose roster columns"
-                                AutomationProperties.HelpText="Show or hide columns from the student roster. Preferences stay for this session."
-                                ToolTip="Add or hide roster columns"/>
                         <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="180" Margin="0,0,8,0"
                                                   Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
                                                   Watermark="Quick search..."
@@ -150,6 +143,12 @@
                     <TextBlock DockPanel.Dock="Left" Text="Roster"
                                Style="{StaticResource StudentsToolbarCaption}"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="8,0,0,0">
+                        <syncfusion:ButtonAdv Name="ColumnsChooserButton"
+                                Label="Columns"
+                                Style="{StaticResource StudentsToolbarButton}"
+                                AutomationProperties.Name="Choose roster columns"
+                                AutomationProperties.HelpText="Show or hide columns from the student roster. Preferences stay for this session."
+                                ToolTip="Add or hide roster columns"/>
                         <syncfusion:ComboBoxAdv Name="ActiveFilterCombo" Width="130" Margin="0,0,8,0"
                                                   ItemsSource="{Binding AvailableActiveFilters}"
                                                   SelectedItem="{Binding ActiveFilter, Mode=TwoWay}"
@@ -240,6 +239,13 @@
                                NavigationMode="Cell"
                                AllowResizingColumns="True"
                                AllowDraggingColumns="True">
+            <syncfusion:SfDataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Columns..."
+                              Click="ColumnsChooserMenu_Click"
+                              ToolTip="Show or hide roster columns"/>
+                </ContextMenu>
+            </syncfusion:SfDataGrid.ContextMenu>
 
             <syncfusion:SfDataGrid.TableSummaryRows>
                 <syncfusion:GridTableSummaryRow ShowSummaryInRow="False">

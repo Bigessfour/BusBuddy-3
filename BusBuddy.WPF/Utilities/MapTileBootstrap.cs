@@ -129,11 +129,11 @@ public static class MapTileBootstrap
                 return null;
             }
 
-            var center = layer.Center;
+            var (lat, lon) = MapCameraHost.ToLatLon(layer.Center);
             var zoom = MapDefaults.ClampZoom(mapControl.ZoomLevel);
             var bounds = MapDefaults.BoundsForViewport(
-                center.Y,
-                center.X,
+                lat,
+                lon,
                 zoom,
                 mapControl.ActualWidth,
                 mapControl.ActualHeight);

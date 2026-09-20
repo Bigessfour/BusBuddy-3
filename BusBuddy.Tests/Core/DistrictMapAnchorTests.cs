@@ -36,6 +36,22 @@ public class DistrictMapAnchorTests
     }
 
     [Test]
+    public void ResolveHomeCamera_PrefersDepotOverSchool()
+    {
+        var settings = new RoutingDistrictSettings
+        {
+            DepotLatitude = 38.0866,
+            DepotLongitude = -102.6201
+        };
+
+        var camera = DistrictMapAnchor.ResolveHomeCamera(settings, schoolLatitude: 38.1535, schoolLongitude: -102.7195);
+
+        Assert.That(camera.Latitude, Is.EqualTo(38.0866).Within(0.0001));
+        Assert.That(camera.Longitude, Is.EqualTo(-102.6201).Within(0.0001));
+        Assert.That(camera.ZoomLevel, Is.EqualTo(MapDefaults.DistrictZoomLevel));
+    }
+
+    [Test]
     public void TryGetConfiguredCenter_UsesDepotThenBboxCentroid()
     {
         var depot = new RoutingDistrictSettings

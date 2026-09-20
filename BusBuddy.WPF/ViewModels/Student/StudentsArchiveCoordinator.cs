@@ -61,7 +61,7 @@ public sealed class StudentsArchiveCoordinator
         {
             try
             {
-                Logger.Warning(
+                Logger.Information(
                     "Deleting student record StudentId={StudentId} Reason={Reason}",
                     student.StudentId,
                     request.Reason);

@@ -332,6 +332,31 @@ public class GoogleAddressValidationClientTests
     }
 
     [Test]
+    public void BuildReverseGeocodeV4Uri_UsesLocationQueryAndNoKey()
+    {
+        var uri = GoogleAddressValidationClient.BuildReverseGeocodeV4Uri(38.0872, -102.6208, null);
+
+        Assert.That(uri.Host, Is.EqualTo("geocode.googleapis.com"));
+        Assert.That(uri.AbsolutePath, Is.EqualTo("/v4/geocode/location"));
+        Assert.That(uri.Query, Does.Contain("locationQuery=38.0872%2C-102.6208"));
+        Assert.That(uri.Query, Does.Contain("regionCode=US"));
+        Assert.That(uri.Query, Does.Not.Contain("key="));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_ReverseAllowsIntersectionWithoutPlotPrecision()
+    {
+        var json = """{"results":[{"placeId":"ChIJint","formattedAddress":"Oak Ave & 4th St, Wiley, CO 81092, USA","location":{"latitude":38.0872,"longitude":-102.6208},"granularity":"GEOMETRIC_CENTER","types":["intersection"]}]}""";
+
+        var plot = GoogleAddressValidationClient.ParseGeocodeJson(json, 1);
+        Assert.That(plot.Ok, Is.False);
+
+        var name = GoogleAddressValidationClient.ParseGeocodeJson(json, 1, requirePlotPrecision: false);
+        Assert.That(name.Ok, Is.True);
+        Assert.That(name.FormattedAddress, Does.Contain("Oak Ave"));
+    }
+
+    [Test]
     public void ParseGeocodeJson_V4EmptyResults_IsNoMatch()
     {
         var result = GoogleAddressValidationClient.ParseGeocodeJson("""{"results":[]}""", 1);

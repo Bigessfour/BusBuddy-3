@@ -8,6 +8,7 @@ using System.Windows.Media.TextFormatting;
 using GridColumn = Syncfusion.UI.Xaml.Grid.GridColumn;
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion docs
 using Syncfusion.SfSkinManager; // For Syncfusion theming
+using BusBuddy.WPF.Commands;
 using BusBuddy.WPF.ViewModels.Student;
 using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog; // Logging per project standards
@@ -41,6 +42,8 @@ namespace BusBuddy.WPF.Views.Student
             _startup = startup;
             _editStudentId = editStudentId;
             InitializeComponent();
+
+            ColumnsChooserButton.Command = new RelayCommand(OpenColumnsChooser);
 
             // Apply Syncfusion theme via central manager (FluentDark with FluentLight fallback)
             // Docs: SfSkinManager — https://help.syncfusion.com/wpf/themes/sfskinmanager
@@ -322,7 +325,9 @@ namespace BusBuddy.WPF.Views.Student
             return new StudentsViewModel();
         }
 
-        private void ColumnsChooserButton_Click(object sender, RoutedEventArgs e)
+        private void ColumnsChooserMenu_Click(object sender, RoutedEventArgs e) => OpenColumnsChooser();
+
+        private void OpenColumnsChooser()
         {
             try
             {

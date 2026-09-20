@@ -13,11 +13,15 @@
                              WindowStartupLocation="CenterOwner"
                              ResizeMode="CanResize"
                              UseNativeChrome="False"
+                             FontSize="14"
                              PreviewKeyDown="PickupStopForm_PreviewKeyDown">
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionStyles.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/BusBuddyInputStyles.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -56,7 +60,7 @@
                     <syncfusion:SfTextBoxExt x:Name="StopNameBox"
                                              AutoCompleteMode="None"
                                              ShowClearButton="True"
-                                             Watermark="Oak &amp; 4th"
+                                             Watermark="e.g. Oak &amp; 4th"
                                              Height="40" Margin="0,0,0,10"
                                              AutomationProperties.Name="Pickup stop name"/>
 
@@ -131,16 +135,15 @@
                                Text="Click map to place the shared stop. Students near this pin can be assigned here."/>
                     <Grid Grid.Row="1">
                         <utils:DistrictSfMap x:Name="StopPickMap"
-                                    ZoomLevel="{Binding MapZoomLevel}"
                                     EnableZoom="True"
                                     EnablePan="True"
-                                    MouseLeftButtonUp="StopPickMap_MouseLeftButtonUp"
+                                    PreviewMouseLeftButtonDown="StopPickMap_MouseLeftButtonDown"
+                                    PreviewMouseLeftButtonUp="StopPickMap_MouseLeftButtonUp"
                                     AutomationProperties.Name="Pickup stop location map">
-                            <!-- Markers assigned in code-behind after tile bootstrap (MapMarkerHost). -->
+                            <!-- Camera via MapCameraHost.TryApply — do not bind Center/ZoomLevel. -->
                             <utils:DistrictSfMap.Layers>
                                 <utils:GoogleMapTilesImageryLayer x:Name="StopPickLayer"
-                                                   LayerType="Bing"
-                                                   Center="{Binding MapCenter}"/>
+                                                   LayerType="Bing"/>
                             </utils:DistrictSfMap.Layers>
                         </utils:DistrictSfMap>
                         <Border x:Name="StopPickAttribution"

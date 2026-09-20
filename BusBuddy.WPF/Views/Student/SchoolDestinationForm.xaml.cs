@@ -20,6 +20,8 @@ public partial class SchoolDestinationForm : ChromelessWindow
     private static readonly ILogger Logger = Log.ForContext<SchoolDestinationForm>();
     private readonly SchoolDestinationFormViewModel _vm;
     private MapMarkerHost.RetryScheduler? _markerRetry;
+    private Point? _pickMouseDown;
+    private bool _cameraApplied;
 
     public SchoolDestinationForm(SchoolDestinationFormViewModel viewModel)
     {
@@ -35,13 +37,16 @@ public partial class SchoolDestinationForm : ChromelessWindow
         SchoolCityBox.Text = _vm.City;
         SchoolStateBox.Text = _vm.State;
         SchoolZipBox.Text = _vm.ZipCode;
-        SchoolStartBox.Text = _vm.StartTimeText;
-        SchoolDismissalBox.Text = _vm.DismissalTimeText;
+        SchoolStartPicker.Value = SchoolDestinationFormViewModel.ParseTimePickerValue(
+            _vm.StartTimeText,
+            new TimeSpan(8, 0, 0));
+        SchoolDismissalPicker.Value = SchoolDestinationFormViewModel.ParseTimePickerValue(
+            _vm.DismissalTimeText,
+            new TimeSpan(15, 30, 0));
         SchoolLatBox.Value = _vm.LatitudeValue;
         SchoolLonBox.Value = _vm.LongitudeValue;
 
         _vm.MapMarkers.CollectionChanged += OnPickMarkersChanged;
-        SchoolPickMap.SizeChanged += OnPickMapSizeChanged;
 
         _vm.RequestClose += (_, result) =>
         {
@@ -100,15 +105,29 @@ public partial class SchoolDestinationForm : ChromelessWindow
                 }
             }
 
-            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
-            _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.ContextIdle);
+            _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.Loaded);
+            _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.ContextIdle);
         };
     }
 
     private void OnPickMarkersChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         _ = Dispatcher.BeginInvoke(AssignPickMarkers, DispatcherPriority.Loaded);
 
-    private void OnPickMapSizeChanged(object sender, SizeChangedEventArgs e) => AssignPickMarkers();
+    private void TryApplyCameraThenMarkers()
+    {
+        if (!_cameraApplied)
+        {
+            if (!MapCameraHost.TryApply(SchoolPickMap, SchoolPickLayer, _vm.MapCenter, _vm.MapZoomLevel))
+            {
+                ArmMarkerRetry();
+                return;
+            }
+
+            _cameraApplied = true;
+        }
+
+        AssignPickMarkers();
+    }
 
     private void AssignPickMarkers()
     {
@@ -118,9 +137,27 @@ public partial class SchoolDestinationForm : ChromelessWindow
             return;
         }
 
+        ArmMarkerRetry();
+    }
+
+    private void ArmMarkerRetry()
+    {
         _markerRetry ??= new MapMarkerHost.RetryScheduler(
             Dispatcher,
-            () => MapMarkerHost.TryAssignAndLayout(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers),
+            () =>
+            {
+                if (!_cameraApplied)
+                {
+                    if (!MapCameraHost.TryApply(SchoolPickMap, SchoolPickLayer, _vm.MapCenter, _vm.MapZoomLevel))
+                    {
+                        return false;
+                    }
+
+                    _cameraApplied = true;
+                }
+
+                return MapMarkerHost.TryAssignAndLayout(SchoolPickMap, SchoolPickLayer, _vm.MapMarkers);
+            },
             retries => Logger.Warning("School pick markers still pending after {Retries} host retries", retries));
         _markerRetry.Arm();
     }
@@ -155,24 +192,61 @@ public partial class SchoolDestinationForm : ChromelessWindow
         }
     }
 
-    private void PushFieldsToViewModel()
+    private void PushAddressFieldsToViewModel()
     {
-        if (_vm.IsTimesOnlyEdit)
-        {
-            // Only the two time boxes are writable here, and a blank box means "clear this time" —
-            // substituting a default would invent a bell schedule the campus never published.
-            _vm.StartTimeText = SchoolStartBox.Text?.Trim() ?? string.Empty;
-            _vm.DismissalTimeText = SchoolDismissalBox.Text?.Trim() ?? string.Empty;
-            return;
-        }
-
-        _vm.Name = SchoolNameBox.Text?.Trim() ?? string.Empty;
         _vm.Address = SchoolAddressBox.AddressText?.Trim() ?? string.Empty;
         _vm.City = SchoolCityBox.Text?.Trim() ?? string.Empty;
         _vm.State = SchoolStateBox.Text?.Trim() ?? string.Empty;
         _vm.ZipCode = SchoolZipBox.Text?.Trim() ?? string.Empty;
-        _vm.StartTimeText = string.IsNullOrWhiteSpace(SchoolStartBox.Text) ? "08:00" : SchoolStartBox.Text.Trim();
-        _vm.DismissalTimeText = string.IsNullOrWhiteSpace(SchoolDismissalBox.Text) ? "15:30" : SchoolDismissalBox.Text.Trim();
+    }
+
+    private async void ValidateSchoolAddressButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            PushAddressFieldsToViewModel();
+            if (_vm.ValidateAddressCommand is IAsyncRelayCommand asyncCmd)
+            {
+                await asyncCmd.ExecuteAsync(null).ConfigureAwait(true);
+            }
+            else if (_vm.ValidateAddressCommand.CanExecute(null))
+            {
+                _vm.ValidateAddressCommand.Execute(null);
+            }
+
+            SchoolLatBox.Value = _vm.LatitudeValue;
+            SchoolLonBox.Value = _vm.LongitudeValue;
+            if (_vm.HasMapPick)
+            {
+                MapCameraHost.TryApply(
+                    SchoolPickMap,
+                    SchoolPickLayer,
+                    MapCameraHost.FromLatLon(_vm.LatitudeValue, _vm.LongitudeValue),
+                    _vm.MapZoomLevel);
+                _cameraApplied = true;
+                AssignPickMarkers();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Validate school address click failed");
+            _vm.ValidationMessage = ex.Message;
+        }
+    }
+
+    private void PushFieldsToViewModel()
+    {
+        if (_vm.IsTimesOnlyEdit)
+        {
+            _vm.StartTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolStartPicker.Value, string.Empty);
+            _vm.DismissalTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolDismissalPicker.Value, string.Empty);
+            return;
+        }
+
+        _vm.Name = SchoolNameBox.Text?.Trim() ?? string.Empty;
+        PushAddressFieldsToViewModel();
+        _vm.StartTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolStartPicker.Value, "08:00");
+        _vm.DismissalTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolDismissalPicker.Value, "15:30");
         _vm.LatitudeValue = SchoolLatBox.Value ?? 0d;
         _vm.LongitudeValue = SchoolLonBox.Value ?? 0d;
         if (Math.Abs(_vm.LatitudeValue) > 0.0001 || Math.Abs(_vm.LongitudeValue) > 0.0001)
@@ -190,11 +264,29 @@ public partial class SchoolDestinationForm : ChromelessWindow
         SchoolZipBox.Text = _vm.ZipCode;
         SchoolLatBox.Value = _vm.LatitudeValue;
         SchoolLonBox.Value = _vm.LongitudeValue;
+        if (_vm.HasMapPick)
+        {
+            MapCameraHost.TryApply(
+                SchoolPickMap,
+                SchoolPickLayer,
+                MapCameraHost.FromLatLon(_vm.LatitudeValue, _vm.LongitudeValue),
+                _vm.MapZoomLevel);
+            _cameraApplied = true;
+            AssignPickMarkers();
+        }
     }
 
     private void SchoolForm_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         NumpadInputHelper.HandlePreviewKeyDown(e);
+    }
+
+    private void SchoolPickMap_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (SchoolPickLayer is not null)
+        {
+            _pickMouseDown = e.GetPosition(SchoolPickLayer);
+        }
     }
 
     private void SchoolPickMap_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -206,21 +298,17 @@ public partial class SchoolDestinationForm : ChromelessWindow
                 return;
             }
 
-            var pos = e.GetPosition(SchoolPickMap);
-            var geo = SchoolPickLayer.GetLatLonFromPoint(pos);
-            var lon = geo.X;
-            var lat = geo.Y;
-            if (lat is < -90 or > 90 || lon is < -180 or > 180)
+            var up = e.GetPosition(SchoolPickLayer);
+            var down = _pickMouseDown ?? up;
+            _pickMouseDown = null;
+            if (!MapCameraHost.TryReadClick(SchoolPickLayer, down, up, out var lat, out var lon))
             {
-                Logger.Warning("Ignored out-of-range map click Lat={Lat} Lon={Lon}", lat, lon);
                 return;
             }
 
             _vm.ApplyMapClick(lat, lon);
             SchoolLatBox.Value = _vm.LatitudeValue;
             SchoolLonBox.Value = _vm.LongitudeValue;
-            SchoolPickLayer.Center = new Point(lat, lon);
-            e.Handled = true;
         }
         catch (Exception ex)
         {
@@ -231,7 +319,6 @@ public partial class SchoolDestinationForm : ChromelessWindow
     protected override void OnClosed(EventArgs e)
     {
         _vm.MapMarkers.CollectionChanged -= OnPickMarkersChanged;
-        SchoolPickMap.SizeChanged -= OnPickMapSizeChanged;
         _markerRetry?.Stop();
         SfSkinManager.Dispose(this);
         base.OnClosed(e);

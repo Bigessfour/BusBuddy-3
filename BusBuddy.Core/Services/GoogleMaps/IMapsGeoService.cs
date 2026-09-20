@@ -29,4 +29,13 @@ public interface IMapsGeoService : IGeocodingService
         string? state,
         string? zip,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reverse geocode a pin to a formatted address for naming a catalog stop.
+    /// Does not replace the clicked coordinates. Fail-open when the key is missing.
+    /// </summary>
+    Task<MapsGeocodeResult> ReverseGeocodeAsync(
+        double latitude,
+        double longitude,
+        CancellationToken cancellationToken = default);
 }

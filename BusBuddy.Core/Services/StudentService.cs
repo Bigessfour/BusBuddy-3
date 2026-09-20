@@ -788,7 +788,7 @@ public class StudentService : IStudentService
     internal static void WriteStudentDeletionLog(StudentDeletionLog entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        Logger.Warning(
+        Logger.Information(
             "Student deleted StudentId={StudentId} StudentNumber={StudentNumber} Reason={Reason} Notes={Notes} WasActive={WasActive} Schedules={ScheduleCount} Transfers={TransferCount} RiderExceptions={RiderExceptionCount}",
             entry.StudentId,
             entry.StudentNumber,

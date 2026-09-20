@@ -23,6 +23,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ApplyClerkOverrideCommand}\""));
         Assert.That(xaml, Does.Contain("Label=\"Move to selected route\""));
+        Assert.That(xaml, Does.Not.Contain("GenerateEligibilityRoutePdfCommand"));
+        Assert.That(xaml, Does.Not.Contain("AddMarkerCommand"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding CenterOnFleetCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshMapCommand}\""));
         // Sidebar ButtonAdv: Label + Command only — no local Background (stomps Fluent pressed chrome).
@@ -49,8 +51,12 @@ public class MapViewTests
         Assert.That(tileLayer, Does.Not.Contain("OpenStreetMapHttpsTemplate"));
         Assert.That(tileLayer, Does.Not.Contain("UseOpenStreetMap"));
         Assert.That(tileLayer, Does.Contain("protected override string GetUri"));
+        Assert.That(tileLayer, Does.Contain("MapBasemap.ResolveTileUrl"));
         Assert.That(tileLayer, Does.Contain("return string.Empty"));
+        Assert.That(tileLayer, Does.Not.Contain("mt1.google.com"));
+        Assert.That(tileLayer, Does.Contain("ClearTileCache"));
         Assert.That(tileLayer, Does.Contain("LogTileHealth"));
+        Assert.That(tileLayer, Does.Contain("TileRequestedEventArgs(Scale, X, Y"));
         Assert.That(tileLayer, Does.Contain("isTileGenerationInProgress"));
         Assert.That(tileLayer, Does.Contain("MeasureOverride"));
         Assert.That(tileLayer, Does.Contain("ArrangeOverride"));
@@ -82,6 +88,7 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("Center=\"{Binding MapCenter"));
         Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("OnImageryCenterChanged"));
         Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("TrySetLayerCenter"));
+        Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("MapCameraHost.TryApply"));
         Assert.That(xaml, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(xaml, Does.Not.Contain("MarkerTemplateSelector=\"{StaticResource DistrictMarkerTemplateSelector}\""));
         Assert.That(xaml, Does.Contain("x:Key=\"DistrictMarkerTemplateSelector\""));
@@ -197,6 +204,8 @@ public class MapViewTests
         Assert.That(codeBehind, Does.Contain("RefreshMarkersOnImageryLayer()"));
         Assert.That(codeBehind, Does.Contain("CanHostMarkers()"));
         Assert.That(codeBehind, Does.Contain("CanApplyLayerCenter()"));
+        Assert.That(codeBehind, Does.Contain("MapCameraHost.TryApply"));
+        Assert.That(codeBehind, Does.Contain("TryApplyCameraThenMarkers"));
         Assert.That(codeBehind, Does.Contain("TransformToVisual"));
         Assert.That(codeBehind, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
         Assert.That(codeBehind, Does.Contain("DispatcherPriority.Loaded"));
@@ -218,6 +227,8 @@ public class MapViewTests
         Assert.That(CoreSourceFile.Exists("Services/GeoDataService.cs"), Is.True);
         Assert.That(CoreSourceFile.Exists("Services/OfflineGeocodingService.cs"), Is.False);
         Assert.That(CoreSourceFile.Exists("Models/GeoAnalysisResults.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("Utilities/MapInteractionDiagnostics.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("Services/EligibilityRoutePdfBuilder.cs"), Is.False);
     }
 
     [Test]
@@ -271,7 +282,6 @@ public class MapViewTests
         // collaborator holds it is a structural choice this test must not freeze.
         var vm = XamlViewFile.ReadFolder("ViewModels/Student");
         Assert.That(vm, Does.Contain("MapViewLauncher.Show"));
-        Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
         Assert.That(vm, Does.Contain("District Map opened"));
         Assert.That(vm, Does.Contain("PickupStopId"));
         Assert.That(vm, Does.Contain("StudentPlotLocation.PinsFromStored"));
@@ -292,6 +302,8 @@ public class MapViewTests
         var studentForm = XamlViewFile.Read("Views/Student/StudentForm.xaml");
         Assert.That(studentForm, Does.Contain("AdjustHomePinCommand"));
         Assert.That(studentForm, Does.Contain("Adjust home pin on map"));
+        Assert.That(studentForm, Does.Contain("AddCatalogStopCommand"));
+        Assert.That(studentForm, Does.Contain("ViewOnMapButton_Click"));
     }
 
     [Test]
@@ -324,6 +336,20 @@ public class MapViewTests
         var stopCs = XamlViewFile.Read("Views/Student/PickupStopForm.xaml.cs");
         Assert.That(schoolCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
         Assert.That(stopCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
+        Assert.That(schoolCs, Does.Contain("MapCameraHost.TryApply"));
+        Assert.That(stopCs, Does.Contain("MapCameraHost.TryApply"));
+        Assert.That(schoolCs, Does.Contain("MapCameraHost.TryReadClick"));
+        Assert.That(stopCs, Does.Contain("MapCameraHost.TryReadClick"));
+        Assert.That(schoolCs, Does.Not.Contain("GetLatLonFromPoint"));
+        Assert.That(stopCs, Does.Not.Contain("GetLatLonFromPoint"));
+        Assert.That(school, Does.Not.Contain("Center=\"{Binding MapCenter}\""));
+        Assert.That(stop, Does.Not.Contain("Center=\"{Binding MapCenter}\""));
+        Assert.That(school, Does.Not.Contain("ZoomLevel=\"{Binding MapZoomLevel}\""));
+        Assert.That(stop, Does.Not.Contain("ZoomLevel=\"{Binding MapZoomLevel}\""));
+        Assert.That(home, Does.Not.Contain("Center=\"{Binding MapCenter}\""));
+        Assert.That(home, Does.Not.Contain("ZoomLevel=\"{Binding MapZoomLevel}\""));
+        Assert.That(schoolCs, Does.Not.Contain("SizeChanged += OnPickMapSizeChanged"));
+        Assert.That(stopCs, Does.Not.Contain("SizeChanged += OnPickMapSizeChanged"));
         Assert.That(school, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(stop, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(schoolCs, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
@@ -345,6 +371,9 @@ public class MapViewTests
         Assert.That(homeCs, Does.Contain("MapTileBootstrap.TryApplyGoogleTilesAsync"));
         Assert.That(homeCs, Does.Contain("host: \"HomePick\""));
         Assert.That(homeCs, Does.Contain("MapMarkerHost.TryAssignAndLayout"));
+        Assert.That(homeCs, Does.Contain("MapCameraHost.TryApply"));
+        Assert.That(homeCs, Does.Contain("MapCameraHost.TryReadClick"));
+        Assert.That(homeCs, Does.Not.Contain("SizeChanged += OnPickMapSizeChanged"));
     }
 
     [Test]
@@ -376,5 +405,21 @@ public class MapViewTests
         var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(mapVm, Does.Contain("TryPlotTrip"));
         Assert.That(mapVm, Does.Not.Contain("IsLiveTrackingEnabled"));
+    }
+
+    [Test]
+    public void MapCameraHost_TreatsPointXAsLatitudePerSyncfusionCenter()
+    {
+        var host = XamlViewFile.Read("Utilities/MapCameraHost.cs");
+        Assert.That(host, Does.Contain("X = latitude, Y = longitude"));
+        Assert.That(host, Does.Contain("MapMarkerHost.CanHost"));
+        Assert.That(host, Does.Contain("map.ZoomLevel = zoom"));
+        Assert.That(host, Does.Contain("layer.Center = centerLatLon"));
+        Assert.That(host, Does.Contain("TryReadClick"));
+        Assert.That(host, Does.Contain("IsClickNotDrag"));
+        Assert.That(host, Does.Not.Contain("layer.Radius"));
+        var bootstrap = XamlViewFile.Read("Utilities/MapTileBootstrap.cs");
+        Assert.That(bootstrap, Does.Contain("MapCameraHost.ToLatLon"));
+        Assert.That(bootstrap, Does.Not.Contain("center.Y,"));
     }
 }

@@ -13,7 +13,6 @@ using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -173,76 +172,7 @@ public class MapViewModelTests
         Assert.That(vm, Does.Not.Contain("IsLiveTrackingEnabled"));
         Assert.That(vm, Does.Contain("PlotPickupStopsCommand"));
         Assert.That(vm, Does.Contain("TryPlotTrip"));
-        Assert.That(vm, Does.Contain("StudentPlotLocation.TryFromStored"));
-    }
-
-    [Test]
-    public async Task GenerateEligibilityRoutePdfAsync_NoStudents_ReturnsEmptyWithoutPlotting()
-    {
-        var students = new Mock<IStudentService>();
-        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(new List<Student>());
-        var vm = await CreateSettledViewModelAsync(students: students.Object);
-        var before = vm.MapMarkers.Count;
-
-        var (pdf, mapped, total) = await vm.GenerateEligibilityRoutePdfAsync();
-
-        Assert.That(pdf, Is.Empty);
-        Assert.That(mapped, Is.EqualTo(0));
-        Assert.That(total, Is.EqualTo(0));
-        Assert.That(vm.MapMarkers, Has.Count.EqualTo(before));
-        Assert.That(vm.StatusMessage, Does.Contain("no students").IgnoreCase);
-    }
-
-    [Test]
-    public async Task GenerateEligibilityRoutePdfAsync_CatalogStopWithoutHome_IsIncludedAndDoesNotPlot()
-    {
-        var pickups = new Mock<IPickupStopService>();
-        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new PickupStop { PickupStopId = 7, Name = "Oak & 4th", Latitude = 38.16m, Longitude = -102.71m }
-            });
-        var students = new Mock<IStudentService>();
-        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
-        [
-            new Student
-            {
-                StudentId = 9,
-                StudentName = "Bea",
-                PickupStopId = 7
-            }
-        ]);
-        var vm = await CreateSettledViewModelAsync(pickupStops: pickups.Object, students: students.Object);
-        var before = vm.MapMarkers.Count;
-
-        var (pdf, mapped, total) = await vm.GenerateEligibilityRoutePdfAsync();
-
-        Assert.That(total, Is.EqualTo(1));
-        Assert.That(mapped, Is.EqualTo(1));
-        Assert.That(pdf, Is.Not.Empty);
-        Assert.That(pdf[0], Is.EqualTo((byte)'%'));
-        Assert.That(pdf[1], Is.EqualTo((byte)'P'));
-        Assert.That(pdf[2], Is.EqualTo((byte)'D'));
-        Assert.That(pdf[3], Is.EqualTo((byte)'F'));
-        Assert.That(vm.MapMarkers, Has.Count.EqualTo(before), "PDF generation must not mutate the district overlay");
-    }
-
-    [Test]
-    public async Task GenerateEligibilityRoutePdfAsync_UnvalidatedHomeOnly_IsSkipped()
-    {
-        var students = new Mock<IStudentService>();
-        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
-        [
-            new Student { StudentId = 4, StudentName = "NoPin", Latitude = 0m, Longitude = 0m }
-        ]);
-        var vm = await CreateSettledViewModelAsync(students: students.Object);
-
-        var (pdf, mapped, total) = await vm.GenerateEligibilityRoutePdfAsync();
-
-        Assert.That(pdf, Is.Empty);
-        Assert.That(mapped, Is.EqualTo(0));
-        Assert.That(total, Is.EqualTo(1));
-        Assert.That(vm.StatusMessage, Does.Contain("no map pins").IgnoreCase);
+        Assert.That(vm, Does.Contain("LocationCoordinate.IsValidated"));
     }
 
     [Test]
@@ -992,7 +922,7 @@ public class MapViewModelTests
     }
 
     [Test]
-    public async Task InitializeMapData_WithRouteWaypoints_RefreshesDrivePathAndKeepsTrailCamera()
+    public async Task InitializeMapData_WithRouteWaypoints_DoesNotAutoSelectOrRefreshTrail()
     {
         var dest = new Mock<IDestinationService>();
         dest.Setup(d => d.GetActiveSchoolsAsync(It.IsAny<CancellationToken>()))
@@ -1015,45 +945,23 @@ public class MapViewModelTests
         geo.Setup(g => g.GetRouteGeoDataAsync(It.IsAny<int>())).ReturnsAsync((Route?)null);
 
         var routing = new Mock<IRoutingService>(MockBehavior.Strict);
-        routing.Setup(r => r.ComputeDrivePathAsync(
-                It.IsAny<(double, double)>(),
-                It.IsAny<(double, double)>(),
-                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
-                default))
-            .ReturnsAsync(() =>
-            {
-                var drivePoints = new[]
-                {
-                    (38.15, -102.72),
-                    (38.155, -102.715),
-                    (38.16, -102.71),
-                };
-                return new DrivePathResult
-                {
-                    EncodedPolyline = EncodedPolylineCodec.Encode(drivePoints),
-                    Points = drivePoints,
-                    DistanceMeters = 400,
-                    Duration = "45s"
-                };
-            });
 
         var vm = await CreateSettledViewModelAsync(
             geoData: geo.Object,
             destinations: dest.Object,
             routing: routing.Object);
 
-        Assert.That(vm.SelectedRoute?.RouteId, Is.EqualTo(21));
-        Assert.That(vm.RouteLinePoints.Count, Is.GreaterThanOrEqualTo(2));
+        Assert.That(vm.SelectedRoute, Is.Null);
+        Assert.That(vm.RouteLinePoints, Is.Empty);
         Assert.That(vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.School), Is.True);
-        Assert.That(vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.Waypoint), Is.True);
-        Assert.That(vm.MapCenter.X, Is.EqualTo(38.155).Within(0.01));
+        Assert.That(vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.Waypoint), Is.False);
         routing.Verify(
             r => r.ComputeDrivePathAsync(
                 It.IsAny<(double, double)>(),
                 It.IsAny<(double, double)>(),
                 It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
                 default),
-            Times.Once);
+            Times.Never);
     }
 
     [Test]
@@ -1102,7 +1010,7 @@ public class MapViewModelTests
     }
 
     [Test]
-    public async Task BulkPlot_GeocodesHomeWhenPickupAndStoredCoordsAreMissing()
+    public async Task BulkPlot_SkipsHomeWhenPickupAndStoredCoordsAreMissing()
     {
         var students = new Mock<IStudentService>();
         var stu = new Student
@@ -1115,28 +1023,18 @@ public class MapViewModelTests
             Zip = "81092"
         };
         students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync([stu]);
-        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(true);
 
-        var geocode = new Mock<IGeocodingService>();
-        geocode.Setup(g => g.GeocodeAsync("2 Home St", "Wiley", "CO", "81092"))
-            .ReturnsAsync((38.11, -102.66));
-
+        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
         var vm = await CreateSettledViewModelAsync(students: students.Object, geocoding: geocode.Object);
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
-        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
-        Assert.That(vm.MapMarkers[0].LatitudeDegrees, Is.EqualTo(38.11).Within(0.0001));
-        Assert.That(vm.MapMarkers[0].Label, Is.EqualTo(MapMarkerLabels.ForHome("Dee")));
-        students.Verify(s => s.UpdateStudentAsync(It.Is<Student>(x =>
-            x.StudentId == 4
-            && x.Latitude.HasValue
-            && x.Longitude.HasValue
-            && Math.Abs((double)x.Latitude.Value - 38.11) < 0.0001
-            && Math.Abs((double)x.Longitude.Value - (-102.66)) < 0.0001)), Times.Once);
+        Assert.That(vm.MapMarkers, Is.Empty);
+        students.Verify(s => s.UpdateStudentAsync(It.IsAny<Student>()), Times.Never);
+        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
-    public async Task BulkPlot_GeocodesHomeWhenAssignedPickupHasNoCoords()
+    public async Task BulkPlot_SkipsHomeWhenAssignedPickupHasNoCoords()
     {
         var pickups = new Mock<IPickupStopService>();
         pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
@@ -1157,25 +1055,17 @@ public class MapViewModelTests
             Zip = "81092"
         };
         students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync([stu]);
-        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(true);
 
-        var geocode = new Mock<IGeocodingService>();
-        geocode.Setup(g => g.GeocodeAsync("3 Home St", "Wiley", "CO", "81092"))
-            .ReturnsAsync((38.12, -102.64));
-
+        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
         var vm = await CreateSettledViewModelAsync(
             pickupStops: pickups.Object,
             students: students.Object,
             geocoding: geocode.Object);
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
-        Assert.That(vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.Pickup), Is.False);
-        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
-        Assert.That(vm.MapMarkers[0].Kind, Is.EqualTo(MapMarkerLabels.Kind.Home));
-        Assert.That(vm.MapMarkers[0].Label, Is.EqualTo(MapMarkerLabels.ForHome("Fay")));
-        Assert.That(vm.MapMarkers[0].LatitudeDegrees, Is.EqualTo(38.12).Within(0.0001));
-        Assert.That(vm.MapMarkers[0].MarkerSize, Is.EqualTo(MapMarkerLabels.ScaledMarkerSize(MapMarkerLabels.Kind.Home, vm.MapZoomLevel)));
-        students.Verify(s => s.UpdateStudentAsync(It.Is<Student>(x => x.StudentId == 8)), Times.Once);
+        Assert.That(vm.MapMarkers, Is.Empty);
+        students.Verify(s => s.UpdateStudentAsync(It.IsAny<Student>()), Times.Never);
+        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1257,7 +1147,7 @@ public class MapViewModelTests
     }
 
     [Test]
-    public async Task BulkPlot_NoGeocodeResult_DoesNotPersistFakeCoords()
+    public async Task BulkPlot_NoStoredCoords_DoesNotGeocodeOrPersist()
     {
         var students = new Mock<IStudentService>();
         var stu = new Student
@@ -1271,15 +1161,13 @@ public class MapViewModelTests
         };
         students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync([stu]);
         var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
-        geocode.Setup(g => g.GeocodeAsync("9 Nowhere", "Wiley", "CO", "81092"))
-            .ReturnsAsync(((double, double)?)null);
 
         var vm = await CreateSettledViewModelAsync(students: students.Object, geocoding: geocode.Object);
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
         Assert.That(vm.MapMarkers, Is.Empty);
         students.Verify(s => s.UpdateStudentAsync(It.IsAny<Student>()), Times.Never);
-        geocode.Verify(g => g.GeocodeAsync("9 Nowhere", "Wiley", "CO", "81092"), Times.Once);
+        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1313,7 +1201,7 @@ public class MapViewModelTests
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
         Assert.That(vm.MapMarkers, Is.Empty);
-        Assert.That(vm.StatusMessage, Does.Contain("no locations").IgnoreCase);
+        Assert.That(vm.StatusMessage, Does.Contain("no stored locations").IgnoreCase);
         students.Verify(s => s.UpdateStudentAsync(It.IsAny<Student>()), Times.Never);
     }
 
@@ -1332,7 +1220,7 @@ public class MapViewModelTests
     {
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(vm, Does.Contain("ResetCameraToDistrictAsync"));
-        Assert.That(vm, Does.Contain("DistrictCameraUi.ResolveAsync"));
+        Assert.That(vm, Does.Contain("DistrictCameraUi.ResolveHomeAsync"));
         Assert.That(vm, Does.Contain("DistrictDepot.TryGetCoordinates"));
         Assert.That(vm, Does.Contain("PlotPickupStopsCommand"));
         Assert.That(vm, Does.Contain("MapMarkerLabels"));
@@ -1343,11 +1231,11 @@ public class MapViewModelTests
         Assert.That(vm, Does.Contain("PlotSchoolsAsync()"));
         Assert.That(vm, Does.Contain("PlotPickupsAsync()"));
         Assert.That(vm, Does.Contain("PlotStoredStudentsAsync()"));
-        Assert.That(vm, Does.Contain("UpdateMapForRouteAsync(routeWithTrail, refreshDrivePath: true)"));
-        Assert.That(vm, Does.Contain("GenerateEligibilityRoutePdfAndPreviewAsync"));
-        Assert.That(vm, Does.Contain("StudentPlotLocation.TryFromStored"));
+        Assert.That(vm, Does.Not.Contain("UpdateMapForRouteAsync(routeWithTrail, refreshDrivePath: true)"));
+        Assert.That(vm, Does.Contain("no auto trail"));
+        Assert.That(vm, Does.Not.Contain("GenerateEligibilityRoutePdf"));
+        Assert.That(vm, Does.Not.Contain("AddMarkerCommand"));
         Assert.That(vm, Does.Not.Contain("PdfReports"));
-        Assert.That(vm, Does.Not.Contain("GenerateEligibilityRoutePdfAndSaveAsync"));
 
         var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
         Assert.That(layers, Does.Contain("StudentPlotLocation.PinsFromStored"));
@@ -1355,7 +1243,8 @@ public class MapViewModelTests
         Assert.That(layers, Does.Contain("MapStudentPlot.Draw"));
         Assert.That(layers, Does.Contain("LoadDistrictLayersAsync"));
         Assert.That(layers, Does.Contain("PlotStoredStudentsAsync"));
-        Assert.That(layers, Does.Contain("IGeocodingService"));
+        Assert.That(layers, Does.Not.Contain("IGeocodingService"));
+        Assert.That(layers, Does.Contain("Geocoded=0"));
         Assert.That(layers, Does.Not.Contain("IMapsGeoService"));
         Assert.That(layers, Does.Contain("PlotDepot"));
         Assert.That(layers, Does.Not.Contain("SeedAsync"));
@@ -1372,6 +1261,7 @@ public class MapViewModelTests
         Assert.That(mapsGeo, Does.Contain("interface IMapsGeoService"));
         Assert.That(mapsGeo, Does.Contain("IsConfigured"));
         Assert.That(mapsGeo, Does.Contain("GeocodeAsync"));
+        Assert.That(mapsGeo, Does.Contain("ReverseGeocodeAsync"));
 
         var depot = CoreSourceFile.Read("Mapping/DistrictDepot.cs");
         Assert.That(depot, Does.Contain("static class DistrictDepot"));
@@ -1383,65 +1273,14 @@ public class MapViewModelTests
     }
 
     [Test]
-    public void MapInteractionDiagnostics_IsGatedByConfigWithEnvOverride()
-    {
-        var previous = Environment.GetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride);
-        try
-        {
-            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, null);
-            var on = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?> { [MapInteractionDiagnostics.ConfigKey] = "true" })
-                .Build();
-            var off = new ConfigurationBuilder().Build();
-
-            Assert.That(MapInteractionDiagnostics.IsEnabled(on), Is.True);
-            Assert.That(MapInteractionDiagnostics.IsEnabled(off), Is.False);
-            Assert.That(MapInteractionDiagnostics.IsEnabled(null), Is.False);
-
-            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, "0");
-            Assert.That(MapInteractionDiagnostics.IsEnabled(on), Is.False, "env var wins over config");
-            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, "1");
-            Assert.That(MapInteractionDiagnostics.IsEnabled(off), Is.True);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, previous);
-        }
-    }
-
-    [Test]
-    public void MapInteractionDiagnostics_BreadcrumbsNameKeysNotCharacters()
-    {
-        Assert.That(
-            MapInteractionDiagnostics.DescribeKey(System.Windows.Input.Key.A, System.Windows.Input.ModifierKeys.Control),
-            Is.EqualTo("Control+A"));
-        Assert.That(
-            MapInteractionDiagnostics.DescribeKey(System.Windows.Input.Key.OemPlus, System.Windows.Input.ModifierKeys.None),
-            Is.EqualTo("OemPlus"));
-
-        var line = MapInteractionDiagnostics.FormatBreadcrumb(1234, "wheel", "delta=120");
-        Assert.That(line, Does.StartWith("+   1234ms"));
-        Assert.That(line, Does.Contain("wheel"));
-        Assert.That(line, Does.EndWith("delta=120"));
-
-        // Never log the resolved tile URL (session token + key): the layer event carries indices only.
-        var layer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
-        Assert.That(layer, Does.Contain("TileRequestedEventArgs(Scale, X, Y"));
-        var diag = XamlViewFile.Read("Utilities/MapInteractionDiagnostics.cs");
-        Assert.That(diag, Does.Not.Contain("ResolveTileUrl"));
-        Assert.That(diag, Does.Not.Contain("UrlTemplate"));
-        Assert.That(diag, Does.Contain("map-interactions-.log"));
-        Assert.That(diag, Does.Contain("PresentationTraceSources.DataBindingSource"));
-        Assert.That(diag, Does.Contain("UnhandledException += OnDispatcherUnhandledException"));
-    }
-
-    [Test]
     public void MapViewCodeBehind_SubscribesToMapMarkersChangedWithoutLayerSelectionHandler()
     {
         var codeBehind = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
         Assert.That(codeBehind, Does.Contain("vm.MapMarkersChanged +="));
         Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapCenter)"));
         Assert.That(codeBehind, Does.Contain("GeoMap_SizeChanged"));
+        Assert.That(codeBehind, Does.Contain("MapCameraHost.TryApply"));
+        Assert.That(codeBehind, Does.Contain("TryApplyCameraThenMarkers"));
         Assert.That(codeBehind, Does.Contain("vm.MapViewportSize = size"));
         // Camera is Center + ZoomLevel; no Radius fit, no zoom nudge, no dead camera helpers.
         Assert.That(codeBehind, Does.Not.Contain("MapFitRadiusKm"));
@@ -1456,14 +1295,10 @@ public class MapViewModelTests
         // Map Tiles API Policies: viewport copyright shown for the tiles on screen, debounced per settled camera.
         Assert.That(bootstrap, Does.Contain("RefreshGoogleAttributionAsync"));
         Assert.That(bootstrap, Does.Contain("GetViewportCopyrightAsync"));
-        Assert.That(bootstrap, Does.Contain("MapDefaults.BoundsForViewport"));
+        Assert.That(bootstrap, Does.Contain("MapCameraHost.ToLatLon"));
         Assert.That(codeBehind, Does.Contain("ScheduleAttributionRefresh"));
         Assert.That(codeBehind, Does.Contain("_attributionTimer"));
-        // VM interaction trace: attached on Loaded, re-attached after tab switches, disposed on Unloaded.
-        Assert.That(codeBehind, Does.Contain("MapInteractionDiagnostics.TryAttach"));
-        Assert.That(codeBehind, Does.Contain("MapView_ReattachDiagnostics"));
-        Assert.That(codeBehind, Does.Contain("_diagnostics?.Dispose()"));
-        Assert.That(codeBehind, Does.Contain("_diagnostics?.RecordError(\"MapView.Loaded\""));
+        Assert.That(codeBehind, Does.Not.Contain("MapInteractionDiagnostics"));
         Assert.That(codeBehind, Does.Contain("ReplayRouteLineFromViewModel"));
         Assert.That(codeBehind, Does.Contain("MapRouteTrailLayer.Apply"));
         Assert.That(codeBehind, Does.Contain("ApplyMarkerTemplates"));

@@ -36,7 +36,6 @@ namespace BusBuddy.WPF.ViewModels.Map
     {
         private readonly IGeoDataService _geoDataService;
         private readonly IRoutingService? _routingService;
-        private readonly EligibilityRoutePdfBuilder _eligibilityPdf = new();
         private readonly BusBuddy.Core.Services.IStudentService? _studentService; // If available for pulling students
         private readonly IServiceScopeFactory? _scopeFactory;
         private readonly IDistrictSettingsAccessor? _districtSettings;
@@ -49,12 +48,9 @@ namespace BusBuddy.WPF.ViewModels.Map
         private RouteModel? _selectedRoute;
         private MapMarker? _selectedMarker;
         private bool _isMapLoading;
-        private bool _eligibilityPdfBusy;
         private bool _clerkOverrideBusy;
         private string _statusMessage = "Ready";
         private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
-        private byte[]? _lastGeneratedEligibilityPdf;
-        private IAsyncRelayCommand _generateEligibilityPdfRelay = null!;
         private IAsyncRelayCommand _applyClerkOverrideRelay = null!;
         /// <summary>Lamar/Wiley clerk default per <c>specs/maps.md</c> — not the US-centroid overview.</summary>
         private const double DistrictDefaultLatitude = 38.0872;
@@ -120,10 +116,10 @@ namespace BusBuddy.WPF.ViewModels.Map
                 pickupStops,
                 destinations,
                 studentService,
-                geocodingService,
                 scopeFactory,
                 (lat, lon, names, label, ids) => PlotStop(lat, lon, names, label, studentIds: ids),
                 ResolveDepotMarker);
+            _ = geocodingService;
 
             LoadRoutesCommand = new AsyncRelayCommand(LoadRoutesAsync);
             RefreshMapCommand = new AsyncRelayCommand(RefreshMapAsync);
@@ -141,14 +137,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             // Print current route map/directions
             PrintRouteMapsCommand = new BusBuddy.WPF.Commands.RelayCommand(_ => OnPrintRequested(), _ => true);
 
-            // Eligibility route PDF generation
-            _generateEligibilityPdfRelay = new AsyncRelayCommand(
-                GenerateEligibilityRoutePdfAndPreviewAsync,
-                () => !_eligibilityPdfBusy);
-            GenerateEligibilityRoutePdfCommand = _generateEligibilityPdfRelay;
-
-            // Add marker (stop) plotting command. Accepts parameter forms documented in AddMarkerFromParam.
-            AddMarkerCommand = new BusBuddy.WPF.Commands.RelayCommand(p => AddMarkerFromParam(p));
             BulkPlotEligibleStudentsCommand = new AsyncRelayCommand(BulkPlotEligibleStudentsAsync);
             _applyClerkOverrideRelay = new AsyncRelayCommand(
                 ApplyClerkOverrideFromMapAsync,
@@ -251,26 +239,6 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             get => _routes;
             set => SetProperty(ref _routes, value);
-        }
-
-        /// <summary>
-        /// Average travel speed in MPH for schedule estimation (configurable at runtime for refinement).
-        /// </summary>
-        private double _averageRouteSpeedMph = 35.0; // default rural estimate
-        public double AverageRouteSpeedMph
-        {
-            get => _averageRouteSpeedMph;
-            set => SetProperty(ref _averageRouteSpeedMph, value);
-        }
-
-        /// <summary>
-        /// Dwell minutes per stop (boarding + safety). Adjustable for calibration.
-        /// </summary>
-        private int _dwellMinutesPerStop = 1;
-        public int DwellMinutesPerStop
-        {
-            get => _dwellMinutesPerStop;
-            set => SetProperty(ref _dwellMinutesPerStop, value);
         }
 
         /// <summary>
@@ -408,9 +376,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         public ICommand ShowSchoolsCommand { get; private set; } = null!;
         public ICommand PlotPickupStopsCommand { get; private set; } = null!;
         public ICommand ResetViewCommand { get; private set; } = null!;
-        public ICommand AddMarkerCommand { get; private set; } = null!;
         public ICommand PrintRouteMapsCommand { get; private set; } = null!;
-        public ICommand GenerateEligibilityRoutePdfCommand { get; private set; } = null!; // New command to trigger eligibility PDF generation
         public ICommand BulkPlotEligibleStudentsCommand { get; private set; } = null!;
         public ICommand ApplyClerkOverrideCommand { get; private set; } = null!;
 
@@ -656,31 +622,23 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         /// <summary>
-        /// One load after routes: depot → schools → active pickups → students with stored coords (no network),
-        /// then refresh the selected route drive path.
+        /// One load after routes: depot → schools → active pickups → students with stored coords (no network).
+        /// Do not auto-select a route or refresh a drive path — clerk pick is the path writer.
         /// </summary>
         private async Task InitializeMapDataAsync()
         {
-            Logger.Information("InitializeMapDataAsync starting — routes, district layers, then drive path");
+            Logger.Information("InitializeMapDataAsync starting — routes then district layers (no auto trail)");
             try
             {
                 await LoadRoutesAsync();
 
-                // Fixed order — no geocode on this path.
                 var depots = _layers.PlotDepotPins();
                 var schools = await _layers.PlotSchoolsAsync();
                 var pickups = await _layers.PlotPickupsAsync();
                 var students = await _layers.PlotStoredStudentsAsync();
                 var seeded = new MapLayerSeedCounts(schools, pickups, students, depots);
 
-                var routeWithTrail = Routes.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.WaypointsJson));
-                if (routeWithTrail is not null)
-                {
-                    // Drive path last — owns camera when a trail exists.
-                    BindSelectedRoute(routeWithTrail);
-                    await UpdateMapForRouteAsync(routeWithTrail, refreshDrivePath: true);
-                }
-                else if (MapMarkers.Count > 0)
+                if (MapMarkers.Count > 0)
                 {
                     CenterOnMarkers();
                 }
@@ -700,7 +658,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                     seeded.Pickups,
                     seeded.Students,
                     seeded.Depots,
-                    routeWithTrail is not null);
+                    false);
             }
             catch (Exception ex)
             {
@@ -1094,7 +1052,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
-        /// <summary>Reset camera to school, then depot/bbox, then Lamar/Wiley clerk default.</summary>
+        /// <summary>Reset camera to depot/bbox, then school, then Lamar/Wiley clerk default.</summary>
         public async Task ResetCameraToDistrictAsync()
         {
             try
@@ -1408,62 +1366,6 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         /// <summary>
-        /// Command target for AddMarkerCommand. Supports parameter types:
-        /// 1) MapMarker instance
-        /// 2) ValueTuple(double lat, double lon, string? label)
-        /// 3) string "lat,lon[,label]"
-        /// 4) anonymous object with Latitude/Longitude[/Label]
-        /// </summary>
-        private void AddMarkerFromParam(object? param)
-        {
-            try
-            {
-                if (param is null)
-                {
-                    PlotStop(MapCenter.X, MapCenter.Y, null, "New Stop");
-                    return;
-                }
-
-                switch (param)
-                {
-                    case MapMarker mm:
-                        PlotStop(mm.LatitudeDegrees, mm.LongitudeDegrees, mm.StudentNames, mm.Label, studentIds: mm.StudentIds);
-                        break;
-                    case ValueTuple<double, double, string?> tuple:
-                        PlotStop(tuple.Item1, tuple.Item2, null, tuple.Item3);
-                        break;
-                    case string s:
-                        {
-                            var parts = s.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                            if (parts.Length >= 2 && double.TryParse(parts[0], out var lat) && double.TryParse(parts[1], out var lon))
-                            {
-                                string? lbl = parts.Length >= 3 ? string.Join(',', parts.Skip(2)) : null;
-                                PlotStop(lat, lon, null, lbl);
-                            }
-                            break;
-                        }
-                    default:
-                        {
-                            // Try reflection pattern for Latitude/Longitude properties
-                            var latProp = param.GetType().GetProperty("Latitude");
-                            var lonProp = param.GetType().GetProperty("Longitude");
-                            if (latProp?.GetValue(param) is double lat && lonProp?.GetValue(param) is double lon)
-                            {
-                                var labelProp = param.GetType().GetProperty("Label")?.GetValue(param) as string;
-                                PlotStop(lat, lon, null, labelProp);
-                            }
-                            break;
-                        }
-                }
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to add marker from parameter");
-                StatusMessage = "Add marker failed";
-            }
-        }
-
-        /// <summary>
         /// Capture a visual element (map container) into PNG bytes and store in LatestMapSnapshotPng.
         /// View code-behind can call this right after PrintRequested is raised.
         /// </summary>
@@ -1475,139 +1377,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             if (bytes is { Length: > 0 })
             {
                 LatestMapSnapshotPng = bytes;
-            }
-        }
-
-        /// <summary>
-        /// Build a route PDF of students who already have a map pin (catalog stop or validated home).
-        /// Stops are nearest-neighbor ordered from the bus barn. Does not mutate map markers.
-        /// </summary>
-        public async Task<(byte[] Pdf, int EligibleCount, int Total)> GenerateEligibilityRoutePdfAsync(
-            BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
-        {
-            var built = await BuildEligibilityRoutePdfAsync(slot);
-            return (built.Pdf, built.MappedCount, built.Total);
-        }
-
-        private async Task<EligibilityPdfBuild> BuildEligibilityRoutePdfAsync(BusBuddy.Core.Models.RouteTimeSlot slot)
-        {
-            using var scope = _scopeFactory?.CreateScope();
-            var built = await _eligibilityPdf.BuildAsync(
-                ResolveStudentService(scope),
-                () => _layers.LoadPickupIndexAsync(),
-                ResolveRouteStartAnchorAsync,
-                async () =>
-                {
-                    var camera = await ResolveDistrictCameraAsync();
-                    return (camera.Lat, camera.Lon);
-                },
-                AverageRouteSpeedMph,
-                DwellMinutesPerStop,
-                slot,
-                LatestMapSnapshotPng).ConfigureAwait(true);
-            StatusMessage = built.StatusMessage;
-            return built;
-        }
-
-        /// <summary>
-        /// Builds the student map PDF and opens it in the in-app viewer. Public so MainWindow
-        /// can trigger it without hosting MapView.
-        /// </summary>
-        public async Task GenerateEligibilityRoutePdfAndPreviewAsync()
-        {
-            if (_eligibilityPdfBusy)
-            {
-                return;
-            }
-
-            _eligibilityPdfBusy = true;
-            _generateEligibilityPdfRelay.NotifyCanExecuteChanged();
-            try
-            {
-                StatusMessage = "Generating student map PDF...";
-                var built = await BuildEligibilityRoutePdfAsync(BusBuddy.Core.Models.RouteTimeSlot.AM);
-                if (built.Blocker is not null)
-                {
-                    Logger.Information(
-                        "Student map PDF skipped: {Blocker} Mapped={Mapped} Total={Total}",
-                        built.Blocker,
-                        built.MappedCount,
-                        built.Total);
-                    UserToast.Warning(built.Blocker, "Student Map PDF");
-                    return;
-                }
-
-                _lastGeneratedEligibilityPdf = built.Pdf;
-                StatusMessage = $"Student map PDF: {built.MappedCount} of {built.Total} students with map pins";
-                ShowEligibilityPdfPreview(built.Pdf);
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Eligibility PDF wrapper failed");
-                StatusMessage = "Student map PDF error";
-                UserToast.Error($"Could not generate the student map PDF: {ex.Message}", "Student Map PDF");
-            }
-            finally
-            {
-                _eligibilityPdfBusy = false;
-                _generateEligibilityPdfRelay.NotifyCanExecuteChanged();
-            }
-        }
-
-        public void PreviewLastEligibilityPdf()
-        {
-            var pdf = _lastGeneratedEligibilityPdf;
-            if (pdf is not { Length: > 0 } || !Views.Reports.PdfPreviewWindow.IsPdfPayload(pdf))
-            {
-                UserToast.Info("Generate a student map PDF first.", "Student Map PDF");
-                return;
-            }
-
-            try
-            {
-                ShowEligibilityPdfPreview(pdf);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed reopening student map PDF");
-                UserToast.Error($"Could not open the PDF: {ex.Message}", "Student Map PDF");
-            }
-        }
-
-        private void ShowEligibilityPdfPreview(byte[] pdf)
-        {
-            ShowOnUi(() =>
-            {
-                var preview = new Views.Reports.PdfPreviewWindow(pdf, "Student Map PDF");
-                DialogOwner.Assign(preview);
-                preview.Show();
-                preview.Activate();
-            });
-        }
-
-        private static void ShowOnUi(Action action)
-        {
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher == null)
-            {
-                Logger.Warning("No WPF dispatcher — student map PDF preview skipped");
-                return;
-            }
-
-            try
-            {
-                if (dispatcher.CheckAccess())
-                {
-                    action();
-                    return;
-                }
-
-                dispatcher.Invoke(action);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "UI dispatch for student map PDF failed");
-                throw;
             }
         }
 
@@ -1688,22 +1457,11 @@ namespace BusBuddy.WPF.ViewModels.Map
             return (lat, lon, DistrictDepot.GetDisplayName(DistrictSettings));
         }
 
-        private async Task<(double Lat, double Lon)> ResolveRouteStartAnchorAsync()
-        {
-            if (DistrictDepot.TryGetCoordinates(DistrictSettings, out var lat, out var lon))
-            {
-                return (lat, lon);
-            }
-
-            var camera = await ResolveDistrictCameraAsync();
-            return (camera.Lat, camera.Lon);
-        }
-
         private async Task<(double Lat, double Lon, int Zoom)> ResolveDistrictCameraAsync()
         {
             using var scope = _scopeFactory?.CreateScope();
             // Prefer the injected accessor (same singleton Settings.Replace updates).
-            var camera = await DistrictCameraUi.ResolveAsync(
+            var camera = await DistrictCameraUi.ResolveHomeAsync(
                 scope?.ServiceProvider ?? App.ServiceProvider,
                 _districtSettings?.Current);
             if (IsUsCentroidOverview(camera.Latitude, camera.Longitude, camera.ZoomLevel))

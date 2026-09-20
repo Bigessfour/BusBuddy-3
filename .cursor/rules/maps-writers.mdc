@@ -1,0 +1,32 @@
+---
+description: District Map writers — four clerk operations only
+globs: ["**/Map*.cs", "**/Map*.xaml", "**/GoogleMapTile*.cs", "**/GoogleMapTiles*.cs", "**/PlacesAddress*.cs", "**/PlaceAddress*.cs", "**/RouteDrivePath*.cs", "**/PublishedStopClockPlanner.cs"]
+alwaysApply: false
+---
+
+# Maps writers
+
+Read `specs/maps.md` before editing. Maps is four clerk operations. Quote the operation you are changing.
+
+| Op                | Allowed writers                                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Open District Map | `MapTileBootstrap`, `GoogleMapTilesImageryLayer`, `GoogleMapTileSessionService`, `MapCameraHost`                            |
+| Plot places       | `MapMarkerHost` (only `ImageryLayer.Markers` assigner), `MapDistrictLayers` → `MapMarkers`, `MapMarker` / `MapMarkerLabels` |
+| Draw path         | `RouteDrivePathRefresher`, `MapRouteTrail`, `MapRouteTrailLayer`                                                            |
+| Validate address  | `PlacesAddressBox`, `MapsGeoService` / Places — pin only after `LocationCoordinate.IsValidated`                             |
+
+Do not:
+
+- Add OSM, `mt1.google.com`, or a second `ImageryLayer` on the same `SfMap`
+- Return an empty `GetUri` while a Google `UrlTemplate` is live (resolve `2dtiles` or remove the override)
+- Geocode inside a plot path
+- Merge Map Tiles, Address Validation, Places, Routes, and Route Optimization
+- Edit `MappingService.cs` for maps
+- Enable `IsLiveTrackingEnabled`
+- Invent a new tile/marker/polyline writer “to make another host work”
+
+Three hosts (District Map, school pick, stop/home pick) must call the same bootstrap + marker host + trail APIs.
+
+Guest tile proof: `MapsConnectionProbe` + `Tools/SfMapTileProbe google-urltemplate` + `MapTileBootstrap Host=DistrictMap Outcome=…`.
+
+Do not restore `Documentation/Archive/2026-09-Maps-Competing-Writers/` (`MapInteractionDiagnostics`, `EligibilityRoutePdfBuilder`, OSM probe, duplicate `map-tile-probe`, diag smoke). Harness OSM stays in `Tools/SfMapTileProbe` only.

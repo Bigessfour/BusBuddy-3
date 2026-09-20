@@ -1,6 +1,7 @@
 using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
@@ -220,7 +221,8 @@ public sealed class StudentsDialogCoordinator
 
             var vm = new PickupStopFormViewModel(
                 stopService,
-                App.ServiceProvider?.GetService<IStudentService>());
+                App.ServiceProvider?.GetService<IStudentService>(),
+                App.ServiceProvider?.GetService<IMapsGeoService>());
             var form = new BusBuddy.WPF.Views.Student.PickupStopForm(vm);
             DialogOwner.Assign(form);
             if (form.ShowDialog() != true)

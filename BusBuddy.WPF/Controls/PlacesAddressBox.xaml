@@ -6,15 +6,17 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionStyles.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/BusBuddyInputStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid>
+    <Grid MinHeight="42">
         <syncfusion:SfTextBoxExt x:Name="AddressInput"
                                  AutoCompleteMode="None"
                                  ShowClearButton="True"
-                                 Height="40"
                                  HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Stretch"
                                  TextChanged="AddressInput_TextChanged"
                                  AutomationProperties.Name="Street address"/>
         <Popup x:Name="SuggestionsPopup"

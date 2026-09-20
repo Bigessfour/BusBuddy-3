@@ -37,6 +37,8 @@ namespace BusBuddy.Tests.Core
                 {
                     new Route { RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Oakridge" }
                 }));
+            _routes.Setup(r => r.GetRouteStopsAsync(It.IsAny<int>()))
+                .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(Array.Empty<RouteStop>()));
             _service = new OperationalReportService(new PdfReportService(), _students.Object, _routes.Object);
         }
 
@@ -139,7 +141,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task GenerateAsync_RouteSummaryWithoutRouteId_UsesAllRoutesTable()
+        public async Task GenerateAsync_RouteSummaryWithoutRouteId_WritesPdfGridSheets()
         {
             _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
                 Result.SuccessResult<IEnumerable<Route>>(new[]
@@ -147,12 +149,25 @@ namespace BusBuddy.Tests.Core
                     new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Oakridge" },
                     new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Oakridge" }
                 }));
+            _routes.Setup(r => r.GetRouteStopsAsync(1)).ReturnsAsync(
+                Result.SuccessResult<IEnumerable<RouteStop>>(new[]
+                {
+                    new RouteStop
+                    {
+                        RouteId = 1,
+                        StopOrder = 1,
+                        StopName = "Barn",
+                        ScheduledArrival = new TimeSpan(7, 30, 0),
+                        ScheduledDeparture = new TimeSpan(7, 31, 0)
+                    }
+                }));
 
             var result = await _service.GenerateAsync(OperationalReportKind.RouteSummary, _dir);
 
-            Assert.That(result.Status, Does.Contain("2 row"));
-            Assert.That(result.Status, Does.Not.Contain("route North"));
+            Assert.That(result.Status, Does.Contain("2 route sheets"));
+            Assert.That(result.Status, Does.Not.Contain("2 row"));
             Assert.That(result.FileBytes[0], Is.EqualTo((byte)'%'));
+            Assert.That(result.FileBytes.Length, Is.GreaterThan(2500));
         }
 
         [Test]

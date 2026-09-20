@@ -19,7 +19,6 @@ using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
 using System.IO; // For PDF export file writing
-using System.Threading; // For debounce timer
 using System.Text.RegularExpressions; // Start time validation
 
 namespace BusBuddy.WPF.ViewModels.Route
@@ -57,8 +56,6 @@ namespace BusBuddy.WPF.ViewModels.Route
         private readonly IDestinationService? _destinations;
         private readonly MapViewModel? _map;
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
-        private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
-        private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
         private static readonly Regex StartTimeRegex = new(@"^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*$", RegexOptions.Compiled); // HH:mm 24h
 
         // Compact helpers for robust display names in logs/status
@@ -111,24 +108,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             InitializeCommands();
             // Kick off data load async (fire & forget)
             _ = LoadDataFromServiceAsync();
-            _retimeDebounceTimer = new Timer(_ =>
-            {
-                try
-                {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        if (SelectedRoute != null && RouteStops.Any())
-                        {
-                            Logger.Debug("Auto-retiming route stops (debounced)");
-                            _ = TimeRouteStopsAsync();
-                        }
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "Auto-retime debounce execution failed");
-                }
-            }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         /// <summary>Unassigned students for assignment.</summary>
@@ -445,7 +424,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             SaveRouteCommand = new RelayCommand(async () => await SaveRouteAsync(), () => CanSaveRoute);
             DeleteRouteCommand = new RelayCommand(async () => await DeleteRouteAsync());
             ViewScheduleCommand = new RelayCommand(async () => await ViewScheduleAsync(), () => SelectedRoute != null && !IsLoading);
-            RefreshDataCommand = new RelayCommand(async () => await RefreshDataAsync());
+            RefreshDataCommand = new RelayCommand(async () => await RefreshDataAsync(), () => !IsLoading);
             GenerateReportCommand = ExportRouteSheetCommand;
 
             // Enhanced Route Building Commands
@@ -485,6 +464,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             (SaveRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (DeleteRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (ViewScheduleCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (RefreshDataCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (AssignVehicleCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (AssignDriverCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (AddStopCommand as RelayCommand)?.RaiseCanExecuteChanged();
@@ -515,8 +495,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             _disposed = true;
             try
             {
-                _retimeDebounceTimer?.Dispose();
-                Logger.Debug("Disposed RouteAssignmentViewModel resources (debounce timer)");
+                Logger.Debug("Disposed RouteAssignmentViewModel resources");
             }
             catch (Exception ex)
             {

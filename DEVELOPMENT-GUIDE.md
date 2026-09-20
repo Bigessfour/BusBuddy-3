@@ -485,14 +485,14 @@ The project was originally Windows-only (WPF). On macOS:
     - If SSH isn't ready yet (VM still booting / logging in / sshd), it prints copy-paste commands.
     - The script prints your current Mac host IP (for reaching Docker Postgres from inside the VM).
 
-    When you are already sitting in a PowerShell prompt _inside the VM_:
+    When you are already sitting in a PowerShell 7 prompt _inside the VM_:
 
     ```powershell
-    cd C:\dev\BusBuddy-3
-    .\utm_run_in_vm.ps1
+    cd C:\dev
+    pwsh -NoProfile -File .\Launch-BusBuddy.ps1
     ```
 
-    That script prefers `C:\dev\BusBuddy-3`, may robocopy from `Z:\` if the NTFS copy is missing, then builds and launches the WPF app. Do not `dotnet run` from `Z:\`.
+    Double-click `C:\dev\Launch-BusBuddy.cmd` if you prefer Explorer. That rebuilds Debug WPF on `C:\dev\BusBuddy-3` and starts `BusBuddy.WPF.exe`. Windows PowerShell 5.1 fallback: `.\utm_run_in_vm.ps1` from `C:\dev\BusBuddy-3`. Do not `dotnet run` from `Z:\`.
 
 - **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data).
     - Host (Mac): localhost:5432

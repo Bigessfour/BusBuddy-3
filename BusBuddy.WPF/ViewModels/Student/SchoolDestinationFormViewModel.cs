@@ -82,6 +82,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
+        ValidateAddressCommand = new AsyncRelayCommand(ValidateAddressAsync, CanValidateAddress);
 
         MapMarkers = new ObservableCollection<MapMarker>();
         var camera = DistrictCameraUi.Resolve();
@@ -246,6 +247,31 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand ClearMapPickCommand { get; }
+    public ICommand ValidateAddressCommand { get; }
+
+    /// <summary>Formats a time-picker value as HH:mm for persistence.</summary>
+    public static string FormatTimeText(DateTime? pickerValue, string fallbackWhenEmpty)
+    {
+        if (!pickerValue.HasValue)
+        {
+            return fallbackWhenEmpty;
+        }
+
+        return pickerValue.Value.ToString("HH:mm", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Maps stored HH:mm text onto today's date for SfTimePicker.</summary>
+    public static DateTime? ParseTimePickerValue(string? text, TimeSpan defaultTime)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return DateTime.Today.Add(defaultTime);
+        }
+
+        return TryParseTime(text, out var parsed)
+            ? DateTime.Today.Add(parsed)
+            : DateTime.Today.Add(defaultTime);
+    }
 
     /// <summary>Called from the view when the clerk clicks the SfMap (GetLatLonFromPoint).</summary>
     public void ApplyMapClick(double latitude, double longitude)
@@ -286,8 +312,6 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             _longitudeValue,
             MapMarkerLabels.ForSchool(string.IsNullOrWhiteSpace(Name) ? "School" : Name),
             MapMarkerLabels.Kind.School));
-        MapCenter = new Point(_latitudeValue, _longitudeValue);
-        OnPropertyChanged(nameof(MapCenter));
     }
 
     private void PrefillFrom(Destination school)
@@ -538,6 +562,48 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         // Strip Syncfusion mask prompt chars if present
         var cleaned = text.Replace("_", string.Empty, StringComparison.Ordinal).Trim();
         return TimeSpan.TryParse(cleaned, CultureInfo.InvariantCulture, out value);
+    }
+
+    private bool CanValidateAddress() =>
+        CanEditSchoolDetails
+        && !string.IsNullOrWhiteSpace(Address)
+        && !string.IsNullOrWhiteSpace(City)
+        && !string.IsNullOrWhiteSpace(State)
+        && State.Length == 2
+        && !string.IsNullOrWhiteSpace(ZipCode);
+
+    private async Task ValidateAddressAsync()
+    {
+        ValidationMessage = string.Empty;
+        var mapsGeo = App.ServiceProvider?.GetService<IMapsGeoService>();
+        if (mapsGeo is null)
+        {
+            ValidationMessage = "Address validation is not available (maps service not registered).";
+            return;
+        }
+
+        if (!mapsGeo.IsConfigured)
+        {
+            ValidationMessage = "Set GOOGLE_MAPS_API_KEY to validate addresses with Google.";
+            return;
+        }
+
+        var result = await mapsGeo.ValidateAndGeocodeAsync(Address, City, State, ZipCode).ConfigureAwait(true);
+        if (result.Ok && result.Latitude.HasValue && result.Longitude.HasValue)
+        {
+            ApplyMapClick(result.Latitude.Value, result.Longitude.Value);
+            ValidationMessage = "Address validated — GPS updated from Google.";
+            Logger.Information(
+                "School address validated HasCoords=true Lat={Lat} Lon={Lon}",
+                result.Latitude.Value,
+                result.Longitude.Value);
+            return;
+        }
+
+        ValidationMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+            ? "Address needs validation — pick a Google suggestion or correct the street."
+            : result.ErrorMessage;
+        Logger.Warning("School address validation failed: {Error}", ValidationMessage);
     }
 
     public void ApplyAppliedAddress(PlaceAddressApplier.AppliedAddress applied)
