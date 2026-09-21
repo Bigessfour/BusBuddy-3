@@ -73,14 +73,11 @@
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-    <Grid Margin="12">
+    <Grid Margin="12"
+          ToolTipService.ShowOnDisabled="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="2*" MinHeight="180" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" MinHeight="140" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Border x:Name="ServiceErrorBanner"
@@ -97,7 +94,17 @@
                        TextWrapping="Wrap"
                        AutomationProperties.Name="Route Assignment Service Error" />
         </Border>
-        <Border Grid.Row="1"
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Grid MinHeight="680">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" MinHeight="220" />
+                    <RowDefinition Height="Auto" MinHeight="200" />
+                </Grid.RowDefinitions>
+        <Border Grid.Row="0"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="6"
                 Padding="10,8"
@@ -279,25 +286,25 @@
                                               Command="{Binding TimeRouteCommand}"
                                               Style="{StaticResource InfoButtonAdv}"
                                               AutomationProperties.Name="Time Route"
-                                              ToolTip="Calculate timing for all stops" />
+                                              ToolTip="{Binding TimeRouteToolTip}" />
                         <syncfusion:ButtonAdv x:Name="ScheduleButton"
                                               Label="Schedule"
                                               Command="{Binding ViewScheduleCommand}"
                                               Style="{StaticResource InfoButtonAdv}"
                                               AutomationProperties.Name="View Schedule"
-                                              ToolTip="Published stop times for the selected route" />
+                                              ToolTip="{Binding ViewScheduleToolTip}" />
                         <syncfusion:ButtonAdv x:Name="PlotButton"
                                               Label="Plot"
                                               Command="{Binding PlotRouteOnMapCommand}"
                                               Style="{StaticResource InfoButtonAdv}"
                                               AutomationProperties.Name="Plot Route on Map"
-                                              ToolTip="Plot route on map" />
+                                              ToolTip="{Binding PlotRouteToolTip}" />
                         <syncfusion:ButtonAdv x:Name="DrivePathButton"
                                               Label="Drive Path"
                                               Command="{Binding RefreshDrivePathCommand}"
                                               Style="{StaticResource InfoButtonAdv}"
                                               AutomationProperties.Name="Refresh Drive Path"
-                                              ToolTip="Compute the Google Routes polyline from published stops" />
+                                              ToolTip="{Binding DrivePathToolTip}" />
                         <syncfusion:ButtonAdv x:Name="PrintMapButton"
                                               Label="Print Map"
                                               Command="{Binding PrintRouteSheetCommand}"
@@ -314,7 +321,7 @@
                 </DockPanel>
             </StackPanel>
         </Border>
-        <Grid Grid.Row="3" MinHeight="180">
+        <Grid Grid.Row="2" MinHeight="180">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="160" />
                 <ColumnDefinition Width="Auto" />
@@ -397,7 +404,7 @@
                                       Margin="0,0,0,8"
                                       HorizontalAlignment="Stretch"
                                       AutomationProperties.Name="Assign Student"
-                                      ToolTip="Assign selected student to route" />
+                                      ToolTip="{Binding AssignStudentToolTip}" />
                 <syncfusion:ButtonAdv x:Name="RemoveButton"
                                       Label="Remove"
                                       Command="{Binding RemoveStudentCommand}"
@@ -405,7 +412,7 @@
                                       Margin="0,0,0,8"
                                       HorizontalAlignment="Stretch"
                                       AutomationProperties.Name="Remove Student"
-                                      ToolTip="Remove selected student from the year assignment (not a same-day absence)" />
+                                      ToolTip="{Binding RemoveStudentToolTip}" />
                 <syncfusion:ButtonAdv x:Name="NotRidingTodayButton"
                                       Label="Not riding today"
                                       Command="{Binding MarkNotRidingTodayCommand}"
@@ -413,7 +420,7 @@
                                       Margin="0"
                                       HorizontalAlignment="Stretch"
                                       AutomationProperties.Name="Not riding today"
-                                      ToolTip="Same-day rider exception — does not delete the stop or year assignment" />
+                                      ToolTip="{Binding NotRidingTodayToolTip}" />
             </StackPanel>
             <GroupBox Grid.Column="2"
                       Header="Assigned to Route"
@@ -472,22 +479,19 @@
                 </Grid>
             </GroupBox>
         </Grid>
-        <GridSplitter Grid.Row="4"
-                      Height="6"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Center"
-                      ResizeDirection="Rows"
-                      Background="{DynamicResource BusBuddy.Brush.Surface.Border}"
-                      Margin="0,4"/>
-        <GroupBox Grid.Row="5"
+        <GroupBox Grid.Row="3"
                   Header="Route Stops"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
-                  Padding="6">
+                  Padding="6"
+                  MinHeight="200">
             <views:RouteStopsEditor HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch" />
+                                    VerticalAlignment="Stretch"
+                                    MinHeight="180" />
         </GroupBox>
-        <Border Grid.Row="6"
+            </Grid>
+        </ScrollViewer>
+        <Border Grid.Row="2"
                 Margin="0,8,0,0"
                 Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"

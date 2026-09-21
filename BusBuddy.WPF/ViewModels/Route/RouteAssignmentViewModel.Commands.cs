@@ -196,8 +196,20 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// </summary>
         private async Task MarkNotRidingTodayAsync()
         {
-            if (SelectedAssignedStudent == null || SelectedRoute == null)
+            if (SelectedRoute == null)
             {
+                MessageBox.Show("Select a route first.", "Route Required",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (SelectedAssignedStudent == null)
+            {
+                MessageBox.Show(
+                    "Select a student in the Assigned to Route list (not Unassigned). Same-day not riding does not remove the year assignment.",
+                    "Student Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
                 return;
             }
 
@@ -206,6 +218,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             var stopCountBefore = RouteStops.Count;
             var am = student.AMRoute;
             var pm = student.PMRoute;
+            var displayName = GetStudentDisplayName(student);
 
             try
             {
@@ -217,12 +230,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                     "Not riding today");
                 if (!result.IsSuccess)
                 {
-                    StatusMessage = result.Error ?? "Could not record not-riding exception";
+                    var error = result.Error ?? "Could not record not-riding exception";
+                    StatusMessage = error;
+                    MessageBox.Show(error, "Not Riding Today", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 StatusMessage =
-                    $"{student.StudentName} not riding today — published stops and year assignment unchanged";
+                    $"{displayName} not riding today — published stops and year assignment unchanged";
+                MessageBox.Show(
+                    $"{displayName} is marked not riding for {PublishedSessionDateUtc:yyyy-MM-dd}.\n\nPublished stops and the year route assignment are unchanged. The schedule sheet will show a not-riding badge.",
+                    "Not Riding Today",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
                 Logger.Information(
                     "Rider exception recorded Student={StudentId} Route={RouteId} Stops={Stops} AMRoute={AM} PMRoute={PM}",
                     student.StudentId,
@@ -235,6 +255,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 Logger.Error(ex, "Failed to record rider exception");
                 StatusMessage = $"Failed to mark not riding: {ex.Message}";
+                MessageBox.Show($"Failed to mark not riding: {ex.Message}", "Not Riding Today",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {

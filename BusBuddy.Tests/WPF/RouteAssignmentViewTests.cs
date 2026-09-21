@@ -84,8 +84,11 @@ public class RouteAssignmentViewTests
     {
         var xaml = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
         Assert.That(xaml, Does.Contain("ButtonAdvTextOnly.xaml"));
-        Assert.That(xaml, Does.Contain("GridSplitter"));
-        Assert.That(xaml, Does.Contain("Height=\"2*\" MinHeight=\"180\""));
+        Assert.That(xaml, Does.Contain("ToolTipService.ShowOnDisabled=\"True\""));
+        Assert.That(xaml, Does.Contain("VerticalScrollBarVisibility=\"Auto\""));
+        Assert.That(xaml, Does.Contain("ToolTip=\"{Binding TimeRouteToolTip}\""));
+        Assert.That(xaml, Does.Contain("ToolTip=\"{Binding NotRidingTodayToolTip}\""));
+        Assert.That(xaml, Does.Contain("MinHeight=\"180\""));
         Assert.That(xaml, Does.Contain("Header=\"Unassigned Students\""));
         Assert.That(xaml, Does.Contain("Header=\"Assigned to Route\""));
         Assert.That(xaml, Does.Contain("Header=\"Route Stops\""));
@@ -109,5 +112,11 @@ public class RouteAssignmentViewTests
         var vm = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.cs");
         Assert.That(vm, Does.Contain("GenerateReportCommand = ExportRouteSheetCommand"));
         Assert.That(vm, Does.Contain("PrintMapCommand = PrintRouteSheetCommand"));
+
+        var hints = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.CommandHints.cs");
+        Assert.That(hints, Does.Contain("NotRidingTodayToolTip"));
+        var commands = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.Commands.cs");
+        Assert.That(commands, Does.Contain("MessageBox.Show"));
+        Assert.That(commands, Does.Contain("Assigned to Route list"));
     }
 }

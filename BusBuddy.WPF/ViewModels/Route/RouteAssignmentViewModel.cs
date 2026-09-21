@@ -162,6 +162,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         StatusMessage = "Invalid start time (use HH:mm 24-hour, e.g. 07:30)";
                     }
                     (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    NotifyCommandHintProperties();
                 }
             }
         }
@@ -481,6 +482,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             (PrintRouteSheetCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (GenerateTransferRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            NotifyCommandHintProperties();
         }
         private void ExportRouteAssignmentPdfAsync(bool includeMap)
         {
