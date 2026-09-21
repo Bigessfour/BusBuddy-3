@@ -109,6 +109,17 @@
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
 
+    <!-- Dropdown panel for SfTimePicker — opaque so scroll text does not show through. -->
+    <Style x:Key="BusBuddySfTimeSelectorStyle" TargetType="syncfusion:SfTimeSelector">
+        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Medium}"/>
+        <Setter Property="Foreground" Value="{DynamicResource FormInputForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource FormInputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="AccentBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+        <Setter Property="SelectedForeground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
+        <Setter Property="Padding" Value="8"/>
+    </Style>
+
     <Style TargetType="syncfusion:SfTimePicker" BasedOn="{StaticResource {x:Type syncfusion:SfTimePicker}}">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -118,10 +129,12 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="FormatString" Value="HH:mm"/>
         <Setter Property="SelectorFormatString" Value="HH:mm"/>
+        <Setter Property="DropDownHeight" Value="240"/>
         <Setter Property="Foreground" Value="{DynamicResource FormInputForegroundBrush}"/>
         <Setter Property="Background" Value="{DynamicResource FormInputBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource FormInputBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="AccentBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+        <Setter Property="SelectorStyle" Value="{StaticResource BusBuddySfTimeSelectorStyle}"/>
     </Style>
 </ResourceDictionary>

@@ -70,15 +70,15 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Add Route"
                 AutomationProperties.HelpText="Create a new bus route"/>
-            <syncfusion:ButtonAdv Name="SaveRouteButton" Label="Save Route"
+            <syncfusion:ButtonAdv Name="SaveRouteButton" Label="Save Grid Changes"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding EditRouteCommand}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource AccentBackgroundBrush}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                AutomationProperties.Name="Save Route"
-                AutomationProperties.HelpText="Persist name, session, school, special-needs, and AM bus for the selected route"/>
+                AutomationProperties.Name="Save grid changes"
+                AutomationProperties.HelpText="Persist inline grid edits (name, session, school, special-needs, AM bus, active) for the selected route"/>
             <syncfusion:ButtonAdv Name="CopyRouteButton" Label="Copy Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding CopyRouteCommand}"
@@ -190,6 +190,12 @@
                                               Watermark="Search routes..."
                                               AutomationProperties.Name="Quick Search Routes"
                                               AutomationProperties.HelpText="Type to search routes by name or description"/>
+                    <CheckBox Content="Show retired routes"
+                              Margin="0,0,8,6"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding ShowRetiredRoutes, Mode=TwoWay}"
+                              AutomationProperties.Name="Show retired routes"
+                              AutomationProperties.HelpText="Include inactive routes retired by Delete"/>
             </WrapPanel>
         </Border>
 
@@ -218,7 +224,6 @@
                               ColumnSizer="Star"
                               Margin="0,0,0,10"
                               Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
-                              MouseDoubleClick="RoutesDataGrid_MouseDoubleClick"
                               AutomationProperties.Name="Routes Data Grid"
                               AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
             <syncfusion:SfDataGrid.Columns>
@@ -230,13 +235,7 @@
                                              AllowEditing="True"/>
         <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
                 <syncfusion:GridCheckBoxColumn MappingName="IsSpecialNeedsRoute" HeaderText="Special Needs" Width="110"/>
-                <syncfusion:GridComboBoxColumn MappingName="School"
-                                             HeaderText="School"
-                                             Width="160"
-                                             DisplayMemberPath="Name"
-                                             SelectedValuePath="Name"
-                                             ItemsSource="{Binding DataContext.AvailableSchools, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                             AllowEditing="True"/>
+                <syncfusion:GridTextColumn MappingName="School" HeaderText="School" Width="160" AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200" AllowEditing="False"/>
                 <syncfusion:GridComboBoxColumn MappingName="AMVehicleId"
                                              HeaderText="AM Bus"

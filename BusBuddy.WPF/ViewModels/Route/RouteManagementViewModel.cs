@@ -279,7 +279,28 @@ namespace BusBuddy.WPF.ViewModels.Route
                     _quickSearchText = value;
                     OnPropertyChanged();
                     RoutesView.Refresh();
+                    OnPropertyChanged(nameof(VisibleRouteCount));
                 }
+            }
+        }
+
+        private bool _showRetiredRoutes;
+
+        /// <summary>When false (default), retired routes are hidden from the grid after Delete.</summary>
+        public bool ShowRetiredRoutes
+        {
+            get => _showRetiredRoutes;
+            set
+            {
+                if (_showRetiredRoutes == value)
+                {
+                    return;
+                }
+
+                _showRetiredRoutes = value;
+                OnPropertyChanged();
+                RoutesView.Refresh();
+                OnPropertyChanged(nameof(VisibleRouteCount));
             }
         }
 
@@ -297,10 +318,32 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// Total number of routes in the current <see cref="Routes"/> collection.
         /// </summary>
         public int TotalRoutes => Routes.Count;
+
+        /// <summary>Routes shown in the grid given <see cref="ShowRetiredRoutes"/> and search filter.</summary>
+        public int VisibleRouteCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var item in RoutesView)
+                {
+                    if (item is BusBuddy.Core.Models.Route)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
         /// <summary>
         /// Number of active routes.
         /// </summary>
         public int ActiveRoutes => Routes.Count(r => r.IsActive);
+
+        internal static bool CanRefreshDrivePathFor(BusBuddy.Core.Models.Route? route) =>
+            route is not null && (route.StopCount ?? 0) >= 2;
         /// <summary>
         /// Aggregate count of assigned students across all routes (null-safe).
         /// </summary>
@@ -381,11 +424,11 @@ namespace BusBuddy.WPF.ViewModels.Route
             ExportReportCommand = _exportReportRelay;
             _printScheduleRelay = new AsyncRelayCommand(PrintScheduleAsync, () => IsRouteSelected && !IsBusy);
             PrintScheduleCommand = _printScheduleRelay;
-            _refreshRelay = new AsyncRelayCommand(LoadRoutesAsync, () => !IsRefreshing);
+            _refreshRelay = new AsyncRelayCommand(() => LoadRoutesAsync(), () => !IsRefreshing);
             RefreshCommand = _refreshRelay;
             _refreshDrivePathRelay = new AsyncRelayCommand(
                 RefreshDrivePathAsync,
-                () => IsRouteSelected && !IsBusy && SelectedRoute!.StopCount.GetValueOrDefault(2) >= 2);
+                () => IsRouteSelected && !IsBusy && CanRefreshDrivePathFor(SelectedRoute));
             RefreshDrivePathCommand = _refreshDrivePathRelay;
             _optimizeStopOrderRelay = new AsyncRelayCommand(OptimizeStopOrderAsync, () => IsRouteSelected && !IsBusy);
             OptimizeStopOrderCommand = _optimizeStopOrderRelay;
@@ -459,7 +502,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 : null;
         }
 
-        private async Task LoadRoutesAsync()
+        private async Task LoadRoutesAsync(bool preserveStatusMessage = false)
         {
             if (!await _loadGate.WaitAsync(0).ConfigureAwait(true))
             {
@@ -481,6 +524,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         return;
                     }
 
+                    var selectedRouteId = SelectedRoute?.RouteId;
                     var routes = result.Value?.OrderBy(r => r.RouteName).ToList() ?? [];
                     Routes.Clear();
                     foreach (var r in routes)
@@ -489,10 +533,18 @@ namespace BusBuddy.WPF.ViewModels.Route
                     }
 
                     RoutesView.Refresh();
-                    StatusMessage = Routes.Count == 0
-                        ? "No routes found — click 'Add Route' to create your first route"
-                        : $"Loaded {Routes.Count} routes";
+                    TryRestoreSelectedRoute(selectedRouteId);
+                    if (!preserveStatusMessage)
+                    {
+                        StatusMessage = Routes.Count == 0
+                            ? "No routes found — click 'Add Route' to create your first route"
+                            : VisibleRouteCount == Routes.Count
+                                ? $"Loaded {Routes.Count} routes"
+                                : $"Loaded {Routes.Count} routes ({VisibleRouteCount} visible — turn on Show retired routes to see inactive)";
+                    }
+
                     OnPropertyChanged(nameof(TotalRoutes));
+                    OnPropertyChanged(nameof(VisibleRouteCount));
                     OnPropertyChanged(nameof(ActiveRoutes));
                     OnPropertyChanged(nameof(TotalAssignedStudents));
                     Logger.Information("Loaded {RouteCount} routes ViaService={ViaService}", Routes.Count, true);
@@ -511,6 +563,16 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
+        private void TryRestoreSelectedRoute(int? routeId)
+        {
+            if (routeId is not int id || id <= 0)
+            {
+                return;
+            }
+
+            SelectedRoute = Routes.FirstOrDefault(r => r.RouteId == id);
+        }
+
         /// <summary>
         /// Predicate used by RoutesView to filter the collection based on QuickSearchText.
         /// </summary>
@@ -520,10 +582,17 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 return false;
             }
+
+            if (!ShowRetiredRoutes && !r.IsActive)
+            {
+                return false;
+            }
+
             if (string.IsNullOrWhiteSpace(QuickSearchText))
             {
                 return true;
             }
+
             var q = QuickSearchText.Trim();
             return (r.RouteName?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
                    || (r.Description?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -611,6 +680,11 @@ namespace BusBuddy.WPF.ViewModels.Route
                             ? "Error saving route"
                             : result.Error;
                         Logger.Warning("UpdateRouteAsync failed for {RouteId}: {Error}", SelectedRoute.RouteId, result.Error);
+                        System.Windows.MessageBox.Show(
+                            StatusMessage,
+                            "Save Route",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Warning);
                         return;
                     }
 
@@ -637,8 +711,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 var confirm = System.Windows.MessageBox.Show(
-                    $"Delete or retire route '{routeToDelete.RouteName}'?\n\n"
-                    + "Empty routes are removed. If daily schedules, student keys, or trip events still reference it, the route is retired (IsActive = false) and those rows are kept.",
+                    $"Remove '{routeToDelete.RouteName}' from the route list?\n\n"
+                    + "Routes with no students, schedules, or trip history are permanently deleted.\n"
+                    + "Otherwise the route is retired and hidden here until you turn on Show retired routes.",
                     "Confirm Delete",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
@@ -672,15 +747,21 @@ namespace BusBuddy.WPF.ViewModels.Route
                     if (retired)
                     {
                         routeToDelete.IsActive = false;
+                        SelectedRoute = null;
                         RoutesView.Refresh();
                         OnPropertyChanged(nameof(TotalRoutes));
                         OnPropertyChanged(nameof(ActiveRoutes));
-                        StatusMessage = result.Error;
+                        StatusMessage = $"Retired and hidden: {name}";
                         Logger.Information(
                             "Retired route {RouteId}:{RouteName} {Message}",
                             routeToDelete.RouteId,
                             name,
                             result.Error);
+                        System.Windows.MessageBox.Show(
+                            result.Error,
+                            "Route retired",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Information);
                     }
                     else
                     {
@@ -689,7 +770,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         RoutesView.Refresh();
                         OnPropertyChanged(nameof(TotalRoutes));
                         OnPropertyChanged(nameof(ActiveRoutes));
-                        StatusMessage = $"Deleted route '{name}'";
+                        StatusMessage = $"Permanently deleted route '{name}'";
                         Logger.Information("Deleted route {RouteId}:{RouteName} ViaService={ViaService}",
                             routeToDelete.RouteId, name, true);
                     }
@@ -836,17 +917,20 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
+            var routeId = SelectedRoute.RouteId;
+            var routeName = SelectedRoute.RouteName;
             try
             {
-                StatusMessage = $"Opening assignment for '{SelectedRoute.RouteName}'...";
+                StatusMessage = $"Opening assignment for '{routeName}'...";
                 RouteAssignmentLauncher.ShowDialog(DialogOwner.Resolve(null), SelectedRoute);
-                await LoadRoutesAsync().ConfigureAwait(true);
-                StatusMessage = $"Closed assignment for '{SelectedRoute.RouteName}'";
+                await LoadRoutesAsync(preserveStatusMessage: true).ConfigureAwait(true);
+                TryRestoreSelectedRoute(routeId);
+                StatusMessage = $"Closed assignment for '{routeName}'";
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed opening route assignment");
-                StatusMessage = $"Error opening assignment: {ex.Message}";
+                Logger.Error(ex, "Route assignment dialog failed RouteId={RouteId}", routeId);
+                StatusMessage = $"Route assignment error for '{routeName}': {ex.Message}";
             }
         }
 

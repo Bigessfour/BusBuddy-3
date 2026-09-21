@@ -13,32 +13,45 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
+            var routeName = SelectedRoute.RouteName;
+            var routeId = SelectedRoute.RouteId;
             try
             {
                 IsBusy = true;
-                StatusMessage = $"Refreshing drive path for '{SelectedRoute.RouteName}'...";
-                var result = await _routeService.RefreshDrivePathAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                StatusMessage = $"Refreshing drive path for '{routeName}'...";
+                var result = await _routeService.RefreshDrivePathAsync(routeId).ConfigureAwait(true);
                 if (!result.IsSuccess || result.Value is null)
                 {
-                    StatusMessage = string.IsNullOrWhiteSpace(result.Error)
+                    var error = string.IsNullOrWhiteSpace(result.Error)
                         ? "Drive path refresh failed."
                         : result.Error;
+                    StatusMessage = error;
                     UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", "failed", result.Error);
+                    MessageBox.Show(error, "Drive Path", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                await LoadSingleRouteAsync(routeId).ConfigureAwait(true);
                 var refresh = result.Value;
                 if (refresh.Success)
                 {
+                    var pathCaption = SelectedRoute?.Path;
+                    var meters = refresh.Path?.DistanceMeters;
+                    var duration = refresh.Path?.Duration;
                     StatusMessage =
-                        $"Drive path updated ({refresh.Path?.DistanceMeters} m, {refresh.Path?.Duration})";
+                        $"Drive path updated ({meters} m, {duration})";
                     UiProofLog.Write(
                         Logger,
                         "Drive Path",
                         "RouteManagementView",
                         "refreshed",
-                        SelectedRoute.RouteName);
+                        routeName);
+                    MessageBox.Show(
+                        $"{routeName}\n\nRoad path saved ({pathCaption ?? $"{meters} m, {duration}"}).\n\n"
+                        + "Open Manage Route to plot the line on the map. Use Time Route there to publish stop clocks.",
+                        "Drive Path",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
                     return;
                 }
 

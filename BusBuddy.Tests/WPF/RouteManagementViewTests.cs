@@ -11,7 +11,6 @@ public class RouteManagementViewTests
     public void RouteManagementViewXaml_WiresVehicleAssignmentPanel()
     {
         var xaml = XamlViewFile.Read("Views/Route/RouteManagementView.xaml");
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.AvailableSchools, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding DataContext.AvailableBuses, RelativeSource={RelativeSource AncestorType=UserControl}}\""));
         Assert.That(xaml, Does.Not.Contain("Source={x:Reference RoutesDataGrid}"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AvailableBuses}\""));
@@ -25,11 +24,13 @@ public class RouteManagementViewTests
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AvailableDrivers}\""));
         Assert.That(xaml, Does.Contain("SelectedValue=\"{Binding SelectedDriverId, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AssignDriverCommand}\""));
-        Assert.That(xaml, Does.Contain("Label=\"Save Route\""));
+        Assert.That(xaml, Does.Contain("Label=\"Save Grid Changes\""));
         Assert.That(xaml, Does.Contain("Pattern=\"ShortDate\""));
         Assert.That(xaml, Does.Contain("MappingName=\"School\""));
+        Assert.That(xaml, Does.Not.Contain("MouseDoubleClick=\"RoutesDataGrid_MouseDoubleClick\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding OpenRouteAssignmentCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshDrivePathCommand}\""));
+        Assert.That(xaml, Does.Contain("ShowRetiredRoutes"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding OptimizeStopOrderCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PrintScheduleCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateScheduleCommand}\""));

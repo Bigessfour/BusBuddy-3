@@ -872,7 +872,10 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.DeleteRouteAsync(route.RouteId);
 
             Assert.That(result.IsSuccess, Is.True, result.Error);
-            Assert.That(result.Error, Does.Contain("retired"));
+            Assert.That(result.Error, Does.Contain("retired").IgnoreCase);
+            Assert.That(result.Error, Does.Contain("student"));
+            Assert.That(result.Error, Does.Contain("schedule"));
+            Assert.That(result.Error, Does.Contain("bus and driver").IgnoreCase);
             _dbContext.ChangeTracker.Clear();
             var kept = await _dbContext.Routes.FirstAsync(r => r.RouteId == route.RouteId);
             Assert.That(kept.IsActive, Is.False);

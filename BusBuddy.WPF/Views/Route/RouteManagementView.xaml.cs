@@ -75,18 +75,4 @@ public partial class RouteManagementView : UserControl
         }
     }
 
-    private void RoutesDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        try
-        {
-            if (DataContext is RouteManagementViewModel vm && vm.OpenRouteAssignmentCommand.CanExecute(null))
-            {
-                vm.OpenRouteAssignmentCommand.Execute(null);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Double-click manage route failed");
-        }
-    }
 }

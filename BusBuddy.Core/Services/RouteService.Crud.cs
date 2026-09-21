@@ -290,11 +290,11 @@ namespace BusBuddy.Core.Services
                     {
                         route.IsActive = false;
                         await context.SaveChangesAsync();
-                        var message =
-                            $"Route retired — {scheduleCount} schedule row(s) still reference it"
-                            + (studentFkCount > 0 ? $", {studentFkCount} student assignment(s)" : string.Empty)
-                            + (tripCount > 0 ? $", {tripCount} trip event(s)" : string.Empty)
-                            + ".";
+                        var message = RouteDeleteClerkMessages.BuildRetiredMessage(
+                            routeName,
+                            scheduleCount,
+                            studentFkCount,
+                            tripCount);
                         Logger.Information(
                             "Soft-retired route {RouteId} Schedules={Schedules} Students={Students} Trips={Trips}",
                             id,

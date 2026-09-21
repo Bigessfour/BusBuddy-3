@@ -76,7 +76,7 @@ public class RouteManagementViewModelTests
     {
         var routes = new List<Route>
         {
-            new() { RouteId = 1, RouteName = "Alpha", IsActive = true }
+            new() { RouteId = 1, RouteName = "Alpha", IsActive = true, StopCount = 14 }
         };
 
         var routeService = new Mock<IRouteService>();
@@ -104,6 +104,15 @@ public class RouteManagementViewModelTests
         vm.PrintScheduleCommand.CanExecute(null).Should().BeTrue();
         vm.RefreshDrivePathCommand.CanExecute(null).Should().BeTrue();
         vm.OptimizeStopOrderCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Test]
+    public void CanRefreshDrivePathFor_RequiresAtLeastTwoStops()
+    {
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = null }).Should().BeFalse();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 0 }).Should().BeFalse();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 1 }).Should().BeFalse();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 2 }).Should().BeTrue();
     }
 
     [Test]
