@@ -24,6 +24,7 @@ public partial class RouteStopEditDialogViewModel : ObservableObject
         Latitude = latitude;
         Longitude = longitude;
         RefreshCoordinateStatus();
+        RefreshSaveToolTip();
     }
 
     public event Action<bool>? CloseRequested;
@@ -47,9 +48,16 @@ public partial class RouteStopEditDialogViewModel : ObservableObject
     [ObservableProperty]
     private string coordinateStatus = string.Empty;
 
+    [ObservableProperty]
+    private string saveToolTip = string.Empty;
+
     public bool HasValidatedCoordinates => Latitude.HasValue && Longitude.HasValue;
 
-    partial void OnStopNameChanged(string value) => SaveCommand.NotifyCanExecuteChanged();
+    partial void OnStopNameChanged(string value)
+    {
+        SaveCommand.NotifyCanExecuteChanged();
+        RefreshSaveToolTip();
+    }
 
     partial void OnLatitudeChanged(decimal? value)
     {
@@ -116,5 +124,19 @@ public partial class RouteStopEditDialogViewModel : ObservableObject
         CoordinateStatus = HasValidatedCoordinates
             ? $"Located at {Latitude!.Value:0.#####}, {Longitude!.Value:0.#####}"
             : "Pick the address from the suggestion list so the stop can be mapped.";
+        RefreshSaveToolTip();
+    }
+
+    private void RefreshSaveToolTip()
+    {
+        if (string.IsNullOrWhiteSpace(StopName))
+        {
+            SaveToolTip = "Enter a stop name.";
+            return;
+        }
+
+        SaveToolTip = HasValidatedCoordinates
+            ? "Save this stop with validated map coordinates."
+            : "Choose the address from the Places suggestion list to enable Save.";
     }
 }

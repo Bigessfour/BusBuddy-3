@@ -272,8 +272,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (SetProperty(ref _selectedRouteStop, value))
                 {
                     OnPropertyChanged(nameof(CanRemoveStop));
+                    OnPropertyChanged(nameof(CanEditStop));
                     OnPropertyChanged(nameof(CanMoveStopUp));
                     OnPropertyChanged(nameof(CanMoveStopDown));
+                    RefreshCommandStates();
                 }
             }
         }
@@ -380,6 +382,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         public bool CanAssignVehicle => SelectedRoute != null && SelectedBus != null && !IsLoading;
         public bool CanAssignDriver => SelectedRoute != null && SelectedDriver != null && !IsLoading;
         public bool CanAddStop => SelectedRoute != null && !IsLoading;
+        public bool CanEditStop => SelectedRouteStop != null && SelectedRoute != null && !IsLoading;
         public bool CanRemoveStop => SelectedRouteStop != null && !IsLoading;
         public bool CanMoveStopUp => SelectedRouteStop != null && RouteStops.IndexOf(SelectedRouteStop) > 0 && !IsLoading;
         public bool CanMoveStopDown => SelectedRouteStop != null && RouteStops.IndexOf(SelectedRouteStop) < RouteStops.Count - 1 && !IsLoading;
@@ -401,6 +404,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         public ICommand AssignVehicleCommand { get; private set; } = null!;
         public ICommand AssignDriverCommand { get; private set; } = null!;
         public ICommand AddStopCommand { get; private set; } = null!;
+        public ICommand EditStopCommand { get; private set; } = null!;
         public ICommand RemoveStopCommand { get; private set; } = null!;
         public ICommand MoveStopUpCommand { get; private set; } = null!;
         public ICommand MoveStopDownCommand { get; private set; } = null!;
@@ -432,6 +436,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             AssignVehicleCommand = new RelayCommand(async () => await AssignVehicleAsync(), () => CanAssignVehicle);
             AssignDriverCommand = new RelayCommand(async () => await AssignDriverAsync(), () => CanAssignDriver);
             AddStopCommand = new RelayCommand(async () => await AddStopAsync(), () => CanAddStop);
+            EditStopCommand = new RelayCommand(async () => await EditStopAsync(), () => CanEditStop);
             RemoveStopCommand = new RelayCommand(async () => await RemoveStopAsync(), () => CanRemoveStop);
             MoveStopUpCommand = new RelayCommand(async () => await MoveStopUpAsync(), () => CanMoveStopUp);
             MoveStopDownCommand = new RelayCommand(async () => await MoveStopDownAsync(), () => CanMoveStopDown);
@@ -469,6 +474,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             (AssignVehicleCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (AssignDriverCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (AddStopCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (EditStopCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (RemoveStopCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (MoveStopUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (MoveStopDownCommand as RelayCommand)?.RaiseCanExecuteChanged();

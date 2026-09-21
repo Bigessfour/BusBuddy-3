@@ -225,6 +225,18 @@ public class RouteScheduleViewModelTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding PrintCommand}\""));
         Assert.That(xaml, Does.Not.Contain("SfScheduler"));
         Assert.That(xaml, Does.Not.Contain("DriverSchedule"));
+        Assert.That(xaml, Does.Contain("ToolTip=\"{Binding ReTimeToolTip}\""));
+        Assert.That(xaml, Does.Contain("ColumnSizer=\"Star\""));
+    }
+
+    [Test]
+    public void ReTimeToolTip_ExplainsEmptyStops()
+    {
+        var route = new Route { RouteName = "Town AM", School = "Wiley School" };
+        Assert.That(
+            RouteScheduleViewModel.TryCreate(route, Array.Empty<RouteStop>(), Array.Empty<Student>(), null, null, RouteTimeSlot.AM, out var vm, reTimeAsync: () => Task.FromResult<RouteSummarySheet?>(null)),
+            Is.True);
+        Assert.That(vm!.ReTimeToolTip, Is.EqualTo(RouteScheduleViewModel.EmptyStopsHint));
     }
 
     private static RouteStop Stop(int order, string name, TimeSpan arr, TimeSpan dep) =>

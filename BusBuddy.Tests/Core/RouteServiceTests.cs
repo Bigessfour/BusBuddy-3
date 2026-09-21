@@ -774,6 +774,38 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task UpdateRouteStopAsync_UpdatesNameAddressAndCoordinates()
+        {
+            var route = await _dbContext.Routes.AsNoTracking().FirstAsync(r => r.RouteName == "Route A");
+            var add = await _routeService.AddStopToRouteAsync(route.RouteId, new RouteStop
+            {
+                StopName = "Old Name",
+                StopAddress = "100 Old St",
+                Latitude = 38.0872m,
+                Longitude = -102.6208m,
+                ScheduledArrival = new TimeSpan(7, 10, 0),
+                ScheduledDeparture = new TimeSpan(7, 12, 0)
+            });
+            Assert.That(add.IsSuccess, Is.True, add.Error);
+            var stopId = add.Value!.RouteStopId;
+
+            var update = await _routeService.UpdateRouteStopAsync(route.RouteId, new RouteStop
+            {
+                RouteStopId = stopId,
+                StopName = "New Name",
+                StopAddress = "200 New St",
+                Latitude = 38.09m,
+                Longitude = -102.63m
+            });
+
+            Assert.That(update.IsSuccess, Is.True, update.Error);
+            Assert.That(update.Value!.StopName, Is.EqualTo("New Name"));
+            Assert.That(update.Value.StopAddress, Is.EqualTo("200 New St"));
+            Assert.That(update.Value.Latitude, Is.EqualTo(38.09m));
+            Assert.That(update.Value.ScheduledArrival, Is.EqualTo(new TimeSpan(7, 10, 0)));
+        }
+
+        [Test]
         public async Task CloneRouteAsync_CopiesStopsAndDepartureEstimate()
         {
             var source = (await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A"));

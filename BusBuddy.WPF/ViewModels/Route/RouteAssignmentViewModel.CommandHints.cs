@@ -73,6 +73,31 @@ public partial class RouteAssignmentViewModel
             ? "Select a route first."
             : "Plot this route on the district map.";
 
+    public string AddStopToolTip =>
+        CanAddStop
+            ? "Add a stop with a validated address from Places."
+            : "Select a route first.";
+
+    public string EditStopToolTip =>
+        CanEditStop
+            ? "Edit the selected stop name and validated address."
+            : "Select a stop in the grid (or double-click a row).";
+
+    public string RemoveStopToolTip =>
+        CanRemoveStop
+            ? "Remove the selected stop from this route."
+            : "Select a stop in the grid.";
+
+    public string MoveStopUpToolTip =>
+        CanMoveStopUp
+            ? "Move the selected stop earlier in the run."
+            : "Select a stop that is not already first.";
+
+    public string MoveStopDownToolTip =>
+        CanMoveStopDown
+            ? "Move the selected stop later in the run."
+            : "Select a stop that is not already last.";
+
     private void NotifyCommandHintProperties()
     {
         OnPropertyChanged(nameof(AssignStudentToolTip));
@@ -82,5 +107,10 @@ public partial class RouteAssignmentViewModel
         OnPropertyChanged(nameof(DrivePathToolTip));
         OnPropertyChanged(nameof(ViewScheduleToolTip));
         OnPropertyChanged(nameof(PlotRouteToolTip));
+        OnPropertyChanged(nameof(AddStopToolTip));
+        OnPropertyChanged(nameof(EditStopToolTip));
+        OnPropertyChanged(nameof(RemoveStopToolTip));
+        OnPropertyChanged(nameof(MoveStopUpToolTip));
+        OnPropertyChanged(nameof(MoveStopDownToolTip));
     }
 }

@@ -135,6 +135,12 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-09-21 — Route folder WPF vertical audit (complete)
+
+- **Scope:** All `BusBuddy.WPF/Views/Route/*` surfaces. **RouteManagementView** + **RouteAssignmentView** previously audited/remediated (PR #97). This pass: **RouteStopsEditor**, **RouteStopEditDialog**, **RouteScheduleWindow**.
+- **Remediated (PR #97+):** **Edit Stop** + double-click row (`UpdateRouteStopAsync`); address column; removed duplicate **Time Route** from editor; schedule/stop dialog tooltips, resizable stop dialog, schedule grid `ColumnSizer=Star`, busy hint on schedule window.
+- **Evidence:** `.function-inventory.json` surfaces for `RouteStopsEditor` / `RouteStopEditDialog`; testhost `RouteScheduleViewModelTests`, `RouteStopEditDialogViewModelTests`, `PlacesAddressSurfaceTests`, `RouteAssignmentViewTests`.
+
 ### 2026-09-20 — Action-items listing catch-up
 
 - Closed **District camera on boot** (live 2026-09-18 relaunch). Added **District Map VM re-smoke** `[x]` so the project-done marker matches the 09-10 / 09-17 harvest.

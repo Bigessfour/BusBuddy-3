@@ -54,6 +54,8 @@ namespace BusBuddy.Core.Services
         Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
         Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
         Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
+        /// <summary>Updates stop name, address, and validated coordinates. Stop order and published clocks are unchanged.</summary>
+        Task<Result<RouteStop>> UpdateRouteStopAsync(int routeId, RouteStop routeStop);
         Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId);
         Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds);
         Task<Result<RouteValidationResult>> ValidateRouteForActivationAsync(int routeId);

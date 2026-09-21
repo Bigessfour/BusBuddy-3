@@ -294,6 +294,73 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<Result<RouteStop>> UpdateRouteStopAsync(int routeId, RouteStop routeStop)
+        {
+            try
+            {
+                var (opId, sw) = StartOp("UpdateStop", routeId);
+                if (routeStop is null || routeStop.RouteStopId <= 0)
+                {
+                    return Result.FailureResult<RouteStop>("RouteStop id is required");
+                }
+
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<RouteStop>("Invalid routeId");
+                }
+
+                if (!routeStop.HasValidatedCoordinates)
+                {
+                    return Result.FailureResult<RouteStop>(
+                        "Stop requires a validated location (geocoded lat/lng). Unvalidated coordinates cannot be published waypoints.");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    return await InTransactionAsync(context, async () =>
+                    {
+                        var existing = await context.RouteStops
+                            .FirstOrDefaultAsync(rs => rs.RouteStopId == routeStop.RouteStopId && rs.RouteId == routeId);
+                        if (existing is null)
+                        {
+                            return Result.FailureResult<RouteStop>(
+                                $"Stop with ID {routeStop.RouteStopId} not found for route {routeId}");
+                        }
+
+                        existing.StopName = routeStop.StopName?.Trim() ?? string.Empty;
+                        existing.StopAddress = routeStop.StopAddress?.Trim() ?? string.Empty;
+                        existing.Latitude = routeStop.Latitude;
+                        existing.Longitude = routeStop.Longitude;
+                        NormalizeStopEstimates(existing);
+
+                        await context.SaveChangesAsync();
+                        Logger.Information(
+                            "Updated stop {StopName} (ID: {RouteStopId}) on route {RouteId} OpId={OpId}",
+                            existing.StopName,
+                            existing.RouteStopId,
+                            routeId,
+                            opId);
+                        await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        EndOpOk("UpdateStop", opId, sw, routeId);
+                        return Result.SuccessResult(existing);
+                    });
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating stop on route {RouteId}", routeId);
+                return Result.FailureResult<RouteStop>($"Error updating route stop: {ex.GetBaseException().Message}");
+            }
+        }
+
         public async Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId)
         {
             try

@@ -10,7 +10,8 @@
              mc:Ignorable="d"
              d:DesignHeight="400" d:DesignWidth="600"
              HorizontalAlignment="Stretch"
-             VerticalAlignment="Stretch">
+             VerticalAlignment="Stretch"
+             ToolTipService.ShowOnDisabled="True">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -31,7 +32,15 @@
                                    SizeMode="Normal"
                                    CornerRadius="3"
                                    Padding="10,5" Margin="0,0,8,4"
-                                   AutomationProperties.Name="Add Stop" ToolTip="Add a new stop" />
+                                   AutomationProperties.Name="Add Stop"
+                                   ToolTip="{Binding AddStopToolTip}" />
+            <syncfusion:ButtonAdv Label="Edit Stop"
+                                   Command="{Binding EditStopCommand}"
+                                   SizeMode="Normal"
+                                   CornerRadius="3"
+                                   Padding="10,5" Margin="0,0,8,4"
+                                   AutomationProperties.Name="Edit Stop"
+                                   ToolTip="{Binding EditStopToolTip}" />
             <syncfusion:ButtonAdv Label="Remove"
                                    Command="{Binding RemoveStopCommand}"
                                    SizeMode="Normal"
@@ -39,27 +48,25 @@
                                    Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                    Padding="10,5" Margin="0,0,8,4"
-                                   AutomationProperties.Name="Remove Stop" ToolTip="Remove selected stop" />
+                                   AutomationProperties.Name="Remove Stop"
+                                   ToolTip="{Binding RemoveStopToolTip}" />
             <syncfusion:ButtonAdv Label="Up"
                                    Command="{Binding MoveStopUpCommand}"
                                    SizeMode="Normal"
                                    CornerRadius="3"
                                    Padding="10,5" Margin="0,0,8,4"
-                                   AutomationProperties.Name="Move Stop Up" ToolTip="Move selected stop up" />
+                                   AutomationProperties.Name="Move Stop Up"
+                                   ToolTip="{Binding MoveStopUpToolTip}" />
             <syncfusion:ButtonAdv Label="Down"
                                    Command="{Binding MoveStopDownCommand}"
                                    SizeMode="Normal"
                                    CornerRadius="3"
                                    Padding="10,5" Margin="0,0,8,4"
-                                   AutomationProperties.Name="Move Stop Down" ToolTip="Move selected stop down" />
-            <syncfusion:ButtonAdv Label="Time Route"
-                                   Command="{Binding TimeRouteCommand}"
-                                   SizeMode="Normal"
-                                   CornerRadius="3"
-                                   Padding="10,5" Margin="0,0,0,4"
-                                   AutomationProperties.Name="Time Route Stops" ToolTip="Recalculate arrival and departure times" />
+                                   AutomationProperties.Name="Move Stop Down"
+                                   ToolTip="{Binding MoveStopDownToolTip}" />
         </WrapPanel>
     <syncfusion:SfDataGrid Grid.Row="1"
+                   x:Name="RouteStopsGrid"
                    ItemsSource="{Binding RouteStops}"
                    SelectedItem="{Binding SelectedRouteStop, Mode=TwoWay}"
                    AutoGenerateColumns="False"
@@ -76,10 +83,12 @@
                    VerticalAlignment="Stretch"
                    Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                    AutomationProperties.Name="Route Stops Grid"
-                   AutomationProperties.HelpText="Grid listing route stops with timing information">
+                   AutomationProperties.HelpText="Grid listing route stops with timing information"
+                   MouseDoubleClick="RouteStopsGrid_MouseDoubleClick">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" MinimumWidth="48" MaximumWidth="64" />
-                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" MinimumWidth="140" />
+                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" MinimumWidth="120" />
+                <syncfusion:GridTextColumn HeaderText="Address" MappingName="StopAddress" MinimumWidth="140" />
                 <syncfusion:GridTextColumn HeaderText="Arrive" MappingName="PublishedArrivalText" MinimumWidth="72" />
                 <syncfusion:GridTextColumn HeaderText="Depart" MappingName="PublishedDepartureText" MinimumWidth="72" />
                 <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" MinimumWidth="88" />
@@ -90,6 +99,8 @@
             <TextBlock Text="{Binding RouteStopCount}" Margin="4,0,12,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
             <TextBlock Text="Selected:" FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" />
             <TextBlock Text="{Binding SelectedRouteStop.StopName}" Margin="4,0,0,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
+            <TextBlock Text=" — Publish → Time sets clocks." Margin="12,0,0,0" FontStyle="Italic"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
         </StackPanel>
     </Grid>
 </UserControl>

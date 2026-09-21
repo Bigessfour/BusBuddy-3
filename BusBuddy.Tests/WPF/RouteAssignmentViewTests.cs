@@ -100,6 +100,9 @@ public class RouteAssignmentViewTests
         Assert.That(xaml, Does.Not.Contain("MappingName=\"StudentName\"\n                                                       Width=\"150\""));
         Assert.That(xaml, Does.Contain("IsEditable=\"False\""));
         var stops = XamlViewFile.Read("Views/Route/RouteStopsEditor.xaml");
+        Assert.That(stops, Does.Contain("Command=\"{Binding EditStopCommand}\""));
+        Assert.That(stops, Does.Contain("MappingName=\"StopAddress\""));
+        Assert.That(stops, Does.Not.Contain("Label=\"Time Route\""));
         Assert.That(stops, Does.Contain("ColumnSizer=\"Star\""));
         Assert.That(stops, Does.Contain("ShowGroupDropArea=\"False\""));
         Assert.That(stops, Does.Contain("MinimumWidth=\"140\""));

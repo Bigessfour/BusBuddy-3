@@ -64,6 +64,7 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasGenerateStopsOnlyNote));
             OnPropertyChanged(nameof(HasPublishedClocks));
             OnPropertyChanged(nameof(FirstLastClockText));
+            OnPropertyChanged(nameof(ReTimeToolTip));
             (ReTimeCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
     }
@@ -85,6 +86,8 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
         {
             _isBusy = value;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(ReTimeToolTip));
+            OnPropertyChanged(nameof(PrintToolTip));
             (ReTimeCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
@@ -103,6 +106,34 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
     public bool CanReTime => !IsBusy && !HasEmptyStops && _reTimeAsync != null;
 
     public bool CanPrint => !IsBusy && _print != null;
+
+    public string ReTimeToolTip
+    {
+        get
+        {
+            if (_reTimeAsync is null)
+            {
+                return "Re-time is not available for this window.";
+            }
+
+            if (IsBusy)
+            {
+                return "Wait for the current operation to finish.";
+            }
+
+            if (HasEmptyStops)
+            {
+                return EmptyStopsHint;
+            }
+
+            return "Recalculate published stop clocks from the route Start time (confirms before overwriting).";
+        }
+    }
+
+    public string PrintToolTip =>
+        IsBusy
+            ? "Wait for the current operation to finish."
+            : "Open a PdfGrid preview of this route sheet (stops + roster).";
 
     /// <summary>
     /// Builds the window VM from the selected assignment row. Returns false when
@@ -175,6 +206,8 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
         finally
         {
             IsBusy = false;
+            OnPropertyChanged(nameof(ReTimeToolTip));
+            OnPropertyChanged(nameof(PrintToolTip));
         }
     }
 
