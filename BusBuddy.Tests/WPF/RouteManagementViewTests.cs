@@ -30,6 +30,7 @@ public class RouteManagementViewTests
         Assert.That(xaml, Does.Not.Contain("MouseDoubleClick=\"RoutesDataGrid_MouseDoubleClick\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding OpenRouteAssignmentCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshDrivePathCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
         Assert.That(xaml, Does.Contain("ShowRetiredRoutes"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding OptimizeStopOrderCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PrintScheduleCommand}\""));
@@ -64,9 +65,20 @@ public class RouteManagementViewTests
     }
 
     [Test]
+    public void RouteManagementViewModel_RefreshRoutes_UsesUiProofAndTimestampStatus()
+    {
+        var source = XamlViewFile.Read("ViewModels/Route/RouteManagementViewModel.cs");
+        Assert.That(source, Does.Contain("RefreshRoutesAsync"));
+        Assert.That(source, Does.Contain("UiProofLog.Write(Logger, \"Refresh Routes\""));
+        Assert.That(source, Does.Contain("Refreshed"));
+        Assert.That(source, Does.Contain("_pendingRoutesReload"));
+    }
+
+    [Test]
     public void RouteManagementView_ResolvesViewModelFromDi()
     {
         var source = XamlViewFile.Read("Views/Route/RouteManagementView.xaml.cs");
+        Assert.That(source, Does.Contain("_dataInitialized"));
         Assert.That(source, Does.Contain("GetRequiredService<RouteManagementViewModel>()"));
         Assert.That(source, Does.Contain("InitializeAsync"));
         Assert.That(source, Does.Not.Contain("RoutesDataGrid_CurrentCellEndEdit"));

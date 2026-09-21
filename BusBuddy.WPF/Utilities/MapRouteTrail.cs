@@ -1,6 +1,7 @@
 using System.Windows;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
@@ -84,7 +85,10 @@ internal sealed class MapRouteTrail
         }
     }
 
-    public static MapRouteTrailPlot Build(Route? route)
+    public static MapRouteTrailPlot Build(
+        Route? route,
+        int publishedValidatedStopCount = 0,
+        int renderableLinePointCount = -1)
     {
         if (route is null)
         {
@@ -96,14 +100,21 @@ internal sealed class MapRouteTrail
 
         var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
         var line = payload.Points
+            .Where(p => LocationCoordinate.IsValidated(p.Latitude, p.Longitude))
             .Select(p => new Point(p.Latitude, p.Longitude))
             .ToArray();
-        var markers = payload.MarkerStops;
+        var markers = payload.MarkerStops
+            .Where(p => LocationCoordinate.IsValidated(p.Latitude, p.Longitude))
+            .ToArray();
+        var stopCount = publishedValidatedStopCount > 0
+            ? publishedValidatedStopCount
+            : markers.Length;
+        var drawable = renderableLinePointCount >= 0 ? renderableLinePointCount : line.Length;
         var name = route.RouteName ?? "Unknown";
-        var status = line.Length >= 2
-            ? $"Route {name}: trail and {markers.Count} stop(s)"
-            : markers.Count > 0
-                ? $"Route {name} has no trail yet — {markers.Count} stop(s)"
+        var status = drawable >= 2
+            ? $"Route {name}: trail ({drawable} point(s)) and {stopCount} published stop(s)"
+            : stopCount > 0
+                ? $"Route {name}: {stopCount} published stop(s) — press Refresh for Google drive path"
                 : $"Route {name} has no waypoints to display";
         return new MapRouteTrailPlot(line, markers, status);
     }

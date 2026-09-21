@@ -39,6 +39,47 @@ public class MapRouteTrailTests
         Assert.That(plot.Line.Count, Is.EqualTo(EncodedPolylineCodec.Decode(encoded).Count));
         Assert.That(plot.Line.Count, Is.GreaterThan(2));
         Assert.That(plot.StatusMessage, Does.Contain("trail"));
+        Assert.That(plot.StatusMessage, Does.Contain("point(s)"));
+    }
+
+    [Test]
+    public void Build_RenderableLineCount_DrivesStatusNotRawGeometry()
+    {
+        var route = new Route
+        {
+            RouteName = "AM-1",
+            WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+            {
+                (38.15, -102.72),
+                (38.16, -102.71),
+            }),
+        };
+
+        var plot = MapRouteTrail.Build(route, publishedValidatedStopCount: 5, renderableLinePointCount: 0);
+
+        Assert.That(plot.StatusMessage, Does.Contain("Refresh"));
+        Assert.That(plot.StatusMessage, Does.Contain("5 published"));
+    }
+
+    [Test]
+    public void Build_UsesPublishedStopCountInStatusWhenProvided()
+    {
+        var route = new Route
+        {
+            RouteName = "AM Special Needs Bus 5",
+            WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+            {
+                (38.15, -102.72),
+                (38.16, -102.71),
+                (38.17, -102.70),
+                (38.18, -102.69),
+            }),
+        };
+
+        var plot = MapRouteTrail.Build(route, publishedValidatedStopCount: 14);
+
+        Assert.That(plot.StatusMessage, Does.Contain("14 published stop"));
+        Assert.That(plot.StatusMessage, Does.Not.Contain("4 published"));
     }
 
     [Test]

@@ -6,6 +6,7 @@
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:models="clr-namespace:BusBuddy.Core.Models;assembly=BusBuddy.Core"
+             xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
 
@@ -16,6 +17,7 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
             <ObjectDataProvider x:Key="RouteSessionValues"
                                 ObjectType="{x:Type models:RouteSession}"
                                 MethodName="GetAll"/>
@@ -182,8 +184,9 @@
                     <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding RefreshCommand}"
+                            IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBooleanConverter}}"
                             AutomationProperties.Name="Refresh Routes"
-                            AutomationProperties.HelpText="Reload route data from database"/>
+                            AutomationProperties.HelpText="Reload route data from database (status bar shows refresh time)"/>
                     <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="0,0,8,6"
                                               VerticalAlignment="Center"
                                               Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"

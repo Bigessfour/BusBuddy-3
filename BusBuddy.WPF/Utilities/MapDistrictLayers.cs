@@ -43,22 +43,69 @@ internal sealed class MapDistrictLayers
     }
 
     /// <summary>
-    /// District pins in fixed order: depot → schools → active pickups → students with stored coords.
-    /// No geocoding / network on this path.
+    /// Default district overlay: depot → schools → active pickups (no student homes until a route is selected).
     /// </summary>
-    public async Task<MapLayerSeedCounts> LoadDistrictLayersAsync()
+    public async Task<MapLayerSeedCounts> LoadDistrictBaseLayersAsync()
     {
         var depotCount = PlotDepot();
         var schoolCount = await PlotSchoolsAsync().ConfigureAwait(true);
         var pickupCount = await PlotPickupsAsync().ConfigureAwait(true);
+        Logger.Information(
+            "District base layers loaded Depots={Depots} Schools={Schools} Pickups={Pickups}",
+            depotCount,
+            schoolCount,
+            pickupCount);
+        return new MapLayerSeedCounts(schoolCount, pickupCount, 0, depotCount);
+    }
+
+    /// <summary>
+    /// Full district seed including every stored student (bulk plot / legacy callers only).
+    /// </summary>
+    public async Task<MapLayerSeedCounts> LoadDistrictLayersAsync()
+    {
+        var seeded = await LoadDistrictBaseLayersAsync().ConfigureAwait(true);
         var studentCount = await PlotStoredStudentsAsync().ConfigureAwait(true);
         Logger.Information(
             "District layers loaded Depots={Depots} Schools={Schools} Pickups={Pickups} Students={Students}",
-            depotCount,
-            schoolCount,
-            pickupCount,
+            seeded.Depots,
+            seeded.Schools,
+            seeded.Pickups,
             studentCount);
-        return new MapLayerSeedCounts(schoolCount, pickupCount, studentCount, depotCount);
+        return new MapLayerSeedCounts(seeded.Schools, seeded.Pickups, studentCount, seeded.Depots);
+    }
+
+    /// <summary>Homes and catalog pickups for riders assigned to <paramref name="route"/> (AM/PM slot).</summary>
+    public async Task<int> PlotAssignedStudentsForRouteAsync(Route route)
+    {
+        ArgumentNullException.ThrowIfNull(route);
+        using var scope = _scopes?.CreateScope();
+        var routeService = Resolve<IRouteService>(null, scope);
+        if (routeService is null)
+        {
+            Logger.Warning("PlotAssignedStudentsForRouteAsync skipped — no route service");
+            return 0;
+        }
+
+        var slot = RouteSession.ToAssignmentSlot(route);
+        var result = await routeService.GetStudentsForRouteAsync(route.RouteId, slot).ConfigureAwait(true);
+        if (!result.IsSuccess || result.Value is null || result.Value.Count == 0)
+        {
+            Logger.Information(
+                "No assigned students to plot RouteId={RouteId} Slot={Slot}",
+                route.RouteId,
+                slot);
+            return 0;
+        }
+
+        var pickups = await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
+        var plotted = PlotStoredStudents(result.Value, pickups);
+        Logger.Information(
+            "Plotted assigned students RouteId={RouteId} Slot={Slot} Roster={Roster} Pins={Pins}",
+            route.RouteId,
+            slot,
+            result.Value.Count,
+            plotted);
+        return plotted;
     }
 
     /// <summary>Bus barn pin from <see cref="DistrictDepot"/> / Settings.</summary>
@@ -144,7 +191,10 @@ internal sealed class MapDistrictLayers
         return PlotStoredStudents(students, pickups);
     }
 
-    /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
+    /// <summary>
+    /// Legacy: plots every stored student. District Map UI must use
+    /// <see cref="PlotAssignedStudentsForRouteAsync"/> instead (specs/maps.md starve list).
+    /// </summary>
     public async Task<MapStudentBulkPlot> BulkPlotStudentsAsync()
     {
         using var scope = _scopes?.CreateScope();

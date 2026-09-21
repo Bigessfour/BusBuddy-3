@@ -959,6 +959,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             try
             {
+                IsLoading = true;
                 StatusMessage = "Refreshing data...";
                 await LoadDataFromServiceAsync();
 

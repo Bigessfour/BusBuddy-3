@@ -148,6 +148,11 @@ namespace BusBuddy.WPF.Views.Map
 
                 _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.Loaded);
                 _ = Dispatcher.BeginInvoke(TryApplyCameraThenMarkers, DispatcherPriority.ContextIdle);
+                if (DataContext is MapViewModel activated)
+                {
+                    _ = activated.OnDistrictMapSurfaceActivatedAsync();
+                }
+
                 Logger.Information("Map layer ready — pan/zoom enabled");
             }
             catch (Exception ex)
@@ -576,6 +581,7 @@ namespace BusBuddy.WPF.Views.Map
                     return;
                 }
 
+                ReplayRouteLineFromViewModel(DataContext as MapViewModel);
                 OnCaptureSnapshotRequested(sender, e);
 
                 var printDlg = new PrintDialog();
@@ -604,9 +610,12 @@ namespace BusBuddy.WPF.Views.Map
                 FixedPage.SetTop(rect, 0);
                 fixedPage.Children.Add(rect);
 
+                var routeLabel = DataContext is MapViewModel mapVm && mapVm.SelectedRoute is not null
+                    ? mapVm.SelectedRoute.RouteName ?? "Route map printout"
+                    : "District map printout";
                 var caption = new TextBlock
                 {
-                    Text = "Route map printout",
+                    Text = routeLabel,
                     Margin = new Thickness(24, fixedPage.Height * 0.82, 24, 24),
                     FontSize = 16,
                 };
@@ -623,6 +632,10 @@ namespace BusBuddy.WPF.Views.Map
         }
 
         private void OnViewResetRequested(object? sender, EventArgs e) =>
-            Dispatcher.Invoke(TryApplyCameraThenMarkers);
+            Dispatcher.Invoke(() =>
+            {
+                TryApplyCameraThenMarkers();
+                ReplayRouteLineFromViewModel(DataContext as MapViewModel);
+            });
     }
 }

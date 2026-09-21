@@ -54,15 +54,20 @@ public class RouteAssignmentViewTests
         Assert.That(schedule, Does.Contain("Opened route schedule"));
         Assert.That(schedule, Does.Contain("Clocks={Clocks}"));
         Assert.That(schedule, Does.Contain("PrintSelectedRouteSheetPreview"));
-        Assert.That(schedule, Does.Contain("preview: true"));
+        Assert.That(schedule, Does.Contain("SaveRouteSheet(includeMap: false)"));
         Assert.That(schedule, Does.Contain("new RouteScheduleWindow"));
         Assert.That(schedule, Does.Not.Contain("new DriverScheduleView"));
 
         var reports = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.Reports.cs");
         Assert.That(reports, Does.Contain("new PdfPreviewWindow("));
+        Assert.That(reports, Does.Contain("previewWindow.Show()"));
+        Assert.That(reports, Does.Contain("MyDocuments"));
+        Assert.That(reports, Does.Contain("Printouts"));
+        Assert.That(reports, Does.Not.Contain("preview: false"));
         Assert.That(reports, Does.Contain("Grid=PdfGrid"));
         Assert.That(reports, Does.Contain("Verb=none"));
         Assert.That(reports, Does.Not.Contain("UseShellExecute"));
+        Assert.That(reports, Does.Not.Contain("AppContext.BaseDirectory, \"Exports\""));
     }
 
     [Test]

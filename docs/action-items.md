@@ -19,7 +19,7 @@
 
 ### Status snapshot (2026-09-21)
 
-Branch **`feature/route-mgmt-assignment-ux`** — [PR #97](https://github.com/Bigessfour/BusBuddy-3/pull/97) (Route Management + Route Assignment UX; merge when **Build & Test** is green). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now: Item 4** (assignment roster — finish guest proof after #97 on guest). Guest SSOT log: `artifacts/utm-runtime-logs-20260921T213326Z/Debug-logs/logs/log-20260921.txt`.
+Branch **`feature/route-mgmt-assignment-ux`** — [PR #97](https://github.com/Bigessfour/BusBuddy-3/pull/97) (Route Management + Route Assignment UX; merge when **Build & Test** is green). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now: Item 5** (refresh route data) + **Maps slice 1** after hop 1–6 close. Latest guest SSOT: `artifacts/utm-runtime-logs-20260921T214854Z/Debug-logs/logs/log-20260921.txt`.
 
 | Criterion                       | Status                                                                                                                                                                                                                           |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +33,7 @@ Branch **`feature/route-mgmt-assignment-ux`** — [PR #97](https://github.com/Bi
 | a11y Phase 2 / wishlist         | Out of scope                                                                                                                                                                                                                     |
 | Project-done checker            | **Not 0** — B14 still wants hops 1–3 live UI boxes; B10 until leftover clicks / parked prefixes; B05 DI leftovers; B12 stale inventory. Ship-ready ≠ checker 0                                                                   |
 
-**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–3** guest-proofed on 2026-09-21 logs; continue **Item 4** then **5–6**. Maps slice 1 (walk Item 7) stays parked until Items 1–6 are checked off.
+**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–4 and 6** guest-proofed on 2026-09-21 logs; close **Item 5** refresh string, then **Maps slice 1** (walk Item 7).
 
 ---
 
@@ -45,10 +45,9 @@ Do in this order. Do not start parked campaigns from this table.
 
 | Order | Item                                                                                                                                                                                            | Why this slot                                                                                       |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1     | **Merge [PR #97](https://github.com/Bigessfour/BusBuddy-3/pull/97)** — re-run **Build & Test** if cancelled; guest sync + spot-check Manage Route / Edit Stop / not-riding dialogs.             | Blocks clean assignment UX on VM until merged.                                                      |
-| 2     | **Prod walk Item 4** — assign / remove / not riding on `RouteAssignmentView`. Rider exceptions logged 2026-09-21; confirm UI feedback + no `OpenRouteAssignmentAsync` NRE on build with #97.    | Items 2–3 closed in `log-20260921.txt`.                                                             |
-| 3     | Prod walk **Items 5–6** (refresh route data, print schedule sheet)                                                                                                                              | After Item 4.                                                                                       |
-| 4     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Wiley center. No OSM. | After Items 1–6. Competing tile strategies blanked the map. Contract: `specs/maps.md`.              |
+| 1     | Prod walk **Item 5** — assignment **Refresh Route Data** → stable `Data refreshed successfully` log (partial 13:59:19; re-click after #97 sync).                                                | Item 6 schedule + PdfGrid preview **closed** 13:57 guest log.                                       |
+| 2     | **Merge [PR #97](https://github.com/Bigessfour/BusBuddy-3/pull/97)** — re-run **Build & Test** if cancelled.                                                                                    | Assignment layout + UX on branch.                                                                   |
+| 3     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Wiley center. No OSM. | After Items 1–6. Competing tile strategies blanked the map. Contract: `specs/maps.md`.              |
 | —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                      | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                              |
 | —     | Student form map live confirm                                                                                                                                                                   | **Met** 2026-09-20 — `Opening home pin map` + `Clerk adjusted home pin` StudentId=65.               |
 | —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                          | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
@@ -64,9 +63,11 @@ Do in this order. Do not start parked campaigns from this table.
 
 - [x] **Prod walk Item 3 (live, guest):** Same log — `Drive path computed RouteId=4 Stops=14 DistanceMeters=42069 Duration=3580s` (13:38:35+); `Published clocks RouteId=4 … TravelMinutes=60 Source=PathDuration First=07:30:00 Last=08:43:00` (13:53:20); `Opened route schedule … FirstLast=07:30 → 08:43` (13:57:43). Note: route was soft-retired 13:39:39 then continued on RouteId=4 — confirm **IsActive** for production wording.
 
-- [ ] **Prod walk Item 4 (live, guest):** Partial — `Rider exception recorded` students 9 and 12 on route 4 (13:55–13:56). Re-prove assign/remove + not-riding **MessageBox** on guest build with PR #97; clear `errors-actionable-20260921.log` NRE at `OpenRouteAssignmentAsync` line 844 (pre-#97).
+- [x] **Prod walk Item 4 (live, guest):** `artifacts/utm-runtime-logs-20260921T214234Z/Debug-logs/logs/log-20260921.txt` — **Remove** `Removed student 11` / `Student Maximiliano Gonzalez removed` (14:41:54); **re-assign** `Assigned student 11` + `Rebuilt WaypointsJson … Points=14` (14:41:58); **not riding** `Recorded rider exception RouteId=4 StudentId=11` + `published stops unchanged` (14:42:01–07). Earlier same day: not-riding students 9 and 12 (13:55–13:56). **Open assignment:** `Opening route assignment dialog RouteId=4` at 14:41:49 with no new `OpenRouteAssignmentAsync` NRE after 14:01 (`errors-actionable-20260921.log` stops at 14:00:54; five pre-layout/NRE attempts 13:40–14:00). Clerk confirmed Remove / Assign / Not riding today UI on post-layout build.
 
-- [ ] **Prod walk Items 5–6:** Refresh route data + print schedule sheet per [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md).
+- [ ] **Prod walk Item 5 (live, guest):** `log-20260921.txt` — `Refresh Route Data started` + `Data refreshed successfully Routes=4` (13:59:19); re-prove on current assignment build after layout/PDF preview fixes (scorer: `Scripts/score-route-assignment-logs.ps1`).
+
+- [x] **Prod walk Item 6 (live, guest):** `artifacts/utm-runtime-logs-20260921T214854Z/Debug-logs/logs/log-20260921.txt` — **View Schedule:** `RouteScheduleWindow` loaded `BindingErrors=0` (13:57:43); `Opened route schedule DisplayName=AM Special Needs Bus 5 Stops=14 FirstLast=07:30 → 08:43` with **14 published clocks** (matches Item 3 PathDuration). **Print sheet:** `Rendered PdfGrid route sheet … Stops=14 Bytes=64252` (13:50:30) → `Route schedule preview … Grid=PdfGrid Preview=true Verb=none` saved under `Documents\BusBuddy\Printouts` (13:50:33). `MapEmbedded=false` acceptable per walk spec. Clerk confirmed printable schedule on guest.
 
 - [ ] **Maps slice 1 (live, guest):** parked until prod walk Item 7. `MapsConnectionProbe` session 200, `SfMapTileProbe google-urltemplate` paints Wiley, District Map logs `MapTileBootstrap Host=DistrictMap Outcome=ok`. Fail-closed empty basemap if no key — never OSM.
 
@@ -144,13 +145,21 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
-### 2026-09-21 — Prod walk guest proof (Items 2–3; Item 4 partial)
+### 2026-09-21 — Prod walk guest proof (Items 2–4, 6)
 
-- **Artifact:** `artifacts/utm-runtime-logs-20260921T213326Z/Debug-logs/logs/log-20260921.txt` (+ `errors-actionable-20260921.log` for pre-#97 assignment NRE).
+- **Artifacts:** `artifacts/utm-runtime-logs-20260921T213326Z/…` (Items 2–3, early Item 4 not-riding); `artifacts/utm-runtime-logs-20260921T214234Z/…` (Item 4 assign/remove); `artifacts/utm-runtime-logs-20260921T214854Z/Debug-logs/logs/log-20260921.txt` (Item 6 schedule + PdfGrid print).
 - **Item 2:** School catalog + GPS; catalog pickup stop; rejected bogus school address (Address Validation).
 - **Item 3:** Bus 5 AM `RouteId=4` — 14-stop drive path ~42 km / 3580 s; **Time Route** published `PathDuration` clocks **07:30→08:43** (not the 09-18 one-minute staircase). Schedule window matches.
-- **Item 4 (partial):** Same-day not-riding exceptions persisted for two students; full assign/remove + dialog UX pending guest pass on PR #97 build.
-- **Ship code:** PR [#97](https://github.com/Bigessfour/BusBuddy-3/pull/97) — route retire UX, assignment scroll/tooltips, edit stop, `CanRefreshDrivePathFor` `GetValueOrDefault(2)` restore. **CI:** re-run after cancel at 25m.
+- **Item 4:** Remove + assign StudentId=11 on RouteId=4; rider exception with **published stops unchanged**; assignment modal opens without post-14:01 `OpenRouteAssignmentAsync` NRE in actionable log.
+- **Item 6:** `RouteScheduleWindow` + `Opened route schedule … FirstLast=07:30 → 08:43`; PdfGrid sheet **~64 KB** with `Preview=true Verb=none` to Printouts (not 1606-byte stub).
+- **Item 5 (open):** `Data refreshed successfully` logged once at 13:59:19 — repeat on post-#97 assignment toolbar refresh.
+- **Ship code:** PR [#97](https://github.com/Bigessfour/BusBuddy-3/pull/97) — route retire UX, assignment scroll/tooltips/layout, edit stop, `CanRefreshDrivePathFor` `GetValueOrDefault(2)` restore, route-mgmt refresh UX, assignment Report/Print opens `PdfPreviewWindow`. **CI:** re-run after cancel at 25m.
+
+### 2026-09-21 — District Map audit full pass (code)
+
+- Roster homes only on selected route (init/refresh/plot students); route combo shows name + session + id; **Show Routes** refreshes selection first; **Refresh** without selection no longer auto-picks a route; **Home** keeps trail; schools-only clears polyline; print replays trail + route caption; `OnDistrictMapSurfaceActivatedAsync` on map reopen; `CenterOnStopsCommand`; legend hex→brush converter; function-inventory map writers listed.
+- **Guest:** close BusBuddy, `./Scripts/utm-dev-bridge.sh sync && test --filter 'FullyQualifiedName~MapDistrictContractTests|MapViewModelTests|MapRouteTrailTests|MapToolbarSmokeTests'`, then live Item 7 smoke (AM Special Needs Bus 5 + Refresh + gold line in logs).
+- **Follow-up audit (2026-09-21):** `MapDistrictContractTests` + tightened `ShowSchools_*` / polyline / refresh / show-routes tests; `OnDistrictMapSurfaceActivated` auto drive-refresh when line &lt; 2. Still need live log proof + kill stale `dotnet` host (pid 3840) if test copy fails.
 
 ### 2026-09-21 — Route folder WPF vertical audit (complete)
 

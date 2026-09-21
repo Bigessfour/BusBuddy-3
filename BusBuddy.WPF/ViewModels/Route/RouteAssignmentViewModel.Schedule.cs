@@ -255,5 +255,5 @@ public partial class RouteAssignmentViewModel
     }
 
     private void PrintSelectedRouteSheetPreview() =>
-        SaveRouteSheet(includeMap: false, preview: true);
+        SaveRouteSheet(includeMap: false);
 }

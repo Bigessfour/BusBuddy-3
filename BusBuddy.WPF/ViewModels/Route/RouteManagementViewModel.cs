@@ -69,6 +69,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private IAsyncRelayCommand _copyRouteRelay = null!;
 
         private readonly SemaphoreSlim _loadGate = new(1, 1);
+        private bool _pendingRoutesReload;
 
         private bool _isRefreshing;
         private bool _isBusy;
@@ -427,7 +428,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             ExportReportCommand = _exportReportRelay;
             _printScheduleRelay = new AsyncRelayCommand(PrintScheduleAsync, () => IsRouteSelected && !IsBusy);
             PrintScheduleCommand = _printScheduleRelay;
-            _refreshRelay = new AsyncRelayCommand(() => LoadRoutesAsync(), () => !IsRefreshing);
+            _refreshRelay = new AsyncRelayCommand(RefreshRoutesAsync, () => !IsRefreshing);
             RefreshCommand = _refreshRelay;
             _refreshDrivePathRelay = new AsyncRelayCommand(
                 RefreshDrivePathAsync,
@@ -505,18 +506,38 @@ namespace BusBuddy.WPF.ViewModels.Route
                 : null;
         }
 
-        private async Task LoadRoutesAsync(bool preserveStatusMessage = false)
+        private async Task RefreshRoutesAsync()
+        {
+            StatusMessage = "Refreshing routes...";
+            UiProofLog.Write(Logger, "Refresh Routes", "RouteManagementView", "started");
+            await LoadRoutesAsync(preserveStatusMessage: false, userInitiated: true).ConfigureAwait(true);
+        }
+
+        private async Task LoadRoutesAsync(bool preserveStatusMessage = false, bool userInitiated = false)
         {
             if (!await _loadGate.WaitAsync(0).ConfigureAwait(true))
             {
+                if (userInitiated)
+                {
+                    _pendingRoutesReload = true;
+                    StatusMessage = "Refreshing routes… (waiting for current load)";
+                    Logger.Information("Refresh routes queued — load already in progress");
+                }
+
                 return;
             }
 
+            var runPendingAfterRelease = false;
             try
             {
                 using (LogContext.PushProperty("Operation", "LoadRoutes"))
                 {
                     IsRefreshing = true;
+                    if (!preserveStatusMessage && !userInitiated)
+                    {
+                        StatusMessage = "Loading routes...";
+                    }
+
                     var result = await _routeService.GetAllRoutesAsync().ConfigureAwait(true);
                     if (!result.IsSuccess)
                     {
@@ -524,6 +545,11 @@ namespace BusBuddy.WPF.ViewModels.Route
                             ? "Error loading routes"
                             : result.Error;
                         Logger.Warning("GetAllRoutesAsync failed: {Error}", result.Error);
+                        if (userInitiated)
+                        {
+                            UiProofLog.Write(Logger, "Refresh Routes", "RouteManagementView", "failed", result.Error);
+                        }
+
                         return;
                     }
 
@@ -539,11 +565,26 @@ namespace BusBuddy.WPF.ViewModels.Route
                     TryRestoreSelectedRoute(selectedRouteId);
                     if (!preserveStatusMessage)
                     {
-                        StatusMessage = Routes.Count == 0
-                            ? "No routes found — click 'Add Route' to create your first route"
-                            : VisibleRouteCount == Routes.Count
-                                ? $"Loaded {Routes.Count} routes"
-                                : $"Loaded {Routes.Count} routes ({VisibleRouteCount} visible — turn on Show retired routes to see inactive)";
+                        if (userInitiated)
+                        {
+                            StatusMessage = Routes.Count == 0
+                                ? $"Refreshed at {DateTime.Now:t} — no routes found"
+                                : $"Refreshed {VisibleRouteCount} visible route(s) at {DateTime.Now:t}";
+                            UiProofLog.Write(
+                                Logger,
+                                "Refresh Routes",
+                                "RouteManagementView",
+                                "ok",
+                                $"Routes={Routes.Count} Visible={VisibleRouteCount}");
+                        }
+                        else
+                        {
+                            StatusMessage = Routes.Count == 0
+                                ? "No routes found — click 'Add Route' to create your first route"
+                                : VisibleRouteCount == Routes.Count
+                                    ? $"Loaded {Routes.Count} routes"
+                                    : $"Loaded {Routes.Count} routes ({VisibleRouteCount} visible — turn on Show retired routes to see inactive)";
+                        }
                     }
 
                     OnPropertyChanged(nameof(TotalRoutes));
@@ -558,11 +599,22 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 Logger.Error(ex, "Failed to load routes from database");
                 StatusMessage = $"Error loading routes: {ex.Message}";
+                if (userInitiated)
+                {
+                    UiProofLog.Failed(Logger, ex, "Refresh Routes", "RouteManagementView");
+                }
             }
             finally
             {
                 IsRefreshing = false;
                 _loadGate.Release();
+                runPendingAfterRelease = _pendingRoutesReload;
+                _pendingRoutesReload = false;
+            }
+
+            if (runPendingAfterRelease)
+            {
+                await LoadRoutesAsync(preserveStatusMessage: false, userInitiated: true).ConfigureAwait(true);
             }
         }
 

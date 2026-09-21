@@ -77,6 +77,8 @@
           ToolTipService.ShowOnDisabled="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -94,17 +96,7 @@
                        TextWrapping="Wrap"
                        AutomationProperties.Name="Route Assignment Service Error" />
         </Border>
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <Grid MinHeight="680">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" MinHeight="220" />
-                    <RowDefinition Height="Auto" MinHeight="200" />
-                </Grid.RowDefinitions>
-        <Border Grid.Row="0"
+        <Border Grid.Row="1"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="6"
                 Padding="10,8"
@@ -310,18 +302,26 @@
                                               Command="{Binding PrintRouteSheetCommand}"
                                               Style="{StaticResource PrimaryButtonAdv}"
                                               AutomationProperties.Name="Print Route Map"
-                                              ToolTip="Export the PdfGrid route sheet with the current map snapshot" />
+                                              ToolTip="Build the PdfGrid route sheet with map snapshot and open in-app preview (also saved under Documents\\BusBuddy\\Printouts)" />
                         <syncfusion:ButtonAdv x:Name="ReportButton"
                                               Label="Report"
                                               Command="{Binding ExportRouteSheetCommand}"
                                               Style="{StaticResource InfoButtonAdv}"
                                               AutomationProperties.Name="Generate Route Assignment Report"
-                                              ToolTip="Export the PdfGrid route sheet (stops + roster)" />
+                                              ToolTip="Build the PdfGrid route sheet (stops + roster) and open in-app preview (also saved under Documents\\BusBuddy\\Printouts)" />
                     </WrapPanel>
                 </DockPanel>
             </StackPanel>
         </Border>
-        <Grid Grid.Row="2" MinHeight="180">
+        <ScrollViewer Grid.Row="3"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <Grid MinHeight="400">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" MinHeight="240" />
+                    <RowDefinition Height="Auto" MinHeight="200" />
+                </Grid.RowDefinitions>
+        <Grid Grid.Row="0" MinHeight="240">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="160" />
                 <ColumnDefinition Width="Auto" />
@@ -336,7 +336,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="180" MinHeight="140" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <syncfusion:SfTextBoxExt x:Name="UnassignedSearchBox"
@@ -429,7 +429,7 @@
                       Padding="6">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="180" MinHeight="140" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <syncfusion:SfDataGrid Grid.Row="0"
@@ -479,7 +479,7 @@
                 </Grid>
             </GroupBox>
         </Grid>
-        <GroupBox Grid.Row="3"
+        <GroupBox Grid.Row="1"
                   Header="Route Stops"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
@@ -491,7 +491,7 @@
         </GroupBox>
             </Grid>
         </ScrollViewer>
-        <Border Grid.Row="2"
+        <Border Grid.Row="4"
                 Margin="0,8,0,0"
                 Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"

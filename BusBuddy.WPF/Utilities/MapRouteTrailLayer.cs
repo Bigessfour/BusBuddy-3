@@ -37,6 +37,12 @@ internal static class MapRouteTrailLayer
                 {
                     polyline.Points.Add(point);
                 }
+
+                Logger.Information("Route trail polyline updated with {Count} point(s)", points.Count);
+            }
+            else
+            {
+                Logger.Information("Route trail polyline cleared ({Count} point(s))", points.Count);
             }
 
             layer?.Refresh();

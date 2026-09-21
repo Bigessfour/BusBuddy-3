@@ -25,7 +25,9 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Label=\"Move to selected route\""));
         Assert.That(xaml, Does.Not.Contain("GenerateEligibilityRoutePdfCommand"));
         Assert.That(xaml, Does.Not.Contain("AddMarkerCommand"));
-        Assert.That(xaml, Does.Contain("Command=\"{Binding CenterOnFleetCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding CenterOnStopsCommand}\""));
+        Assert.That(xaml, Does.Contain("HexColorToBrushConverter"));
+        Assert.That(xaml, Does.Contain("ComboBoxAdv.ItemTemplate"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshMapCommand}\""));
         // Sidebar ButtonAdv: Label + Command only — no local Background (stomps Fluent pressed chrome).
         Assert.That(xaml, Does.Not.Contain("Command=\"{Binding ShowSchoolsCommand}\"\n                              Background="));

@@ -14,6 +14,8 @@
              xmlns:local="clr-namespace:BusBuddy.WPF.Views.Map"
              xmlns:viewModels="clr-namespace:BusBuddy.WPF.ViewModels.Map"
              xmlns:utils="clr-namespace:BusBuddy.WPF.Utilities"
+             xmlns:models="clr-namespace:BusBuddy.Core.Models;assembly=BusBuddy.Core"
+             xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200"
              d:DataContext="{d:DesignInstance viewModels:MapViewModel}">
@@ -91,6 +93,7 @@
                 </Style.Triggers>
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:HexColorToBrushConverter x:Key="HexColorToBrushConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -146,11 +149,12 @@
                                      VerticalAlignment="Center"
                                      Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding StatusMessage}"
+                                       ToolTip="{Binding StatusMessage}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
-                                       MaxWidth="280"
-                                       TextTrimming="CharacterEllipsis"
-                                                                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                       MaxWidth="420"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                         </StackPanel>
                     </Border>
 
@@ -191,7 +195,7 @@
                 <syncfusion:ButtonAdv Label="Center on Stops"
                               AutomationProperties.Name="Center on plotted stops"
                               ToolTip="Center on plotted schools, stops, and route markers (live fleet GPS is deferred)"
-                              Command="{Binding CenterOnFleetCommand}"/>
+                              Command="{Binding CenterOnStopsCommand}"/>
 
                 <TextBlock Text="Live fleet GPS tracking is deferred — not enabled in this build"
                            FontSize="12"
@@ -207,17 +211,32 @@
                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                            Margin="0,0,0,4"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Routes}"
-                                        DisplayMemberPath="RouteName"
                                         SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                                         IsEditable="False"
-                                        MaxDropDownHeight="240"
+                                        MaxDropDownHeight="280"
                                         Margin="0,0,0,8"
-                                        ToolTip="Select a route to display on the map"
-                                        AutomationProperties.Name="Route selector"/>
+                                        ToolTip="Route name, session (AM/PM/Special Needs), and id — homes and trail follow this row"
+                                        AutomationProperties.Name="Route selector">
+                    <syncfusion:ComboBoxAdv.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:Route}">
+                            <StackPanel Margin="2,4">
+                                <TextBlock FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                           Text="{Binding RouteName}"/>
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}">
+                                    <Run Text="{Binding Session, Mode=OneWay}"/>
+                                    <Run Text=" · id "/>
+                                    <Run Text="{Binding RouteId, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </syncfusion:ComboBoxAdv.ItemTemplate>
+                </syncfusion:ComboBoxAdv>
 
                 <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
-                              ToolTip="Show the first route with waypoints; refreshes the drive path via Google Routes when a key is configured"
+                              ToolTip="Refresh the selected route (Google drive path when keyed), or load the first route with stored waypoints if none is selected"
                               Command="{Binding ShowRoutesCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Export Route"
@@ -237,7 +256,7 @@
 
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                     <syncfusion:ButtonAdv Label="Plot Students"
-                                          ToolTip="Plot catalog pickup stops when assigned, otherwise validated home coordinates already on the student"
+                                          ToolTip="Plot assigned riders on the selected route (catalog pickup or stored home GPS — no geocoding)"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
                                           AutomationProperties.Name="Plot Students"/>
 
@@ -266,7 +285,7 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Margin="0,3">
                                                 <Ellipse Width="12" Height="12"
-                                                         Fill="{Binding FillHex}"
+                                                         Fill="{Binding FillHex, Converter={StaticResource HexColorToBrushConverter}}"
                                                          Stroke="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                                          StrokeThickness="1"
                                                          VerticalAlignment="Center"
@@ -485,7 +504,7 @@
                                               Command="{Binding ZoomOutCommand}"/>
                         <syncfusion:ButtonAdv Label="Home"
                                               Style="{StaticResource MapOverlayButtonStyle}"
-                                              ToolTip="Reset map view"
+                                              ToolTip="Recenter on the bus barn / district home view (keeps the selected route trail)"
                                               AutomationProperties.Name="Reset Map View"
                                               Command="{Binding ResetViewCommand}"/>
                         <syncfusion:ButtonAdv Label="Refresh"
