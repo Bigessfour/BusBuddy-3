@@ -109,7 +109,7 @@ public class RouteManagementViewModelTests
     [Test]
     public void CanRefreshDrivePathFor_RequiresAtLeastTwoStops()
     {
-        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = null }).Should().BeFalse();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = null }).Should().BeTrue();
         RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 0 }).Should().BeFalse();
         RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 1 }).Should().BeFalse();
         RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 2 }).Should().BeTrue();

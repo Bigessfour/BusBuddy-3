@@ -342,8 +342,11 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// </summary>
         public int ActiveRoutes => Routes.Count(r => r.IsActive);
 
+        /// <summary>
+        /// Grid rows may not have <see cref="BusBuddy.Core.Models.Route.StopCount"/> loaded; default to 2 so Drive Path stays enabled until a count proves otherwise.
+        /// </summary>
         internal static bool CanRefreshDrivePathFor(BusBuddy.Core.Models.Route? route) =>
-            route is not null && (route.StopCount ?? 0) >= 2;
+            route is not null && route.StopCount.GetValueOrDefault(2) >= 2;
         /// <summary>
         /// Aggregate count of assigned students across all routes (null-safe).
         /// </summary>
