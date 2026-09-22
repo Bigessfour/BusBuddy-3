@@ -40,7 +40,19 @@ public static class UserToast
 
         try
         {
-            var dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+            // Do not touch Dispatcher.CurrentDispatcher. Creating one from a test or
+            // background thread leaves a WPF dispatcher running and GitHub Actions
+            // testhost never exits (CI Build & Test cancelled at the 25 minute cap).
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null)
+            {
+                Logger.Information(
+                    "UserToast skipped — no WPF application. Title={Title} Message={Message}",
+                    title,
+                    message);
+                return;
+            }
+
             if (dispatcher.CheckAccess())
             {
                 ShowCore(message, title, type, autoCloseMs);
