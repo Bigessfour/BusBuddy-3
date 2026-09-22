@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Markup;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
@@ -40,6 +40,7 @@ namespace BusBuddy.WPF.Views.Map
         private bool _pendingMarkerRefresh;
         private bool _placingMarkers;
         private bool _syncingCenterFromLayer;
+        private FlowDocument? _printDocument;
         private Window? _hostWindow;
         private readonly Action<IReadOnlyList<Point>> _paintRouteLine;
 
@@ -307,6 +308,11 @@ namespace BusBuddy.WPF.Views.Map
                 return;
             }
 
+            if (vm.HoldCenterForZoom)
+            {
+                return;
+            }
+
             var center = DistrictTilesLayer.Center;
             if (vm.MapCenter == center)
             {
@@ -360,6 +366,7 @@ namespace BusBuddy.WPF.Views.Map
                 _pendingCameraSync = !cameraOk;
                 if (cameraOk)
                 {
+                    vm.ReleaseCenterHold();
                     ScheduleAttributionRefresh();
                 }
             }
@@ -491,8 +498,15 @@ namespace BusBuddy.WPF.Views.Map
                 return;
             }
 
+            if (e.PropertyName == nameof(MapViewModel.MapZoomLevel))
+            {
+                // Same stack as the ZoomLevel binding so ZoomMap's corner pan is written back
+                // before the next frame. A deferred apply was saving the jumped center.
+                RestoreCameraAfterZoom(sender as MapViewModel);
+                return;
+            }
+
             if (e.PropertyName == nameof(MapViewModel.MapMarkers)
-                || e.PropertyName == nameof(MapViewModel.MapZoomLevel)
                 || e.PropertyName == nameof(MapViewModel.MapCenter))
             {
                 if (e.PropertyName == nameof(MapViewModel.MapCenter) && _syncingCenterFromLayer)
@@ -548,6 +562,61 @@ namespace BusBuddy.WPF.Views.Map
         }
 
         /// <summary>
+        /// Wheel zoom stays on the clerk's center. ImageryLayer.OnMouseWheel sets ZoomLevel, and
+        /// ZoomMap pans to a stale point (Syncfusion 34.2.3). Handle the wheel here and step
+        /// <see cref="MapViewModel.MapZoomLevel"/> so the view can write the center back.
+        /// </summary>
+        protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
+        {
+            if (PrintPreviewPanel is { Visibility: Visibility.Visible })
+            {
+                base.OnPreviewMouseWheel(e);
+                return;
+            }
+
+            if (DataContext is MapViewModel vm
+                && MapControl is { IsMouseOver: true }
+                && e.Delta != 0)
+            {
+                e.Handled = true;
+                if (e.Delta > 0)
+                {
+                    vm.ZoomInCommand.Execute(null);
+                }
+                else
+                {
+                    vm.ZoomOutCommand.Execute(null);
+                }
+
+                return;
+            }
+
+            base.OnPreviewMouseWheel(e);
+        }
+
+        /// <summary>
+        /// Puts <see cref="MapViewModel.MapCenter"/> back after Syncfusion's zoom pan.
+        /// </summary>
+        private void RestoreCameraAfterZoom(MapViewModel? vm)
+        {
+            if (vm is null)
+            {
+                return;
+            }
+
+            var cameraOk = TrySetLayerCenter(DistrictTilesLayer, vm.MapCenter, vm.MapZoomLevel);
+            _pendingCameraSync = !cameraOk;
+            if (cameraOk)
+            {
+                vm.ReleaseCenterHold();
+                ScheduleAttributionRefresh();
+            }
+
+            TryPlaceMarkers();
+            ReplayRouteLineFromViewModel(vm);
+        }
+
+        /// <summary>
         /// Camera is Center + ZoomLevel only (TwoWay bindings carry wheel/drag back to the view model).
         /// Same-value sets are no-ops on the dependency properties, so this never double-loads tiles.
         /// </summary>
@@ -580,7 +649,10 @@ namespace BusBuddy.WPF.Views.Map
             ReportViewportSize(DataContext as MapViewModel);
             if (_pendingCameraSync || _pendingMarkerRefresh)
             {
-                TryApplyCameraThenMarkers();
+                if (TryApplyCameraThenMarkers() && DataContext is MapViewModel vm)
+                {
+                    vm.ReleaseCenterHold();
+                }
             }
         }
 
@@ -645,7 +717,7 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (MapControl is not FrameworkElement mapElement)
+                if (MapControl is not FrameworkElement mapElement || PrintPreviewPanel is null || PrintPreviewViewer is null)
                 {
                     return;
                 }
@@ -654,68 +726,174 @@ namespace BusBuddy.WPF.Views.Map
                 mapElement.UpdateLayout();
                 OnCaptureSnapshotRequested(sender, e);
 
+                var sheet = DataContext is MapViewModel mapVm ? mapVm.PrintSheet : null;
+                var title = sheet?.Title
+                    ?? (DataContext is MapViewModel named && named.SelectedRoute is not null
+                        ? named.SelectedRoute.RouteName ?? "Route map"
+                        : "District map");
+                var subtitle = sheet?.Subtitle ?? "Published path — not live tracking";
+                var lines = sheet?.Lines ?? Array.Empty<string>();
+                var mapBitmap = ReadSnapshot(DataContext as MapViewModel);
+
+                // Letter preview. The printer dialog supplies the real page size when the clerk prints.
+                _printDocument = BuildRoutePrintDocument(816, 1056, title, subtitle, mapElement, mapBitmap, lines);
+                PrintPreviewViewer.Document = _printDocument;
+                PrintPreviewPanel.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to open the route-map preview");
+            }
+        }
+
+        private void OnConfirmPrintPreview(object sender, RoutedEventArgs e)
+        {
+            if (_printDocument is null)
+            {
+                return;
+            }
+
+            try
+            {
                 var printDlg = new PrintDialog();
                 if (printDlg.ShowDialog() != true)
                 {
                     return;
                 }
 
-                var doc = new FixedDocument();
-                doc.DocumentPaginator.PageSize = new Size(printDlg.PrintableAreaWidth, printDlg.PrintableAreaHeight);
-
-                var pageContent = new PageContent();
-                var fixedPage = new FixedPage
-                {
-                    Width = printDlg.PrintableAreaWidth,
-                    Height = printDlg.PrintableAreaHeight,
-                };
-
-                var mapHeight = fixedPage.Height * 0.8;
-                FrameworkElement printedMap = new System.Windows.Shapes.Rectangle
-                {
-                    Width = fixedPage.Width,
-                    Height = mapHeight,
-                    Fill = new VisualBrush(mapElement),
-                };
-                if (DataContext is MapViewModel snap && snap.LatestMapSnapshotPng is { Length: > 0 } png)
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.StreamSource = new MemoryStream(png);
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-                    bitmap.Freeze();
-                    printedMap = new Image
-                    {
-                        Width = fixedPage.Width,
-                        Height = mapHeight,
-                        Stretch = Stretch.Uniform,
-                        Source = bitmap,
-                    };
-                }
-                FixedPage.SetLeft(printedMap, 0);
-                FixedPage.SetTop(printedMap, 0);
-                fixedPage.Children.Add(printedMap);
-
-                var routeLabel = DataContext is MapViewModel mapVm && mapVm.SelectedRoute is not null
-                    ? mapVm.SelectedRoute.RouteName ?? "Route map printout"
-                    : "District map printout";
-                var caption = new TextBlock
-                {
-                    Text = routeLabel,
-                    Margin = new Thickness(24, fixedPage.Height * 0.82, 24, 24),
-                    FontSize = 16,
-                };
-                fixedPage.Children.Add(caption);
-
-                ((IAddChild)pageContent).AddChild(fixedPage);
-                doc.Pages.Add(pageContent);
-                printDlg.PrintDocument(doc.DocumentPaginator, "BusBuddy Route Map");
+                // A document cannot sit in the viewer and the printer at the same time.
+                PrintPreviewViewer.Document = null;
+                _printDocument.PageWidth = printDlg.PrintableAreaWidth;
+                _printDocument.PageHeight = printDlg.PrintableAreaHeight;
+                _printDocument.ColumnWidth = printDlg.PrintableAreaWidth;
+                var paginator = ((IDocumentPaginatorSource)_printDocument).DocumentPaginator;
+                paginator.PageSize = new Size(printDlg.PrintableAreaWidth, printDlg.PrintableAreaHeight);
+                printDlg.PrintDocument(paginator, "BusBuddy Route Map");
+                ClosePrintPreview();
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "Failed to print route map");
+                if (PrintPreviewViewer is not null && _printDocument is not null)
+                {
+                    PrintPreviewViewer.Document = _printDocument;
+                }
             }
+        }
+
+        private void OnClosePrintPreview(object sender, RoutedEventArgs e) => ClosePrintPreview();
+
+        private void ClosePrintPreview()
+        {
+            if (PrintPreviewViewer is not null)
+            {
+                PrintPreviewViewer.Document = null;
+            }
+
+            _printDocument = null;
+            if (PrintPreviewPanel is not null)
+            {
+                PrintPreviewPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private static BitmapSource? ReadSnapshot(MapViewModel? vm)
+        {
+            if (vm?.LatestMapSnapshotPng is not { Length: > 0 } png)
+            {
+                return null;
+            }
+
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.StreamSource = new MemoryStream(png);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+
+        /// <summary>
+        /// One flowing document. The paginator measures wrapped lines, so a long turn list continues on the next page.
+        /// </summary>
+        private static FlowDocument BuildRoutePrintDocument(
+            double pageWidth,
+            double pageHeight,
+            string title,
+            string subtitle,
+            FrameworkElement mapElement,
+            BitmapSource? mapBitmap,
+            IReadOnlyList<string> lines)
+        {
+            var doc = new FlowDocument
+            {
+                PageWidth = pageWidth,
+                PageHeight = pageHeight,
+                PagePadding = new Thickness(36),
+                ColumnWidth = pageWidth,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize = 12,
+                Background = Brushes.White
+            };
+
+            doc.Blocks.Add(new Paragraph(new Run(title))
+            {
+                FontSize = 18,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 0, 4)
+            });
+            doc.Blocks.Add(new Paragraph(new Run(subtitle))
+            {
+                FontSize = 11,
+                Foreground = Brushes.DimGray,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
+
+            // District zoom stacks pin captions on top of each other, so a large screenshot
+            // is the squiggle the clerk already rejected. Keep a short overview and let the
+            // stop order and road instructions fill the page.
+            var mapWidth = Math.Max(120, pageWidth - 72);
+            var mapHeight = Math.Min(200, Math.Max(120, pageHeight * 0.28));
+            FrameworkElement printed = mapBitmap is { } bitmap && bitmap.Width > 0 && bitmap.Height > 0
+                ? FitPrintImage(bitmap, mapWidth, mapHeight)
+                : new System.Windows.Shapes.Rectangle
+                {
+                    Width = mapWidth,
+                    Height = mapHeight,
+                    Fill = new VisualBrush(mapElement)
+                };
+            doc.Blocks.Add(new BlockUIContainer(printed) { Margin = new Thickness(0, 0, 0, 12) });
+
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrEmpty(line))
+                {
+                    doc.Blocks.Add(new Paragraph { Margin = new Thickness(0, 8, 0, 0) });
+                    continue;
+                }
+
+                var heading = line is "Stops" or "Follow the route";
+                doc.Blocks.Add(new Paragraph(new Run(line))
+                {
+                    FontSize = heading ? 13 : 12,
+                    FontWeight = heading ? FontWeights.SemiBold : FontWeights.Normal,
+                    Margin = new Thickness(0, heading ? 6 : 1, 0, 1)
+                });
+            }
+
+            return doc;
+        }
+
+        private static Image FitPrintImage(BitmapSource bitmap, double maxWidth, double maxHeight)
+        {
+            var scale = Math.Min(maxWidth / bitmap.Width, maxHeight / bitmap.Height);
+            return new Image
+            {
+                Source = bitmap,
+                Stretch = Stretch.Uniform,
+                Width = bitmap.Width * scale,
+                Height = bitmap.Height * scale
+            };
         }
 
         private void OnViewResetRequested(object? sender, EventArgs e) =>

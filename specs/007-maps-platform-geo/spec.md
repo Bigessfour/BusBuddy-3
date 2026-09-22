@@ -14,7 +14,7 @@
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Address correctness   | Regex / format checks; optional skip                                            | Postal-grade US validation with standardized components and a clear fail reason                                                            |
 | Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                                                                            |
-| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                                                                                 |
+| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                                                                                  |
 | Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                                                                           |
 | Map UI                | Syncfusion `SfMap` + unofficial `mt1.google.com` / OSM experiments              | Syncfusion `SfMap` + official Google Map Tiles only (no OSM fail-open; empty basemap if the session is unavailable)                        |
 | District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                                                                                          |
@@ -28,15 +28,15 @@ Nominated provider (working solution): **Google Maps Platform** on `busbuddy-507
 
 ### User Story 1 - Clerk saves a real student address and sees it on the map (Priority: P1)
 
-As a transportation clerk, when I enter a Wiley-area student street address, the app tells me whether it is a real deliverable address, stores the standardized form, and plots the home on the district map — not a random point near the school.
+As a transportation clerk, when I enter a student street address, the app tells me whether it is a real deliverable address, stores the standardized form, and plots the home on the district map — not a random point near the school.
 
 **Why this priority**: Fake coordinates and regex-only checks are the current failure. This is the minimum replacement for Earth Engine on the student path.
 
-**Independent Test**: With a mapping key present, saving a known Wiley street address yields a success status, persisted latitude/longitude, and a map marker at that location. With the key absent, the clerk sees a clear “mapping unavailable” message and the app does not invent coordinates. Unit tests cover valid, invalid, and no-key paths without calling the live network.
+**Independent Test**: With a mapping key present, saving a known street address yields a success status, persisted latitude/longitude, and a map marker at that location. With the key absent, the clerk sees a clear “mapping unavailable” message and the app does not invent coordinates. Unit tests cover valid, invalid, and no-key paths without calling the live network. Sample addresses from a real district are fine in tests.
 
 **Acceptance Scenarios**:
 
-1. **Given** a mapping key and a complete US address in the Wiley service area, **When** the clerk validates or saves the student, **Then** the address is accepted or corrected to a standardized form and latitude/longitude are stored.
+1. **Given** a mapping key and a complete US address, **When** the clerk validates or saves the student, **Then** the address is accepted or corrected to a standardized form and latitude/longitude are stored.
 2. **Given** a mapping key and a nonsense or incomplete address, **When** the clerk validates, **Then** save is blocked (unless the existing skip-validation flag is on) and the clerk sees why it failed.
 3. **Given** no mapping key, **When** the clerk plots or validates, **Then** the UI states mapping is not configured and does **not** hash the address into fake coordinates.
 4. **Given** a previously validated student with coordinates, **When** the map bulk-plots eligible students, **Then** markers use stored coordinates and do not re-call the network for every row.
@@ -61,7 +61,7 @@ As a maintainer, I can start the app and run CI without Earth Engine credentials
 
 ### User Story 3 - Dispatcher sees a road-based trip, not a straight line of stops (Priority: P2)
 
-As a dispatcher, when I review or optimize a route, I get driving distance, estimated time, and a road-following line on the map between Wiley School and the ordered stops.
+As a dispatcher, when I review or optimize a route, I get driving distance, estimated time, and a road-following line on the map between the school and the ordered stops.
 
 **Why this priority**: Capacity assignment already exists; without a road graph, “trip planning” is still a list of points.
 
@@ -85,14 +85,14 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 **Acceptance Scenarios**:
 
-1. **Given** a mapping key, **When** the clerk types a street in the student form, **Then** address suggestions for the Wiley region appear.
+1. **Given** a mapping key, **When** the clerk types a street in the student form, **Then** address suggestions for that region appear.
 2. **Given** no key, **When** the clerk types, **Then** the form behaves as today (no suggestions, no errors).
 
 ---
 
 ### Edge Cases
 
-- Rural Prowers/Bent County addresses that USPS can certify but Google rooftop is approximate: store coordinates anyway; show precision (rooftop vs range vs approximate) to the clerk.
+- Rural addresses that USPS can certify but Google rooftop is approximate: store coordinates anyway; show precision (rooftop vs range vs approximate) to the clerk.
 - Rate limits / quota: cache by normalized address; do not geocode on every keystroke (except P3 suggestions).
 - Existing students with hash-scattered coordinates: treat as untrusted; re-validate on next edit, not a silent mass rewrite in this increment.
 - Unofficial `mt1.google.com` map tiles: forbidden. Product basemap is Google Map Tiles only; OSM is allowed only in `Tools/SfMapTileProbe`, never as a District Map fail-open.
@@ -128,7 +128,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 ### Measurable Outcomes
 
-- **SC-001**: A clerk can validate and plot a correct Wiley-area address in one save/validate action; the marker is within a city-block of the real location, not a random offset up to tens of kilometers.
+- **SC-001**: A clerk can validate and plot a correct address in one save/validate action; the marker is within a city-block of the real location, not a random offset up to tens of kilometers.
 - **SC-002**: With mapping unconfigured, 100% of plot/validate attempts show an explicit configuration message and 0% write hash-generated coordinates.
 - **SC-003**: After this feature, starting the app with no Earth Engine secrets produces 0 Earth Engine log events and 0 service-account files written under the app data `keys` directory.
 - **SC-004**: For a route of at least two geocoded stops, a dispatcher can display a road-following path and a distance/time summary without leaving the map/route screens.
@@ -138,9 +138,9 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 ## Assumptions
 
 - Nominated provider is Google Maps Platform (Address Validation with USPS CASS, Routes API) billed on `busbuddy-507301`. `new-coursera-490518` is a legacy billed project; do not header Maps traffic there.
-- Wiley-scale volume is hundreds of students; validate on save; cache; route compute on demand.
+- Expected volume is hundreds of students; validate on save; cache; route compute on demand.
 - Renaming `MapView` / `MapViewModel` is out of scope (map UI stays; EE backend goes).
-- `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in this increment.
+- Seat fill on a route the clerk already selected stays on `RouteService.AutoAssignStudentsAsync`. Clerk Generate Routes is `IRouteDeterminationService`. Stop order is `IRouteOptimizationService`. There is no `StudentRouteOptimizer`.
 - Eligibility is “students in the system,” not a shapefile polygon. No Maps “dataset” upload in this feature.
 - Constitution Geo line is amended in the same PR as implementation.
 - Offline hasher remains only behind tests/demo flag if needed; production DI uses the mapping client or a no-op that returns null.

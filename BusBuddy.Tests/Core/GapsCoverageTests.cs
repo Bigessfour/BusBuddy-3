@@ -48,7 +48,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task OllamaAiService_OptimizeRoutes_WhenUnreachable_ReturnsMock()
+        public async Task OllamaAiService_Commentary_WhenUnreachable_ReturnsMock()
         {
             var inMemory = new Dictionary<string, string?>
             {
@@ -62,11 +62,10 @@ namespace BusBuddy.Tests.Core
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
             var api = new OllamaAiService(httpClient, config);
 
-            var result = await api.OptimizeRoutesAsync(new RouteOptimizationRequest { RouteId = "test-1" });
+            var result = await api.GetShortCommentaryAsync("route summary", "12 riders");
 
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.AIModel, Is.EqualTo("Mock-AI"));
-            Assert.That(result.OptimizationSuggestions, Does.Contain("Mock optimization"));
+            Assert.That(result, Does.Contain("Mock insight"));
+            Assert.That(result, Does.Contain("route summary"));
         }
 
         [Test]

@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Mapping;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.Extensions.Options;
 using Serilog;
 
@@ -16,7 +18,8 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
     private static readonly ILogger Logger = Log.ForContext<GoogleRoutingService>();
     private static readonly Uri ComputeRoutesUri = new("https://routes.googleapis.com/directions/v2:computeRoutes");
     private static readonly Uri ComputeRouteMatrixUri = new("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix");
-    private const string FieldMask = "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline";
+    private const string FieldMask =
+        "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction";
     private const string MatrixFieldMask =
         "originIndex,destinationIndex,duration,distanceMeters,condition,status";
 
@@ -157,7 +160,8 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
                 EncodedPolyline = encoded,
                 Points = points,
                 DistanceMeters = distance,
-                Duration = duration
+                Duration = duration,
+                Steps = ReadSteps(route)
             };
         }
         catch (Exception ex)
@@ -165,6 +169,68 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
             Logger.Warning(ex, "Routes computeRoutes failed");
             return new DrivePathResult { Error = "Routing request failed." };
         }
+    }
+
+    private static IReadOnlyList<string> ReadSteps(JsonElement route)
+    {
+        if (!route.TryGetProperty("legs", out var legs) || legs.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        var steps = new List<string>();
+        foreach (var leg in legs.EnumerateArray())
+        {
+            if (!leg.TryGetProperty("steps", out var legSteps) || legSteps.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var step in legSteps.EnumerateArray())
+            {
+                var text = PlainInstruction(step);
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    continue;
+                }
+
+                if (step.TryGetProperty("distanceMeters", out var metersEl) && metersEl.TryGetInt32(out var meters) && meters > 0)
+                {
+                    text = $"{text} — {FormatMiles(meters)}";
+                }
+
+                steps.Add(text);
+            }
+        }
+
+        return steps;
+    }
+
+    private static string PlainInstruction(JsonElement step)
+    {
+        if (!step.TryGetProperty("navigationInstruction", out var nav))
+        {
+            return string.Empty;
+        }
+
+        var raw = nav.TryGetProperty("instructions", out var instructions) && instructions.ValueKind == JsonValueKind.String
+            ? instructions.GetString()
+            : null;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return string.Empty;
+        }
+
+        var noTags = Regex.Replace(raw, "<[^>]+>", " ");
+        return Regex.Replace(noTags, @"\s+", " ").Trim();
+    }
+
+    private static string FormatMiles(int meters)
+    {
+        var miles = meters / 1609.344;
+        return miles < 0.1
+            ? $"{Math.Max(1, (int)Math.Round(meters * 3.28084)):N0} ft"
+            : $"{miles.ToString("0.0", CultureInfo.InvariantCulture)} mi";
     }
 
     public async Task<IReadOnlyList<RouteMatrixElement>> ComputeRouteMatrixAsync(

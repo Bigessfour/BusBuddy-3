@@ -2,7 +2,7 @@ using System.Diagnostics;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 

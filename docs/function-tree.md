@@ -27,7 +27,6 @@ flowchart TB
     Seed[SeedDataService]
     RouteSvc[RouteService]
     RouteDet[RouteDetermination]
-    Opt[StudentRouteOptimizer]
     ReportsSvc[OperationalReportService]
     Pdf[PdfReportService]
     DriverSvc[DriverService]

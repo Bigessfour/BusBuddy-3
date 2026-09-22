@@ -1,6 +1,6 @@
 using System.Diagnostics;
+using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using Serilog;
 
 namespace BusBuddy.WPF.Services
@@ -10,16 +10,16 @@ namespace BusBuddy.WPF.Services
         private static readonly ILogger Logger = Log.ForContext<DriverAvailabilityService>();
         private readonly IDriverService _driverService;
         private readonly IScheduleService _scheduleService;
-        private readonly IActivityScheduleService? _activityScheduleService;
+        private readonly ITripEventService? _tripEventService;
 
         public DriverAvailabilityService(
             IDriverService driverService,
             IScheduleService scheduleService,
-            IActivityScheduleService? activityScheduleService = null)
+            ITripEventService? tripEventService = null)
         {
             _driverService = driverService;
             _scheduleService = scheduleService;
-            _activityScheduleService = activityScheduleService;
+            _tripEventService = tripEventService;
             Logger.Debug("DriverAvailabilityService constructed");
         }
 
@@ -30,9 +30,9 @@ namespace BusBuddy.WPF.Services
 
             var drivers = await _driverService.GetAllDriversAsync();
             var schedules = (await _scheduleService.GetSchedulesAsync()).ToList();
-            var activities = _activityScheduleService is null
-                ? new List<BusBuddy.Core.Models.ActivitySchedule>()
-                : (await _activityScheduleService.GetAllActivitySchedulesAsync()).ToList();
+            var trips = _tripEventService is null
+                ? new List<TripEvent>()
+                : (await _tripEventService.GetTripsByDateRangeAsync(DateTime.Today, DateTime.Today.AddDays(14))).ToList();
             var today = DateTime.Today;
             var result = new List<DriverAvailabilityInfo>();
             var inactiveSkipped = 0;
@@ -53,7 +53,7 @@ namespace BusBuddy.WPF.Services
                 }
 
                 var dates = DriverAvailabilityCalculator
-                    .AvailableDates(schedules, activities, driver.DriverId, today, 14)
+                    .AvailableDates(schedules, trips, driver.DriverId, today, 14)
                     .ToList();
                 if (dates.Count > 0)
                 {
@@ -70,8 +70,8 @@ namespace BusBuddy.WPF.Services
 
             stopwatch.Stop();
             Logger.Information(
-                "Driver availability calculated Drivers={DriverCount} InactiveSkipped={Inactive} WithOpenDays={WithOpenDays} Schedules={ScheduleCount} ElapsedMs={ElapsedMs}",
-                result.Count, inactiveSkipped, withOpenDays, schedules.Count, stopwatch.ElapsedMilliseconds);
+                "Driver availability calculated Drivers={DriverCount} InactiveSkipped={Inactive} WithOpenDays={WithOpenDays} Schedules={ScheduleCount} Trips={TripCount} ElapsedMs={ElapsedMs}",
+                result.Count, inactiveSkipped, withOpenDays, schedules.Count, trips.Count, stopwatch.ElapsedMilliseconds);
 
             return result;
         }

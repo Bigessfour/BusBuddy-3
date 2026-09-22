@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Views.Fuel;
 using CommunityToolkit.Mvvm.Input;

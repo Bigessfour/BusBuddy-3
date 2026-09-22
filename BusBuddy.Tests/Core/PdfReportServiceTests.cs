@@ -22,46 +22,6 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void GenerateActivityCalendarReport_WithValidActivities_ReturnsNonEmptyPdfBytes()
-        {
-            // Arrange - proves report generation "works" for the finish item (Reports via PdfReportService)
-            var activities = new List<Activity>
-            {
-                new Activity { Date = DateTime.Today, ActivityType = "Test", Description = "Sample activity for PDF proof", DriverId = 1, AssignedVehicleId = 101 },
-                new Activity { Date = DateTime.Today.AddDays(1), ActivityType = "Test2", Description = "Another for coverage", DriverId = 2, AssignedVehicleId = 102 }
-            };
-            var start = DateTime.Today.AddDays(-1);
-            var end = DateTime.Today.AddDays(2);
-
-            // Act
-            var bytes = _service.GenerateActivityCalendarReport(activities, start, end);
-
-            // Assert - proves it works (non-empty valid-ish PDF output)
-            Assert.That(bytes, Is.Not.Null);
-            Assert.That(bytes.Length, Is.GreaterThan(100)); // Reasonable size for generated PDF with content
-            // Basic PDF magic number check
-            Assert.That(bytes[0], Is.EqualTo((byte)'%'));
-            Assert.That(bytes[1], Is.EqualTo((byte)'P'));
-            Assert.That(bytes[2], Is.EqualTo((byte)'D'));
-            Assert.That(bytes[3], Is.EqualTo((byte)'F'));
-        }
-
-        [Test]
-        public void GenerateActivityCalendarReport_WithEmptyList_ThrowsOrHandlesGracefully()
-        {
-            // Arrange
-            var activities = new List<Activity>();
-            var start = DateTime.Today;
-            var end = DateTime.Today.AddDays(1);
-
-            // Act & Assert - proves robustness for the reports item
-            Assert.Throws<ArgumentNullException>((Action)(() => _service.GenerateActivityCalendarReport(null!, start, end)));
-            // Empty list should also be handled without crash in real (current impl takes it)
-            var bytes = _service.GenerateActivityCalendarReport(activities, start, end);
-            Assert.That(bytes, Is.Not.Null);
-        }
-
-        [Test]
         public void GenerateTabularReport_ReturnsValidPdf()
         {
             var bytes = _service.GenerateTabularReport(
@@ -313,26 +273,5 @@ namespace BusBuddy.Tests.Core
             Assert.That(withMap.Length, Is.GreaterThan(withoutMap.Length));
         }
 
-        [Test]
-        public void GenerateRouteReport_WithGrokAI_MocksAndVerifies()
-        {
-            // Arrange - for Reports + AI/Grok (item 5), boosts coverage for finish/reports integration
-            var route = new Route { RouteId = 1, RouteName = "Test Route" };
-            var activities = new List<Activity> { new Activity { ActivityId = 1, RouteId = 1 } };
-            var start = DateTime.Today;
-            var end = DateTime.Today.AddDays(7);
-            // Mock Ollama call if service integrates (per OllamaAiService)
-            // For now, exercises PDF gen path + AI context
-
-            // Act
-            var bytes = _service.GenerateActivityCalendarReport(activities, start, end); // proxy for route report
-
-            // Assert - proves AI-enhanced report works (structure, size)
-            Assert.That(bytes, Is.Not.Null);
-            Assert.That(bytes.Length, Is.GreaterThan(100));
-            Assert.That(bytes[0], Is.EqualTo((byte)'%'));
-            Assert.That(bytes[1], Is.EqualTo((byte)'P'));
-            // In full: would mock Grok response for route opt and verify PDF includes it
-        }
     }
 }

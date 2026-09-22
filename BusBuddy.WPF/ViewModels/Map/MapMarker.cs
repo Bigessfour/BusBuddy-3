@@ -47,7 +47,7 @@ public sealed class MapMarker : INotifyPropertyChanged
 
     /// <summary>
     /// Sequence tag ("Start", "Stop 7", "End") when the selected route stops at this pin. Set instead of
-    /// stacking a second WP marker on the same spot — that is what produced captions like "Lamar Stop 7 chool".
+    /// stacking a second waypoint marker on the same spot — that is what overprints the first caption.
     /// </summary>
     public string? RouteStopLabel
     {
@@ -65,7 +65,7 @@ public sealed class MapMarker : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Caption as drawn: "Lamar High School (Stop 7)" when the route stops here, else <see cref="Caption"/>.</summary>
+    /// <summary>Caption as drawn: "School name (Stop 7)" when the route stops here, else <see cref="Caption"/>.</summary>
     public string DisplayCaption => MapMarkerLabels.DisplayCaption(Caption, RouteStopLabel);
 
     /// <summary>Pin fill by kind (schools black, stops orange, homes blue, …). Frozen, shared per colour.</summary>

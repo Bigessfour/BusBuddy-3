@@ -21,7 +21,7 @@
 
 - [x] T001 Create directory `BusBuddy.Core/Services/RouteDetermination/` and add placeholder `README.md` noting contracts in `specs/008-route-determination/contracts/`
 - [x] T002 [P] Add `RoutingDistrictSettings` options class in `BusBuddy.Core/Configuration/RoutingDistrictSettings.cs` (bbox or extent keys, TargetRidersPerCell, MaxPickupGapMinutes, AverageSpeedMph, MaxRideMinutes, AllowSeatingOverride) per [data-model.md](./data-model.md)
-- [x] T003 [P] Bind `RoutingDistrictSettings` section in `BusBuddy.WPF/appsettings.json` and `BusBuddy.Core/appsettings.json` with Wiley-scale defaults
+- [x] T003 [P] Bind `RoutingDistrictSettings` section in `BusBuddy.WPF/appsettings.json` and `BusBuddy.Core/appsettings.json` with district-scale defaults
 
 ---
 

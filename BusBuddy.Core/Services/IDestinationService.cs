@@ -1,6 +1,6 @@
 using BusBuddy.Core.Models;
 
-namespace BusBuddy.Core.Services.Interfaces;
+namespace BusBuddy.Core.Services;
 
 /// <summary>School / destination catalog for intake dropdowns and map markers.</summary>
 public interface IDestinationService

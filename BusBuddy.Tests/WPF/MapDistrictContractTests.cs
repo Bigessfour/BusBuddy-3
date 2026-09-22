@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using NUnit.Framework;
@@ -36,9 +36,11 @@ public class MapDistrictContractTests
     {
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(vm, Does.Contain("UpdateMapForRouteAsync"));
-        Assert.That(vm, Does.Contain("MapRouteTrail.Build"));
+        Assert.That(vm, Does.Contain("_trail.DrawAsync"));
         Assert.That(vm, Does.Contain("RouteLineUpdated"));
         Assert.That(vm, Does.Not.Contain("ImageryLayer.Markers"));
+        var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
+        Assert.That(trail, Does.Contain("MapRouteTrailPlot Build"));
     }
 
     [Test]

@@ -5,7 +5,6 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Logging;
 using BusBuddy.WPF.Utilities;

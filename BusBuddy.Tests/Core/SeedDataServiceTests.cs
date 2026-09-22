@@ -537,9 +537,7 @@ namespace BusBuddy.Tests.Core
 
             await using var verify = new BusBuddyDbContext(options);
             var school = await verify.Destinations.FirstOrDefaultAsync(d => d.Name == "Wiley K-12 School");
-            Assert.That(school, Is.Not.Null);
-            Assert.That(school!.Latitude, Is.Not.Null);
-            Assert.That(school.Longitude, Is.Not.Null);
+            Assert.That(school, Is.Null, "prep must not invent a school that is not in the catalog");
 
             var bus = await verify.Buses.FirstAsync(b => b.BusNumber == "BUS-001");
             Assert.That(bus.CurrentLatitude, Is.Null);
@@ -548,7 +546,8 @@ namespace BusBuddy.Tests.Core
 
             var route = await verify.Routes.FirstOrDefaultAsync(r => r.RouteName == "Special Needs Route");
             Assert.That(route, Is.Not.Null);
-            Assert.That(route!.WaypointsJson, Is.Not.Null.And.Not.Empty);
+            Assert.That(string.IsNullOrWhiteSpace(route!.School), Is.True);
+            Assert.That(string.IsNullOrWhiteSpace(route.WaypointsJson), Is.True);
 
             var seededStudents = await verify.Students.CountAsync();
             Assert.That(seededStudents, Is.EqualTo(0), "map prep must not insert students");

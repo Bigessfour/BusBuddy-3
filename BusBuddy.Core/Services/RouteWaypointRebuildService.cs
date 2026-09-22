@@ -24,6 +24,22 @@ public interface IRouteWaypointRebuildService
     /// Clerk Optimize Order calls this so visit-order has stops to reorder. Does not replace an existing list.
     /// </summary>
     Task<int> PublishRosterStopsIfMissingAsync(int routeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Drops stops named for a school that is not an active destination, and clears a stored
+    /// drive path that still visits that school. Leaves an already-valid path unchanged.
+    /// </summary>
+    Task<UnlistedSchoolCleanup> OmitUnlistedSchoolsAsync(int routeId, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Result of removing a school stop that is not an active catalog destination.</summary>
+public sealed class UnlistedSchoolCleanup
+{
+    public bool Changed { get; init; }
+
+    public string? WaypointsJson { get; init; }
+
+    public string? School { get; init; }
 }
 
 public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
@@ -96,12 +112,14 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
         }
 
         var students = await LoadAssignedStudentsAsync(context, route, cancellationToken).ConfigureAwait(false);
+        var schools = await LoadSchoolsAsync(context, cancellationToken).ConfigureAwait(false);
+        await OmitUnlistedSchoolsCoreAsync(context, route, students, schools, cancellationToken).ConfigureAwait(false);
         var publishedStops = await context.RouteStops.AsNoTracking()
             .Where(s => s.RouteId == routeId)
             .OrderBy(s => s.StopOrder)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        var routableStops = AssignedRouteStops.ForRouting(publishedStops, students);
+        var routableStops = AssignedRouteStops.ForRouting(publishedStops, students, schools);
         var publishedCoords = routableStops
             .Where(s => s.HasValidatedCoordinates)
             .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
@@ -203,11 +221,17 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
 
         if (points.Count < 2)
         {
+            if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
+            {
+                route.WaypointsJson = null;
+                await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+
             Logger.Information(
-                "Waypoint rebuild skipped RouteId={RouteId} — need ≥2 points (have {Count})",
+                "Waypoint rebuild cleared RouteId={RouteId} — need ≥2 points (have {Count})",
                 routeId,
                 points.Count);
-            return route.WaypointsJson;
+            return null;
         }
 
         var json = RouteWaypointSerializer.FromPairs(points);
@@ -221,6 +245,177 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             transfersByStudent.Count);
         return json;
     }
+
+    public async Task<UnlistedSchoolCleanup> OmitUnlistedSchoolsAsync(
+        int routeId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId, cancellationToken)
+            .ConfigureAwait(false);
+        if (route is null)
+        {
+            return new UnlistedSchoolCleanup();
+        }
+
+        var students = await LoadAssignedStudentsAsync(context, route, cancellationToken).ConfigureAwait(false);
+        var schools = await LoadSchoolsAsync(context, cancellationToken).ConfigureAwait(false);
+        var changed = await OmitUnlistedSchoolsCoreAsync(context, route, students, schools, cancellationToken)
+            .ConfigureAwait(false);
+        return new UnlistedSchoolCleanup
+        {
+            Changed = changed,
+            WaypointsJson = route.WaypointsJson,
+            School = route.School
+        };
+    }
+
+    /// <summary>
+    /// Removes stops named for an inactive school, and a placeholder barn written at the
+    /// clerk map center when the route has no riders. Rewrites the stored path only when
+    /// a stop was removed, so a valid Google polyline is left alone.
+    /// </summary>
+    private static async Task<bool> OmitUnlistedSchoolsCoreAsync(
+        BusBuddyDbContext context,
+        Route route,
+        List<Student> students,
+        List<Destination> schools,
+        CancellationToken cancellationToken)
+    {
+        var stops = await context.RouteStops
+            .Where(s => s.RouteId == route.RouteId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var routable = AssignedRouteStops.ForRouting(stops, students, schools);
+        var remove = stops
+            .Where(stop => !routable.Contains(stop) && AssignedRouteStops.NamesCatalogSchool(stop, schools))
+            .ToList();
+        if (students.Count == 0)
+        {
+            foreach (var barn in stops.Where(IsPlaceholderBarn))
+            {
+                if (!remove.Contains(barn))
+                {
+                    remove.Add(barn);
+                }
+            }
+        }
+
+        var schoolCleared = AlignRouteSchoolWithActiveCatalog(route, students, schools);
+        if (remove.Count == 0 && !schoolCleared)
+        {
+            return false;
+        }
+
+        if (remove.Count > 0)
+        {
+            context.RouteStops.RemoveRange(remove);
+            route.StopCount = Math.Max(0, stops.Count - remove.Count);
+        }
+
+        var remaining = AssignedRouteStops.ForRouting(stops.Except(remove), students, schools)
+            .Where(s => s.HasValidatedCoordinates)
+            .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
+            .ToList();
+        route.WaypointsJson = remaining.Count >= 2
+            ? RouteWaypointSerializer.FromPairs(remaining)
+            : null;
+        var entry = context.Entry(route);
+        entry.Property(r => r.School).IsModified = true;
+        entry.Property(r => r.WaypointsJson).IsModified = true;
+        if (remove.Count > 0)
+        {
+            entry.Property(r => r.StopCount).IsModified = true;
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Logger.Information(
+            "Omitted unlisted school stops RouteId={RouteId} Removed={Removed} School={School}",
+            route.RouteId,
+            string.Join(", ", remove.Select(s => s.StopName)),
+            route.School ?? "(none)");
+        return true;
+    }
+
+    private static bool AlignRouteSchoolWithActiveCatalog(
+        Route route,
+        IReadOnlyList<Student> students,
+        IReadOnlyList<Destination> schools)
+    {
+        if (string.IsNullOrWhiteSpace(route.School))
+        {
+            return false;
+        }
+
+        var named = ActiveSchoolNamed(schools, route.School);
+        if (named is not null)
+        {
+            return false;
+        }
+
+        var attended = students
+            .Select(student => ActiveSchoolForStudent(schools, student))
+            .Where(school => school is not null)
+            .DistinctBy(school => school!.DestinationId)
+            .ToList();
+        var next = attended.Count == 1 ? attended[0]!.Name : null;
+        if (string.Equals(route.School, next, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        route.School = next;
+        return true;
+    }
+
+    private static Destination? ActiveSchoolNamed(IReadOnlyList<Destination> schools, string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        return schools.FirstOrDefault(school =>
+            school.IsActive
+            && !school.IsDeleted
+            && school.HasValidatedCoordinates
+            && DestinationTypes.IsSchool(school.DestinationType)
+            && string.Equals(school.Name?.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static Destination? ActiveSchoolForStudent(IReadOnlyList<Destination> schools, Student student)
+    {
+        if (student.DestinationId is int destinationId)
+        {
+            var byId = schools.FirstOrDefault(school =>
+                school.DestinationId == destinationId
+                && school.IsActive
+                && !school.IsDeleted
+                && DestinationTypes.IsSchool(school.DestinationType));
+            if (byId is not null)
+            {
+                return byId;
+            }
+        }
+
+        return ActiveSchoolNamed(schools, student.School);
+    }
+
+    /// <summary>
+    /// Seed wrote "District Bus Barn" / "Bus barn" at the clerk camera center when no barn was configured.
+    /// That point is a map default, not a stop.
+    /// </summary>
+    private static bool IsPlaceholderBarn(RouteStop stop) =>
+        string.Equals(stop.StopName?.Trim(), "District Bus Barn", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(stop.StopAddress?.Trim(), "Bus barn", StringComparison.OrdinalIgnoreCase);
+
+    private static async Task<List<Destination>> LoadSchoolsAsync(
+        BusBuddyDbContext context,
+        CancellationToken cancellationToken) =>
+        await context.Destinations.AsNoTracking()
+            .Where(d => d.DestinationType == DestinationTypes.School)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
 
     public async Task<int> PublishRosterStopsIfMissingAsync(int routeId, CancellationToken cancellationToken = default)
     {

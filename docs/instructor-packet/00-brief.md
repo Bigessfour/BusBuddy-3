@@ -15,17 +15,17 @@ It is a single-user line-of-business app. It is not a parent portal, it does not
 
 ## Stack
 
-| Layer   | Choice                                                                                                                                                                | Reason                                                                 |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Runtime | .NET 9, C# 13, WPF                                                                                                                                                    | Windows-only clerk workstation; offline tolerant; no hosting cost      |
-| UI      | Syncfusion WPF 34.2.3 (`SfDataGrid`, `SfMap`, `SfChart`, `SfScheduler`, PDF)                                                                                          | One vendor for grid, map, chart, scheduler, and PDF; community license |
-| Pattern | MVVM with CommunityToolkit.Mvvm; DI via `Microsoft.Extensions.DependencyInjection` (47 registrations in `App.xaml.cs`)                                                | Testable ViewModels; code-behind limited to window chrome              |
-| Data    | EF Core 9, PostgreSQL (Npgsql) in Docker for dev/test; SQL Server provider retained for a hosted district DB                                                          | 24 migrations; repository + UnitOfWork over `BusBuddyDbContext`        |
-| Logging | Serilog only (file + console sinks, enrichers)                                                                                                                        | Structured; every clerk click writes a greppable `UI proof` line       |
-| Geo     | Google Maps Platform: Address Validation, Places Autocomplete (New), Routes (`computeRoutes` / `computeRouteMatrix`), Route Optimization (`optimizeTours`), Map Tiles | Postal-grade addresses, real drive polylines, ToS-compliant basemap    |
-| AI      | Local Ollama behind a service interface                                                                                                                               | No cloud xAI key; offline fallback when Ollama is down                 |
-| Tests   | NUnit + Moq; 572 test cases across `BusBuddy.Tests` and `BusBuddy.XamlCompliance.Tests`                                                                               | Core services against Postgres; XAML contract tests for UI wiring      |
-| CI      | GitHub Actions on `windows-latest`: restore → build → test → publish; squash auto-merge on green                                                                      | Solo-developer flow, protected `master`, no direct pushes              |
+| Layer   | Choice                                                                                                                                                                | Reason                                                                  |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Runtime | .NET 9, C# 13, WPF                                                                                                                                                    | Windows-only clerk workstation; offline tolerant; no hosting cost       |
+| UI      | Syncfusion WPF 34.2.3 (`SfDataGrid`, `SfMap`, `SfChart`, `SfScheduler`, PDF)                                                                                          | One vendor for grid, map, chart, scheduler, and PDF; community license  |
+| Pattern | MVVM with CommunityToolkit.Mvvm; DI via `Microsoft.Extensions.DependencyInjection` (`AddDataServices` for Core, `App.Composition` for WPF)                            | Testable ViewModels; code-behind limited to window chrome               |
+| Data    | EF Core 9, PostgreSQL (Npgsql) in Docker for dev/test; SQL Server provider retained for a hosted district DB                                                          | Migrations; `IBusBuddyDbContextFactory` opens one context per operation |
+| Logging | Serilog only (file + console sinks, enrichers)                                                                                                                        | Structured; every clerk click writes a greppable `UI proof` line        |
+| Geo     | Google Maps Platform: Address Validation, Places Autocomplete (New), Routes (`computeRoutes` / `computeRouteMatrix`), Route Optimization (`optimizeTours`), Map Tiles | Postal-grade addresses, real drive polylines, ToS-compliant basemap     |
+| AI      | Local Ollama behind a service interface                                                                                                                               | No cloud xAI key; offline fallback when Ollama is down                  |
+| Tests   | NUnit + Moq; 572 test cases across `BusBuddy.Tests` and `BusBuddy.XamlCompliance.Tests`                                                                               | Core services against Postgres; XAML contract tests for UI wiring       |
+| CI      | GitHub Actions on `windows-latest`: restore → build → test → publish; squash auto-merge on green                                                                      | Solo-developer flow, protected `master`, no direct pushes               |
 
 ## Size
 

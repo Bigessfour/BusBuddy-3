@@ -57,8 +57,9 @@ public sealed class StudentHomePinViewModel : INotifyPropertyChanged
         }
         else
         {
-            MapCenter = new Point(38.0872, -102.6208);
-            MapZoomLevel = MapDefaults.SchoolZoomLevel;
+            var camera = DistrictCameraUi.Resolve();
+            MapCenter = new Point(camera.Latitude, camera.Longitude);
+            MapZoomLevel = camera.ZoomLevel;
         }
 
         if (HasValidatedAddressPin && HasMapPick && !SameAsValidated(_latitudeValue, _longitudeValue))

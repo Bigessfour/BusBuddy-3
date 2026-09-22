@@ -1,4 +1,4 @@
-namespace BusBuddy.Core.Services.Interfaces;
+namespace BusBuddy.Core.Services;
 
 /// <summary>Road routing via Google Routes API (drive path).</summary>
 public interface IRoutingService
@@ -27,6 +27,10 @@ public sealed class DrivePathResult
         Array.Empty<(double, double)>();
     public int? DistanceMeters { get; init; }
     public string? Duration { get; init; }
+
+    /// <summary>Road instructions from the same computeRoutes response, in drive order.</summary>
+    public IReadOnlyList<string> Steps { get; init; } = Array.Empty<string>();
+
     public string? Error { get; init; }
     public bool Succeeded => string.IsNullOrEmpty(Error) && !string.IsNullOrWhiteSpace(EncodedPolyline);
 }

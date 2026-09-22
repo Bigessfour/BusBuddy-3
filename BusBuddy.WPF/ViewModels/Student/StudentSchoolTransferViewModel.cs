@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 

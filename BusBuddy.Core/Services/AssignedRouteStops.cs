@@ -7,8 +7,10 @@ namespace BusBuddy.Core.Services;
 
 /// <summary>
 /// A student stop is on the drive path, the map, and the printed sheet only when that
-/// student is assigned to the route. School, depot, and catalog stops stay.
-/// Generated stops that still carry <c>StudentId</c> notes stay when the route has no roster yet.
+/// student is assigned to the route. School, depot, and catalog stops stay when the
+/// place is still an active catalog location. A stop named for a school that is not
+/// an active destination is omitted. Generated stops that still carry <c>StudentId</c>
+/// notes stay when the route has no roster yet.
 /// </summary>
 public static class AssignedRouteStops
 {
@@ -21,10 +23,12 @@ public static class AssignedRouteStops
 
     public static IReadOnlyList<RouteStop> ForRouting(
         IEnumerable<RouteStop>? stops,
-        IEnumerable<Student>? assignedStudents)
+        IEnumerable<Student>? assignedStudents,
+        IEnumerable<Destination>? schools = null)
     {
         var roster = (assignedStudents ?? Array.Empty<Student>()).ToList();
-        return (stops ?? Array.Empty<RouteStop>()).Where(stop => IsRoutable(stop, roster)).ToList();
+        var catalog = schools?.ToList();
+        return (stops ?? Array.Empty<RouteStop>()).Where(stop => IsRoutable(stop, roster, catalog)).ToList();
     }
 
     /// <summary>
@@ -46,10 +50,21 @@ public static class AssignedRouteStops
         return routableOrder.Concat(held).ToList();
     }
 
-    public static bool IsRoutable(RouteStop stop, IReadOnlyList<Student> assignedStudents)
+    public static bool IsRoutable(RouteStop stop, IReadOnlyList<Student> assignedStudents) =>
+        IsRoutable(stop, assignedStudents, null);
+
+    public static bool IsRoutable(
+        RouteStop stop,
+        IReadOnlyList<Student> assignedStudents,
+        IReadOnlyList<Destination>? schools)
     {
         ArgumentNullException.ThrowIfNull(stop);
         assignedStudents ??= Array.Empty<Student>();
+        if (IsUnlistedSchoolStop(stop, assignedStudents, schools))
+        {
+            return false;
+        }
+
         if (!IsStudentStop(stop))
         {
             return true;
@@ -92,6 +107,60 @@ public static class AssignedRouteStops
 
     internal static bool HasStudentToken(string? name) =>
         !string.IsNullOrWhiteSpace(name) && StudentToken.IsMatch(name);
+
+    /// <summary>Stop name matches a school row in the destination catalog, active or not.</summary>
+    public static bool NamesCatalogSchool(RouteStop stop, IEnumerable<Destination>? schools)
+    {
+        ArgumentNullException.ThrowIfNull(stop);
+        var name = stop.StopName?.Trim();
+        if (string.IsNullOrWhiteSpace(name) || schools is null)
+        {
+            return false;
+        }
+
+        return schools.Any(school =>
+            DestinationTypes.IsSchool(school.DestinationType)
+            && string.Equals(school.Name?.Trim(), name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// True when the stop names a school that is inactive or deleted, or a school
+    /// none of the assigned riders attend when the roster names its schools.
+    /// </summary>
+    public static bool IsUnlistedSchoolStop(
+        RouteStop stop,
+        IReadOnlyList<Student> assignedStudents,
+        IReadOnlyList<Destination>? schools)
+    {
+        if (schools is null || schools.Count == 0 || !NamesCatalogSchool(stop, schools))
+        {
+            return false;
+        }
+
+        var name = stop.StopName?.Trim();
+        var active = schools.Where(school =>
+            DestinationTypes.IsSchool(school.DestinationType)
+            && school.IsActive
+            && !school.IsDeleted
+            && school.HasValidatedCoordinates
+            && string.Equals(school.Name?.Trim(), name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (active.Count == 0)
+        {
+            return true;
+        }
+
+        if (!assignedStudents.Any(s => s.DestinationId.HasValue || !string.IsNullOrWhiteSpace(s.School)))
+        {
+            return false;
+        }
+
+        return !active.Any(school => Attends(assignedStudents, school));
+    }
+
+    private static bool Attends(IReadOnlyList<Student> students, Destination school) =>
+        students.Any(student =>
+            (student.DestinationId.HasValue && student.DestinationId.Value == school.DestinationId)
+            || string.Equals(student.School?.Trim(), school.Name?.Trim(), StringComparison.OrdinalIgnoreCase));
 
     private static bool Matches(Student student, RouteStop stop)
     {

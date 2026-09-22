@@ -93,6 +93,9 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("IsHitTestVisible=\"True\""));
         Assert.That(xaml, Does.Not.Contain("Center=\"{Binding MapCenter"));
         Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("OnImageryCenterChanged"));
+        Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("HoldCenterForZoom"));
+        Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("OnPreviewMouseWheel"));
+        Assert.That(xaml, Does.Contain("x:Name=\"PrintPreviewPanel\""));
         Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("TrySetLayerCenter"));
         Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("MapCameraHost.TryApply"));
         Assert.That(xaml, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
@@ -397,10 +400,6 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("MappingName=\"ExternalTicketNo\""));
         Assert.That(xaml, Does.Contain("MappingName=\"PlannedHeadcount\""));
         Assert.That(xaml, Does.Not.Contain("Regular Route"));
-
-        var dialog = XamlViewFile.Read("Views/Activity/ActivityScheduleEditDialog.xaml.cs");
-        Assert.That(dialog, Does.Not.Contain("Regular Route"));
-        Assert.That(dialog, Does.Contain("MissingInfo"));
 
         var tripDialog = XamlViewFile.Read("Views/Activity/TripEventEditDialog.xaml");
         Assert.That(tripDialog, Does.Contain("TripEvent"));

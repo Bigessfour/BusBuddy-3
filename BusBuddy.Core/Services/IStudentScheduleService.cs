@@ -1,6 +1,6 @@
 using BusBuddy.Core.Models;
 
-namespace BusBuddy.Core.Services.Interfaces;
+namespace BusBuddy.Core.Services;
 
 /// <summary>
 /// Service interface for managing student-schedule assignments
@@ -20,17 +20,6 @@ public interface IStudentScheduleService
     Task<StudentSchedule> AssignStudentToScheduleAsync(int studentId, int scheduleId, string? pickupLocation = null, string? dropoffLocation = null, string? notes = null);
 
     /// <summary>
-    /// Assigns a student to an activity schedule
-    /// </summary>
-    /// <param name="studentId">Student ID</param>
-    /// <param name="activityScheduleId">Activity Schedule ID</param>
-    /// <param name="pickupLocation">Optional pickup location</param>
-    /// <param name="dropoffLocation">Optional dropoff location</param>
-    /// <param name="notes">Optional notes</param>
-    /// <returns>Created StudentSchedule</returns>
-    Task<StudentSchedule> AssignStudentToActivityScheduleAsync(int studentId, int activityScheduleId, string? pickupLocation = null, string? dropoffLocation = null, string? notes = null);
-
-    /// <summary>
     /// Assigns multiple students to a schedule
     /// </summary>
     /// <param name="studentIds">List of student IDs</param>
@@ -48,14 +37,6 @@ public interface IStudentScheduleService
     Task<bool> RemoveStudentFromScheduleAsync(int studentId, int scheduleId);
 
     /// <summary>
-    /// Removes a student from an activity schedule
-    /// </summary>
-    /// <param name="studentId">Student ID</param>
-    /// <param name="activityScheduleId">Activity Schedule ID</param>
-    /// <returns>True if successful</returns>
-    Task<bool> RemoveStudentFromActivityScheduleAsync(int studentId, int activityScheduleId);
-
-    /// <summary>
     /// Gets all students assigned to a schedule
     /// </summary>
     /// <param name="scheduleId">Schedule ID</param>
@@ -63,25 +44,11 @@ public interface IStudentScheduleService
     Task<List<Student>> GetStudentsForScheduleAsync(int scheduleId);
 
     /// <summary>
-    /// Gets all students assigned to an activity schedule
-    /// </summary>
-    /// <param name="activityScheduleId">Activity Schedule ID</param>
-    /// <returns>List of students</returns>
-    Task<List<Student>> GetStudentsForActivityScheduleAsync(int activityScheduleId);
-
-    /// <summary>
     /// Gets all schedules for a student
     /// </summary>
     /// <param name="studentId">Student ID</param>
     /// <returns>List of schedules with assignment details</returns>
     Task<List<StudentSchedule>> GetSchedulesForStudentAsync(int studentId);
-
-    /// <summary>
-    /// Gets all activity schedules for a student
-    /// </summary>
-    /// <param name="studentId">Student ID</param>
-    /// <returns>List of activity schedules with assignment details</returns>
-    Task<List<StudentSchedule>> GetActivitySchedulesForStudentAsync(int studentId);
 
     /// <summary>
     /// Confirms a student's attendance for a scheduled trip

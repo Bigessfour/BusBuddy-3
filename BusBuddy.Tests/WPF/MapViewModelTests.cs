@@ -7,7 +7,6 @@ using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Configuration;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
@@ -113,8 +112,17 @@ public class MapViewModelTests
         var raised = new List<string>();
         vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? string.Empty);
 
+        var heldDuringZoom = false;
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MapViewModel.MapZoomLevel))
+            {
+                heldDuringZoom = vm.HoldCenterForZoom;
+            }
+        };
         vm.ZoomInCommand.Execute(null);
         Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DetailLabelZoomLevel));
+        Assert.That(heldDuringZoom, Is.True, "SfMap ZoomMap must not be allowed to replace the center");
         Assert.That(vm.ShowDetailLabels, Is.True);
         Assert.That(vm.MapCenter, Is.EqualTo(center), "zoom must not move the camera");
         Assert.That(raised, Does.Contain(nameof(MapViewModel.MapZoomLevel)));
@@ -316,9 +324,9 @@ public class MapViewModelTests
         Assert.That(geo, Does.Not.Contain("using sample route"));
         Assert.That(geo, Does.Contain("PersistDerivedWaypointsAsync"));
 
-        var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
-        Assert.That(mapVm, Does.Contain("EnsureRouteWaypointsAsync"));
-        Assert.That(mapVm, Does.Contain("RebuildAndPersistAsync"));
+        var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
+        Assert.That(trail, Does.Contain("EnsureWaypointsAsync"));
+        Assert.That(trail, Does.Contain("RebuildAndPersistAsync"));
     }
 
     [Test]
@@ -559,7 +567,7 @@ public class MapViewModelTests
             BusNumber = "5",
             WaypointsJson = RouteWaypointSerializer.FromPairs([(38.15, -102.72), (38.16, -102.71)])
         };
-        await WaitUntilAsync(() => vm.StatusMessage.Contains("Bus 5", StringComparison.Ordinal));
+        await WaitUntilAsync(() => vm.StatusMessage.StartsWith("Bus 5.", StringComparison.Ordinal));
 
         Assert.That(vm.SelectedRouteBusLabel, Is.EqualTo("Bus 5"));
         Assert.That(vm.StatusMessage, Does.Contain("Bus 5"));
@@ -1064,12 +1072,10 @@ public class MapViewModelTests
             }
         ]);
 
-        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
         var vm = await CreateSettledViewModelAsync(
             destinations: dest.Object,
             pickupStops: pickups.Object,
-            students: students.Object,
-            geocoding: geocode.Object);
+            students: students.Object);
 
         Assert.That(vm.StatusMessage, Does.StartWith("Map ready"));
         Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForSchool("Wiley School")), Is.True);
@@ -1088,7 +1094,6 @@ public class MapViewModelTests
         Assert.That(pickupMarker.LatitudeDegrees, Is.EqualTo(38.16).Within(0.0001));
         Assert.That(pickupMarker.StudentNames, Is.Empty);
         Assert.That(pickupMarker.Caption, Is.EqualTo("Oak & 4th"));
-        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1230,10 +1235,8 @@ public class MapViewModelTests
         services.AddSingleton(routes.Object);
         var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
-        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
         var vm = await CreateSettledViewModelAsync(
             pickupStops: pickups.Object,
-            geocoding: geocode.Object,
             scopes: scopes);
         vm.SelectedRoute = new Route { RouteId = routeId, RouteName = "AM-Plot" };
 
@@ -1243,7 +1246,6 @@ public class MapViewModelTests
         Assert.That(
             vm.MapMarkers.Single(m => m.Label == MapMarkerLabels.ForPickup("Main & Elm")).LatitudeDegrees,
             Is.EqualTo(38.2).Within(0.0001));
-        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1269,13 +1271,11 @@ public class MapViewModelTests
         services.AddSingleton(routes.Object);
         var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
-        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
-        var vm = await CreateSettledViewModelAsync(geocoding: geocode.Object, scopes: scopes);
+        var vm = await CreateSettledViewModelAsync(scopes: scopes);
         vm.SelectedRoute = new Route { RouteId = routeId, RouteName = "AM-Empty" };
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
         Assert.That(vm.MapMarkers.Any(m => m.Kind is MapMarkerLabels.Kind.Home or MapMarkerLabels.Kind.Student), Is.False);
-        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1309,16 +1309,13 @@ public class MapViewModelTests
         services.AddSingleton(routes.Object);
         var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
-        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
         var vm = await CreateSettledViewModelAsync(
             pickupStops: pickups.Object,
-            geocoding: geocode.Object,
             scopes: scopes);
         vm.SelectedRoute = new Route { RouteId = routeId, RouteName = "AM-NoGps" };
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
         Assert.That(vm.MapMarkers.Any(m => m.Kind is MapMarkerLabels.Kind.Home or MapMarkerLabels.Kind.Student), Is.False);
-        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1421,14 +1418,12 @@ public class MapViewModelTests
         var services = new ServiceCollection();
         services.AddSingleton(routes.Object);
         var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
-        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
 
-        var vm = await CreateSettledViewModelAsync(geocoding: geocode.Object, scopes: scopes);
+        var vm = await CreateSettledViewModelAsync(scopes: scopes);
         vm.SelectedRoute = new Route { RouteId = routeId, RouteName = "AM-Eve" };
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
         Assert.That(vm.MapMarkers.Any(m => m.Kind is MapMarkerLabels.Kind.Home or MapMarkerLabels.Kind.Student), Is.False);
-        geocode.VerifyNoOtherCalls();
     }
 
     [Test]
@@ -1463,8 +1458,7 @@ public class MapViewModelTests
         services.AddSingleton(routes.Object);
         var scopes = services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
-        // No IGeocodingService — fail-open, never invent GPS.
-        var vm = await CreateSettledViewModelAsync(geocoding: null, scopes: scopes);
+        var vm = await CreateSettledViewModelAsync(scopes: scopes);
         vm.SelectedRoute = new Route { RouteId = routeId, RouteName = "AM-NoGeo" };
         await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
 
@@ -1512,6 +1506,8 @@ public class MapViewModelTests
         Assert.That(vm, Does.Not.Contain("GenerateEligibilityRoutePdf"));
         Assert.That(vm, Does.Not.Contain("AddMarkerCommand"));
         Assert.That(vm, Does.Not.Contain("PdfReports"));
+        Assert.That(vm, Does.Not.Contain("IGeocodingService"));
+        Assert.That(vm, Does.Not.Contain("38.0872"));
 
         var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
         Assert.That(layers, Does.Contain("StudentPlotLocation.PinsFromStored"));
@@ -1546,6 +1542,8 @@ public class MapViewModelTests
         var refresher = CoreSourceFile.Read("Services/GoogleMaps/RouteDrivePathRefresher.cs");
         Assert.That(refresher, Does.Contain("static class RouteDrivePathRefresher"));
         Assert.That(refresher, Does.Contain("TryRefreshAsync"));
+        Assert.That(refresher, Does.Contain("TryReadStepsAsync"));
+        Assert.That(vm, Does.Not.Contain("DirectionsForPrintAsync"));
     }
 
     [Test]
@@ -1593,7 +1591,6 @@ public class MapViewModelTests
         IPickupStopService? pickupStops = null,
         IDestinationService? destinations = null,
         IStudentService? students = null,
-        IGeocodingService? geocoding = null,
         IDistrictSettingsAccessor? districtSettings = null,
         IServiceScopeFactory? scopes = null)
     {
@@ -1607,7 +1604,6 @@ public class MapViewModelTests
 
         return new MapViewModel(
             geoData,
-            geocodingService: geocoding,
             studentService: students,
             scopeFactory: scopes,
             routingService: routing,
@@ -1622,11 +1618,10 @@ public class MapViewModelTests
         IPickupStopService? pickupStops = null,
         IDestinationService? destinations = null,
         IStudentService? students = null,
-        IGeocodingService? geocoding = null,
         IDistrictSettingsAccessor? districtSettings = null,
         IServiceScopeFactory? scopes = null)
     {
-        var vm = CreateViewModel(geoData, routing, pickupStops, destinations, students, geocoding, districtSettings, scopes);
+        var vm = CreateViewModel(geoData, routing, pickupStops, destinations, students, districtSettings, scopes);
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (DateTime.UtcNow < deadline)
         {

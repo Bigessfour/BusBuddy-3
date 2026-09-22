@@ -1,7 +1,7 @@
 using System.Linq;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Mapping;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

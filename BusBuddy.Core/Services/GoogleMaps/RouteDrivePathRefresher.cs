@@ -1,6 +1,6 @@
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Serilog;
 using Serilog.Context;
 
@@ -45,14 +45,11 @@ public static class RouteDrivePathRefresher
         {
             try
             {
-                var origin = stops[0];
-                var destination = stops[^1];
-                var allIntermediates = stops.Skip(1).Take(stops.Count - 2).ToList();
-                var intermediates = CapIntermediateWaypoints(allIntermediates);
-                var droppedIntermediates = Math.Max(0, allIntermediates.Count - intermediates.Count);
-                var path = await routingService
-                    .ComputeDrivePathAsync(origin, destination, intermediates, cancellationToken)
+                var requested = await RequestDrivePathAsync(routingService, stops, cancellationToken)
                     .ConfigureAwait(false);
+                var path = requested.Path;
+                var intermediates = requested.Intermediates;
+                var droppedIntermediates = requested.DroppedIntermediates;
 
                 if (!path.Succeeded || path.Points.Count == 0)
                 {
@@ -65,7 +62,8 @@ public static class RouteDrivePathRefresher
 
                 route.WaypointsJson = RouteWaypointSerializer.FromEncodedPolyline(
                     path.EncodedPolyline!,
-                    stops);
+                    stops,
+                    path.Steps);
                 ApplyPathMetrics(route, path);
 
                 Logger.Information(
@@ -87,6 +85,67 @@ public static class RouteDrivePathRefresher
             }
         }
     }
+
+    /// <summary>
+    /// Road instructions for the published stop list. Does not change <see cref="Route.WaypointsJson"/>.
+    /// A path that has an encoded line but no stored stops is left alone — decoded vertices are not waypoints.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> TryReadStepsAsync(
+        IRoutingService? routingService,
+        Route? route,
+        CancellationToken cancellationToken = default)
+    {
+        if (route is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
+        if (payload.Directions.Count > 0)
+        {
+            return payload.Directions;
+        }
+
+        if (routingService is null || payload.Stops.Count < 2)
+        {
+            return Array.Empty<string>();
+        }
+
+        try
+        {
+            var requested = await RequestDrivePathAsync(routingService, payload.Stops, cancellationToken)
+                .ConfigureAwait(false);
+            return requested.Path.Succeeded ? requested.Path.Steps : Array.Empty<string>();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Road directions unavailable RouteId={RouteId}", route.RouteId);
+            return Array.Empty<string>();
+        }
+    }
+
+    private static async Task<RequestedDrivePath> RequestDrivePathAsync(
+        IRoutingService routingService,
+        IReadOnlyList<(double Latitude, double Longitude)> stops,
+        CancellationToken cancellationToken)
+    {
+        var origin = stops[0];
+        var destination = stops[^1];
+        var allIntermediates = stops.Skip(1).Take(Math.Max(0, stops.Count - 2)).ToList();
+        var intermediates = CapIntermediateWaypoints(allIntermediates);
+        var path = await routingService
+            .ComputeDrivePathAsync(origin, destination, intermediates, cancellationToken)
+            .ConfigureAwait(false);
+        return new RequestedDrivePath(
+            path,
+            intermediates,
+            Math.Max(0, allIntermediates.Count - intermediates.Count));
+    }
+
+    private readonly record struct RequestedDrivePath(
+        DrivePathResult Path,
+        IReadOnlyList<(double Latitude, double Longitude)> Intermediates,
+        int DroppedIntermediates);
 
     /// <summary>
     /// Evenly samples intermediates so a long stop list stays within the Routes API cap.

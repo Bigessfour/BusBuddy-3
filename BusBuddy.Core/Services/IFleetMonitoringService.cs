@@ -1,6 +1,6 @@
 using BusBuddy.Core.Models;
 
-namespace BusBuddy.Core.Services.Interfaces
+namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Service interface for real-time fleet monitoring and status tracking

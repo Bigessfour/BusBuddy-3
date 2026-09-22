@@ -12,7 +12,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST belong to exactly one session: `AM`, `PM`, `Transfer`, or `SpecialNeeds`. Core keys AM and PM as **two route rows** (for example `Draft-School-cell-1` and `Draft-School-cell-1-PM`). `Route.Session` plus `RouteSession.Infer` name the session. Do not add a second session structure on the same row.
 - MUST be an ordered list of stops. Each stop carries a validated, geocoded name/address/lat/lng plus a target time. The clerk picks the place from the location catalog (school `Destination`, `PickupStop`, or a validated student home); the stop then **denormalizes** those fields. There is no `RouteStop.LocationId` column — do not invent a parallel location graph.
 - MUST use those stops as Google Routes waypoints. The map polyline is derived from the published stop list, not freehand drawing as source of truth.
-- MUST NOT send the drive path, the map, or the printed sheet to a student-home stop unless that student is assigned to the route (`AssignedRouteStops`). School, depot, and catalog stops stay. Generated stops that still carry `StudentId` notes stay when the route has no roster yet.
+- MUST NOT send the drive path, the map, or the printed sheet to a student-home stop unless that student is assigned to the route (`AssignedRouteStops`). School, depot, and catalog stops stay when that place is still an active catalog location. A stop named for a school that is not an active destination is not on the path. Generated stops that still carry `StudentId` notes stay when the route has no roster yet.
 - MUST keep year-default bus and driver on `Route.AMVehicleId` / `AMDriverId` (and the PM pair). Substitutes and spares are session exceptions on `Schedule`; they do not rewrite the published pairing unless the clerk changes the default. Leftover AM*/PM* columns on a single row are those year-default pairings (Hop 4b), not a second session.
 - MUST keep published stop times stable and parent-visible. Same-day “student not riding” is a **rider exception**, not a new route version.
 - MUST NOT invent a dated `RouteVersion` table. Mid-year structural edits (add/remove/reorder stop, change target time) update the current published stop list in place. `CloneRouteAsync` copies a run onto another calendar date when the clerk needs a dated variant. Do not silently drop stops.
@@ -31,7 +31,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - Route stop place comes from `specs/locations.md` (`School`, `PickupStop`, `StudentHome` for home/special-needs pickup, optional `Depot` pull-out) at edit time.
 - Route `1` → `0..*` student assignments for that session (`Student.AmRouteId` / `PmRouteId`, names mirrored until the name-string drop).
 - Route `1` → `0..*` rider exceptions (date + student + not riding).
-- Geographic area is a planning label (Wiley in-town, rural east, special needs). It is not a required GIS polygon in this version.
+- Geographic area is a planning label (in-town, rural, special needs). It is not a required GIS polygon in this version.
 
 ## Data the app must store
 
@@ -132,7 +132,7 @@ Implementation: **two route rows** (5 AM and 5 PM). Core already keys routes tha
 
 ## Worked examples
 
-- Published in-town AM: depot optional, catalog stops in sequence, Wiley School last, target times on each stop, Bus #2, same weekday pattern via generate/clone.
+- Published in-town AM: depot optional, catalog stops in sequence, the school last, target times on each stop, a bus number, same weekday pattern via generate/clone.
 - Special-needs AM Bus #5: ordered **homes** + school, not corner stops, aide expected, capacity includes wheelchair stations.
 - Student sick Thursday: rider exception for that date. Published times unchanged.
 - New house in October: validate home, clerk inserts stop at sequence 4 on the current list.
@@ -140,3 +140,5 @@ Implementation: **two route rows** (5 AM and 5 PM). Core already keys routes tha
 ## Agent instructions
 
 When changing route code, read this file plus `specs/locations.md`, `specs/students.md`, `specs/buses.md`, `specs/drivers.md`, `specs/trips.md`, and `specs/maps.md`. Quote the invariant you implemented. Never implement “student not riding” by deleting a stop or cloning Route into Trip.
+
+Clerk **Generate Routes** calls `IRouteDeterminationService`. Clerk **Optimize Order** calls `IRouteOptimizationService`. `RouteService` persists the published route and can fill seats on a route the clerk already selected. It does not generate a plan, and local Ollama does not either.

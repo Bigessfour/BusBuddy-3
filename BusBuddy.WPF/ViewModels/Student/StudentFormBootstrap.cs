@@ -1,5 +1,4 @@
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Data.Interfaces;
 using BusBuddy.Core.Utilities;
 using StudentModel = BusBuddy.Core.Models.Student;
 

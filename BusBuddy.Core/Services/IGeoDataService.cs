@@ -1,6 +1,6 @@
 using BusBuddy.Core.Models;
 
-namespace BusBuddy.Core.Services.Interfaces
+namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Geographic data for mapping visualization. Route geometry comes from the database.

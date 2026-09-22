@@ -1,6 +1,6 @@
 using BusBuddy.Core.Models;
 
-namespace BusBuddy.Core.Services.Interfaces
+namespace BusBuddy.Core.Services
 {
     public interface IScheduleService
     {

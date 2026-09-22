@@ -96,8 +96,8 @@
                     <syncfusion:ButtonAdv Label="Trips" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="ActivitiesButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Activity timeline and office trip board (not daily routes)"
-                                          AutomationProperties.Name="Activity Timeline"/>
+                                          ToolTip="Office trip board (not daily routes)"
+                                          AutomationProperties.Name="Trip Board"/>
                     <syncfusion:ButtonAdv Label="Settings" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="SettingsButton_Click" FontSize="14" FontWeight="SemiBold"

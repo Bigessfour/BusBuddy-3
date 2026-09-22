@@ -2,7 +2,7 @@ using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services.Trips;
 using BusBuddy.Core.Utilities;
 
-namespace BusBuddy.Core.Services.Interfaces
+namespace BusBuddy.Core.Services
 {
     public interface ITripEventService
     {

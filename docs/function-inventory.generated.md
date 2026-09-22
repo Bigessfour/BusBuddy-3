@@ -61,7 +61,6 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P2 | Other Public | RouteManagementExportHelper.RouteManagementExportHelper | BusBuddy.WPF/ViewModels/Route/RouteManagementExportHelper.cs:1 | BusBuddy.Tests/WPF/RouteManagementExportHelperTests.cs | has logic |
 | P2 | Core Service | RouteDeterminationService.RouteDeterminationService | BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs:1 | BusBuddy.Tests/Core/RouteDetermination/RouteDeterminationSer... | has logic |
 | P2 | Other Public | AssignFitnessEvaluator.AssignFitnessEvaluator | BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs:1 | BusBuddy.Tests/Core/RouteDetermination/AssignFitnessEvaluato... | has logic |
-| P2 | Other Public | StudentRouteOptimizer.StudentRouteOptimizer | BusBuddy.Core/Services/StudentRouteOptimizer.cs:1 | BusBuddy.Tests/Core/StudentRouteOptimizerTests.cs | has logic |
 | P2 | Core Service | OperationalReportService.OperationalReportService | BusBuddy.Core/Services/OperationalReportService.cs:1 | BusBuddy.Tests/Core/OperationalReportServiceTests.cs | has logic |
 | P2 | Core Service | PdfReportService.PdfReportService | BusBuddy.Core/Services/PdfReportService.cs:1 | BusBuddy.Tests/Core/PdfReportServiceTests.cs | has logic |
 | P2 | Other Public | ReportsView.xaml.ReportsView.xaml | BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1 | BusBuddy.Tests/WPF/ReportsViewTests.cs | has logic |

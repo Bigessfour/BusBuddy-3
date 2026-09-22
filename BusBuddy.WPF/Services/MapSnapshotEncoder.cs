@@ -23,10 +23,12 @@ public static class MapSnapshotEncoder
 
         try
         {
-            var width = (int)Math.Max(1, mapElement.ActualWidth);
-            var height = (int)Math.Max(1, mapElement.ActualHeight);
+            // Two device pixels per screen pixel so the printed map is not a stretched screenshot.
+            const double printScale = 2d;
+            var width = Math.Max(1, (int)Math.Round(mapElement.ActualWidth * printScale));
+            var height = Math.Max(1, (int)Math.Round(mapElement.ActualHeight * printScale));
 
-            var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            var rtb = new RenderTargetBitmap(width, height, 96d * printScale, 96d * printScale, PixelFormats.Pbgra32);
             rtb.Render(mapElement);
 
             var encoder = new PngBitmapEncoder();

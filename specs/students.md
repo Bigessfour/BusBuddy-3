@@ -62,7 +62,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 - After a home validates, **hint** the nearest published catalog stop inside the walk radius (`StopSuggestMaxMeters`). Do not auto-assign it. The clerk selects the stop if that corner is a safe pickup.
 - If no catalog stop is in range, pickup mode stays **Home**. If other Home students with validated coordinates sit in the same radius, **hint** the clerk to publish a catalog stop and then assign those riders — do not create the stop automatically. Generate already shares one waypoint per catalog stop; home riders stay on the published list until the clerk attaches them.
 - Map plots a student only after lat/lng exist. Unvalidated addresses show as incomplete, not as pins at 0,0 or the US centroid.
-- District map center for clerks is Lamar/Wiley CO (~38.0872, -102.6208) until a route or student extent is chosen.
+- District map center follows the clerk's depot, bounding box, or a school pin. Until one of those exists, the map uses the `MapDefaults` US overview.
 - AM-only and PM-only students appear on the matching session roster and map only.
 - Special-needs students appear on the special-needs route (example: AM Bus #5), not on a general in-town catalog-stop route, unless a clerk explicitly reassigns them.
 - Transfer assignments show as a separate in-day movement, not as a duplicate child.
@@ -113,7 +113,7 @@ When a student **leaves** (moved out of district, no longer attending, or the ro
 1. Prefer **Archive** if the child may return later this year.
 2. **Delete** only after the clerk picks Mistake, Moved, or Not attending and confirms. That writes the deletion log and removes the roster row.
 
-## Worked examples (Wiley / Lamar area)
+## Worked examples (sample district)
 
 - Special-needs AM home rider: active, `IsSpecialNeeds=true`, `PickupMode=Home`, `RidesAm=true`, `RidesPm=false`, assigned to the special-needs AM route (Bus #5 pattern). Map pin is the home, not a town corner stop.
 - In-town general rider: `PickupMode=CatalogStop`, both AM and PM, pin is the catalog stop. Home may still be stored for contact and eligibility, but it is not a route waypoint.

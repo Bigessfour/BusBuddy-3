@@ -52,12 +52,8 @@ flowchart TB
   subgraph DATA["Data Layer - BusBuddy.Core/Data"]
     direction TB
     CTX["BusBuddyDbContext"]
-    FACT["DbContextFactory"]
-    UOW["UnitOfWork"]
-    REPOS["Repositories<br/>Student Route Bus Driver<br/>Vehicle Fuel Maintenance Activity"]
-    CTX --> REPOS
+    FACT["IBusBuddyDbContextFactory<br/>one context per operation"]
     FACT --> CTX
-    UOW --> REPOS
   end
 
   subgraph MODELS["Domain Models"]

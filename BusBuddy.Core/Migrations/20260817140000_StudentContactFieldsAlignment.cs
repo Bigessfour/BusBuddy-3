@@ -8,7 +8,7 @@ namespace BusBuddy.Core.Migrations;
 
 /// <summary>
 /// Student contact fields (parent email/cell, emergency name) + school Destination params +
-/// inter-district StudentSchoolTransfers + seed Wiley campus.
+/// inter-district StudentSchoolTransfers. School rows are clerk-entered.
 /// </summary>
 [DbContext(typeof(BusBuddyDbContext))]
 [Migration("20260817140000_StudentContactFieldsAlignment")]

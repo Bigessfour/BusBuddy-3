@@ -38,7 +38,7 @@ When those conflict with this constitution, **this file wins** until amended und
 
 ### IV. Layered Architecture
 
-- **Core**: domain models, EF Core data access, UnitOfWork + repository pattern, business services.
+- **Core**: domain models, EF Core data access through `IBusBuddyDbContextFactory` (one context per operation), business services. Do not add a Unit of Work or generic repository layer beside that factory.
 - **WPF**: Views + ViewModels (MVVM + CommunityToolkit.Mvvm), DI wiring in `App.xaml.cs`.
 - **Tests**: prefer Postgres/Docker for realistic DB tests; filter out Integration/InMemoryFlaky in CI unit gates.
 - Do not park unused or broken services as `*.disabled`. Delete them or leave them unreferenced. Git history is the archive.

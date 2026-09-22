@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Utilities;
 
@@ -19,27 +18,8 @@ namespace BusBuddy.Core.Services
             try
             {
                 await SeedSpecialNeedsTransportPrepAsync();
-
-                using var context = _contextFactory.CreateWriteDbContext();
-
-                var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteName == "Special Needs Route")
-                    ?? await context.Routes.FirstOrDefaultAsync(r => r.IsActive);
-
-                if (route is not null && string.IsNullOrWhiteSpace(route.WaypointsJson))
-                {
-                    route.WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
-                    {
-                        (38.1535, -102.7195),
-                        (38.1550, -102.7210),
-                        (38.1565, -102.7180),
-                        (38.1535, -102.7195)
-                    });
-                }
-
-                await context.SaveChangesAsync();
                 Logger.Information(
-                    "Map demo geo ensured StudentsSeeded=false RouteHasWaypoints={HasWaypoints}",
-                    route is not null && !string.IsNullOrWhiteSpace(route.WaypointsJson));
+                    "Map demo geo skipped invented waypoints. Drive paths come from active schools and assigned homes.");
             }
             catch (Exception ex)
             {
@@ -51,7 +31,6 @@ namespace BusBuddy.Core.Services
         /// <inheritdoc />
         public async Task<SpecialNeedsPrepSummary> SeedSpecialNeedsTransportPrepAsync()
         {
-            const string schoolName = "Wiley K-12 School";
             const string routeName = "Special Needs Route";
             const string driverName = "Pat Special";
             const string busNumber = "BUS-SN01";
@@ -60,44 +39,8 @@ namespace BusBuddy.Core.Services
 
             using var context = _contextFactory.CreateWriteDbContext();
 
-            var school = await context.Destinations
-                .FirstOrDefaultAsync(d =>
-                    d.DestinationType == DestinationTypes.School &&
-                    d.Name == schoolName);
-
-            if (school is null)
-            {
-                school = new Destination
-                {
-                    Name = schoolName,
-                    Address = "403 N Main St",
-                    City = "Wiley",
-                    State = "CO",
-                    ZipCode = "81092",
-                    DestinationType = DestinationTypes.School,
-                    DistrictName = "Wiley School District RE-13",
-                    Latitude = 38.1535m,
-                    Longitude = -102.7195m,
-                    StartTime = TimeSpan.FromHours(8),
-                    DismissalTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(30),
-                    IsActive = true,
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedBy = "SeedDataService"
-                };
-                context.Destinations.Add(school);
-                await context.SaveChangesAsync();
-                messages.Add($"Created school destination '{schoolName}'");
-            }
-            else if (school.Latitude is null || school.Longitude is null)
-            {
-                school.Latitude = 38.1535m;
-                school.Longitude = -102.7195m;
-                school.StartTime ??= TimeSpan.FromHours(8);
-                school.DismissalTime ??= TimeSpan.FromHours(15) + TimeSpan.FromMinutes(30);
-                await context.SaveChangesAsync();
-                messages.Add($"Updated GPS and bell times for '{schoolName}'");
-            }
-
+            // Do not invent a Wiley campus. The school catalog is clerk-entered.
+            // A route path starts at an active destination or an assigned home.
             var driver = await context.Drivers
                 .FirstOrDefaultAsync(d => d.DriverName == driverName);
             if (driver is null)
@@ -108,7 +51,7 @@ namespace BusBuddy.Core.Services
                     FirstName = "Pat",
                     LastName = "Special",
                     DriverPhone = "(719) 555-0142",
-                    DriverEmail = "pat.special@wiley.k12.co.us",
+                    DriverEmail = "pat.special@busbuddy.local",
                     DriversLicenceType = "CDL",
                     TrainingComplete = true,
                     Status = "Active",
@@ -162,8 +105,7 @@ namespace BusBuddy.Core.Services
                 route = new Route
                 {
                     RouteName = routeName,
-                    Description = "Door-to-door special-needs transport to Wiley K-12",
-                    School = schoolName,
+                    Description = "Door-to-door special-needs transport",
                     Date = todayUtc,
                     IsActive = true,
                     IsSpecialNeedsRoute = true,
@@ -174,24 +116,15 @@ namespace BusBuddy.Core.Services
                     DriverName = driver.DriverName,
                     BusNumber = bus.BusNumber,
                     AMBeginTime = TimeSpan.FromHours(7) + TimeSpan.FromMinutes(15),
-                    PMBeginTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(45),
-                    WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
-                    {
-                        (38.1535, -102.7195),
-                        (38.1550, -102.7210),
-                        (38.1565, -102.7180),
-                        (38.1535, -102.7195)
-                    })
+                    PMBeginTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(45)
                 };
                 context.Routes.Add(route);
                 await context.SaveChangesAsync();
-                messages.Add($"Created route '{routeName}'");
+                messages.Add($"Created route '{routeName}' without a baked-in school");
             }
             else
             {
                 route.IsSpecialNeedsRoute = true;
-                route.School = schoolName;
-                route.IsActive = true;
                 if (!route.AMDriverId.HasValue)
                 {
                     route.AMDriverId = driver.DriverId;
@@ -210,18 +143,8 @@ namespace BusBuddy.Core.Services
                 {
                     route.PMVehicleId = bus.BusId;
                 }
-                if (string.IsNullOrWhiteSpace(route.WaypointsJson))
-                {
-                    route.WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
-                    {
-                        (38.1535, -102.7195),
-                        (38.1550, -102.7210),
-                        (38.1565, -102.7180),
-                        (38.1535, -102.7195)
-                    });
-                }
                 await context.SaveChangesAsync();
-                messages.Add($"Updated route '{routeName}' special-needs flag without replacing assigned bus/driver");
+                messages.Add($"Updated route '{routeName}' special-needs flag without replacing school, bus, or driver");
             }
 
             const string regularRouteName = "North Elementary";
@@ -232,8 +155,7 @@ namespace BusBuddy.Core.Services
                 regularRoute = new Route
                 {
                     RouteName = regularRouteName,
-                    Description = "Regular home-to-school route — Wiley K-12",
-                    School = schoolName,
+                    Description = "Regular home-to-school route",
                     Date = todayUtc,
                     IsActive = true,
                     IsSpecialNeedsRoute = false
@@ -257,7 +179,7 @@ namespace BusBuddy.Core.Services
 
             return new SpecialNeedsPrepSummary
             {
-                SchoolDestinationId = school.DestinationId,
+                SchoolDestinationId = 0,
                 SpecialNeedsRouteId = route.RouteId,
                 SpecialNeedsRouteName = route.RouteName,
                 SpecialNeedsDriverId = driver.DriverId,

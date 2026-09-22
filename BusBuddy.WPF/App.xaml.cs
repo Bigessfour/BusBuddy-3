@@ -11,7 +11,6 @@ using Microsoft.Extensions.Configuration;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 // Phase-based extension removed; direct registrations used instead
 using BusBuddy.Core.Extensions; // Needed for AddDataServices extension
 using BusBuddy.Core.Utilities;
@@ -478,9 +477,6 @@ namespace BusBuddy.WPF
                 {
                     switch (args[i].ToLowerInvariant())
                     {
-                        case "--optimize-route":
-                            return HandleRouteOptimization(args, i);
-
                         case "--generate-report":
                             return HandleReportGeneration(args, i);
 
@@ -496,106 +492,6 @@ namespace BusBuddy.WPF
             {
                 Log.Error(ex, "Error handling command line arguments");
                 Console.WriteLine($"Error: {ex.Message}");
-                return 1;
-            }
-        }
-
-        /// <summary>
-        /// Handle route optimization command line operation
-        /// </summary>
-        private int HandleRouteOptimization(string[] args, int startIndex)
-        {
-            try
-            {
-                // Parse route optimization arguments
-                string routeId = null;
-                string currentPerformance = "Standard performance metrics";
-                string targetMetrics = "Improve efficiency and reduce travel time";
-                var constraints = new List<string>();
-                string outputPath = null;
-
-                for (int i = startIndex + 1; i < args.Length; i += 2)
-                {
-                    if (i >= args.Length - 1)
-                    {
-                        break;
-                    }
-
-                    switch (args[i].ToLowerInvariant())
-                    {
-                        case "--route-id":
-                            routeId = args[i + 1];
-                            break;
-                        case "--current-performance":
-                            currentPerformance = args[i + 1];
-                            break;
-                        case "--target-metrics":
-                            targetMetrics = args[i + 1];
-                            break;
-                        case "--constraints":
-                            constraints.AddRange(args[i + 1].Split(';'));
-                            break;
-                        case "--output":
-                            outputPath = args[i + 1];
-                            break;
-                    }
-                }
-
-                if (string.IsNullOrEmpty(routeId))
-                {
-                    Console.WriteLine("Error: --route-id is required for route optimization");
-                    return 1;
-                }
-
-                Log.Information("Starting command line route optimization for route {RouteId}", routeId);
-
-                if (ServiceProvider is null)
-                {
-                    Console.WriteLine("Error: application services are not initialized");
-                    return 1;
-                }
-
-                using var scope = ServiceProvider.CreateScope();
-                var ollama = scope.ServiceProvider.GetRequiredService<OllamaAiService>();
-                var request = new BusBuddy.Core.Models.RouteOptimizationRequest
-                {
-                    RouteId = routeId,
-                    CurrentPerformance = currentPerformance,
-                    TargetMetrics = targetMetrics,
-                    Constraints = constraints
-                };
-                if (int.TryParse(routeId, out var parsedRouteId))
-                {
-                    var routes = scope.ServiceProvider.GetService<IRouteService>();
-                    var routeResult = routes is null
-                        ? null
-                        : Task.Run(() => routes.GetRouteByIdAsync(parsedRouteId)).GetAwaiter().GetResult();
-                    if (routeResult is { IsSuccess: true, Value: { } route })
-                    {
-                        request.StudentsServed = route.StudentCount ?? 0;
-                        request.CurrentPerformance = string.IsNullOrWhiteSpace(currentPerformance) || currentPerformance == "Standard performance metrics"
-                            ? $"{route.RouteName}: {route.StudentCount ?? 0} students"
-                            : currentPerformance;
-                    }
-                }
-
-                var result = Task.Run(() => ollama.OptimizeRoutesAsync(request)).GetAwaiter().GetResult();
-
-                var json = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-
-                if (!string.IsNullOrEmpty(outputPath))
-                {
-                    File.WriteAllText(outputPath, json);
-                    Log.Information("Route optimization saved to {OutputPath}", outputPath);
-                }
-
-                Console.WriteLine(json);
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error in route optimization");
-                Console.WriteLine($"Route optimization error: {ex.Message}");
                 return 1;
             }
         }
@@ -716,14 +612,6 @@ namespace BusBuddy.WPF
 Usage:
   BusBuddy.exe [options]
 
-Route Optimization:
-  --optimize-route --route-id <id> [options]
-    --route-id <id>              Route identifier (required)
-    --current-performance <text> Current performance description
-    --target-metrics <text>      Target optimization goals
-    --constraints <list>         Semicolon-separated constraints
-    --output <path>              Output file path for results
-
 Report Generation:
   --generate-report --report-type <type> --output <path> [options]
     --report-type <type>         Roster, RouteManifest, StudentList, DriverSchedule, or any OperationalReportKind
@@ -735,7 +623,6 @@ General:
   --help, -h                     Show this help message
 
 Examples:
-  BusBuddy.exe --optimize-route --route-id ""Route-001"" --target-metrics ""Reduce time by 10%""
   BusBuddy.exe --generate-report --report-type Roster --output ""reports/roster.pdf""
 ");
         }

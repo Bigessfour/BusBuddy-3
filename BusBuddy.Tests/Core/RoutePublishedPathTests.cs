@@ -275,6 +275,71 @@ public class RoutePublishedPathTests
         Assert.That(stops, Has.Count.EqualTo(2));
     }
 
+    [Test]
+    public async Task OmitUnlistedSchool_DropsInactiveWileyAndClearsTheDrivePath()
+    {
+        var options = CreateOptions();
+        var factory = new TestDbContextFactory(options);
+        int routeId;
+        await using (var seed = factory.CreateWriteDbContext())
+        {
+            seed.Destinations.Add(new Destination
+            {
+                Name = "Wiley K-12 School",
+                DestinationType = DestinationTypes.School,
+                City = "Wiley",
+                IsActive = false,
+                Latitude = 38.1535m,
+                Longitude = -102.7195m,
+                CreatedDate = DateTime.UtcNow
+            });
+            seed.Destinations.Add(new Destination
+            {
+                Name = "Lamar High School",
+                DestinationType = DestinationTypes.School,
+                City = "Lamar",
+                IsActive = true,
+                Latitude = 38.0872m,
+                Longitude = -102.6207m,
+                CreatedDate = DateTime.UtcNow
+            });
+            var route = new Route
+            {
+                RouteName = "Special Needs Route",
+                Date = DateTime.Today,
+                IsActive = true,
+                IsSpecialNeedsRoute = true,
+                School = "Wiley K-12 School",
+                Session = RouteSession.SpecialNeeds,
+                WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+                {
+                    (38.0872, -102.6208),
+                    (38.1535, -102.7195)
+                })
+            };
+            seed.Routes.Add(route);
+            await seed.SaveChangesAsync();
+            routeId = route.RouteId;
+            var barn = Stop("District Bus Barn", 38.0872m, -102.6208m, 1, routeId);
+            barn.StopAddress = "Bus barn";
+            seed.RouteStops.Add(barn);
+            seed.RouteStops.Add(Stop("Wiley K-12 School", 38.1535m, -102.7195m, 2, routeId));
+            await seed.SaveChangesAsync();
+        }
+
+        var cleanup = await new RouteWaypointRebuildService(factory).OmitUnlistedSchoolsAsync(routeId);
+        Assert.That(cleanup.Changed, Is.True);
+        Assert.That(cleanup.School, Is.Null);
+        Assert.That(cleanup.WaypointsJson, Is.Null.Or.Empty);
+
+        await using var verify = factory.CreateDbContext();
+        var names = await verify.RouteStops.Select(s => s.StopName).ToListAsync();
+        Assert.That(names, Is.Empty);
+        var routeRow = await verify.Routes.SingleAsync(r => r.RouteId == routeId);
+        Assert.That(routeRow.School, Is.Null);
+        Assert.That(routeRow.WaypointsJson, Is.Null.Or.Empty);
+    }
+
     private static RouteStop Stop(string name, decimal lat, decimal lon, int order, int routeId = 0) =>
         new()
         {

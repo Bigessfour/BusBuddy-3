@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,7 +23,6 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         private readonly IDashboardMetricsService _metricsService;
         private readonly IFleetMonitoringService _fleetMonitoringService;
         private readonly IBusService _busService;
-        private readonly IStudentRouteOptimizer? _routeOptimizer;
         private readonly IOperationalReportService? _reportService;
 
         public DashboardViewModel(
@@ -32,18 +30,15 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             IDashboardMetricsService metricsService,
             IFleetMonitoringService fleetMonitoringService,
             IBusService busService,
-            IStudentRouteOptimizer? routeOptimizer = null,
             IOperationalReportService? reportService = null)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
             _metricsService = metricsService ?? throw new ArgumentNullException(nameof(metricsService));
             _fleetMonitoringService = fleetMonitoringService ?? throw new ArgumentNullException(nameof(fleetMonitoringService));
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
-            _routeOptimizer = routeOptimizer;
             _reportService = reportService;
 
             RefreshCommand = new AsyncRelayCommand(RefreshDataAsync);
-            OptimizeCommand = new AsyncRelayCommand(OptimizeRoutesAsync);
             GenerateReportCommand = new AsyncRelayCommand(GenerateReportAsync);
 
             RouteSummaries = new ObservableCollection<DashboardRouteRow>();
@@ -86,7 +81,6 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         private bool isLoading;
 
         public IAsyncRelayCommand RefreshCommand { get; }
-        public IAsyncRelayCommand OptimizeCommand { get; }
         public IAsyncRelayCommand GenerateReportCommand { get; }
 
         public async Task RefreshDataAsync()
@@ -179,32 +173,6 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 SystemStatus = DatabaseUserMessage.IsConnectivityFailure(ex)
                     ? DatabaseUserMessage.UnavailableShort
                     : $"Error loading data: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task OptimizeRoutesAsync()
-        {
-            try
-            {
-                IsLoading = true;
-                SystemStatus = "Optimizing routes...";
-                Logger.Information("Dashboard optimize routes started HasInjectedOptimizer={HasOptimizer}", _routeOptimizer is not null);
-                var optimizer = _routeOptimizer ?? new StudentRouteOptimizer(_routeService);
-                var result = await optimizer.OptimizeUnassignedAsync();
-                await RefreshDataAsync();
-                SystemStatus = result.Status;
-                Logger.Information(
-                    "Dashboard optimize routes completed Assigned={Assigned} Remaining={Remaining} MockAi={MockAi} Status={Status}",
-                    result.AssignedCount, result.RemainingUnassigned, result.UsedMockAi, result.Status);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Dashboard optimize routes failed");
-                SystemStatus = $"Error optimizing routes: {ex.Message}";
             }
             finally
             {

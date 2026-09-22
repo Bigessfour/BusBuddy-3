@@ -15,7 +15,8 @@ public class StudentsViewTests
         var xaml = File.ReadAllText(FindView("Views/Student/StudentsView.xaml"));
 
         Assert.That(xaml, Does.Contain("Command=\"{Binding ImportStudentsCommand}\""));
-        Assert.That(xaml, Does.Contain("Command=\"{Binding OptimizeRoutesCommand}\""));
+        Assert.That(xaml, Does.Not.Contain("OptimizeRoutesCommand"));
+        Assert.That(xaml, Does.Not.Contain("SuggestRouteCommand"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding SchoolTransferCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddStudentCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddSchoolCommand}\""));

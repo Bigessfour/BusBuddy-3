@@ -34,7 +34,7 @@
 - [x] T004 Bind `GoogleMapsOptions` and register Maps `HttpClient` factories in `AddDataServices` / WPF `ConfigureServices` (key from env `GOOGLE_MAPS_API_KEY`; `QuotaProject` from `GCP_BILLING_PROJECT` then `GOOGLE_CLOUD_PROJECT` then JSON/default `busbuddy-507301`)
 - [x] T005 Remove `BootstrapGcpCredentialsForProduction` invocation and `GoogleEarthEngineService` / EE `IGeoDataService` token factory from `BusBuddy.WPF/App.xaml.cs`; keep `IGeoDataService` as DB-backed `GeoDataService` without a bearer token
 - [x] T006 Unconfigured geocode: `GoogleAddressValidationClient` returns null / MappingUnconfigured when key missing (supersedes separate `UnconfiguredGeocodingService`); production DI is not `OfflineGeocodingService`
-- [x] T007 Strip `GetGeoJsonAsync` from `BusBuddy.Core/Services/Interfaces/IGeoDataService.cs` and `BusBuddy.Core/Services/GeoDataService.cs` (DB route methods stay)
+- [x] T007 Strip `GetGeoJsonAsync` from `BusBuddy.Core/Services/IGeoDataService.cs` and `BusBuddy.Core/Services/GeoDataService.cs` (DB route methods stay)
 
 **Checkpoint**: App starts without GEE env; map can still load DB routes; geocode returns null
 
@@ -95,10 +95,10 @@
 
 ### Implementation for User Story 3
 
-- [x] T023 [US3] Add `BusBuddy.Core/Services/Interfaces/IRoutingService.cs` and `BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs`
+- [x] T023 [US3] Add `BusBuddy.Core/Services/IRoutingService.cs` and `BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs`
 - [x] T024 [US3] Extend `BusBuddy.Core/Mapping/RouteWaypointSerializer.cs` if needed to store encoded polyline + points
 - [x] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/Map/MapViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
-- [x] T026 [US3] Ensure `BusBuddy.Core/Services/StudentRouteOptimizer.cs` still assigns seats if routing fails (try/catch + Serilog Warning)
+- [x] T026 [US3] Seat fill stays on `RouteService.AutoAssignStudentsAsync` if routing fails. `StudentRouteOptimizer` was removed; generation is `IRouteDeterminationService` and stop order is `IRouteOptimizationService`.
 - [x] T027 [US3] Register `IRoutingService` in `BusBuddy.WPF/App.xaml.cs` (via `AddDataServices`)
 
 **Checkpoint**: Path draws when key present; optimize works without key

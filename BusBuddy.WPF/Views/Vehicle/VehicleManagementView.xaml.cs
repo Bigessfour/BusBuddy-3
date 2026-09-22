@@ -7,7 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Vehicle;
 

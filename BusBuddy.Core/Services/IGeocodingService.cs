@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace BusBuddy.Core.Services.Interfaces
+namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Provides address to coordinate geocoding.

@@ -1,7 +1,7 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Extensions;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -406,16 +406,16 @@ namespace BusBuddy.Core.Services
 
                 using (LogContext.PushProperty("BusNumber", bus.BusNumber))
                 {
-                    // Restrict FKs: Routes AM/PM, Fuel, Maintenance, Activities — never cascade-delete routes.
+                    // Restrict FKs: Routes AM/PM, Fuel, Maintenance, trip loans — never cascade-delete routes.
                     var assignedRoutes = await context.Routes
                         .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
                         .Select(r => new { r.RouteId, r.RouteName, r.Date, r.AMVehicleId, r.PMVehicleId, r.BusNumber })
                         .ToListAsync();
                     var hasFuel = await context.FuelRecords.AnyAsync(f => f.VehicleFueledId == busId);
                     var hasMaintenance = await context.MaintenanceRecords.AnyAsync(m => m.VehicleId == busId);
-                    var hasActivities = await context.Activities.AnyAsync(a => a.AssignedVehicleId == busId);
+                    var hasTrips = await context.TripEvents.AnyAsync(t => t.VehicleId == busId);
 
-                    var hasBlockingFks = assignedRoutes.Count > 0 || hasFuel || hasMaintenance || hasActivities;
+                    var hasBlockingFks = assignedRoutes.Count > 0 || hasFuel || hasMaintenance || hasTrips;
                     if (!hasBlockingFks)
                     {
                         context.Buses.Remove(bus);
@@ -484,15 +484,15 @@ namespace BusBuddy.Core.Services
                         .ToList();
                     var routeSummary = routeLabels.Count > 0
                         ? string.Join(", ", routeLabels)
-                        : "(fuel/maintenance/activity history)";
+                        : "(fuel/maintenance/trip history)";
 
                     Logger.Warning(
-                        "Soft-retiring bus {BusId} — Restrict FKs present (routes={RouteCount}, fuel={HasFuel}, maint={HasMaint}, activities={HasAct}). Labels={Labels}",
+                        "Soft-retiring bus {BusId} — Restrict FKs present (routes={RouteCount}, fuel={HasFuel}, maint={HasMaint}, trips={HasTrips}). Labels={Labels}",
                         busId,
                         assignedRoutes.Count,
                         hasFuel,
                         hasMaintenance,
-                        hasActivities,
+                        hasTrips,
                         routeSummary);
 
                     bus.Status = "Retired";

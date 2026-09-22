@@ -1,7 +1,6 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +10,7 @@ using StudentModel = BusBuddy.Core.Models.Student;
 
 namespace BusBuddy.WPF.ViewModels.Student;
 
-/// <summary>Bulk AM/PM route assignment and route optimization from the students grid.</summary>
+/// <summary>Bulk AM/PM assignment onto a route the clerk already has. Generation stays on Route Assignment.</summary>
 public sealed class StudentsBulkRouteCoordinator
 {
     private const int MaxBatch = 500;
@@ -48,17 +47,6 @@ public sealed class StudentsBulkRouteCoordinator
         }
 
         return candidates;
-    }
-
-    /// <summary>
-    /// Assigns unassigned students to active routes, then asks local Ollama (or mock AI) for
-    /// commentary. Routes are daily published runs, never trips (specs/routes.md).
-    /// </summary>
-    public async Task<StudentRouteOptimizeResult> OptimizeUnassignedAsync()
-    {
-        var optimizer = App.ServiceProvider?.GetService<IStudentRouteOptimizer>()
-            ?? new StudentRouteOptimizer(new RouteService(_contextFactory));
-        return await optimizer.OptimizeUnassignedAsync();
     }
 
     public async Task<(int Affected, int Errors, string RouteName)> AssignAsync(

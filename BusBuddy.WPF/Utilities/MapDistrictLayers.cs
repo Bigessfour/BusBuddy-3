@@ -1,7 +1,6 @@
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -168,7 +167,7 @@ internal sealed class MapDistrictLayers
 
                 var route = await routes.GetRouteByIdAsync(routeId).ConfigureAwait(true);
                 IReadOnlyList<Student> students = Array.Empty<Student>();
-                if (route.IsSuccess && route.Value is not null)
+                if (route is { IsSuccess: true, Value: not null })
                 {
                     var slot = RouteSession.ToAssignmentSlot(route.Value);
                     var roster = await routes.GetStudentsForRouteAsync(routeId, slot).ConfigureAwait(true);

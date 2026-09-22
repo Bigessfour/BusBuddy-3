@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- 🚌 BusBuddy WPF - Greenfield Foundation Phase 1 -->
   <PropertyGroup>
-    <TargetFrameworks>net9.0-windows;net8.0-windows</TargetFrameworks>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <StartupObject>BusBuddy.WPF.Program</StartupObject>

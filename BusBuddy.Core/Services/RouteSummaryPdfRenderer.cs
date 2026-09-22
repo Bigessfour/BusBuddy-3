@@ -51,7 +51,7 @@ public static class RouteSummaryPdfRenderer
             var pageSize = page.GetClientSize();
 
             // PdfStandardFont Helvetica (incl. Regular) draws space glyphs at width 0 in this
-            // Syncfusion pin — live 2026-09-17 sheet read as LamarHighSchoolSpecialNeedsRouteSheet.
+            // Syncfusion pin — the sheet title is the route's school name.
             var titleFont = PdfSheetFonts.Bold(11);
             var labelFont = PdfSheetFonts.Bold(8);
             var valueFont = PdfSheetFonts.Regular(9);

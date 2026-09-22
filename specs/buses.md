@@ -88,7 +88,7 @@ When a student sees their assigned number, they expect that body to run their pu
 
 | Spec term             | Existing code                                                                                                         |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Bus record            | `BusBuddy.Core.Models.Bus`, `IBusService`, `IBusRepository`                                                           |
+| Bus record            | `BusBuddy.Core.Models.Bus`, `IBusService`                                                                             |
 | SQL table             | `Vehicles` / `VehicleId` — legacy names; do not add a `Vehicle` CLR type. Rename table only via a later EF migration. |
 | Fleet clerk chrome    | `VehicleForm` / `VehiclesView` wrap `Bus`. Filenames still say Vehicle.                                               |
 | Map list of buses     | `MapViewModel` active-bus collection — labels only, no live track                                                     |

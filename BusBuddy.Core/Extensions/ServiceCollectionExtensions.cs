@@ -1,9 +1,5 @@
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Data.Interfaces;
-using BusBuddy.Core.Data.Repositories;
-using BusBuddy.Core.Data.UnitOfWork;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -63,27 +59,17 @@ namespace BusBuddy.Core.Extensions
             });
 
             services.AddSingleton<IBusBuddyDbContextFactory>(sp => new BusBuddyDbContextFactory(sp));
-            services.AddScoped<IActivityRepository, BusBuddy.Core.Data.Repositories.ActivityRepository>();
-            services.AddScoped<IBusRepository, BusBuddy.Core.Data.Repositories.BusRepository>();
-            services.AddScoped<IDriverRepository, BusBuddy.Core.Data.Repositories.DriverRepository>();
-            services.AddScoped<IRouteRepository, BusBuddy.Core.Data.Repositories.RouteRepository>();
-            services.AddScoped<IFuelRepository, BusBuddy.Core.Data.Repositories.FuelRepository>();
-            services.AddScoped<IMaintenanceRepository, BusBuddy.Core.Data.Repositories.MaintenanceRepository>();
-            services.AddScoped<IScheduleRepository, BusBuddy.Core.Data.Repositories.ScheduleRepository>();
-            services.AddScoped<ISchoolCalendarRepository, BusBuddy.Core.Data.Repositories.SchoolCalendarRepository>();
-            services.AddScoped<IActivityScheduleRepository, BusBuddy.Core.Data.Repositories.ActivityScheduleRepository>();
-            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-            services.AddScoped<IUnitOfWork, BusBuddy.Core.Data.UnitOfWork.UnitOfWork>();
+            services.AddSingleton<IUserSettingsService, UserSettingsService>();
+            services.AddSingleton<IGeoDataService>(sp =>
+                new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
             services.AddScoped<IUserContextService, UserContextService>();
             services.AddMemoryCache();
             services.AddSingleton<IBusCachingService, BusCachingService>();
             services.AddSingleton<IEnhancedCachingService, EnhancedCachingService>();
             services.AddScoped<IBusService, BusService>();
             services.AddScoped<IDriverService, DriverService>();
-            services.AddScoped<IActivityService, ActivityService>();
             services.AddScoped<BusBuddy.Core.Services.RouteDetermination.AssignFitnessEvaluator>();
             services.AddScoped<IRouteService, RouteService>();
-            services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();
             services.AddSingleton<PdfReportService>();
             services.AddScoped<IOperationalReportService, OperationalReportService>();
             services.AddScoped<IStudentService, StudentService>();
@@ -100,9 +86,12 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IStudentSchoolTransferService, StudentSchoolTransferService>();
             services.AddScoped<IRouteWaypointRebuildService, RouteWaypointRebuildService>();
             services.AddScoped<IDriverTrainingService, DriverTrainingService>();
+            services.AddScoped<ISeedDataService, SeedDataService>();
             services.AddScoped<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService,
                 BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
             services.AddScoped<IFuelService, FuelService>();
+            services.AddScoped<IFuelLocationCatalog, FuelLocationCatalog>();
+            services.AddScoped<ITripReasonCatalog, TripReasonCatalog>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
             services.AddScoped<IScheduleService, ScheduleService>();
             services.AddScoped<IStudentScheduleService, StudentScheduleService>();
@@ -138,7 +127,7 @@ namespace BusBuddy.Core.Extensions
                     sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.IMapsAddressCache>()));
             services.AddSingleton<IGeocodingService>(sp =>
                 sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>());
-            services.AddSingleton<BusBuddy.Core.Services.Interfaces.IRoutingService>(sp =>
+            services.AddSingleton<BusBuddy.Core.Services.IRoutingService>(sp =>
             {
                 var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
                 return new BusBuddy.Core.Services.GoogleMaps.GoogleRoutingService(

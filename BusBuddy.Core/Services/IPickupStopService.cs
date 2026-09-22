@@ -1,6 +1,6 @@
 using BusBuddy.Core.Models;
 
-namespace BusBuddy.Core.Services.Interfaces;
+namespace BusBuddy.Core.Services;
 
 /// <summary>District pickup stop catalog for shared boarding locations.</summary>
 public interface IPickupStopService

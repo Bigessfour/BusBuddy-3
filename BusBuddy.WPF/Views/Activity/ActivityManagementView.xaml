@@ -68,6 +68,12 @@
                                   SizeMode="Normal"
                                   Margin="0,0,8,4"
                                   AutomationProperties.Name="Refresh trip board"/>
+            <syncfusion:ButtonAdv Label="Audit log"
+                                  Click="AuditLogButton_Click"
+                                  SizeMode="Normal"
+                                  Margin="0,0,8,4"
+                                  AutomationProperties.Name="Open activity log"
+                                  AutomationProperties.HelpText="Audit timeline. This is not the trip list."/>
             <syncfusion:ButtonAdv Label="Optimize Day"
                                   Command="{Binding OptimizeDayCommand}"
                                   SizeMode="Normal"

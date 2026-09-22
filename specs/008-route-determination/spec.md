@@ -140,7 +140,7 @@ As a director, school-to-school transfer riders are planned with the same capaci
 ## Assumptions
 
 - Drive-time estimates may use existing Maps routing when configured, or a documented average-speed fallback when not (fail-open like 007).
-- “Quadrant” and “outlier gap” thresholds will be configurable district settings with sensible defaults for Wiley-scale and city-scale.
+- “Quadrant” and “outlier gap” thresholds will be configurable district settings with sensible defaults for a small district and a city.
 - Occasional-rider stops mean the stop stays in the path/order even if the student is not on the daily AM or PM roster for that day.
 - PR #36 school destinations, student geo, and transfer records are available before implementation.
-- Existing `IStudentRouteOptimizer` capacity fill remains a fallback until 008 generation replaces or wraps it.
+- Clerk Generate Routes is `IRouteDeterminationService`. Visit order is `IRouteOptimizationService` (`optimizeTours`). `RouteService` persists the published route and fills seats on a selected route. Local Ollama does not generate or reorder routes.

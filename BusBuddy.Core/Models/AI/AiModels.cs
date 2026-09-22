@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace BusBuddy.Core.Models
 {
@@ -39,15 +38,4 @@ namespace BusBuddy.Core.Models
         public int TotalTokens { get; set; }
     }
 
-    public class RouteOptimizationRequest
-    {
-        public string RouteId { get; set; } = string.Empty;
-        public string CurrentPerformance { get; set; } = string.Empty;
-        public string TargetMetrics { get; set; } = string.Empty;
-        public List<string> Constraints { get; set; } = new();
-        public double CurrentEfficiency { get; set; }
-        public int StudentsServed { get; set; }
-        public double DistanceTraveled { get; set; }
-        public TimeSpan AverageTime { get; set; }
-    }
 }

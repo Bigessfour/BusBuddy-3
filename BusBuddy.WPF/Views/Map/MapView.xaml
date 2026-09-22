@@ -370,7 +370,7 @@
                                     Pin colour is per kind (MapMarkerLabels.FillHex → MapMarker.FillBrush): school black,
                                     pickup orange, route stop gold, bus barn purple, student green, home blue. Stroke turns
                                     gold when the selected route stops at that pin. Captions are opaque so a neighbour's
-                                    text cannot bleed through — the "Lamar Stop 7 chool" overprint came from two pins on one spot.
+                                    text cannot bleed through — overlapping captions came from two pins on one spot.
                                 -->
                                 <DataTemplate x:Key="SchoolMarkerTemplate">
                                     <StackPanel Orientation="Vertical"
@@ -561,7 +561,7 @@
                                               Margin="8,0,0,0"/>
                         <syncfusion:ButtonAdv Label="Print"
                                               Style="{StaticResource MapOverlayButtonStyle}"
-                                              ToolTip="Print Route Map"
+                                              ToolTip="Preview the route sheet, then print it"
                                               AutomationProperties.Name="Print Route Map"
                                               Command="{Binding PrintRouteMapsCommand}"
                                               Margin="8,0,0,0"/>
@@ -594,6 +594,42 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+            </Border>
+            <Border x:Name="PrintPreviewPanel"
+                    Background="{DynamicResource BusBuddy.Brush.Panel.Background}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Margin="16"
+                    Visibility="Collapsed"
+                    Panel.ZIndex="30">
+                <DockPanel>
+                    <Border DockPanel.Dock="Bottom"
+                            Padding="12"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <syncfusion:ButtonAdv Label="Close"
+                                                  Style="{StaticResource MapOverlayButtonStyle}"
+                                                  AutomationProperties.Name="Close print preview"
+                                                  Click="OnClosePrintPreview"/>
+                            <syncfusion:ButtonAdv Label="Print"
+                                                  Style="{StaticResource MapOverlayButtonStyle}"
+                                                  AutomationProperties.Name="Print the preview"
+                                                  Click="OnConfirmPrintPreview"
+                                                  Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Route sheet preview"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="16,12,16,4"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <FlowDocumentScrollViewer x:Name="PrintPreviewViewer"
+                                              Margin="8,0,8,8"
+                                              VerticalScrollBarVisibility="Auto"/>
+                </DockPanel>
             </Border>
         </Grid>
     </Grid>

@@ -22,7 +22,6 @@
     "BusBuddy.WPF/ViewModels/Route/RouteManagementExportHelper.cs",
     "BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs",
     "BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs",
-    "BusBuddy.Core/Services/StudentRouteOptimizer.cs",
     "BusBuddy.Core/Services/OperationalReportService.cs",
     "BusBuddy.Core/Services/PdfReportService.cs",
     "BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs",

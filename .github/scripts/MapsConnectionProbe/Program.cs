@@ -32,6 +32,7 @@ internal static class Program
 
         Console.WriteLine($"Maps probe starting QuotaProject={options.Value.QuotaProject}");
 
+        // Sample address for this probe. The product does not assume a district.
         var address = await addressClient.ValidateAndGeocodeAsync(
             "100 Main St",
             "Wiley",

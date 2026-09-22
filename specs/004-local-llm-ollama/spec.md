@@ -27,18 +27,18 @@ As a Windows desktop operator, BusBuddy chat uses local Ollama when it is runnin
 
 ---
 
-### User Story 2 - Route optimization uses local Ollama (Priority: P1)
+### User Story 2 - Report commentary uses local Ollama (Priority: P1)
 
-As an operator, route optimization commentary uses the local OpenAI-compatible Ollama base URL.
+As an operator, report commentary uses the local OpenAI-compatible Ollama base URL. Generating or reordering a route is not an LLM job.
 
-**Why this priority**: Same provider for chat and optimization.
+**Why this priority**: Same local provider for chat and report notes.
 
-**Independent Test**: `OllamaAiService` logs the Ollama endpoint without an API key; on connection failure falls back to mock optimization and logs Warning.
+**Independent Test**: `OllamaAiService` logs the Ollama endpoint without an API key; on connection failure `GetShortCommentaryAsync` returns mock text and logs Warning.
 
 **Acceptance Scenarios**:
 
 1. **Given** `Ollama:Enabled` is true, **When** `OllamaAiService` is constructed, **Then** it is configured without any cloud key.
-2. **Given** Ollama is down, **When** `OptimizeRoutesAsync` runs, **Then** mock optimization is returned and no Error-level log is written for the refused connection.
+2. **Given** Ollama is down, **When** `GetShortCommentaryAsync` runs, **Then** mock commentary is returned and no Error-level log is written for the refused connection.
 
 ---
 
