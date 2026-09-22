@@ -19,13 +19,13 @@ public partial class RouteAssignmentViewModel
 
     public ICommand ExportRouteSheetCommand =>
         _exportRouteSheetCommand ??= new RelayCommand(
-            () => SaveRouteSheet(includeMap: false, preview: false),
+            () => SaveRouteSheet(includeMap: false),
             () => SelectedRoute != null);
 
     /// <summary>PdfGrid sheet with the current map snapshot embedded when one exists.</summary>
     public ICommand PrintRouteSheetCommand =>
         _printRouteSheetCommand ??= new RelayCommand(
-            () => SaveRouteSheet(includeMap: true, preview: false),
+            () => SaveRouteSheet(includeMap: true),
             () => SelectedRoute != null);
 
     private void ResolveSelectedSlotBusAndDriver(out BusBuddy.Core.Models.Bus? bus, out BusBuddy.Core.Models.Driver? driver)
@@ -84,7 +84,7 @@ public partial class RouteAssignmentViewModel
             notRidingStudentIds: notRidingStudentIds);
     }
 
-    private void SaveRouteSheet(bool includeMap, bool preview)
+    private void SaveRouteSheet(bool includeMap)
     {
         if (SelectedRoute == null)
         {
@@ -117,32 +117,31 @@ public partial class RouteAssignmentViewModel
                 NormalizeTimeSlot(SelectedTimeSlot),
                 mapPng);
 
-            if (preview)
-            {
-                var previewWindow = new PdfPreviewWindow(pdfBytes, GetRouteDisplayName(SelectedRoute) + " schedule");
-                DialogOwner.Assign(previewWindow);
-                previewWindow.Show();
-                Logger.Information(
-                    "Route schedule preview DisplayName={DisplayName} Stops={Stops} Size={SizeBytes} bytes Grid=PdfGrid Preview=true Verb=none",
-                    GetRouteDisplayName(SelectedRoute),
-                    RouteStops.Count,
-                    pdfBytes.Length);
-                StatusMessage = $"Schedule preview: {RouteStops.Count} stops, {AssignedStudentCount} students";
-                return;
-            }
-
+            var displayName = GetRouteDisplayName(SelectedRoute);
             var safeName = string.Join("_", (SelectedRoute.RouteName ?? "Route").Split(Path.GetInvalidFileNameChars()));
             var fileName = $"Route_{safeName}_{SelectedTimeSlot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-            var exportDir = Path.Combine(AppContext.BaseDirectory, "Exports");
+            var exportDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "BusBuddy",
+                "Printouts");
             Directory.CreateDirectory(exportDir);
             var fullPath = Path.Combine(exportDir, fileName);
             File.WriteAllBytes(fullPath, pdfBytes);
-            StatusMessage = $"Route PDF exported: {fileName}" + (mapPng != null ? " (with map)" : string.Empty);
+
+            var previewTitle = displayName + (includeMap ? " route sheet (map)" : " route sheet");
+            var previewWindow = new PdfPreviewWindow(pdfBytes, previewTitle);
+            DialogOwner.Assign(previewWindow);
+            previewWindow.Show();
+
+            var mapNote = mapPng != null ? " (with map)" : string.Empty;
+            StatusMessage = $"Opened route sheet preview{mapNote} — saved to Printouts\\{fileName}";
             Logger.Information(
-                "Route PDF export complete: {File} (MapEmbedded={HasMap}) Size={SizeBytes} bytes Grid=PdfGrid",
+                "Route sheet preview DisplayName={DisplayName} Stops={Stops} Size={SizeBytes} bytes Grid=PdfGrid Preview=true Verb=none File={File} MapEmbedded={HasMap}",
+                displayName,
+                RouteStops.Count,
+                pdfBytes.Length,
                 fullPath,
-                mapPng != null,
-                pdfBytes.Length);
+                mapPng != null);
         }
         catch (Exception ex)
         {

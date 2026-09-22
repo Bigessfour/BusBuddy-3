@@ -4,10 +4,13 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:controls="clr-namespace:BusBuddy.WPF.Controls"
         Title="Route Stop"
-        Height="320"
-        Width="420"
+        Height="360"
+        MinHeight="320"
+        Width="440"
+        MinWidth="400"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="CanResizeWithGrip"
+        ToolTipService.ShowOnDisabled="True">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,36 +19,40 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="Stop name" Margin="0,0,0,4"/>
-            <syncfusion:SfTextBoxExt Height="40"
-                                     Text="{Binding StopName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     AutomationProperties.Name="Stop name"/>
-        </StackPanel>
-        <StackPanel Grid.Row="1" Margin="0,0,0,12">
-            <TextBlock Text="Address" Margin="0,0,0,4"/>
-            <controls:PlacesAddressBox x:Name="StopAddressBox"
-                                        AddressText="{Binding StopAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        UseFormattedAddress="True"
-                                        FieldAutomationName="Stop address"
-                                        AddressApplied="StopAddressBox_AddressApplied"/>
-        </StackPanel>
-        <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                   VerticalAlignment="Top"
-                   Text="{Binding CoordinateStatus}"
-                   AutomationProperties.Name="Stop coordinate status"/>
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="40" Margin="0,0,8,0"
-                                  Command="{Binding SaveCommand}" AutomationProperties.Name="Save stop"/>
-            <syncfusion:ButtonAdv Label="Cancel" MinWidth="80" Height="40"
-                                  Command="{Binding CancelCommand}" AutomationProperties.Name="Cancel stop"/>
-        </StackPanel>
-    </Grid>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                <TextBlock Text="Stop name" Margin="0,0,0,4"/>
+                <syncfusion:SfTextBoxExt Height="40"
+                                         Text="{Binding StopName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Stop name"/>
+            </StackPanel>
+            <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                <TextBlock Text="Address" Margin="0,0,0,4"/>
+                <controls:PlacesAddressBox x:Name="StopAddressBox"
+                                            AddressText="{Binding StopAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                            UseFormattedAddress="True"
+                                            FieldAutomationName="Stop address"
+                                            AddressApplied="StopAddressBox_AddressApplied"/>
+            </StackPanel>
+            <TextBlock Grid.Row="2" TextWrapping="Wrap"
+                       Margin="0,0,0,12"
+                       Text="{Binding CoordinateStatus}"
+                       AutomationProperties.Name="Stop coordinate status"/>
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="40" Margin="0,0,8,0"
+                                      Command="{Binding SaveCommand}"
+                                      ToolTip="{Binding SaveToolTip}"
+                                      AutomationProperties.Name="Save stop"/>
+                <syncfusion:ButtonAdv Label="Cancel" MinWidth="80" Height="40"
+                                      Command="{Binding CancelCommand}" AutomationProperties.Name="Cancel stop"/>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </Window>

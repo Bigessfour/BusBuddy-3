@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.Fuel;
 using FluentAssertions;
 using Moq;

@@ -10,9 +10,12 @@ namespace BusBuddy.WPF.Utilities;
 /// <summary>
 /// District Map camera: Google Map Tiles 2D viewport is latitude, longitude, and integer zoom
 /// (<see href="https://developers.google.com/maps/documentation/tile/2d-tiles-overview"/>).
-/// Syncfusion <see cref="ImageryLayer.Center"/> is <c>Point(latitude, longitude)</c>; zoom is
-/// <see cref="SfMap.ZoomLevel"/> (clamped 1–19). Do not bind Center in XAML and do not use
-/// <c>Radius</c> fit — both fight this camera and throw or zoom-loop.
+/// Syncfusion <see cref="ImageryLayer.Center"/> is <c>Point(latitude, longitude)</c>
+/// (docs: ImageryLayer.Center). Zoom is <see cref="SfMap.ZoomLevel"/> (clamped 1–19), not ZoomFactor.
+/// Setting ZoomLevel calls ImageryLayer.ZoomMap, which pans LatLonPoint to zoomPointPosition.
+/// That point is (0,0) for a toolbar zoom and stale on the wheel's first tick, so the district
+/// leaves the viewport. The view holds MapCenter across that notification and writes it back.
+/// Do not bind Center in XAML and do not use Radius fit — both fight this camera and throw or zoom-loop.
 /// </summary>
 public static class MapCameraHost
 {

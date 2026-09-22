@@ -10,7 +10,6 @@ using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using System.Windows.Data;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
@@ -390,10 +389,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         // New enhanced commands for route building
         public ICommand ImportStudentsCommand { get; private set; } = null!;
         public ICommand BulkAssignRouteCommand { get; private set; } = null!;
-        public ICommand OptimizeRoutesCommand { get; private set; } = null!;
         public ICommand ViewMapCommand { get; private set; } = null!;
         public ICommand ViewOnMapCommand { get; private set; } = null!;
-        public ICommand SuggestRouteCommand { get; private set; } = null!;
         public ICommand ShowSummaryCommand { get; private set; } = null!;
         public ICommand SaveGridEditsCommand { get; private set; } = null!; // Inline save for grid edits
         public ICommand SchoolTransferCommand { get; private set; } = null!;
@@ -430,16 +427,14 @@ namespace BusBuddy.WPF.ViewModels.Student
             ImportStudentsCommand = new AsyncRelayCommand(ExecuteImportStudentsAsync);
             _bulkAssignRouteRelay = new AsyncRelayCommand(ExecuteBulkAssignRouteAsync, CanExecuteBulkAssignRoute);
             BulkAssignRouteCommand = _bulkAssignRouteRelay;
-            OptimizeRoutesCommand = new AsyncRelayCommand(ExecuteOptimizeRoutes);
             ViewMapCommand = new RelayCommand(ExecuteViewMap);
             ViewOnMapCommand = new AsyncRelayCommand<Core.Models.Student>(ExecuteViewOnMapAsync);
-            SuggestRouteCommand = new RelayCommand<Core.Models.Student>(ExecuteSuggestRoute);
             ShowSummaryCommand = new RelayCommand(ExecuteShowSummary);
             SaveGridEditsCommand = new AsyncRelayCommand(SaveInlineGridEditsAsync);
             _schoolTransferRelay = new RelayCommand(ExecuteSchoolTransfer, () => HasSelectedStudent);
             SchoolTransferCommand = _schoolTransferRelay;
 
-            Logger.Debug("Commands initialized: AddStudent/AddSchool/EditSchool/DeleteSchool/Edit/Archive/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/SchoolTransfer");
+            Logger.Debug("Commands initialized: AddStudent/AddSchool/EditSchool/DeleteSchool/Edit/Archive/Delete/Import/BulkAssign/ViewMap/ViewOnMap/Validate/Refresh/Export/ShowSummary/SchoolTransfer");
         }
 
         private void NotifySelectionDependentCommands()
@@ -761,36 +756,6 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Assigns unassigned students to active routes, then asks local Ollama (or mock AI) for commentary.
-        /// </summary>
-        private async Task ExecuteOptimizeRoutes()
-        {
-            try
-            {
-                IsLoading = true;
-                StatusMessage = "Optimizing routes with AI...";
-                Logger.Information("AI route optimization started");
-
-                var result = await _bulkRoute.OptimizeUnassignedAsync();
-                await LoadStudentsAsync();
-                StatusMessage = result.Status;
-                NotifyRosterCounts();
-                Logger.Information(
-                    "AI route optimization completed Assigned={Assigned} Remaining={Remaining} MockAi={Mock}",
-                    result.AssignedCount, result.RemainingUnassigned, result.UsedMockAi);
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing route optimization");
-                StatusMessage = $"Error in route optimization: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
         /// Creates and displays a quick summary of student counts.
         /// </summary>
         private void ExecuteShowSummary()
@@ -864,15 +829,6 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             StatusMessage = "Opening district map with student locations...";
             StatusMessage = _map.ViewMap();
-        }
-
-        private void ExecuteSuggestRoute(Core.Models.Student? student)
-        {
-            var status = _map.SuggestRoute(student, ExecuteOptimizeRoutes);
-            if (!string.IsNullOrEmpty(status))
-            {
-                StatusMessage = status;
-            }
         }
 
         #endregion

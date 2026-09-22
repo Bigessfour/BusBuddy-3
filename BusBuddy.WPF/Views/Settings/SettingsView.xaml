@@ -181,13 +181,13 @@
                     <TextBlock x:Name="DepotLonLabel" Grid.Row="0" Grid.Column="1" Text="Longitude" Style="{StaticResource SettingsFieldLabel}"/>
                     <syncfusion:SfTextBoxExt x:Name="DepotLatBox" Grid.Row="1" Grid.Column="0" Margin="0,0,8,10"
                                              Text="{Binding DepotLatitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Watermark="e.g. 38.0872"
+                                             Watermark="decimal degrees"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="Bus barn latitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=DepotLatLabel}"/>
                     <syncfusion:SfTextBoxExt x:Name="DepotLonBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
                                              Text="{Binding DepotLongitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Watermark="e.g. -102.6208"
+                                             Watermark="decimal degrees"
                                              Height="40" Padding="8,5"
                                              AutomationProperties.Name="Bus barn longitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=DepotLonLabel}"/>

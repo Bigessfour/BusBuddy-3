@@ -14,6 +14,9 @@ public readonly record struct RouteWaypointPayload(
     IReadOnlyList<(double Latitude, double Longitude)> PathPoints,
     string? EncodedPolyline)
 {
+    /// <summary>Road instructions stored with the published path. Empty until a Routes response includes them.</summary>
+    public IReadOnlyList<string> Directions { get; init; } = Array.Empty<string>();
+
     /// <summary>Line geometry: decoded road path, else the stop list.</summary>
     public IReadOnlyList<(double Latitude, double Longitude)> Points =>
         PathPoints.Count > 0 ? PathPoints : Stops;
@@ -49,6 +52,11 @@ public static class RouteWaypointSerializer
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(RouteWaypointSerializer));
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
+
     public static string FromPairs(IEnumerable<(double Latitude, double Longitude)> points)
     {
         var sb = new StringBuilder();
@@ -81,14 +89,16 @@ public static class RouteWaypointSerializer
     /// </summary>
     public static string FromEncodedPolyline(
         string encodedPolyline,
-        IEnumerable<(double Latitude, double Longitude)> stops)
+        IEnumerable<(double Latitude, double Longitude)> stops,
+        IReadOnlyList<string>? directions = null)
     {
         var payload = new
         {
             encodedPolyline,
-            stops = stops.Select(p => new[] { p.Latitude, p.Longitude }).ToArray()
+            stops = stops.Select(p => new[] { p.Latitude, p.Longitude }).ToArray(),
+            directions = CleanDirections(directions)
         };
-        var json = JsonSerializer.Serialize(payload);
+        var json = JsonSerializer.Serialize(payload, JsonOptions);
         Logger.Debug("Serialized encoded polyline with stop list");
         return json;
     }
@@ -138,7 +148,10 @@ public static class RouteWaypointSerializer
                     Logger.Warning("Waypoint object JSON missing stops, points, and encoded polyline");
                 }
 
-                return new RouteWaypointPayload(stopList, path, encoded);
+                return new RouteWaypointPayload(stopList, path, encoded)
+                {
+                    Directions = ReadDirections(doc.RootElement)
+                };
             }
 
             if (doc.RootElement.ValueKind != JsonValueKind.Array)
@@ -159,6 +172,39 @@ public static class RouteWaypointSerializer
 
     private static RouteWaypointPayload EmptyPayload() =>
         new(Array.Empty<(double, double)>(), Array.Empty<(double, double)>(), EncodedPolyline: null);
+
+    private static IReadOnlyList<string> ReadDirections(JsonElement root)
+    {
+        if (!root.TryGetProperty("directions", out var el) || el.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<string>();
+        }
+
+        var list = new List<string>();
+        foreach (var item in el.EnumerateArray())
+        {
+            if (item.ValueKind == JsonValueKind.String && item.GetString() is { Length: > 0 } text)
+            {
+                list.Add(text.Trim());
+            }
+        }
+
+        return list;
+    }
+
+    private static string[]? CleanDirections(IReadOnlyList<string>? directions)
+    {
+        if (directions is null || directions.Count == 0)
+        {
+            return null;
+        }
+
+        var cleaned = directions
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .ToArray();
+        return cleaned.Length == 0 ? null : cleaned;
+    }
 
     private static IReadOnlyList<(double Latitude, double Longitude)> ReadCoordinateArray(
         JsonElement root,

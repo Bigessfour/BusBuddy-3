@@ -9,7 +9,6 @@ using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.ViewModels.Map;

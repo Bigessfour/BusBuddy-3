@@ -35,7 +35,7 @@ Students (who rides)
 - Same-day **“not riding”** is a **rider exception**, not a route rewrite.
 - **`MappingService.cs`** is AutoMapper (object mapping), not geospatial maps.
 - **Maps:** Syncfusion `SfMap` + official Google Map Tiles only (no OSM). Four clerk operations, one writer per seam — see [maps.md](maps.md). Do not restore `Documentation/Archive/2026-09-Maps-Competing-Writers/`. Geocode/validate with Google Address Validation; paths with Google Routes. Do not merge Google clients. Do not geocode inside a plot path.
-- **Default clerk map center:** Lamar/Wiley CO (~38.0872, -102.6208). Not `MapDefaults` US centroid as the home view.
+- **Unconfigured map camera:** `MapDefaults` US overview. The district home view is the clerk's depot, bounding box, or a school pin. Do not bake in a town.
 - **Live fleet GPS is deferred.** Do not enable `IsLiveTrackingEnabled` to “finish” the map.
 - Plot only **validated** lat/lng. No 0,0 pins, no US centroid guesses.
 - **Never commit student PII** (names, addresses, rosters). Load through clerk forms; keep paper/Excel rosters local.

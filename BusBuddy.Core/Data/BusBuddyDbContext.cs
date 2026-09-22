@@ -43,7 +43,6 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
     public virtual DbSet<Driver> Drivers { get; set; } = null!;
     public virtual DbSet<Route> Routes { get; set; } = null!;
-    public virtual DbSet<Activity> Activities { get; set; } = null!;
     public virtual DbSet<Fuel> FuelRecords { get; set; } = null!;
     public virtual DbSet<Maintenance> MaintenanceRecords { get; set; } = null!;
     public virtual DbSet<Student> Students { get; set; } = null!;
@@ -56,7 +55,6 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<RouteStop> RouteStops { get; set; } = null!;
     public virtual DbSet<RouteRiderException> RouteRiderExceptions { get; set; } = null!;
     public virtual DbSet<SchoolCalendar> SchoolCalendar { get; set; } = null!;
-    public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
     public virtual DbSet<PickupStop> PickupStops { get; set; } = null!;
     public virtual DbSet<StudentSchoolTransfer> StudentSchoolTransfers { get; set; } = null!;
@@ -66,7 +64,6 @@ public class BusBuddyDbContext : DbContext
 
     public virtual DbSet<Fuel> Fuels => FuelRecords;
     public virtual DbSet<Maintenance> Maintenances => MaintenanceRecords;
-    public virtual DbSet<ActivitySchedule> ActivitySchedules => ActivitySchedule;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

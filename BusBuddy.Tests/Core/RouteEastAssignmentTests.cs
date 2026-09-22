@@ -62,30 +62,6 @@ public class RouteEastAssignmentTests : IDisposable
     }
 
     [Test]
-    public async Task TestAssignToEastRoute()
-    {
-        // Arrange: Seed a student with address east of 287
-        Assert.That(_context, Is.Not.Null);
-        Assert.That(_studentService, Is.Not.Null);
-        Assert.That(_busService, Is.Not.Null);
-        var student = new Student { StudentName = "Test East", HomeAddress = "123 East Hwy 287", Grade = "5", School = "Oakridge School" };
-        var route = _context!.Routes.FirstOrDefault(r => r.RouteName == "East Route");
-        Assert.That(route, Is.Not.Null, "East Route must exist");
-        await _context.Students.AddAsync(student);
-        await _context.SaveChangesAsync();
-
-        // Act: Assign student to route
-        var assignments = await _studentService!.AssignStudentsToRoutesAsync(_context, new[] { student }, new[] { route! }, _busService!);
-        await _context.SaveChangesAsync();
-
-        // Assert: Student assigned to East Route
-        var updatedStudent = _context.Students.FirstOrDefault(s => s.StudentName == "Test East");
-        Assert.That(updatedStudent, Is.Not.Null);
-        var assignedRouteId = _context.RouteAssignments.FirstOrDefault(ra => ra.RouteAssignmentId == updatedStudent!.RouteAssignmentId)?.RouteId;
-        Assert.That(assignedRouteId, Is.EqualTo(route!.RouteId));
-    }
-
-    [Test]
     public async Task TestCapacityCheck()
     {
         Assert.That(_context, Is.Not.Null);

@@ -1,9 +1,9 @@
 using System.Windows;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -84,7 +84,10 @@ internal sealed class MapRouteTrail
         }
     }
 
-    public static MapRouteTrailPlot Build(Route? route)
+    public static MapRouteTrailPlot Build(
+        Route? route,
+        int publishedValidatedStopCount = 0,
+        int renderableLinePointCount = -1)
     {
         if (route is null)
         {
@@ -96,14 +99,21 @@ internal sealed class MapRouteTrail
 
         var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
         var line = payload.Points
+            .Where(p => LocationCoordinate.IsValidated(p.Latitude, p.Longitude))
             .Select(p => new Point(p.Latitude, p.Longitude))
             .ToArray();
-        var markers = payload.MarkerStops;
+        var markers = payload.MarkerStops
+            .Where(p => LocationCoordinate.IsValidated(p.Latitude, p.Longitude))
+            .ToArray();
+        var stopCount = publishedValidatedStopCount > 0
+            ? publishedValidatedStopCount
+            : markers.Length;
+        var drawable = renderableLinePointCount >= 0 ? renderableLinePointCount : line.Length;
         var name = route.RouteName ?? "Unknown";
-        var status = line.Length >= 2
-            ? $"Route {name}: trail and {markers.Count} stop(s)"
-            : markers.Count > 0
-                ? $"Route {name} has no trail yet — {markers.Count} stop(s)"
+        var status = drawable >= 2
+            ? $"Route {name}: trail ({drawable} point(s)) and {stopCount} published stop(s)"
+            : stopCount > 0
+                ? $"Route {name}: {stopCount} published stop(s) — press Refresh for Google drive path"
                 : $"Route {name} has no waypoints to display";
         return new MapRouteTrailPlot(line, markers, status);
     }
@@ -122,4 +132,292 @@ internal sealed class MapRouteTrail
 
         return $"{WaypointPrefix}Stop {index}";
     }
+
+    /// <summary>
+    /// One load of published stops plus the assigned-rider filter. Draw and Optimize Order both use this.
+    /// </summary>
+    public async Task<RouteStopSets> LoadStopsAsync(Route route)
+    {
+        ArgumentNullException.ThrowIfNull(route);
+        using var scope = _scopes?.CreateScope();
+        var routes = scope?.ServiceProvider.GetService<IRouteService>();
+        if (routes is null)
+        {
+            return RouteStopSets.Empty;
+        }
+
+        var result = await routes.GetRouteStopsAsync(route.RouteId).ConfigureAwait(false);
+        if (!result.IsSuccess || result.Value is null)
+        {
+            return RouteStopSets.Empty;
+        }
+
+        var all = result.Value.ToList();
+        var slot = RouteSession.ToAssignmentSlot(route);
+        var roster = await routes.GetStudentsForRouteAsync(route.RouteId, slot).ConfigureAwait(false);
+        var students = roster.IsSuccess && roster.Value is not null
+            ? roster.Value
+            : new List<Student>();
+        return new RouteStopSets(all, AssignedRouteStops.ForRouting(all, students));
+    }
+
+    /// <summary>
+    /// Prepare the selected route's line and stops before the view-model touches the map.
+    /// Published stops are loaded once, then again only if a rebuild wrote new stops.
+    /// </summary>
+    public async Task<MapRouteDraw> DrawAsync(
+        Route? route,
+        bool refreshDrivePath,
+        int generation,
+        IGeoDataService? geoData,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCurrent(generation))
+        {
+            return MapRouteDraw.Stale();
+        }
+
+        var routeName = route?.RouteName ?? "Unknown";
+        IReadOnlyList<RouteStop> published = Array.Empty<RouteStop>();
+        if (route is not null)
+        {
+            await OmitUnlistedSchoolsAsync(route, cancellationToken).ConfigureAwait(false);
+            if (!IsCurrent(generation))
+            {
+                return MapRouteDraw.Stale();
+            }
+
+            var loaded = await LoadStopsAsync(route).ConfigureAwait(false);
+            if (!IsCurrent(generation))
+            {
+                return MapRouteDraw.Stale();
+            }
+
+            published = loaded.Routable;
+            var rebuilt = await EnsureWaypointsAsync(route, published, geoData, cancellationToken).ConfigureAwait(false);
+            if (!IsCurrent(generation))
+            {
+                return MapRouteDraw.Stale();
+            }
+
+            if (rebuilt)
+            {
+                loaded = await LoadStopsAsync(route).ConfigureAwait(false);
+                if (!IsCurrent(generation))
+                {
+                    return MapRouteDraw.Stale();
+                }
+
+                published = loaded.Routable;
+            }
+        }
+
+        var validated = published.Where(s => s.HasValidatedCoordinates).ToList();
+        var persist = default(MapRouteTrailPersist);
+        if (refreshDrivePath && route is not null)
+        {
+            persist = await TryRefreshDrivePathAsync(route, cancellationToken).ConfigureAwait(false);
+            if (!IsCurrent(generation))
+            {
+                return MapRouteDraw.Stale();
+            }
+        }
+
+        var plot = Build(route, validated.Count);
+        var line = plot.Line.Where(p => LocationCoordinate.IsValidated(p.X, p.Y)).ToList();
+        plot = Build(route, validated.Count, line.Count);
+
+        if (!refreshDrivePath
+            && route is not null
+            && line.Count < 2
+            && validated.Count >= 2
+            && _routing is not null)
+        {
+            Logger.Information(
+                "Auto-refreshing drive path — published stops={Published} renderable line={Line} RouteId={RouteId}",
+                validated.Count,
+                line.Count,
+                route.RouteId);
+            var refreshed = await TryRefreshDrivePathAsync(route, cancellationToken).ConfigureAwait(false);
+            if (!IsCurrent(generation))
+            {
+                return MapRouteDraw.Stale();
+            }
+
+            if (refreshed.Computed)
+            {
+                persist = refreshed;
+                refreshDrivePath = true;
+                plot = Build(route, validated.Count);
+                line = plot.Line.Where(p => LocationCoordinate.IsValidated(p.X, p.Y)).ToList();
+                plot = Build(route, validated.Count, line.Count);
+            }
+        }
+
+        return new MapRouteDraw
+        {
+            Line = line,
+            PublishedStops = validated,
+            Plot = plot,
+            Persist = persist,
+            RouteName = routeName,
+            Refreshed = refreshDrivePath,
+            HasRoute = route is not null
+        };
+    }
+
+    private async Task OmitUnlistedSchoolsAsync(Route route, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = _scopes?.CreateScope();
+            var rebuild = scope?.ServiceProvider.GetService<IRouteWaypointRebuildService>();
+            if (rebuild is null)
+            {
+                return;
+            }
+
+            var cleanup = await rebuild.OmitUnlistedSchoolsAsync(route.RouteId, cancellationToken)
+                .ConfigureAwait(false);
+            if (!cleanup.Changed)
+            {
+                return;
+            }
+
+            route.WaypointsJson = cleanup.WaypointsJson;
+            route.School = cleanup.School;
+            Logger.Information(
+                "RouteId={RouteId} dropped a school that is not an active destination",
+                route.RouteId);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Omit unlisted schools failed RouteId={RouteId}", route.RouteId);
+        }
+    }
+
+    private async Task<bool> EnsureWaypointsAsync(
+        Route route,
+        IReadOnlyList<RouteStop> published,
+        IGeoDataService? geoData,
+        CancellationToken cancellationToken)
+    {
+        var validatedCount = published.Count(s => s.HasValidatedCoordinates);
+        if (validatedCount >= 2)
+        {
+            var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
+            var jsonStopCount = payload.Stops.Count > 0
+                ? payload.Stops.Count
+                : payload.MarkerStops.Count;
+            if (string.IsNullOrWhiteSpace(route.WaypointsJson) || jsonStopCount != validatedCount)
+            {
+                if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
+                {
+                    Logger.Information(
+                        "WaypointsJson stop count {JsonStops} != published {PublishedStops} RouteId={RouteId} — rebuilding from published stops",
+                        jsonStopCount,
+                        validatedCount,
+                        route.RouteId);
+                }
+
+                await RebuildAsync(route, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+
+            return false;
+        }
+
+        Logger.Information(
+            "RouteId={RouteId} has no published stops — rebuilding the trail from assigned homes",
+            route.RouteId);
+        await RebuildAsync(route, cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
+        {
+            return true;
+        }
+
+        try
+        {
+            var loaded = geoData is null
+                ? null
+                : await geoData.GetRouteGeoDataAsync(route.RouteId).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(loaded?.WaypointsJson))
+            {
+                route.WaypointsJson = loaded.WaypointsJson;
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Ensure waypoints via GeoDataService failed RouteId={RouteId}", route.RouteId);
+        }
+
+        await RebuildAsync(route, cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    private async Task RebuildAsync(Route route, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = _scopes?.CreateScope();
+            var rebuild = scope?.ServiceProvider.GetService<IRouteWaypointRebuildService>();
+            if (rebuild is null)
+            {
+                return;
+            }
+
+            var json = await rebuild.RebuildAndPersistAsync(route.RouteId, cancellationToken).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                route.WaypointsJson = json;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Ensure waypoints via rebuild failed RouteId={RouteId}", route.RouteId);
+        }
+    }
+
+    private async Task<MapRouteTrailPersist> TryRefreshDrivePathAsync(Route route, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(route.WaypointsJson))
+        {
+            return default;
+        }
+
+        var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
+        if (payload.Stops.Count < 2 && payload.Points.Count < 2)
+        {
+            return default;
+        }
+
+        return await RefreshStoredPathAsync(route, cancellationToken).ConfigureAwait(false);
+    }
+}
+
+internal readonly record struct RouteStopSets(IReadOnlyList<RouteStop> All, IReadOnlyList<RouteStop> Routable)
+{
+    public static RouteStopSets Empty { get; } = new(Array.Empty<RouteStop>(), Array.Empty<RouteStop>());
+}
+
+internal sealed class MapRouteDraw
+{
+    public static MapRouteDraw Stale() => new() { IsStale = true };
+
+    public bool IsStale { get; init; }
+
+    public bool HasRoute { get; init; }
+
+    public string RouteName { get; init; } = "Unknown";
+
+    public bool Refreshed { get; init; }
+
+    public IReadOnlyList<Point> Line { get; init; } = Array.Empty<Point>();
+
+    public IReadOnlyList<RouteStop> PublishedStops { get; init; } = Array.Empty<RouteStop>();
+
+    public MapRouteTrailPlot Plot { get; init; }
+
+    public MapRouteTrailPersist Persist { get; init; }
 }

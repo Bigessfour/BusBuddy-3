@@ -1,6 +1,6 @@
 using System.Windows.Media;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Messages;
 using BusBuddy.WPF.Utilities;

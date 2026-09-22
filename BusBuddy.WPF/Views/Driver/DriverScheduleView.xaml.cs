@@ -1,6 +1,6 @@
 using System;
 using System.Windows.Controls;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.WPF.ViewModels.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;

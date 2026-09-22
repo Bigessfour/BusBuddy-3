@@ -155,6 +155,38 @@ public class RouteSummarySheetBuilderTests
     }
 
     [Test]
+    public void Build_OmitsStudentStopThatIsNotOnTheRoster()
+    {
+        var route = new Route
+        {
+            RouteName = "Special Needs Route",
+            School = "Wiley K-12 School",
+            Session = RouteSession.SpecialNeeds
+        };
+        var barn = Stop(1, "District Bus Barn", new TimeSpan(7, 0, 0), new TimeSpan(7, 1, 0));
+        var orphan = Stop(2, "TEST_STUDENT_SN_01", new TimeSpan(7, 10, 0), new TimeSpan(7, 11, 0));
+        orphan.StopAddress = "100 Test St";
+        var school = Stop(3, "Wiley K-12 School", new TimeSpan(7, 40, 0), new TimeSpan(7, 41, 0));
+        var rider = new Student
+        {
+            StudentId = 21,
+            StudentName = "Assigned Rider",
+            HomeAddress = "710 S 4th Street"
+        };
+
+        var sheet = RouteSummarySheetBuilder.Build(
+            route,
+            new[] { barn, orphan, school },
+            new[] { rider },
+            null,
+            null,
+            RouteTimeSlot.AM);
+
+        Assert.That(sheet.Stops.Select(s => s.Name), Is.EqualTo(new[] { "District Bus Barn", "Wiley K-12 School" }));
+        Assert.That(sheet.Students, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public void Build_UsesRouteSession_ForPmRow()
     {
         var route = new Route

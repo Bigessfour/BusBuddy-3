@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.Student;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

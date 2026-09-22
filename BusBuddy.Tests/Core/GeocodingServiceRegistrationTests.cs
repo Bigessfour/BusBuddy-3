@@ -2,7 +2,7 @@ using System.Linq;
 using System.Net.Http;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

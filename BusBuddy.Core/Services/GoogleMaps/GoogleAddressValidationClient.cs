@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.Extensions.Options;
 using Serilog;
 

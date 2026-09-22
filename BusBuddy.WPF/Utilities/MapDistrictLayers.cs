@@ -1,15 +1,12 @@
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace BusBuddy.WPF.Utilities;
 
 internal readonly record struct MapLayerSeedCounts(int Schools, int Pickups, int Students, int Depots);
-
-internal readonly record struct MapStudentBulkPlot(int Plotted, int Geocoded, int Total, string Status);
 
 /// <summary>
 /// Schools, catalog pickups, and student pins on the district map.
@@ -21,7 +18,6 @@ internal sealed class MapDistrictLayers
 
     private readonly IPickupStopService? _pickups;
     private readonly IDestinationService? _destinations;
-    private readonly IStudentService? _students;
     private readonly IServiceScopeFactory? _scopes;
     private readonly MapPinPlot _plot;
     private readonly Func<(double Lat, double Lon, string Name)?>? _depot;
@@ -29,36 +25,89 @@ internal sealed class MapDistrictLayers
     public MapDistrictLayers(
         IPickupStopService? pickups,
         IDestinationService? destinations,
-        IStudentService? students,
         IServiceScopeFactory? scopes,
         MapPinPlot plot,
         Func<(double Lat, double Lon, string Name)?>? depot = null)
     {
         _pickups = pickups;
         _destinations = destinations;
-        _students = students;
         _scopes = scopes;
         _plot = plot ?? throw new ArgumentNullException(nameof(plot));
         _depot = depot;
     }
 
     /// <summary>
-    /// District pins in fixed order: depot → schools → active pickups → students with stored coords.
-    /// No geocoding / network on this path.
+    /// Default district overlay: depot → schools → active pickups (no student homes until a route is selected).
     /// </summary>
-    public async Task<MapLayerSeedCounts> LoadDistrictLayersAsync()
+    public async Task<MapLayerSeedCounts> LoadDistrictBaseLayersAsync()
     {
         var depotCount = PlotDepot();
-        var schoolCount = await PlotSchoolsAsync().ConfigureAwait(true);
-        var pickupCount = await PlotPickupsAsync().ConfigureAwait(true);
-        var studentCount = await PlotStoredStudentsAsync().ConfigureAwait(true);
+        var schoolCount = await TryPlotAsync(PlotSchoolsAsync, "schools").ConfigureAwait(true);
+        var pickupCount = await TryPlotAsync(PlotPickupsAsync, "catalog stops").ConfigureAwait(true);
         Logger.Information(
-            "District layers loaded Depots={Depots} Schools={Schools} Pickups={Pickups} Students={Students}",
+            "District base layers loaded Depots={Depots} Schools={Schools} Pickups={Pickups}",
             depotCount,
             schoolCount,
-            pickupCount,
-            studentCount);
-        return new MapLayerSeedCounts(schoolCount, pickupCount, studentCount, depotCount);
+            pickupCount);
+        return new MapLayerSeedCounts(schoolCount, pickupCount, 0, depotCount);
+    }
+
+    /// <summary>Schools and catalog stops skipped because they have no validated coordinates.</summary>
+    public async Task<IReadOnlyList<string>> ListNeedsValidationAsync()
+    {
+        using var scope = _scopes?.CreateScope();
+        var lines = new List<string>();
+        foreach (var school in await LoadSchoolsAsync(scope).ConfigureAwait(true))
+        {
+            if (!school.HasValidatedCoordinates)
+            {
+                lines.Add($"School: {DisplayPlaceName(school.Name)}");
+            }
+        }
+
+        foreach (var stop in (await LoadPickupCatalogAsync(scope).ConfigureAwait(true)).Values)
+        {
+            if (!stop.HasValidatedCoordinates)
+            {
+                lines.Add($"Pickup: {DisplayPlaceName(stop.Name)}");
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>Homes and catalog pickups for riders assigned to <paramref name="route"/> (AM/PM slot).</summary>
+    public async Task<int> PlotAssignedStudentsForRouteAsync(Route route)
+    {
+        ArgumentNullException.ThrowIfNull(route);
+        using var scope = _scopes?.CreateScope();
+        var routeService = Resolve<IRouteService>(null, scope);
+        if (routeService is null)
+        {
+            Logger.Warning("PlotAssignedStudentsForRouteAsync skipped — no route service");
+            return 0;
+        }
+
+        var slot = RouteSession.ToAssignmentSlot(route);
+        var result = await routeService.GetStudentsForRouteAsync(route.RouteId, slot).ConfigureAwait(true);
+        if (!result.IsSuccess || result.Value is null || result.Value.Count == 0)
+        {
+            Logger.Information(
+                "No assigned students to plot RouteId={RouteId} Slot={Slot}",
+                route.RouteId,
+                slot);
+            return 0;
+        }
+
+        var pickups = await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
+        var plotted = PlotStoredStudents(result.Value, pickups);
+        Logger.Information(
+            "Plotted assigned students RouteId={RouteId} Slot={Slot} Roster={Roster} Pins={Pins}",
+            route.RouteId,
+            slot,
+            result.Value.Count,
+            plotted);
+        return plotted;
     }
 
     /// <summary>Bus barn pin from <see cref="DistrictDepot"/> / Settings.</summary>
@@ -116,7 +165,19 @@ internal sealed class MapDistrictLayers
                     continue;
                 }
 
-                stops = result.Value;
+                var route = await routes.GetRouteByIdAsync(routeId).ConfigureAwait(true);
+                IReadOnlyList<Student> students = Array.Empty<Student>();
+                if (route is { IsSuccess: true, Value: not null })
+                {
+                    var slot = RouteSession.ToAssignmentSlot(route.Value);
+                    var roster = await routes.GetStudentsForRouteAsync(routeId, slot).ConfigureAwait(true);
+                    if (roster.IsSuccess && roster.Value is not null)
+                    {
+                        students = roster.Value;
+                    }
+                }
+
+                stops = AssignedRouteStops.ForRouting(result.Value, students);
             }
             catch (Exception ex)
             {
@@ -135,31 +196,8 @@ internal sealed class MapDistrictLayers
         return plotted;
     }
 
-    /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
-    public async Task<int> PlotStoredStudentsAsync()
-    {
-        using var scope = _scopes?.CreateScope();
-        var pickups = await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
-        var students = await LoadStudentsAsync(scope).ConfigureAwait(true);
-        return PlotStoredStudents(students, pickups);
-    }
-
-    /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
-    public async Task<MapStudentBulkPlot> BulkPlotStudentsAsync()
-    {
-        using var scope = _scopes?.CreateScope();
-        var pickups = await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
-        var students = await LoadStudentsAsync(scope).ConfigureAwait(true);
-        var plotted = PlotStoredStudents(students, pickups);
-        var status = plotted == 0
-            ? $"Student plotting complete — no stored locations ({students.Count} in DB)"
-            : $"Student plotting complete — {plotted} locations";
-        Logger.Information(
-            "Bulk plot complete Geocoded=0 Plotted={Plotted} Total={Total}",
-            plotted,
-            students.Count);
-        return new MapStudentBulkPlot(plotted, 0, students.Count, status);
-    }
+    private static string DisplayPlaceName(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "(unnamed)" : name.Trim();
 
     private int PlotSchools(IReadOnlyList<Destination> schools)
     {
@@ -226,15 +264,7 @@ internal sealed class MapDistrictLayers
             return StudentPlotLocation.Index(null);
         }
 
-        try
-        {
-            return StudentPlotLocation.Index(await service.GetActiveStopsAsync().ConfigureAwait(true));
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "LoadPickupCatalogAsync failed");
-            return StudentPlotLocation.Index(null);
-        }
+        return StudentPlotLocation.Index(await service.GetActiveStopsAsync().ConfigureAwait(true));
     }
 
     private async Task<IReadOnlyList<Destination>> LoadSchoolsAsync(IServiceScope? scope)
@@ -245,33 +275,19 @@ internal sealed class MapDistrictLayers
             return Array.Empty<Destination>();
         }
 
-        try
-        {
-            return await dest.GetActiveSchoolsAsync().ConfigureAwait(true);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "LoadSchoolsAsync failed");
-            return Array.Empty<Destination>();
-        }
+        return await dest.GetActiveSchoolsAsync().ConfigureAwait(true);
     }
 
-    private async Task<IReadOnlyList<Student>> LoadStudentsAsync(IServiceScope? scope)
+    private async Task<int> TryPlotAsync(Func<Task<int>> plot, string layerName)
     {
-        var students = Resolve(_students, scope);
-        if (students is null)
-        {
-            return Array.Empty<Student>();
-        }
-
         try
         {
-            return await students.GetAllStudentsAsync().ConfigureAwait(true);
+            return await plot().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
-            Logger.Warning(ex, "LoadStudentsAsync failed");
-            return Array.Empty<Student>();
+            Logger.Warning(ex, "District {Layer} layer skipped", layerName);
+            return 0;
         }
     }
 

@@ -32,7 +32,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Activity Timeline" FontSize="24" FontWeight="Bold"
+                <TextBlock Text="Activity log" FontSize="24" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryTextBrush}"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Label="Trip Board"

@@ -1,4 +1,6 @@
 using System.Windows;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.WPF.Logging;
 
@@ -13,32 +15,44 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
+            var routeName = SelectedRoute.RouteName;
+            var routeId = SelectedRoute.RouteId;
             try
             {
                 IsBusy = true;
-                StatusMessage = $"Refreshing drive path for '{SelectedRoute.RouteName}'...";
-                var result = await _routeService.RefreshDrivePathAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                StatusMessage = $"Refreshing drive path for '{routeName}'...";
+                var result = await _routeService.RefreshDrivePathAsync(routeId).ConfigureAwait(true);
                 if (!result.IsSuccess || result.Value is null)
                 {
-                    StatusMessage = string.IsNullOrWhiteSpace(result.Error)
+                    var error = string.IsNullOrWhiteSpace(result.Error)
                         ? "Drive path refresh failed."
                         : result.Error;
+                    StatusMessage = error;
                     UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", "failed", result.Error);
+                    ShowClerkNotice(error, "Drive Path", MessageBoxImage.Warning);
                     return;
                 }
 
-                await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                await LoadSingleRouteAsync(routeId).ConfigureAwait(true);
                 var refresh = result.Value;
                 if (refresh.Success)
                 {
+                    var pathCaption = SelectedRoute?.Path;
+                    var meters = refresh.Path?.DistanceMeters;
+                    var duration = refresh.Path?.Duration;
                     StatusMessage =
-                        $"Drive path updated ({refresh.Path?.DistanceMeters} m, {refresh.Path?.Duration})";
+                        $"Drive path updated ({meters} m, {duration})";
                     UiProofLog.Write(
                         Logger,
                         "Drive Path",
                         "RouteManagementView",
                         "refreshed",
-                        SelectedRoute.RouteName);
+                        routeName);
+                    ShowClerkNotice(
+                        $"{routeName}\n\nRoad path saved ({pathCaption ?? $"{meters} m, {duration}"}).\n\n"
+                        + "Open Manage Route to plot the line on the map. Use Time Route there to publish stop clocks.",
+                        "Drive Path",
+                        MessageBoxImage.Information);
                     return;
                 }
 
@@ -49,10 +63,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", outcome, skip);
                 if (refresh.Skipped)
                 {
-                    MessageBox.Show(
+                    ShowClerkNotice(
                         $"{SelectedRoute.RouteName} has {SelectedRoute.StopCount ?? 0} geocoded stop(s).\n\n{skip}",
                         "Drive Path",
-                        MessageBoxButton.OK,
                         MessageBoxImage.Information);
                 }
             }
@@ -91,8 +104,16 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
+                var allStops = stopsResult.Value.ToList();
+                var slot = RouteSession.ToAssignmentSlot(SelectedRoute);
+                var roster = await _routeService.GetStudentsForRouteAsync(SelectedRoute.RouteId, slot)
+                    .ConfigureAwait(true);
+                var students = roster.IsSuccess && roster.Value is not null
+                    ? roster.Value
+                    : new List<BusBuddy.Core.Models.Student>();
+                var routable = AssignedRouteStops.ForRouting(allStops, students).ToList();
                 var ordered = await RouteStopOrderPlanner.ComputePinnedOrderAsync(
-                    stopsResult.Value.ToList(),
+                    routable,
                     _routeOptimization,
                     SelectedRoute.MaxCapacity,
                     DateTime.UtcNow).ConfigureAwait(true);
@@ -102,7 +123,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
-                var reorder = await _routeService.ReorderRouteStopsAsync(SelectedRoute.RouteId, ordered.Value.ToList())
+                var reorder = await _routeService.ReorderRouteStopsAsync(
+                    SelectedRoute.RouteId,
+                    AssignedRouteStops.OrderPreservingUnroutable(allStops, ordered.Value.ToList()))
                     .ConfigureAwait(true);
                 if (!reorder.IsSuccess)
                 {
@@ -133,6 +156,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsBusy = false;
             }
+        }
+
+        /// <summary>
+        /// Clerk dialog. Headless runs (CI, unit tests) have no WPF application, and
+        /// <see cref="MessageBox.Show(string)"/> would block the test host until the job is cancelled.
+        /// </summary>
+        private static void ShowClerkNotice(string message, string title, MessageBoxImage image)
+        {
+            if (Application.Current is null)
+            {
+                return;
+            }
+
+            MessageBox.Show(message, title, MessageBoxButton.OK, image);
         }
 
         private async Task CopyRouteAsync()

@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using FluentAssertions;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Models.Trips;
 using System.ComponentModel.DataAnnotations;
 
 namespace BusBuddy.Tests.ValidationTests;
@@ -127,97 +128,6 @@ public class ModelValidationTests
 
     [Test]
     [Category("ModelValidation")]
-    [Category("Activity")]
-    public void Activity_ShouldValidateTimeSequence()
-    {
-        // Arrange
-        var validActivity = new Activity
-        {
-            ActivityId = 1,
-            ActivityType = "Field Trip",
-            Date = DateTime.Today,
-            LeaveTime = new TimeSpan(8, 0, 0),
-            EventTime = new TimeSpan(10, 0, 0),
-            Destination = "Science Museum",
-            Status = "Scheduled"
-        };
-
-        var invalidActivity = new Activity
-        {
-            ActivityId = 2,
-            ActivityType = "Invalid Trip",
-            Date = DateTime.Today,
-            LeaveTime = new TimeSpan(10, 0, 0),
-            EventTime = new TimeSpan(8, 0, 0), // Event before leave time
-            Destination = "Invalid Destination",
-            Status = "Invalid"
-        };
-
-        // Act & Assert
-        validActivity.LeaveTime.Should().BeLessThan(validActivity.EventTime,
-            "Leave time should be before event time for valid activity");
-
-        invalidActivity.LeaveTime.Should().BeGreaterThan(invalidActivity.EventTime,
-            "Invalid activity demonstrates the validation rule");
-    }
-
-    [Test]
-    [Category("ModelValidation")]
-    [Category("Activity")]
-    public void Activity_ShouldValidateRequiredFields()
-    {
-        // Arrange
-        var activity = new Activity
-        {
-            ActivityId = 1,
-            ActivityType = "Field Trip",
-            Date = DateTime.Today,
-            Destination = "Science Museum",
-            Status = "Scheduled",
-            RequestedBy = "Teacher Smith"
-        };
-
-        // Act & Assert
-        activity.ActivityId.Should().BePositive("ActivityId should be positive");
-        activity.ActivityType.Should().NotBeNullOrEmpty("ActivityType is required");
-        activity.Destination.Should().NotBeNullOrEmpty("Destination is required");
-        activity.Status.Should().NotBeNullOrEmpty("Status is required");
-        activity.Date.Should().BeOnOrAfter(DateTime.Today.AddYears(-1), "Date should be reasonable");
-    }
-
-    [Test]
-    [Category("ModelValidation")]
-    [Category("ActivitySchedule")]
-    public void ActivitySchedule_ShouldValidateSchedulingProperties()
-    {
-        // Arrange
-        var schedule = new ActivitySchedule
-        {
-            ActivityScheduleId = 1,
-            ScheduledDate = DateTime.Today.AddDays(1),
-            TripType = "Field Trip",
-            ScheduledVehicleId = 1,
-            ScheduledDriverId = 1,
-            ScheduledDestination = "Science Museum",
-            ScheduledLeaveTime = new TimeSpan(8, 0, 0),
-            ScheduledEventTime = new TimeSpan(10, 0, 0),
-            ScheduledRiders = 45,
-            Status = "Scheduled",
-            RequestedBy = "Principal"
-        };
-
-        // Act & Assert
-        schedule.ActivityScheduleId.Should().BePositive("ActivityScheduleId should be positive");
-        schedule.ScheduledVehicleId.Should().BePositive("ScheduledVehicleId should be valid");
-        schedule.ScheduledDriverId.Should().BePositive("ScheduledDriverId should be valid");
-        schedule.ScheduledRiders.Should().BePositive("ScheduledRiders should be positive");
-        schedule.ScheduledLeaveTime.Should().BeLessThan(schedule.ScheduledEventTime,
-            "Leave time should be before event time");
-        schedule.RequestedBy.Should().NotBeNullOrEmpty("RequestedBy is required for accountability");
-    }
-
-    [Test]
-    [Category("ModelValidation")]
     [Category("Student")]
     public void Student_ShouldValidateStudentProperties()
     {
@@ -282,18 +192,18 @@ public class ModelValidationTests
         // Arrange - Create related models
         var driver = new Driver { DriverId = 1, DriverName = "Test Driver", Status = "Active" };
         var vehicle = new Bus { VehicleId = 1, BusNumber = "001", Make = "Test", SeatingCapacity = 50 };
-        var activity = new Activity
+        var trip = new TripEvent
         {
-            ActivityId = 1,
+            TripEventId = 1,
             DriverId = driver.DriverId,
             VehicleId = vehicle.VehicleId,
-            ActivityType = "Test Trip",
-            Status = "Scheduled"
+            Type = TripType.Field,
+            Status = TripStatus.Draft
         };
 
         // Assert referential consistency
-        activity.DriverId.Should().Be(driver.DriverId, "Activity should reference correct driver");
-        activity.VehicleId.Should().Be(vehicle.VehicleId, "Activity should reference correct vehicle");
+        trip.DriverId.Should().Be(driver.DriverId, "Trip should reference the assigned driver");
+        trip.VehicleId.Should().Be(vehicle.VehicleId, "Trip should reference the assigned bus");
 
         // Test status consistency
         var validStatuses = new[] { "Active", "Inactive", "Training", "Suspended" };

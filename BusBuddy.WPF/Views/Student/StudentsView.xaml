@@ -199,12 +199,6 @@
                                 AutomationProperties.Name="Bulk Assign Route"
                                 AutomationProperties.HelpText="Assign routes to multiple selected students at once"
                                 ToolTip="Bulk assign route"/>
-                        <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="AI Optimize"
-                                Command="{Binding OptimizeRoutesCommand}"
-                                Style="{StaticResource StudentsToolbarButton}"
-                                AutomationProperties.Name="AI Optimize Routes"
-                                AutomationProperties.HelpText="Run AI-assisted route optimization for selected students"
-                                ToolTip="AI-assisted route optimization"/>
                         <syncfusion:ButtonAdv Name="ViewMapButton" Label="View Map"
                                 Command="{Binding ViewMapCommand}"
                                 Style="{StaticResource StudentsToolbarButton}"
@@ -378,13 +372,6 @@
                                                           Style="{StaticResource StudentsToolbarButton}"
                                                           MinWidth="56" Height="28" Margin="2,0"
                                                           AutomationProperties.Name="View Student On Map"/>
-                                    <syncfusion:ButtonAdv Label="Suggest"
-                                                          ToolTip="AI Route Suggest"
-                                                          Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
-                                                          CommandParameter="{Binding}"
-                                                          Style="{StaticResource StudentsToolbarButton}"
-                                                          MinWidth="72" Height="28" Margin="2,0"
-                                                          AutomationProperties.Name="Suggest Route For Student"/>
                                 </StackPanel>
                         </DataTemplate>
                     </syncfusion:GridTemplateColumn.CellTemplate>

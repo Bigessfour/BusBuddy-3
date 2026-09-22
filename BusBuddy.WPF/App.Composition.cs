@@ -4,12 +4,10 @@ using System.Net.Http;
 using System.Windows;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Configuration;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Extensions;
 using BusBuddy.Core.Utilities;
 
@@ -55,30 +53,8 @@ namespace BusBuddy.WPF
                 // Register configuration for DI
                 services.AddSingleton<IConfiguration>(configuration);
 
-                // Use the proper extension method that registers IBusBuddyDbContextFactory
+                // Core students, routes, buses, maps, and trips are registered once here.
                 services.AddDataServices(configuration);
-
-                // Route geography. Maps Platform clients (IGeocodingService / IRoutingService)
-                // are registered in AddDataServices above. No hash geocoder; no shapefile geofence.
-                services.AddSingleton<IGeoDataService>(sp =>
-                    new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
-
-                // Register core business services for Students, Routes, Buses, Drivers
-                services.AddScoped<IStudentService, StudentService>();
-                services.AddScoped<BusBuddy.Core.Services.Interfaces.IDestinationService, BusBuddy.Core.Services.DestinationService>();
-                services.AddScoped<BusBuddy.Core.Services.IStudentSchoolTransferService, BusBuddy.Core.Services.StudentSchoolTransferService>();
-                services.AddScoped<BusBuddy.Core.Services.IRouteWaypointRebuildService, BusBuddy.Core.Services.RouteWaypointRebuildService>();
-                services.AddScoped<BusBuddy.Core.Services.IDriverTrainingService, BusBuddy.Core.Services.DriverTrainingService>();
-                services.AddScoped<BusBuddy.Core.Services.RouteDetermination.AssignFitnessEvaluator>();
-                services.AddScoped<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService,
-                    BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
-                services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
-                    configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
-                services.TryAddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
-                    BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
-                services.AddScoped<IDriverService, DriverService>();
-                services.AddScoped<IRouteService, RouteService>();
-                services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
 
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
@@ -93,20 +69,8 @@ namespace BusBuddy.WPF
                         new HttpClient(),
                         sp.GetRequiredService<IConfiguration>()));
 
-                services.AddSingleton<IUserSettingsService, UserSettingsService>();
-                services.AddScoped<IFuelService, FuelService>();
-                services.AddScoped<IFuelLocationCatalog, FuelLocationCatalog>();
-                services.AddScoped<ITripReasonCatalog, TripReasonCatalog>();
-                services.AddScoped<IMaintenanceService, MaintenanceService>();
-                services.AddScoped<IScheduleService, ScheduleService>();
-                services.AddScoped<IActivityScheduleService, ActivityScheduleService>();
-                services.AddScoped<BusBuddy.Core.Services.Interfaces.ITripEventService, BusBuddy.Core.Services.TripEventService>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Activity.ActivityManagementViewModel>();
                 services.AddScoped<BusBuddy.WPF.Services.IDriverAvailabilityService, BusBuddy.WPF.Services.DriverAvailabilityService>();
-                services.AddScoped<ISeedDataService, SeedDataService>();
-                services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();
-                services.AddSingleton<PdfReportService>();
-                services.AddScoped<IOperationalReportService, OperationalReportService>();
 
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
@@ -135,7 +99,7 @@ namespace BusBuddy.WPF
                         sp.GetRequiredService<IBusBuddyDbContextFactory>(),
                         sp.GetRequiredService<IRouteService>(),
                         sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
-                        sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>(),
+                        sp.GetService<BusBuddy.Core.Services.IDestinationService>(),
                         sp.GetService<BusBuddy.Core.Services.GoogleMaps.IRouteOptimizationService>(),
                         sp.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>(),
                         sp.GetService<IScheduleService>(),
@@ -147,10 +111,9 @@ namespace BusBuddy.WPF
                 services.AddSingleton<BusBuddy.WPF.ViewModels.Map.MapViewModel>(sp =>
                     new BusBuddy.WPF.ViewModels.Map.MapViewModel(
                         sp.GetRequiredService<IGeoDataService>(),
-                        sp.GetService<IGeocodingService>(),
                         studentService: null,
                         scopeFactory: sp.GetRequiredService<IServiceScopeFactory>(),
-                        routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
+                        routingService: sp.GetService<BusBuddy.Core.Services.IRoutingService>(),
                         districtSettings: sp.GetService<IDistrictSettingsAccessor>()));
                 services.AddSingleton<BusBuddy.WPF.Services.IDistrictMapSync, BusBuddy.WPF.Services.DistrictMapSync>();
 
@@ -174,9 +137,9 @@ namespace BusBuddy.WPF
                             maxRetries: 3
                         );
 
-                        // Do not auto-seed students. EnsureMapDemoGeo / JSON / CSV seed re-inserts
-                        // deleted TEST_STUDENT_* rows on every launch. Roster is clerk-entered
-                        // (Add Student / Import CSV). DbPrep hops may still call seed explicitly.
+                        // Do not auto-seed students. SeedSpecialNeedsTransportPrep used to re-insert
+                        // deleted TEST_STUDENT_* rows on every launch. That insert is gone.
+                        // Roster is clerk-entered (Add Student / Import CSV).
                         Log.Information(
                             "Startup student seed skipped (SeedFromJson/EnsureMapDemoGeo). Use Import CSV to load a roster.");
                     }

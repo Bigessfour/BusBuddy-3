@@ -72,10 +72,6 @@ public class PlacesAddressSurfaceTests
         Assert.That(transfer, Does.Contain("AddressText=\"{Binding PickupAddress"));
         Assert.That(transfer, Does.Contain("AddressText=\"{Binding DropoffAddress"));
 
-        var activity = XamlViewFile.Read("Views/Activity/ActivityScheduleEditDialog.xaml");
-        Assert.That(activity, Does.Contain("controls:PlacesAddressBox"));
-        Assert.That(activity, Does.Contain("AddressText=\"{Binding ScheduledDestination"));
-
         var trip = XamlViewFile.Read("Views/Activity/TripEventEditDialog.xaml");
         Assert.That(trip, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(trip, Does.Contain("AddressText=\"{Binding DestinationName"));

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using Serilog;
 

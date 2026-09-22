@@ -23,7 +23,7 @@ IRoutingService
 
 Headers:
 
-- `X-Goog-FieldMask`: `routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline`
+- `X-Goog-FieldMask`: `routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction`
 
 Optional later: `computeRouteMatrix` for ranking students vs routes — same interface file, not blocking this increment.
 

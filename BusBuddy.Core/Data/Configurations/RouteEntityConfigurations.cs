@@ -182,15 +182,9 @@ internal sealed class StudentScheduleConfiguration : IEntityTypeConfiguration<St
             .HasForeignKey(ss => ss.ScheduleId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_StudentSchedules_Schedule");
-        entity.HasOne(ss => ss.ActivitySchedule)
-            .WithMany(a => a.StudentSchedules)
-            .HasForeignKey(ss => ss.ActivityScheduleId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_StudentSchedules_ActivitySchedule");
 
         entity.HasIndex(e => e.StudentId).HasDatabaseName("IX_StudentSchedules_StudentId");
         entity.HasIndex(e => e.ScheduleId).HasDatabaseName("IX_StudentSchedules_ScheduleId");
-        entity.HasIndex(e => e.ActivityScheduleId).HasDatabaseName("IX_StudentSchedules_ActivityScheduleId");
         entity.HasIndex(e => e.AssignmentType).HasDatabaseName("IX_StudentSchedules_AssignmentType");
         entity.HasIndex(e => new { e.StudentId, e.ScheduleId }).IsUnique().HasDatabaseName("IX_StudentSchedules_StudentSchedule");
     }

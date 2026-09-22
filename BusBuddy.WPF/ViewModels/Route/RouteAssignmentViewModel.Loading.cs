@@ -16,7 +16,6 @@ using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Driver;
 using BusBuddy.WPF.ViewModels.Driver;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
 using System.IO; // For PDF export file writing
 using System.Text.RegularExpressions; // Start time validation
@@ -46,7 +45,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 await Task.WhenAll(studentsTask, routesTask, busesTask, driversTask);
 
-                var loadErrors = new List<string>();
+                var loadFailures = new List<LoadFailure>();
 
                 _allUnassignedStudents.Clear();
                 if (studentsTask.Result.IsSuccess && studentsTask.Result.Value != null)
@@ -55,7 +54,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    loadErrors.Add($"unassigned students ({studentsTask.Result.Error})");
+                    NoteFailure(loadFailures, "unassigned students", studentsTask.Result);
                 }
                 FilterStudents();
 
@@ -68,7 +67,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    loadErrors.Add($"routes ({routesTask.Result.Error})");
+                    NoteFailure(loadFailures, "routes", routesTask.Result);
                 }
 
                 if (busesTask.Result.IsSuccess && busesTask.Result.Value != null)
@@ -80,7 +79,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    loadErrors.Add($"buses ({busesTask.Result.Error})");
+                    NoteFailure(loadFailures, "buses", busesTask.Result);
                 }
 
                 if (driversTask.Result.IsSuccess && driversTask.Result.Value != null)
@@ -92,7 +91,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    loadErrors.Add($"drivers ({driversTask.Result.Error})");
+                    NoteFailure(loadFailures, "drivers", driversTask.Result);
                 }
 
                 if (_preselectedRouteId.HasValue
@@ -121,15 +120,11 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 UpdateStatusMessage();
 
-                if (loadErrors.Count > 0)
-                {
-                    Logger.Error("Route assignment data partially unavailable: {Failures}", string.Join("; ", loadErrors));
-                    StatusMessage = "Could not load " + string.Join("; ", loadErrors);
-                }
+                ReportLoadFailures("Route assignment data partially unavailable", loadFailures);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed loading route assignment data from service");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed loading route assignment data from service");
                 SelectedRoute = null;
                 UnassignedStudents.Clear();
                 _allUnassignedStudents.Clear();
@@ -141,12 +136,38 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
                 OnPropertyChanged(nameof(RouteStopCount));
-                StatusMessage = $"Could not load route data: {ex.Message}";
+                StatusMessage = DatabaseUserMessage.IsConnectivityFailure(ex)
+                    ? DatabaseUserMessage.UnavailableShort
+                    : $"Could not load route data: {ex.Message}";
             }
             finally
             {
                 IsLoading = false;
             }
+        }
+
+        private readonly record struct LoadFailure(string Label, string Error, Exception? Exception);
+
+        private static void NoteFailure<T>(List<LoadFailure> failures, string label, Result<T> result) =>
+            failures.Add(new LoadFailure(label, result.Error ?? "unknown error", result.Exception));
+
+        private void ReportLoadFailures(string context, IReadOnlyList<LoadFailure> failures)
+        {
+            if (failures.Count == 0)
+            {
+                return;
+            }
+
+            var detail = string.Join("; ", failures.Select(f => $"{f.Label} ({f.Error})"));
+            if (failures.All(f => DatabaseUserMessage.IsConnectivityFailure(f.Exception)))
+            {
+                Logger.Warning("{Context} because Postgres is unreachable: {Failures}", context, detail);
+                StatusMessage = DatabaseUserMessage.UnavailableShort;
+                return;
+            }
+
+            Logger.Error("{Context}: {Failures}", context, detail);
+            StatusMessage = "Could not load " + detail;
         }
 
         private async Task ReloadStudentListsForRouteAsync()
@@ -158,7 +179,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             var slot = NormalizeTimeSlot(SelectedTimeSlot);
 
-            var loadErrors = new List<string>();
+            var loadFailures = new List<LoadFailure>();
 
             var assignedResult = await _routeService.GetStudentsForRouteAsync(SelectedRoute.RouteId, slot);
             AssignedStudentsForSelectedRoute.Clear();
@@ -171,7 +192,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
             else
             {
-                loadErrors.Add($"assigned students ({assignedResult.Error})");
+                NoteFailure(loadFailures, "assigned students", assignedResult);
             }
 
             var unassignedResult = await _routeService.GetUnassignedStudentsAsync(slot);
@@ -182,7 +203,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
             else
             {
-                loadErrors.Add($"unassigned students ({unassignedResult.Error})");
+                NoteFailure(loadFailures, "unassigned students", unassignedResult);
             }
             FilterStudents();
 
@@ -191,11 +212,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             OnPropertyChanged(nameof(AssignedStudentCount));
             OnPropertyChanged(nameof(UnassignedStudentCount));
 
-            if (loadErrors.Count > 0)
+            if (loadFailures.Count > 0)
             {
-                Logger.Error("Route {RouteId} ({Slot}) roster load failed: {Failures}",
-                    SelectedRoute.RouteId, slot, string.Join("; ", loadErrors));
-                StatusMessage = "Could not load " + string.Join("; ", loadErrors);
+                ReportLoadFailures($"Route {SelectedRoute.RouteId} ({slot}) roster load failed", loadFailures);
             }
             else
             {

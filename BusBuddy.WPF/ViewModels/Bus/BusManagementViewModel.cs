@@ -1,6 +1,5 @@
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;

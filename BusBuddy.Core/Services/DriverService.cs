@@ -239,8 +239,6 @@ namespace BusBuddy.Core.Services
                 context.Entry(driver).Collection(d => d.AMRoutes).IsModified = false;
                 context.Entry(driver).Collection(d => d.PMRoutes).IsModified = false;
                 context.Entry(driver).Collection(d => d.Schedules).IsModified = false;
-                context.Entry(driver).Collection(d => d.Activities).IsModified = false;
-                context.Entry(driver).Collection(d => d.ScheduledActivities).IsModified = false;
 
                 try
                 {

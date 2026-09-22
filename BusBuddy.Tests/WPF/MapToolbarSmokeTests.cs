@@ -8,7 +8,6 @@ using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
@@ -223,7 +222,7 @@ public class MapToolbarSmokeTests
             vm.LatestMapSnapshotPng = new byte[] { 0x89, 0x50 };
         };
         Assert.That(vm.PrintRouteMapsCommand.CanExecute(null), Is.True);
-        vm.PrintRouteMapsCommand.Execute(null);
+        await ((IAsyncRelayCommand)vm.PrintRouteMapsCommand).ExecuteAsync(null);
         vm.RequestMapSnapshot();
         Assert.That(printRequested, Is.EqualTo(1));
         Assert.That(snapshotRequested, Is.EqualTo(1));

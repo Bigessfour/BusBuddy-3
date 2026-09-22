@@ -774,13 +774,13 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Activities navigation requested");
             try
             {
-                ShowViewInWindow(new ActivityTimelineView(), "📋 Activity Timeline", 1100, 700);
-                UiProofLog.Write(Logger, click, "ActivityTimelineView", "opened");
+                ShowViewInWindow(new ActivityManagementView(), "Trip Board", 1200, 800);
+                UiProofLog.Write(Logger, click, "ActivityManagementView", "opened");
             }
             catch (Exception ex)
             {
-                UiProofLog.Failed(Logger, ex, click, "ActivityTimelineView");
-                MessageBox.Show($"Error opening Activity Timeline: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                UiProofLog.Failed(Logger, ex, click, "ActivityManagementView");
+                MessageBox.Show($"Error opening Trip Board: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

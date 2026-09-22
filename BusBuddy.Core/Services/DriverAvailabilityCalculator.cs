@@ -1,10 +1,12 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Models.Trips;
 using Serilog;
 
 namespace BusBuddy.Core.Services;
 
 /// <summary>
-/// Derives driver free days from Schedule and ActivitySchedule rows (busy = any non-cancelled assignment that day).
+/// Derives driver free days from published route Schedule rows and TripEvent loans
+/// (busy = any non-cancelled assignment that day). Route != Trip.
 /// </summary>
 public static class DriverAvailabilityCalculator
 {
@@ -15,11 +17,11 @@ public static class DriverAvailabilityCalculator
         int driverId,
         DateTime fromInclusive,
         int dayCount) =>
-        AvailableDates(schedules, Array.Empty<ActivitySchedule>(), driverId, fromInclusive, dayCount);
+        AvailableDates(schedules, Array.Empty<TripEvent>(), driverId, fromInclusive, dayCount);
 
     public static IReadOnlyList<DateTime> AvailableDates(
         IEnumerable<Schedule> schedules,
-        IEnumerable<ActivitySchedule> activities,
+        IEnumerable<TripEvent> trips,
         int driverId,
         DateTime fromInclusive,
         int dayCount)
@@ -30,10 +32,10 @@ public static class DriverAvailabilityCalculator
             .Where(s => s.DriverId == driverId &&
                         !string.Equals(s.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
             .Select(s => s.ScheduleDate.Date)
-            .Concat(activities
-                .Where(a => a.ScheduledDriverId == driverId &&
-                            !string.Equals(a.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
-                .Select(a => a.ScheduledDate.Date))
+            .Concat(trips
+                .Where(t => t.DriverId == driverId &&
+                            !string.Equals(t.Status, TripStatus.Cancelled, StringComparison.OrdinalIgnoreCase))
+                .Select(t => (t.TripDate == default ? t.LeaveTime : t.TripDate).Date))
             .ToHashSet();
 
         var available = Enumerable.Range(0, window)

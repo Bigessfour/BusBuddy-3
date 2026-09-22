@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.Student;
 using CommunityToolkit.Mvvm.Input;
 using FluentAssertions;

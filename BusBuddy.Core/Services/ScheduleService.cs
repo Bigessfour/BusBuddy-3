@@ -1,7 +1,8 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Serilog;
 using Serilog.Context;
 
@@ -142,12 +143,19 @@ namespace BusBuddy.Core.Services
                         throw new ArgumentException("Invalid driver ID.");
                     }
 
-                    await context.Schedules.AddAsync(schedule);
-                    await context.SaveChangesAsync();
-
+                    var refreshed = await SaveOrRefreshRouteBusDepartureAsync(context, schedule);
                     stopwatch.Stop();
-                    Logger.Information("Successfully added schedule with ID {ScheduleId} in {ElapsedMs}ms. Final DestinationTown: {DestinationTown}",
-                        schedule.ScheduleId, stopwatch.ElapsedMilliseconds, schedule.DestinationTown);
+                    if (refreshed)
+                    {
+                        Logger.Information(
+                            "Refreshed existing schedule {ScheduleId} for route {RouteId} bus {BusId} departure {DepartureTime} in {ElapsedMs}ms",
+                            schedule.ScheduleId, schedule.RouteId, schedule.BusId, schedule.DepartureTime, stopwatch.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        Logger.Information("Successfully added schedule with ID {ScheduleId} in {ElapsedMs}ms. Final DestinationTown: {DestinationTown}",
+                            schedule.ScheduleId, stopwatch.ElapsedMilliseconds, schedule.DestinationTown);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -160,6 +168,75 @@ namespace BusBuddy.Core.Services
                     await context.DisposeAsync();
                 }
             }
+        }
+
+        /// <summary>
+        /// <c>IX_Schedules_RouteBusDeparture</c> allows one row per route, bus, and departure.
+        /// Returns true when that row already existed and was refreshed.
+        /// </summary>
+        private static async Task<bool> SaveOrRefreshRouteBusDepartureAsync(BusBuddyDbContext context, Schedule schedule)
+        {
+            var existing = await FindRouteBusDepartureAsync(context, schedule);
+            if (existing is null)
+            {
+                try
+                {
+                    await context.Schedules.AddAsync(schedule);
+                    await context.SaveChangesAsync();
+                    return false;
+                }
+                catch (DbUpdateException ex) when (IsRouteBusDepartureConflict(ex))
+                {
+                    context.Entry(schedule).State = EntityState.Detached;
+                    existing = await FindRouteBusDepartureAsync(context, schedule);
+                    if (existing is null)
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            CopyOntoExisting(existing, schedule);
+            await context.SaveChangesAsync();
+            return true;
+        }
+
+        private static Task<Schedule?> FindRouteBusDepartureAsync(BusBuddyDbContext context, Schedule schedule) =>
+            context.Schedules.FirstOrDefaultAsync(s =>
+                s.RouteId == schedule.RouteId
+                && s.BusId == schedule.BusId
+                && s.DepartureTime == schedule.DepartureTime);
+
+        private static void CopyOntoExisting(Schedule existing, Schedule incoming)
+        {
+            existing.DriverId = incoming.DriverId;
+            existing.ArrivalTime = incoming.ArrivalTime;
+            existing.ScheduleDate = incoming.ScheduleDate;
+            existing.Location = incoming.Location;
+            existing.Notes = incoming.Notes;
+            existing.Status = string.IsNullOrWhiteSpace(incoming.Status) ? existing.Status : incoming.Status;
+            existing.SportsCategory = incoming.SportsCategory ?? existing.SportsCategory;
+            existing.Opponent = incoming.Opponent ?? existing.Opponent;
+            existing.DestinationTown = incoming.DestinationTown ?? existing.DestinationTown;
+            existing.DepartTime = incoming.DepartTime ?? existing.DepartTime;
+            existing.ScheduledTime = incoming.ScheduledTime ?? existing.ScheduledTime;
+            existing.UpdatedDate = DateTime.UtcNow;
+            incoming.ScheduleId = existing.ScheduleId;
+        }
+
+        private static bool IsRouteBusDepartureConflict(Exception exception)
+        {
+            for (var ex = exception; ex is not null; ex = ex.InnerException)
+            {
+                if (ex is PostgresException postgres
+                    && postgres.SqlState == PostgresErrorCodes.UniqueViolation
+                    && postgres.ConstraintName == "IX_Schedules_RouteBusDeparture")
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public async Task UpdateScheduleAsync(Schedule schedule)

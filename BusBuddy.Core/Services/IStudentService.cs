@@ -118,6 +118,12 @@ public interface IStudentService
     Task<List<string>> ValidateStudentAsync(Student student);
 
     /// <summary>
+    /// Transportation gaps that leave the record incomplete. These do not block save.
+    /// The missing-info list uses the same conditions.
+    /// </summary>
+    IReadOnlyList<string> GetIntakeWarnings(Student student);
+
+    /// <summary>
     /// Gets student count statistics
     /// </summary>
     /// <returns>Dictionary with count statistics</returns>

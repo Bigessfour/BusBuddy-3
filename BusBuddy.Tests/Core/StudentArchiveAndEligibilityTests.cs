@@ -230,6 +230,59 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task DeleteStudentAsync_RemovesAHomeStopThatNamesOnlyThatStudent()
+        {
+            var student = await SeedStudentAsync();
+            var route = new Route
+            {
+                RouteName = "TEST_SN_ROUTE",
+                Date = DateTime.UtcNow.Date,
+                IsActive = true,
+                School = "TEST_SCHOOL"
+            };
+            _dbContext.Routes.Add(route);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.RouteStops.Add(new RouteStop
+            {
+                RouteId = route.RouteId,
+                StopName = student.StudentName,
+                StopAddress = "100 Test St",
+                StopOrder = 1,
+                ScheduledArrival = TimeSpan.FromHours(7),
+                ScheduledDeparture = TimeSpan.FromHours(7).Add(TimeSpan.FromMinutes(1)),
+                CreatedDate = DateTime.UtcNow,
+                EstimatedArrivalTime = DateTime.UtcNow,
+                EstimatedDepartureTime = DateTime.UtcNow
+            });
+            _dbContext.RouteStops.Add(new RouteStop
+            {
+                RouteId = route.RouteId,
+                StopName = "TEST_SCHOOL",
+                StopAddress = "403 N Main St",
+                StopOrder = 2,
+                Notes = $"StudentIds={student.StudentId},88",
+                ScheduledArrival = TimeSpan.FromHours(7).Add(TimeSpan.FromMinutes(30)),
+                ScheduledDeparture = TimeSpan.FromHours(7).Add(TimeSpan.FromMinutes(31)),
+                CreatedDate = DateTime.UtcNow,
+                EstimatedArrivalTime = DateTime.UtcNow,
+                EstimatedDepartureTime = DateTime.UtcNow
+            });
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var deleted = await _studentService.DeleteStudentAsync(
+                student.StudentId,
+                StudentDeletionReason.Mistake);
+
+            deleted.Should().BeTrue();
+            var remaining = await _dbContext.RouteStops.AsNoTracking().Where(s => s.RouteId == route.RouteId).ToListAsync();
+            remaining.Should().ContainSingle();
+            remaining[0].StopName.Should().Be("TEST_SCHOOL");
+            remaining[0].Notes.Should().Be("StudentId=88");
+            (await _dbContext.Routes.FindAsync(route.RouteId)).Should().NotBeNull();
+        }
+
+        [Test]
         public async Task DeleteStudentAsync_RejectsAnUndefinedReason()
         {
             var student = await SeedStudentAsync();

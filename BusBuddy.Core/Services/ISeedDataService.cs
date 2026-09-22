@@ -60,13 +60,14 @@ namespace BusBuddy.Core.Services
         Task SeedAllAsync();
 
         /// <summary>
-        /// Idempotent prep for special-needs routing tests: school, SN bus/driver/route, sample students.
+        /// Idempotent prep for special-needs routing tests: school, SN bus/driver/route.
+        /// Does not insert or restore student rows.
         /// </summary>
         Task<SpecialNeedsPrepSummary> SeedSpecialNeedsTransportPrepAsync();
 
         /// <summary>
-        /// Seed school/student coordinates and one route polyline for the district map.
-        /// Does not assign live bus GPS — fleet tracking is deferred.
+        /// Ensures one route polyline for the district map.
+        /// Does not insert students and does not assign live bus GPS — fleet tracking is deferred.
         /// </summary>
         Task EnsureMapDemoGeoAsync();
 

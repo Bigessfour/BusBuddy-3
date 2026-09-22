@@ -486,8 +486,6 @@ public class Bus : INotifyPropertyChanged
     public virtual ICollection<Route> AMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Route> PMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
-    public virtual ICollection<BusBuddy.Core.Models.Activity> Activities { get; set; } = new List<BusBuddy.Core.Models.Activity>();
-    public virtual ICollection<ActivitySchedule> ScheduledActivities { get; set; } = new List<ActivitySchedule>();
     public virtual ICollection<Fuel> FuelRecords { get; set; } = new List<Fuel>();
     public virtual ICollection<Maintenance> MaintenanceRecords { get; set; } = new List<Maintenance>();
 

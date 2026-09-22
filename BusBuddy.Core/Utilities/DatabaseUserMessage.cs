@@ -53,7 +53,7 @@ public static class DatabaseUserMessage
     }
 
     /// <summary>
-    /// Logs connectivity timeouts as Warning so they do not land in errors-actionable.
+    /// Logs connectivity failures (timeouts and connection refused) as Warning so they do not land in errors-actionable.
     /// Real application failures stay Error.
     /// </summary>
     public static void LogFailure(Serilog.ILogger logger, Exception exception, string messageTemplate, params object?[]? propertyValues)

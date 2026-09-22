@@ -2,7 +2,6 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services.Trips;
 using BusBuddy.Tests.WPF;
 using Microsoft.EntityFrameworkCore;

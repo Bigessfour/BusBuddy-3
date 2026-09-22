@@ -196,8 +196,20 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// </summary>
         private async Task MarkNotRidingTodayAsync()
         {
-            if (SelectedAssignedStudent == null || SelectedRoute == null)
+            if (SelectedRoute == null)
             {
+                MessageBox.Show("Select a route first.", "Route Required",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (SelectedAssignedStudent == null)
+            {
+                MessageBox.Show(
+                    "Select a student in the Assigned to Route list (not Unassigned). Same-day not riding does not remove the year assignment.",
+                    "Student Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
                 return;
             }
 
@@ -206,6 +218,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             var stopCountBefore = RouteStops.Count;
             var am = student.AMRoute;
             var pm = student.PMRoute;
+            var displayName = GetStudentDisplayName(student);
 
             try
             {
@@ -217,12 +230,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                     "Not riding today");
                 if (!result.IsSuccess)
                 {
-                    StatusMessage = result.Error ?? "Could not record not-riding exception";
+                    var error = result.Error ?? "Could not record not-riding exception";
+                    StatusMessage = error;
+                    MessageBox.Show(error, "Not Riding Today", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 StatusMessage =
-                    $"{student.StudentName} not riding today — published stops and year assignment unchanged";
+                    $"{displayName} not riding today — published stops and year assignment unchanged";
+                MessageBox.Show(
+                    $"{displayName} is marked not riding for {PublishedSessionDateUtc:yyyy-MM-dd}.\n\nPublished stops and the year route assignment are unchanged. The schedule sheet will show a not-riding badge.",
+                    "Not Riding Today",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
                 Logger.Information(
                     "Rider exception recorded Student={StudentId} Route={RouteId} Stops={Stops} AMRoute={AM} PMRoute={PM}",
                     student.StudentId,
@@ -235,6 +255,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 Logger.Error(ex, "Failed to record rider exception");
                 StatusMessage = $"Failed to mark not riding: {ex.Message}";
+                MessageBox.Show($"Failed to mark not riding: {ex.Message}", "Not Riding Today",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -445,6 +467,15 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         // Route Stop Management Commands
+        private static bool TryShowRouteStopDialog(RouteStopEditDialogViewModel stopVm, out RouteStopEditDialog dialog)
+        {
+            dialog = new RouteStopEditDialog(stopVm)
+            {
+                Owner = Application.Current?.MainWindow
+            };
+            return dialog.ShowDialog() == true;
+        }
+
         private async Task AddStopAsync()
         {
             if (SelectedRoute == null || IsLoading)
@@ -455,11 +486,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 var stopVm = new RouteStopEditDialogViewModel($"Stop {RouteStops.Count + 1}", string.Empty);
-                var dialog = new RouteStopEditDialog(stopVm)
-                {
-                    Owner = Application.Current?.MainWindow
-                };
-                if (dialog.ShowDialog() != true)
+                if (!TryShowRouteStopDialog(stopVm, out var dialog))
                 {
                     return;
                 }
@@ -479,14 +506,14 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = $"Adding stop '{stopName}' to {SelectedRoute.RouteName}...";
 
                 var result = await _routeService.AddStopToRouteAsync(SelectedRoute.RouteId, newStop);
-                if (!result.IsSuccess)
+                if (!result.IsSuccess || result.Value is null)
                 {
                     StatusMessage = $"Failed to add stop: {result.Error}";
-                    MessageBox.Show(result.Error!, "Add Stop Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(result.Error ?? "Add stop failed", "Add Stop Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
-                RouteStops.Add(newStop);
+                RouteStops.Add(result.Value);
                 OnPropertyChanged(nameof(RouteStopCount));
                 StatusMessage = $"Successfully added stop '{stopName}' to {SelectedRoute.RouteName}";
                 Logger.Information("Added stop {StopName} to route {RouteName}", stopName, SelectedRoute.RouteName);
@@ -501,6 +528,74 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsLoading = false;
+                RefreshCommandStates();
+            }
+        }
+
+        private async Task EditStopAsync()
+        {
+            if (SelectedRoute == null || SelectedRouteStop == null || IsLoading)
+            {
+                return;
+            }
+
+            var existing = SelectedRouteStop;
+            try
+            {
+                var stopVm = new RouteStopEditDialogViewModel(
+                    existing.StopName,
+                    existing.StopAddress,
+                    existing.Latitude,
+                    existing.Longitude);
+                if (!TryShowRouteStopDialog(stopVm, out var dialog))
+                {
+                    return;
+                }
+
+                var payload = new RouteStop
+                {
+                    RouteStopId = existing.RouteStopId,
+                    RouteId = existing.RouteId,
+                    StopName = dialog.StopName,
+                    StopAddress = string.IsNullOrWhiteSpace(dialog.StopAddress) ? dialog.StopName : dialog.StopAddress,
+                    Latitude = dialog.Latitude,
+                    Longitude = dialog.Longitude,
+                    StopOrder = existing.StopOrder,
+                    ScheduledArrival = existing.ScheduledArrival,
+                    ScheduledDeparture = existing.ScheduledDeparture
+                };
+
+                IsLoading = true;
+                StatusMessage = $"Updating stop '{existing.StopName}'...";
+
+                var result = await _routeService.UpdateRouteStopAsync(SelectedRoute.RouteId, payload);
+                if (!result.IsSuccess || result.Value is null)
+                {
+                    StatusMessage = $"Failed to update stop: {result.Error}";
+                    MessageBox.Show(result.Error ?? "Update stop failed", "Edit Stop Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var saved = result.Value;
+                existing.StopName = saved.StopName;
+                existing.StopAddress = saved.StopAddress;
+                existing.Latitude = saved.Latitude;
+                existing.Longitude = saved.Longitude;
+                OnPropertyChanged(nameof(RouteStops));
+                StatusMessage = $"Updated stop '{saved.StopName}'";
+                Logger.Information("Updated stop {StopId} on route {RouteId}", saved.RouteStopId, SelectedRoute.RouteId);
+                MarkPublishedClocksStale("edit stop");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to edit route stop");
+                StatusMessage = $"Failed to update stop: {ex.Message}";
+                MessageBox.Show($"Failed to update stop: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+                RefreshCommandStates();
             }
         }
 
@@ -864,6 +959,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             try
             {
+                IsLoading = true;
                 StatusMessage = "Refreshing data...";
                 await LoadDataFromServiceAsync();
 

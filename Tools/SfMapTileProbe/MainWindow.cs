@@ -62,7 +62,8 @@ public sealed class MainWindow : Window
             ? new GoogleGetUriLayer()
             : new ImageryLayer();
 
-        _layer.Center = new Point(38.0872, -102.6208);
+        // Unconfigured overview. Pan to the district under test.
+        _layer.Center = new Point(39.8283, -98.5795);
 
         switch (mode)
         {

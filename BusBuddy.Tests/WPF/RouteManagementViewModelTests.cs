@@ -7,7 +7,6 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Route;
 using FluentAssertions;
@@ -76,7 +75,7 @@ public class RouteManagementViewModelTests
     {
         var routes = new List<Route>
         {
-            new() { RouteId = 1, RouteName = "Alpha", IsActive = true }
+            new() { RouteId = 1, RouteName = "Alpha", IsActive = true, StopCount = 14 }
         };
 
         var routeService = new Mock<IRouteService>();
@@ -104,6 +103,15 @@ public class RouteManagementViewModelTests
         vm.PrintScheduleCommand.CanExecute(null).Should().BeTrue();
         vm.RefreshDrivePathCommand.CanExecute(null).Should().BeTrue();
         vm.OptimizeStopOrderCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Test]
+    public void CanRefreshDrivePathFor_RequiresAtLeastTwoStops()
+    {
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = null }).Should().BeTrue();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 0 }).Should().BeFalse();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 1 }).Should().BeFalse();
+        RouteManagementViewModel.CanRefreshDrivePathFor(new Route { StopCount = 2 }).Should().BeTrue();
     }
 
     [Test]
@@ -439,6 +447,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
         routeService.Setup(s => s.GetRouteStopsAsync(4))
             .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routeService.Setup(s => s.GetStudentsForRouteAsync(4, It.IsAny<RouteTimeSlot>()))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>()));
         routeService.Setup(s => s.ReorderRouteStopsAsync(4, It.Is<List<int>>(ids => ids.SequenceEqual(new[] { 10, 11, 12 }))))
             .ReturnsAsync(Result.SuccessResult(true));
         routeService.Setup(s => s.GetRouteByIdAsync(4))

@@ -1,6 +1,6 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -85,66 +85,6 @@ public class StudentScheduleService : IStudentScheduleService
                 Logger.Error(ex, "Error occurred while assigning student to schedule");
                 throw;
             }
-        }
-    }
-    public async Task<StudentSchedule> AssignStudentToActivityScheduleAsync(int studentId, int activityScheduleId, string? pickupLocation = null, string? dropoffLocation = null, string? notes = null)
-    {
-        try
-        {
-            Logger.Information("Assigning student {StudentId} to activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-
-            using var context = _contextFactory.CreateWriteDbContext();
-
-            // Check if assignment already exists
-            var existingAssignment = await context.StudentSchedules
-                .FirstOrDefaultAsync(ss => ss.StudentId == studentId && ss.ActivityScheduleId == activityScheduleId);
-
-            if (existingAssignment != null)
-            {
-                Logger.Warning("Student {StudentId} is already assigned to activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-                return existingAssignment;
-            }
-
-            // Verify student and activity schedule exist
-            var student = await context.Students.FindAsync(studentId);
-            var activitySchedule = await context.ActivitySchedule.FindAsync(activityScheduleId);
-
-            if (student == null)
-            {
-
-                throw new ArgumentException($"Student with ID {studentId} not found");
-            }
-
-
-            if (activitySchedule == null)
-            {
-
-                throw new ArgumentException($"Activity schedule with ID {activityScheduleId} not found");
-            }
-
-
-            var studentSchedule = new StudentSchedule
-            {
-                StudentId = studentId,
-                ActivityScheduleId = activityScheduleId,
-                AssignmentType = activitySchedule.TripType,
-                PickupLocation = pickupLocation,
-                DropoffLocation = dropoffLocation,
-                Notes = notes,
-                CreatedDate = DateTime.UtcNow,
-                CreatedBy = Environment.UserName
-            };
-
-            context.StudentSchedules.Add(studentSchedule);
-            await context.SaveChangesAsync();
-
-            Logger.Information("Successfully assigned student {StudentId} to activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-            return studentSchedule;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Error assigning student {StudentId} to activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-            throw;
         }
     }
 
@@ -242,35 +182,6 @@ public class StudentScheduleService : IStudentScheduleService
         }
     }
 
-    public async Task<bool> RemoveStudentFromActivityScheduleAsync(int studentId, int activityScheduleId)
-    {
-        try
-        {
-            Logger.Information("Removing student {StudentId} from activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-
-            using var context = _contextFactory.CreateWriteDbContext();
-
-            var studentSchedule = await context.StudentSchedules
-                .FirstOrDefaultAsync(ss => ss.StudentId == studentId && ss.ActivityScheduleId == activityScheduleId);
-
-            if (studentSchedule == null)
-            {
-                Logger.Warning("Student {StudentId} is not assigned to activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-                return false;
-            }
-
-            context.StudentSchedules.Remove(studentSchedule);
-            await context.SaveChangesAsync();
-
-            Logger.Information("Successfully removed student {StudentId} from activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Error removing student {StudentId} from activity schedule {ActivityScheduleId}", studentId, activityScheduleId);
-            throw;
-        }
-    }
 
     public async Task<List<Student>> GetStudentsForScheduleAsync(int scheduleId)
     {
@@ -305,29 +216,6 @@ public class StudentScheduleService : IStudentScheduleService
                 Logger.Error(ex, "Error occurred while retrieving students for schedule");
                 throw;
             }
-        }
-    }
-    public async Task<List<Student>> GetStudentsForActivityScheduleAsync(int activityScheduleId)
-    {
-        try
-        {
-            Logger.Information("Getting students for activity schedule {ActivityScheduleId}", activityScheduleId);
-
-            using var context = _contextFactory.CreateDbContext();
-
-            var students = await context.StudentSchedules
-                .Where(ss => ss.ActivityScheduleId == activityScheduleId)
-                .Include(ss => ss.Student)
-                .Select(ss => ss.Student)
-                .ToListAsync();
-
-            Logger.Information("Found {Count} students for activity schedule {ActivityScheduleId}", students.Count, activityScheduleId);
-            return students;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Error getting students for activity schedule {ActivityScheduleId}", activityScheduleId);
-            throw;
         }
     }
 
@@ -377,31 +265,6 @@ public class StudentScheduleService : IStudentScheduleService
                     stopwatch.ElapsedMilliseconds);
                 throw;
             }
-        }
-    }
-    public async Task<List<StudentSchedule>> GetActivitySchedulesForStudentAsync(int studentId)
-    {
-        try
-        {
-            Logger.Information("Getting activity schedules for student {StudentId}", studentId);
-
-            using var context = _contextFactory.CreateDbContext();
-
-            var schedules = await context.StudentSchedules
-                .Where(ss => ss.StudentId == studentId && ss.ActivityScheduleId != null)
-                .Include(ss => ss.ActivitySchedule)
-                .ThenInclude(a => a!.ScheduledVehicle)
-                .Include(ss => ss.ActivitySchedule)
-                .ThenInclude(a => a!.ScheduledDriver)
-                .ToListAsync();
-
-            Logger.Information("Found {Count} activity schedules for student {StudentId}", schedules.Count, studentId);
-            return schedules;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Error getting activity schedules for student {StudentId}", studentId);
-            throw;
         }
     }
 
@@ -493,8 +356,7 @@ public class StudentScheduleService : IStudentScheduleService
                     ["ConfirmedAssignments"] = await context.StudentSchedules.CountAsync(ss => ss.Confirmed),
                     ["AttendedAssignments"] = await context.StudentSchedules.CountAsync(ss => ss.Attended),
                     ["StudentsWithAssignments"] = await context.StudentSchedules.Select(ss => ss.StudentId).Distinct().CountAsync(),
-                    ["SchedulesWithAssignments"] = await context.StudentSchedules.Where(ss => ss.ScheduleId != null).Select(ss => ss.ScheduleId).Distinct().CountAsync(),
-                    ["ActivitySchedulesWithAssignments"] = await context.StudentSchedules.Where(ss => ss.ActivityScheduleId != null).Select(ss => ss.ActivityScheduleId).Distinct().CountAsync()
+                    ["SchedulesWithAssignments"] = await context.StudentSchedules.Where(ss => ss.ScheduleId != null).Select(ss => ss.ScheduleId).Distinct().CountAsync()
                 };
 
                 stopwatch.Stop();

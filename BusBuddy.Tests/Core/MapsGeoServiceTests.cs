@@ -1,7 +1,7 @@
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -173,9 +173,68 @@ public class RouteDrivePathRefresherTests
         var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
 
         result.Success.Should().BeTrue();
+        result.DroppedIntermediateCount.Should().Be(0);
         route.WaypointsJson.Should().Contain("encodedPolyline");
         route.WaypointsJson.Should().Contain("stops");
         route.WaypointsJson.Should().NotContain("\"points\"");
+    }
+
+    [Test]
+    public async Task TryReadSteps_ReturnsStoredDirections_WithoutCallingRoutesOrRewritingThePath()
+    {
+        var json = RouteWaypointSerializer.FromEncodedPolyline(
+            "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+            [(38.15, -102.72), (38.16, -102.71)],
+            ["Turn left onto Oak St — 0.2 mi"]);
+        var route = new Route { RouteId = 5, WaypointsJson = json };
+        var routing = new Mock<IRoutingService>(MockBehavior.Strict);
+
+        var steps = await RouteDrivePathRefresher.TryReadStepsAsync(routing.Object, route);
+
+        steps.Should().Equal("Turn left onto Oak St — 0.2 mi");
+        route.WaypointsJson.Should().Be(json);
+    }
+
+    [Test]
+    public async Task TryReadSteps_IgnoresDecodedVertices_AndLeavesThePathUnchanged()
+    {
+        const string json =
+            """{"encodedPolyline":"_p~iF~ps|U_ulLnnqC_mqNvxq`@","points":[[38.0,-102.0],[38.01,-102.01],[38.02,-102.02],[38.03,-102.03]]}""";
+        var route = new Route { RouteId = 5, WaypointsJson = json };
+        var routing = new Mock<IRoutingService>(MockBehavior.Strict);
+
+        var steps = await RouteDrivePathRefresher.TryReadStepsAsync(routing.Object, route);
+
+        steps.Should().BeEmpty();
+        route.WaypointsJson.Should().Be(json);
+    }
+
+    [Test]
+    public async Task TryReadSteps_ReadsInstructionsForStoredStops_WithoutSavingThem()
+    {
+        var route = new Route
+        {
+            RouteId = 5,
+            WaypointsJson = RouteWaypointSerializer.FromPairs([(38.15, -102.72), (38.16, -102.71)])
+        };
+        var original = route.WaypointsJson;
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default))
+            .ReturnsAsync(new DrivePathResult
+            {
+                EncodedPolyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+                Points = new List<(double, double)> { (38.15, -102.72), (38.16, -102.71) },
+                Steps = ["Head north on Main St — 0.2 mi"]
+            });
+
+        var steps = await RouteDrivePathRefresher.TryReadStepsAsync(routing.Object, route);
+
+        steps.Should().Equal("Head north on Main St — 0.2 mi");
+        route.WaypointsJson.Should().Be(original);
     }
 
     [Test]
@@ -226,6 +285,39 @@ public class RouteDrivePathRefresherTests
         capped.Should().HaveCount(RouteDrivePathRefresher.MaxIntermediateWaypoints);
         capped[0].Should().Be(many[0]);
         capped[^1].Should().Be(many[^1]);
+    }
+
+    [Test]
+    public async Task TryRefresh_ReportsIntermediateStopsOmittedByTheRoutesCap()
+    {
+        var points = Enumerable.Range(0, RouteDrivePathRefresher.MaxIntermediateWaypoints + 4)
+            .Select(i => (38.0 + (i * 0.001), -102.0))
+            .ToList();
+        var route = new Route
+        {
+            RouteId = 9,
+            WaypointsJson = RouteWaypointSerializer.FromPairs(points)
+        };
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default))
+            .ReturnsAsync(new DrivePathResult
+            {
+                EncodedPolyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+                Points = new List<(double, double)> { points[0], points[^1] },
+                DistanceMeters = 1000,
+                Duration = "120s"
+            });
+
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
+
+        result.Success.Should().BeTrue();
+        result.DroppedIntermediateCount.Should().Be(points.Count - 2 - RouteDrivePathRefresher.MaxIntermediateWaypoints);
+        result.Message.Should().Contain("omitted");
+        result.Message.Should().Contain(RouteDrivePathRefresher.MaxIntermediateWaypoints.ToString());
     }
 
     [Test]

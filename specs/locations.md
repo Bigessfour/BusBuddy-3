@@ -18,7 +18,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST NOT treat a student’s home as a shared catalog stop unless a clerk publishes that home as a `PickupStop`.
 - MUST NOT fold trips into this entity. A trip is a one-time movement that _references_ two or more locations.
 - MUST NOT invent a parallel place model. Extend `IDestinationService`, `IPickupStopService`, `IGeoDataService` / `IMapsGeoService`, and `DistrictDepot`.
-- Default map center for clerks with no selection: Lamar/Wiley CO (~38.0872, -102.6208).
+- Unconfigured map center is the `MapDefaults` US overview. A district center exists only after the clerk sets a depot, bounding box, or school.
 - Exception: facility address correction, new catalog stop, school-year rollover, or a trip to a one-off destination (field, another district, event site).
 
 ## Relationships
@@ -36,7 +36,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 | Field                         | Type         | Required       | Notes                                                                                 |
 | ----------------------------- | ------------ | -------------- | ------------------------------------------------------------------------------------- |
 | LocationId                    | existing key | yes            | Reuse Core identity.                                                                  |
-| Name                          | string       | yes            | “Wiley School”, “Main & 4th”, “Bus Barn”.                                             |
+| Name                          | string       | yes            | “School”, “Main & 4th”, “Bus Barn”.                                                   |
 | LocationType                  | enum         | yes            | See types above.                                                                      |
 | StreetAddress                 | string       | yes            | Human-entered; then validated.                                                        |
 | City / State / PostalCode     | string       | yes            | Colorado district context; do not assume Denver.                                      |

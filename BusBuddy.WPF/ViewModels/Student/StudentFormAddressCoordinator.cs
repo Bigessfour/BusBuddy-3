@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Models;
 using BusBuddy.WPF.Utilities;

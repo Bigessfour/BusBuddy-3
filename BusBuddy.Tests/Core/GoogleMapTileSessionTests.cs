@@ -87,7 +87,7 @@ public class GoogleMapTileSessionTests
     [Test]
     public void BoundsForViewport_IsInverseOfZoomForBounds()
     {
-        // Clerk default center (38.0872, -102.6208), 1024x768 viewport.
+        // Sample viewport at a district-scale zoom, 1024x768.
         var bounds = MapDefaults.BoundsForViewport(38.0872, -102.6208, 12, 1024, 768);
 
         Assert.That(bounds.North, Is.GreaterThan(38.0872));

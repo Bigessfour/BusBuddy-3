@@ -51,6 +51,23 @@ public class MapCoordinateFormatterTests
         Assert.That(json, Does.Not.Contain("\"points\""));
         Assert.That(payload.PathPoints.Count, Is.GreaterThanOrEqualTo(2));
         Assert.That(payload.Stops[0].Latitude, Is.EqualTo(38.0).Within(0.0001));
+        Assert.That(payload.Directions, Is.Empty);
+    }
+
+    [Test]
+    public void RouteWaypointSerializer_FromEncodedPolyline_KeepsDirectionsWithTheLine()
+    {
+        const string encoded = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
+        var withSteps = RouteWaypointSerializer.FromEncodedPolyline(
+            encoded,
+            new[] { (38.0, -102.0), (38.1, -102.1) },
+            ["Head north on Main St — 0.2 mi"]);
+
+        var payload = RouteWaypointSerializer.ParsePayload(withSteps);
+
+        Assert.That(payload.EncodedPolyline, Is.EqualTo(encoded));
+        Assert.That(payload.Stops, Has.Count.EqualTo(2));
+        Assert.That(payload.Directions, Is.EqualTo(new[] { "Head north on Main St — 0.2 mi" }));
     }
 
     [Test]

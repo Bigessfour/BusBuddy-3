@@ -463,7 +463,7 @@ namespace BusBuddy.Core.Services
             await SeedActivityLogsAsync(100);
             await SeedDriversAsync(15);
             await SeedBusesAsync(12);
-            await SeedStudentsFromCsvAsync();
+            // Students are clerk-entered (Add Student / Import CSV). Do not top up the roster.
             await SeedRoutesAsync(8);
             // Activities (one-off trips) are not seeded: the Trip Board is clerk-entered only.
             await EnsureMapDemoGeoAsync();

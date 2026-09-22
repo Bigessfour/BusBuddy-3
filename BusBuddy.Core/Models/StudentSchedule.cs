@@ -23,10 +23,6 @@ public class StudentSchedule
     [Display(Name = "Schedule")]
     public int? ScheduleId { get; set; }
 
-    [ForeignKey("ActivitySchedule")]
-    [Display(Name = "Activity Schedule")]
-    public int? ActivityScheduleId { get; set; }
-
     [Required]
     [StringLength(20)]
     [Display(Name = "Assignment Type")]
@@ -67,5 +63,4 @@ public class StudentSchedule
     // Navigation properties
     public virtual Student Student { get; set; } = null!;
     public virtual Schedule? Schedule { get; set; }
-    public virtual ActivitySchedule? ActivitySchedule { get; set; }
 }

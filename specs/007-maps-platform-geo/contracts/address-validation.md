@@ -32,7 +32,7 @@ Response mapping (Google risk-averse checkout: https://developers.google.com/map
 - `verdict.possibleNextAction` FIX, or `validationGranularity` OTHER/ROUTE → not valid, no pin
 - `verdict.geocodeGranularity` is the pin accuracy (can be coarser than `validationGranularity`)
 - Pin only when `geocodeGranularity` is PREMISE / SUB_PREMISE / PREMISE_PROXIMITY **and** the street is confirmed. Unconfirmed `street_number`/`route`, or `geocode.placeTypes` of only locality/political, is a city centroid — not a pin.
-- `uspsData.dpvConfirmation` N → not valid; D / missing subpremise → needs unit; empty DPV is allowed when the verdict is otherwise premise-grade (rural Wiley/Lamar)
+- `uspsData.dpvConfirmation` N → not valid; D / missing subpremise → needs unit; empty DPV is allowed when the verdict is otherwise premise-grade (rural addresses)
 - `geocode.location` → lat/lon
 - `address.formattedAddress` / `postalAddress` → normalized display
 - Missing location + invalid verdict → `GeocodeAsync` returns null

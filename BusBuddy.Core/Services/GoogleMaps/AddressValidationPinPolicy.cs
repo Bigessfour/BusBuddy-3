@@ -21,7 +21,7 @@ public static class AddressValidationPinPolicy
     /// <summary>
     /// Address Validation <c>validationGranularity</c> that means a mailing destination at building
     /// or unit level. Google: PREMISE or SUB_PREMISE is likely deliverable; ROUTE/OTHER is not.
-    /// PREMISE_PROXIMITY approximates the building (rural Wiley/Lamar homes).
+    /// PREMISE_PROXIMITY approximates the building (rural homes).
     /// </summary>
     public static bool IsDeliverableAddressGranularity(string? validationGranularity) =>
         EqualsAny(validationGranularity, "SUB_PREMISE", "PREMISE", "PREMISE_PROXIMITY");
@@ -184,7 +184,7 @@ public static class AddressValidationPinPolicy
 
     /// <summary>
     /// Address Validation <c>geocode.placeTypes</c> of only locality/political is the city centroid
-    /// (12200 BenVerified Ave → Lamar), not a student-home pin.
+    /// a city-level result, not a student-home pin.
     /// </summary>
     private static bool IsLocalityOnlyGeocode(IReadOnlyList<string>? placeTypes)
     {

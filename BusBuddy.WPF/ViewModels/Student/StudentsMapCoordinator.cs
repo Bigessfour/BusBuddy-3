@@ -1,7 +1,7 @@
 using System.Windows;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.Input;
@@ -98,27 +98,4 @@ public sealed class StudentsMapCoordinator
         }
     }
 
-    /// <summary>
-    /// Kicks the same optimizer the bulk-assign toolbar uses. The grid has no dedicated AI
-    /// suggestion surface; this is a thin alias so the row command stays bound.
-    /// </summary>
-    public string SuggestRoute(StudentModel? student, Func<Task> optimizeRoutes)
-    {
-        if (student is null)
-        {
-            return string.Empty;
-        }
-
-        try
-        {
-            Logger.Information("AI route suggestion for student {StudentId}", student.StudentId);
-            _ = optimizeRoutes();
-            return $"Getting AI route suggestions for {student.StudentName}";
-        }
-        catch (Exception ex)
-        {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error getting route suggestions");
-            return "Error getting route suggestions";
-        }
-    }
 }

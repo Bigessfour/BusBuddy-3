@@ -3,7 +3,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Utilities;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -294,6 +294,73 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<Result<RouteStop>> UpdateRouteStopAsync(int routeId, RouteStop routeStop)
+        {
+            try
+            {
+                var (opId, sw) = StartOp("UpdateStop", routeId);
+                if (routeStop is null || routeStop.RouteStopId <= 0)
+                {
+                    return Result.FailureResult<RouteStop>("RouteStop id is required");
+                }
+
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<RouteStop>("Invalid routeId");
+                }
+
+                if (!routeStop.HasValidatedCoordinates)
+                {
+                    return Result.FailureResult<RouteStop>(
+                        "Stop requires a validated location (geocoded lat/lng). Unvalidated coordinates cannot be published waypoints.");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    return await InTransactionAsync(context, async () =>
+                    {
+                        var existing = await context.RouteStops
+                            .FirstOrDefaultAsync(rs => rs.RouteStopId == routeStop.RouteStopId && rs.RouteId == routeId);
+                        if (existing is null)
+                        {
+                            return Result.FailureResult<RouteStop>(
+                                $"Stop with ID {routeStop.RouteStopId} not found for route {routeId}");
+                        }
+
+                        existing.StopName = routeStop.StopName?.Trim() ?? string.Empty;
+                        existing.StopAddress = routeStop.StopAddress?.Trim() ?? string.Empty;
+                        existing.Latitude = routeStop.Latitude;
+                        existing.Longitude = routeStop.Longitude;
+                        NormalizeStopEstimates(existing);
+
+                        await context.SaveChangesAsync();
+                        Logger.Information(
+                            "Updated stop {StopName} (ID: {RouteStopId}) on route {RouteId} OpId={OpId}",
+                            existing.StopName,
+                            existing.RouteStopId,
+                            routeId,
+                            opId);
+                        await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        EndOpOk("UpdateStop", opId, sw, routeId);
+                        return Result.SuccessResult(existing);
+                    });
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating stop on route {RouteId}", routeId);
+                return Result.FailureResult<RouteStop>($"Error updating route stop: {ex.GetBaseException().Message}");
+            }
+        }
+
         public async Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId)
         {
             try
@@ -328,9 +395,31 @@ namespace BusBuddy.Core.Services
                         }
 
                         context.RouteStops.Remove(stop);
-
-                        // Persist changes asynchronously
                         await context.SaveChangesAsync();
+
+                        var remaining = await context.RouteStops
+                            .AsTracking()
+                            .Where(rs => rs.RouteId == routeId)
+                            .OrderBy(rs => rs.StopOrder)
+                            .ThenBy(rs => rs.RouteStopId)
+                            .ToListAsync();
+                        var order = 1;
+                        foreach (var remainingStop in remaining)
+                        {
+                            if (remainingStop.StopOrder != order)
+                            {
+                                remainingStop.StopOrder = order;
+                                remainingStop.UpdatedDate = DateTime.UtcNow;
+                                context.Entry(remainingStop).Property(s => s.StopOrder).IsModified = true;
+                            }
+
+                            order++;
+                        }
+
+                        if (remaining.Count > 0)
+                        {
+                            await context.SaveChangesAsync();
+                        }
 
                         Logger.Information("Removed stop {StopId} from route {RouteId} OpId={OpId}", stopId, routeId, opId);
                         await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
@@ -382,14 +471,22 @@ namespace BusBuddy.Core.Services
                             .OrderBy(s => s.StopOrder)
                             .ToListAsync();
 
+                        var cloneDate = newDate == default
+                            ? DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc)
+                            : newDate.Date;
+                        var cloneName = string.IsNullOrWhiteSpace(newRouteName)
+                            ? $"Copy of {source.RouteName}"
+                            : newRouteName.Trim();
+                        if (await RouteNameExistsOnDateAsync(context, cloneName, cloneDate).ConfigureAwait(false))
+                        {
+                            return Result.FailureResult<Route>(
+                                $"A route with name '{cloneName}' already exists for {cloneDate:yyyy-MM-dd}");
+                        }
+
                         var clone = new Route
                         {
-                            Date = newDate == default
-                                ? DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc)
-                                : newDate.Date,
-                            RouteName = string.IsNullOrWhiteSpace(newRouteName)
-                                ? $"Copy of {source.RouteName}"
-                                : newRouteName.Trim(),
+                            Date = cloneDate,
+                            RouteName = cloneName,
                             Description = source.Description,
                             IsActive = false,
                             School = source.School,
@@ -401,6 +498,10 @@ namespace BusBuddy.Core.Services
                             WaypointsJson = source.WaypointsJson,
                             Distance = source.Distance,
                             EstimatedDuration = source.EstimatedDuration,
+                            AMVehicleId = source.AMVehicleId,
+                            PMVehicleId = source.PMVehicleId,
+                            AMDriverId = source.AMDriverId,
+                            PMDriverId = source.PMDriverId,
                             StopCount = stops.Count,
                             StudentCount = 0
                         };
@@ -538,8 +639,22 @@ namespace BusBuddy.Core.Services
                 .OrderBy(s => s.StopOrder)
                 .ToListAsync()
                 .ConfigureAwait(false);
+            var assigned = await context.Students.AsNoTracking()
+                .Where(s => s.Active)
+                .WhereOnRoute(route)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            var routable = AssignedRouteStops.ForRouting(coords, assigned);
+            if (routable.Count != coords.Count)
+            {
+                Logger.Information(
+                    "Drive path omitted unassigned student stops RouteId={RouteId} Kept={Kept} Omitted={Omitted}",
+                    routeId,
+                    routable.Count,
+                    coords.Count - routable.Count);
+            }
 
-            var validated = coords
+            var validated = routable
                 .Where(s => RouteStop.IsValidatedCoordinate(s.Latitude, s.Longitude))
                 .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
                 .ToList();

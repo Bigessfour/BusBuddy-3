@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
 
 namespace BusBuddy.Core.Configuration;
@@ -10,6 +11,12 @@ namespace BusBuddy.Core.Configuration;
 public class OllamaOptions
 {
     public const string SectionName = "Ollama";
+    public const int MinTimeoutSeconds = 1;
+    public const int MaxTimeoutSeconds = 300;
+    public const int MinMaxTokens = 1;
+    public const int MaxMaxTokens = 256_000;
+    public const double MinTemperature = 0.0;
+    public const double MaxTemperature = 2.0;
 
     /// <summary>
     /// OpenAI-compatible base URL (default port 11434).
@@ -26,13 +33,13 @@ public class OllamaOptions
     /// </summary>
     public string Model { get; set; } = "llama3.2";
 
-    [Range(1, 300)]
+    [Range(MinTimeoutSeconds, MaxTimeoutSeconds)]
     public int TimeoutSeconds { get; set; } = 60;
 
-    [Range(1, 256000)]
+    [Range(MinMaxTokens, MaxMaxTokens)]
     public int MaxTokens { get; set; } = 2048;
 
-    [Range(0.0, 2.0)]
+    [Range(MinTemperature, MaxTemperature)]
     public double Temperature { get; set; } = 0.3;
 
     /// <summary>
@@ -64,17 +71,17 @@ public class OllamaOptions
             options.Model = model;
         }
 
-        if (int.TryParse(section["TimeoutSeconds"], out var timeout))
+        if (int.TryParse(section["TimeoutSeconds"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var timeout))
         {
             options.TimeoutSeconds = timeout;
         }
 
-        if (int.TryParse(section["MaxTokens"], out var maxTokens))
+        if (int.TryParse(section["MaxTokens"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxTokens))
         {
             options.MaxTokens = maxTokens;
         }
 
-        if (double.TryParse(section["Temperature"], out var temperature))
+        if (double.TryParse(section["Temperature"], NumberStyles.Float, CultureInfo.InvariantCulture, out var temperature))
         {
             options.Temperature = temperature;
         }
@@ -88,6 +95,17 @@ public class OllamaOptions
             options.Enabled = useLive;
         }
 
+        options.ApplyBounds();
         return options;
+    }
+
+    /// <summary>
+    /// Pull numeric settings back inside the <see cref="RangeAttribute"/> limits declared on this type.
+    /// </summary>
+    public void ApplyBounds()
+    {
+        TimeoutSeconds = Math.Clamp(TimeoutSeconds, MinTimeoutSeconds, MaxTimeoutSeconds);
+        MaxTokens = Math.Clamp(MaxTokens, MinMaxTokens, MaxMaxTokens);
+        Temperature = Math.Clamp(Temperature, MinTemperature, MaxTemperature);
     }
 }

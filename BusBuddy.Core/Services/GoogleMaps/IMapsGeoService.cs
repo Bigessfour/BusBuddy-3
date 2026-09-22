@@ -1,4 +1,4 @@
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 
 namespace BusBuddy.Core.Services.GoogleMaps;
 

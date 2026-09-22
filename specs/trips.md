@@ -17,7 +17,7 @@ The current office trip board is the clerk spreadsheet **Activity Schedule - Tri
 - MUST treat “All buses and SPED” as multi-asset (`IsMultiAsset`). Do not smash that into one `BusId`.
 - MUST link Day 1 / Day 2 or “both teams ride together” with `LinkedTripId`. Do not merge those rows into a Route.
 - MUST plot a selected trip on the map only when coordinates exist. No 0,0 or US-centroid fallback pins.
-- MUST print a trip ticket from Core `TripEvent` (not `Activity` / `Schedule`). Paper blanks for beginning/ending/total mileage, fuel entered, time departed, and time arrived back at the barn are **not** persisted columns.
+- MUST print a trip ticket from Core `TripEvent`. `Schedule` is the published route calendar, not a trip. Paper blanks for beginning/ending/total mileage, fuel entered, time departed, and time arrived back at the barn are **not** persisted columns.
 - MUST persist clerk-edited trip purposes and sports/reasons in user settings (`ITripReasonCatalog`). Do not require a code change to add Track, Band, or a field-trip purpose.
 - MUST add 1.5 hours (`TripEvent.PrePostTripInspectionHours`) to billed driver hours for every trip (`DriverHours` = wheel time + 1.5). Do not auto-insert PreTrip/PostTrip duty events. Do not change `HomeRouteId`.
 - MUST NOT invent a second calendar or clone Route. Extend Core `TripEvent` if it exists.
@@ -97,7 +97,7 @@ MissingInfo → Draft (Scheduled) → Assigned → Confirmed → Completed
 | Spec term             | Existing code                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------- |
 | Trip aggregate        | `BusBuddy.Core.Models.Trips.TripEvent` (extend — do not clone `Route`)                              |
-| Leftover calendars    | `Activity`, `ActivitySchedule` — do not merge into Route                                            |
+| Trip store            | `TripEvent` only. `Activity` and `ActivitySchedule` are removed. Do not merge trips into Route.     |
 | Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination`                     |
 | Bus / driver loan     | `IBusService`, driver services                                                                      |
 | Path                  | `IRoutingService`, `IMapsGeoService`                                                                |

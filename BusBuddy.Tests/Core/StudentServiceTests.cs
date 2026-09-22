@@ -39,8 +39,8 @@ namespace BusBuddy.Tests.Core
             // Seed minimal data
             _dbContext.Routes.AddRange(new[]
             {
-                new Route { RouteId = 1, RouteName = "East Route", Date = DateTime.Today, IsActive = true, School = "Test" },
-                new Route { RouteId = 2, RouteName = "West Route", Date = DateTime.Today, IsActive = true, School = "Test" }
+                new Route { RouteId = 1, RouteName = "East Route", Date = DateTime.Today, IsActive = true, School = "Test", Session = RouteSession.AM },
+                new Route { RouteId = 2, RouteName = "West Route", Date = DateTime.Today, IsActive = true, School = "Test", Session = RouteSession.PM }
             });
             _dbContext.SaveChanges();
 
@@ -236,7 +236,9 @@ namespace BusBuddy.Tests.Core
                 Grade = "2",
                 School = "T",
                 ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555"
+                EmergencyPhone = "555-555-5555",
+                RidesAm = true,
+                RidesPm = true
             };
             _dbContext.Students.Add(s);
             await _dbContext.SaveChangesAsync();
@@ -374,6 +376,138 @@ namespace BusBuddy.Tests.Core
             stats["TotalStudents"].Should().Be(2);
             stats["ActiveStudents"].Should().Be(1);
             stats["StudentsWithRoutes"].Should().Be(1);
+        }
+
+        [Test]
+        public async Task GetIntakeWarnings_DoesNotBlockValidate()
+        {
+            var student = new Student { StudentName = "Incomplete", Grade = "1" };
+
+            var warnings = _studentService.GetIntakeWarnings(student);
+            var errors = await _studentService.ValidateStudentAsync(student);
+
+            warnings.Should().Contain(w => w.Contains("School", StringComparison.Ordinal));
+            warnings.Should().Contain(w => w.Contains("eligibility", StringComparison.OrdinalIgnoreCase));
+            warnings.Should().Contain(w => w.Contains("validated coordinates", StringComparison.Ordinal));
+            errors.Should().NotContain(w => w.Contains("School is not assigned", StringComparison.Ordinal));
+        }
+
+        [Test]
+        public async Task UpdateStudentAddressAsync_ClearsPreviousPin()
+        {
+            var s = new Student
+            {
+                StudentName = "Moved",
+                Grade = "3",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                HomeAddress = "1 Old St",
+                City = "Wiley",
+                State = "CO",
+                Zip = "81090",
+                Latitude = 38.08m,
+                Longitude = -102.62m,
+                PlaceId = "old-place"
+            };
+            _dbContext.Students.Add(s);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.RouteStops.Add(new RouteStop
+            {
+                RouteId = 1,
+                StopName = "Home",
+                StopAddress = "1 Old St",
+                Latitude = 38.08m,
+                Longitude = -102.62m,
+                Notes = $"StudentId={s.StudentId}"
+            });
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var ok = await _studentService.UpdateStudentAddressAsync(s.StudentId, "2 New St", "Lamar", "CO", "81052");
+
+            ok.Should().BeTrue();
+            _dbContext.ChangeTracker.Clear();
+            var saved = await _dbContext.Students.AsNoTracking().FirstAsync(x => x.StudentId == s.StudentId);
+            saved.HomeAddress.Should().Be("2 New St");
+            saved.Latitude.Should().BeNull();
+            saved.Longitude.Should().BeNull();
+            saved.PlaceId.Should().BeNull();
+            var stop = await _dbContext.RouteStops.AsNoTracking().FirstAsync(x => x.Notes == $"StudentId={s.StudentId}");
+            stop.Latitude.Should().BeNull();
+            stop.Longitude.Should().BeNull();
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_RefusesWhenEligibilityIsOff()
+        {
+            var s = new Student
+            {
+                StudentName = "No AM",
+                Grade = "2",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                RidesAm = false,
+                RidesPm = true
+            };
+            _dbContext.Students.Add(s);
+            await _dbContext.SaveChangesAsync();
+
+            var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", null);
+
+            ok.Should().BeFalse();
+            _dbContext.ChangeTracker.Clear();
+            var saved = await _dbContext.Students.AsNoTracking().FirstAsync(x => x.StudentId == s.StudentId);
+            saved.AmRouteId.Should().BeNull();
+        }
+
+        [Test]
+        public async Task UpdateStudentAsync_TurningOffAmEligibility_ClearsAmRoute()
+        {
+            var s = new Student
+            {
+                StudentName = "Was AM",
+                Grade = "2",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                RidesAm = true,
+                RidesPm = true,
+                AMRoute = "East Route",
+                PMRoute = "West Route"
+            };
+            var added = await _studentService.AddStudentAsync(s);
+            added.RidesAm = false;
+            var ok = await _studentService.UpdateStudentAsync(added);
+
+            ok.Should().BeTrue();
+            await using var next = new BusBuddyDbContext(_dbOptions);
+            var saved = await next.Students.AsNoTracking().FirstAsync(x => x.StudentId == added.StudentId);
+            saved.AmRouteId.Should().BeNull();
+            saved.AMRoute.Should().BeNull();
+            saved.PmRouteId.Should().Be(2);
+        }
+
+        [Test]
+        public async Task AddStudentAsync_SpecialNeeds_DefaultsAideAndClearsCatalogStop()
+        {
+            var s = new Student
+            {
+                StudentName = "Aide",
+                Grade = "4",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                RequiresSpecialNeedsBus = true,
+                RequiresAide = false,
+                PickupStopId = 9
+            };
+
+            var added = await _studentService.AddStudentAsync(s);
+
+            added.RequiresAide.Should().BeTrue();
+            added.PickupStopId.Should().BeNull();
         }
     }
 }

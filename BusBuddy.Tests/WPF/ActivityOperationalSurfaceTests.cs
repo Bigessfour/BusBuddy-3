@@ -1,6 +1,6 @@
 using System;
 using BusBuddy.Core.Models.Trips;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Tests.WPF;
 using BusBuddy.WPF.ViewModels.Activity;
 using CommunityToolkit.Mvvm.Input;

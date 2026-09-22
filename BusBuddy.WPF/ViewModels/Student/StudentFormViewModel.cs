@@ -7,7 +7,6 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Messages;
 using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.Input;

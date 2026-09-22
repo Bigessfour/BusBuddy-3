@@ -112,7 +112,7 @@ public static class MapMarkerLabels
     }
 
     /// <summary>
-    /// "Lamar High School (Stop 7)" — one caption per spot instead of two pins stacked on each other.
+    /// "School name (Stop 7)" — one caption per spot instead of two pins stacked on each other.
     /// A route stop named after the pin it sits on ("Ada" on Ada's home) adds nothing, so the caption stays as is.
     /// </summary>
     public static string DisplayCaption(string caption, string? routeStopLabel)

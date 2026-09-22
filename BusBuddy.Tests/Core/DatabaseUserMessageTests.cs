@@ -1,7 +1,11 @@
 using System;
+using System.Net.Sockets;
+using System.Reflection;
+using BusBuddy.Core.Data;
 using BusBuddy.Core.Utilities;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using NUnit.Framework;
 
@@ -41,6 +45,40 @@ public class DatabaseUserMessageTests
 
         DatabaseUserMessage.ForOperation(ex, "save the student")
             .Should().Be("Failed to save the student: Student number already exists.");
+    }
+
+    [Test]
+    public void IsConnectivityFailure_detects_connection_refused_after_retry_limit()
+    {
+        var refused = new SocketException((int)SocketError.ConnectionRefused);
+        var npgsql = new NpgsqlException("Failed to connect to 192.168.64.1:5432", refused);
+        var exhausted = new RetryLimitExceededException(
+            "The maximum number of retries (5) was exceeded",
+            npgsql);
+
+        DatabaseUserMessage.IsConnectivityFailure(exhausted).Should().BeTrue();
+        var failed = Result.FailureResult<int>("Error retrieving students", exhausted);
+        DatabaseUserMessage.IsConnectivityFailure(failed.Exception).Should().BeTrue();
+        DatabaseUserMessage.IsConnectivityFailure(Result.FailureResult<int>("Invalid routeId").Exception).Should().BeFalse();
+        BusBuddyNpgsqlExecutionStrategy.IsConnectionRefused(exhausted).Should().BeTrue();
+    }
+
+    [Test]
+    public void ConnectionRefused_IsNotRetried()
+    {
+        var builder = new DbContextOptionsBuilder<BusBuddyDbContext>();
+        builder.UseBusBuddyPostgres("Host=127.0.0.1;Port=1;Database=busbuddy;Username=u;Password=p");
+        using var context = new BusBuddyDbContext(builder.Options);
+        var strategy = context.Database.CreateExecutionStrategy();
+        strategy.Should().BeOfType<BusBuddyNpgsqlExecutionStrategy>();
+
+        var refused = new NpgsqlException(
+            "Failed to connect to 192.168.64.1:5432",
+            new SocketException((int)SocketError.ConnectionRefused));
+        var shouldRetry = (bool)typeof(BusBuddyNpgsqlExecutionStrategy)
+            .GetMethod("ShouldRetryOn", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(strategy, new object[] { refused })!;
+        shouldRetry.Should().BeFalse();
     }
 
     [Test]

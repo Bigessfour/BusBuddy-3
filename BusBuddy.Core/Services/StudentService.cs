@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Serilog;
 using System.Globalization;
 using System.Linq; // Added for FirstOrDefault in seeding path resolution
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
 
 namespace BusBuddy.Core.Services;
@@ -549,6 +549,29 @@ public class StudentService : IStudentService
             int result;
             try
             {
+                var previous = await context.Students.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.StudentId == student.StudentId)
+                    .ConfigureAwait(false);
+                if (previous is not null)
+                {
+                    if (previous.RidesAm && !student.RidesAm)
+                    {
+                        student.AMRoute = null;
+                        student.AmRouteId = null;
+                    }
+
+                    if (previous.RidesPm && !student.RidesPm)
+                    {
+                        student.PMRoute = null;
+                        student.PmRouteId = null;
+                    }
+
+                    if (!previous.RequiresSpecialNeedsBus && student.RequiresSpecialNeedsBus)
+                    {
+                        student.RequiresAide = true;
+                    }
+                }
+
                 context.Students.Update(student);
                 student.AmRouteId = await ResolveRouteIdByNameAsync(context, student.AMRoute);
                 student.PmRouteId = await ResolveRouteIdByNameAsync(context, student.PMRoute);
@@ -672,6 +695,26 @@ public class StudentService : IStudentService
         }
     }
 
+    private static async Task ClearPublishedHomeStopCoordinatesAsync(BusBuddyDbContext context, int studentId)
+    {
+        var stops = await context.RouteStops
+            .AsTracking()
+            .Where(s => s.Notes != null && (s.Notes.Contains($"StudentId={studentId}") || s.Notes.StartsWith("StudentIds=")))
+            .ToListAsync()
+            .ConfigureAwait(false);
+        foreach (var stop in stops)
+        {
+            if (!NotesNameStudent(stop.Notes, studentId))
+            {
+                continue;
+            }
+
+            stop.Latitude = null;
+            stop.Longitude = null;
+            stop.UpdatedDate = DateTime.UtcNow;
+        }
+    }
+
     internal static bool NotesNameStudent(string? notes, int studentId)
     {
         if (string.IsNullOrWhiteSpace(notes))
@@ -756,6 +799,7 @@ public class StudentService : IStudentService
                 context.StudentSchedules.RemoveRange(schedules);
                 context.StudentSchoolTransfers.RemoveRange(transfers);
                 context.RouteRiderExceptions.RemoveRange(exceptions);
+                var removedStops = await RemoveStudentHomeStopsAsync(context, student).ConfigureAwait(false);
                 context.StudentDeletionLogs.Add(log);
                 context.Students.Remove(student);
 
@@ -763,6 +807,13 @@ public class StudentService : IStudentService
                 if (result > 0)
                 {
                     WriteStudentDeletionLog(log);
+                    if (removedStops > 0)
+                    {
+                        Logger.Information(
+                            "Student delete removed home stops StudentId={StudentId} Stops={StopCount}",
+                            student.StudentId,
+                            removedStops);
+                    }
                 }
 
                 return result > 0;
@@ -780,6 +831,51 @@ public class StudentService : IStudentService
             DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student record {StudentId}", studentId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Drops a home stop that names only this student. A shared stop keeps the other riders.
+    /// The route row stays. specs/students.md: assignment rows leave with the student.
+    /// </summary>
+    private static async Task<int> RemoveStudentHomeStopsAsync(BusBuddyDbContext context, Student student)
+    {
+        var name = student.StudentName?.Trim() ?? string.Empty;
+        var idText = student.StudentId.ToString(CultureInfo.InvariantCulture);
+        var candidates = await context.RouteStops
+            .AsTracking()
+            .Where(s =>
+                s.StopName == name
+                || (s.Notes != null && s.Notes.Contains(idText)))
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        var removed = 0;
+        foreach (var stop in candidates)
+        {
+            var named = RouteSummarySheetBuilder.ParseStudentIds(stop.Notes);
+            var idMatch = NotesNameStudent(stop.Notes, student.StudentId);
+            var nameMatch = name.Length > 0
+                && string.Equals(stop.StopName?.Trim(), name, StringComparison.OrdinalIgnoreCase);
+            if (!idMatch && !nameMatch)
+            {
+                continue;
+            }
+
+            var others = named.Where(id => id != student.StudentId).ToList();
+            if (others.Count > 0)
+            {
+                stop.Notes = others.Count == 1
+                    ? $"StudentId={others[0]}"
+                    : $"StudentIds={string.Join(",", others)}";
+                stop.UpdatedDate = DateTime.UtcNow;
+                continue;
+            }
+
+            context.RouteStops.Remove(stop);
+            removed++;
+        }
+
+        return removed;
     }
 
     /// <summary>
@@ -948,7 +1044,40 @@ public class StudentService : IStudentService
             errors.Add("Validation error occurred");
         }
 
+        foreach (var warning in GetIntakeWarnings(student))
+        {
+            Logger.Information("Intake incomplete StudentId={StudentId}: {Warning}", student.StudentId, warning);
+        }
+
         return errors;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<string> GetIntakeWarnings(Student student)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        var warnings = new List<string>();
+        if (student.DestinationId is null)
+        {
+            warnings.Add("School is not assigned.");
+        }
+
+        if (!student.RidesAm && !student.RidesPm)
+        {
+            warnings.Add("Ride eligibility is unset. Choose AM, PM, or both.");
+        }
+
+        if (student.PickupStopId is null && !student.HasValidatedHomeCoordinates)
+        {
+            warnings.Add("Home pickup has no validated coordinates.");
+        }
+
+        if (student.PickupStopId is > 0 && student.RequiresSpecialNeedsBus)
+        {
+            warnings.Add("Special needs uses home pickup. The catalog stop will be cleared on save.");
+        }
+
+        return warnings;
     }
 
     #endregion
@@ -969,8 +1098,14 @@ public class StudentService : IStudentService
                     ["TotalStudents"] = await context.Students.CountAsync(),
                     ["ActiveStudents"] = await context.Students.CountAsync(s => s.Active),
                     ["InactiveStudents"] = await context.Students.CountAsync(s => !s.Active),
-                    ["StudentsWithRoutes"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute)),
-                    ["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute))
+                    ["StudentsWithRoutes"] = await context.Students.CountAsync(s =>
+                        s.AmRouteId != null || s.PmRouteId != null
+                        || (s.AmRouteId == null && s.AMRoute != null && s.AMRoute != "")
+                        || (s.PmRouteId == null && s.PMRoute != null && s.PMRoute != "")),
+                    ["StudentsWithoutRoutes"] = await context.Students.CountAsync(s =>
+                        s.AmRouteId == null && s.PmRouteId == null
+                        && (s.AMRoute == null || s.AMRoute == "")
+                        && (s.PMRoute == null || s.PMRoute == ""))
                 };
 
                 // Grade level counts
@@ -1210,6 +1345,39 @@ public class StudentService : IStudentService
                 }
             }
 
+            var (studentContext, disposeStudent) = GetReadContext();
+            Student? rider;
+            try
+            {
+                rider = await studentContext.Students.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.StudentId == studentId)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                if (disposeStudent)
+                {
+                    await studentContext.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+
+            if (rider is null)
+            {
+                return false;
+            }
+
+            if (amId is int && !rider.RidesAm)
+            {
+                Logger.Warning("AM assign refused for student {StudentId}: RidesAm is off", studentId);
+                return false;
+            }
+
+            if (pmId is int && !rider.RidesPm)
+            {
+                Logger.Warning("PM assign refused for student {StudentId}: RidesPm is off", studentId);
+                return false;
+            }
+
             if (amId is int amRouteId)
             {
                 var amResult = await _routeService.AssignStudentToRouteAsync(
@@ -1295,80 +1463,6 @@ public class StudentService : IStudentService
         }
     }
 
-    public async Task<RouteAssignmentResult> AssignStudentsToRoutesAsync(BusBuddyDbContext context, IEnumerable<Student> students, IEnumerable<Route> routes, BusService busService)
-    {
-        var updatedStudents = new List<Student>();
-        var newAssignments = new List<RouteAssignment>();
-
-        foreach (var student in students)
-        {
-            // Example: If address contains "east of Hwy 287", assign East Route
-            var route = routes.FirstOrDefault(r => student.HomeAddress != null && r.Boundaries != null && IsAddressInRouteBoundary(student.HomeAddress, r.Boundaries));
-            if (route == null)
-            {
-                // Log and skip if no route matches
-                continue;
-            }
-
-            // Find bus for route
-            var bus = await context.Buses.FirstOrDefaultAsync(v => v.Make == route.RouteName || v.BusNumber == route.RouteName || v.BusNumber == route.RouteName.Replace(" Route", ""));
-            if (bus == null)
-            {
-                continue;
-            }
-
-            // Check bus capacity
-            var assignedCount = await busService.GetAssignedStudentCountAsync(context, bus.BusId);
-            if (assignedCount >= bus.SeatingCapacity)
-            {
-                continue;
-            }
-
-            // Create and persist assignment (ensure PK is generated)
-            var assignment = new RouteAssignment
-            {
-                RouteId = route.RouteId,
-                VehicleId = bus.BusId,
-                AssignmentDate = System.DateTime.Today
-            };
-            await context.RouteAssignments.AddAsync(assignment);
-            await context.SaveChangesAsync();
-            newAssignments.Add(assignment);
-
-            student.RouteAssignmentId = assignment.RouteAssignmentId;
-            student.BusStop = "Assigned by address";
-            context.Students.Update(student);
-            await context.SaveChangesAsync();
-            updatedStudents.Add(student);
-        }
-
-        return new RouteAssignmentResult
-        {
-            UpdatedStudents = updatedStudents,
-            NewAssignments = newAssignments
-        };
-    }
-
-    private bool IsAddressInRouteBoundary(string address, string boundaries)
-    {
-        // Simple example: match keywords (expand as needed)
-        if (string.IsNullOrEmpty(address) || string.IsNullOrEmpty(boundaries)) { return false; }
-        address = address.ToLower(System.Globalization.CultureInfo.InvariantCulture);
-        boundaries = boundaries.ToLower(System.Globalization.CultureInfo.InvariantCulture);
-        if (boundaries.Contains("east") && address.Contains("east")) { return true; }
-        if (boundaries.Contains("west") && address.Contains("west")) { return true; }
-        if (boundaries.Contains("south") && address.Contains("south")) { return true; }
-        if (boundaries.Contains("north") && address.Contains("north")) { return true; }
-        // Add more logic as needed
-        return false;
-    }
-
-    public class RouteAssignmentResult
-    {
-        public List<Student> UpdatedStudents { get; set; } = new();
-        public List<RouteAssignment> NewAssignments { get; set; } = new();
-    }
-
     #endregion
 
     #region Address and Contact Management
@@ -1399,10 +1493,22 @@ public class StudentService : IStudentService
                 }
 
                 studentName = student.StudentName;
+                var addressChanged = !string.Equals(student.HomeAddress?.Trim(), homeAddress.Trim(), StringComparison.Ordinal)
+                    || !string.Equals(student.City?.Trim(), city.Trim(), StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(student.State?.Trim(), state.Trim(), StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(student.Zip?.Trim(), zip.Trim(), StringComparison.Ordinal);
                 student.HomeAddress = homeAddress;
                 student.City = city;
                 student.State = state;
                 student.Zip = zip;
+                if (addressChanged)
+                {
+                    student.Latitude = null;
+                    student.Longitude = null;
+                    student.PlaceId = null;
+                    await ClearPublishedHomeStopCoordinatesAsync(context, student.StudentId).ConfigureAwait(false);
+                }
+
                 // Explicit, because the context may have been created with NoTracking.
                 context.Entry(student).State = EntityState.Modified;
 

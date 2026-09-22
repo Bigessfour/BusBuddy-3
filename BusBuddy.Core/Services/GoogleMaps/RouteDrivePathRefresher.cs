@@ -1,6 +1,6 @@
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Serilog;
 using Serilog.Context;
 
@@ -45,13 +45,11 @@ public static class RouteDrivePathRefresher
         {
             try
             {
-                var origin = stops[0];
-                var destination = stops[^1];
-                var intermediates = CapIntermediateWaypoints(
-                    stops.Skip(1).Take(stops.Count - 2).ToList());
-                var path = await routingService
-                    .ComputeDrivePathAsync(origin, destination, intermediates, cancellationToken)
+                var requested = await RequestDrivePathAsync(routingService, stops, cancellationToken)
                     .ConfigureAwait(false);
+                var path = requested.Path;
+                var intermediates = requested.Intermediates;
+                var droppedIntermediates = requested.DroppedIntermediates;
 
                 if (!path.Succeeded || path.Points.Count == 0)
                 {
@@ -64,19 +62,21 @@ public static class RouteDrivePathRefresher
 
                 route.WaypointsJson = RouteWaypointSerializer.FromEncodedPolyline(
                     path.EncodedPolyline!,
-                    stops);
+                    stops,
+                    path.Steps);
                 ApplyPathMetrics(route, path);
 
                 Logger.Information(
-                    "Drive path computed RouteId={RouteId} Stops={StopCount} Intermediates={Intermediates} DistanceMeters={DistanceMeters} Duration={Duration} ViaService={ViaService}",
+                    "Drive path computed RouteId={RouteId} Stops={StopCount} Intermediates={Intermediates} DroppedIntermediates={Dropped} DistanceMeters={DistanceMeters} Duration={Duration} ViaService={ViaService}",
                     route.RouteId,
                     stops.Count,
                     intermediates.Count,
+                    droppedIntermediates,
                     path.DistanceMeters,
                     path.Duration,
                     true);
 
-                return DrivePathRefreshResult.Succeeded(path);
+                return DrivePathRefreshResult.Succeeded(path, droppedIntermediates);
             }
             catch (Exception ex)
             {
@@ -85,6 +85,67 @@ public static class RouteDrivePathRefresher
             }
         }
     }
+
+    /// <summary>
+    /// Road instructions for the published stop list. Does not change <see cref="Route.WaypointsJson"/>.
+    /// A path that has an encoded line but no stored stops is left alone — decoded vertices are not waypoints.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> TryReadStepsAsync(
+        IRoutingService? routingService,
+        Route? route,
+        CancellationToken cancellationToken = default)
+    {
+        if (route is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
+        if (payload.Directions.Count > 0)
+        {
+            return payload.Directions;
+        }
+
+        if (routingService is null || payload.Stops.Count < 2)
+        {
+            return Array.Empty<string>();
+        }
+
+        try
+        {
+            var requested = await RequestDrivePathAsync(routingService, payload.Stops, cancellationToken)
+                .ConfigureAwait(false);
+            return requested.Path.Succeeded ? requested.Path.Steps : Array.Empty<string>();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Road directions unavailable RouteId={RouteId}", route.RouteId);
+            return Array.Empty<string>();
+        }
+    }
+
+    private static async Task<RequestedDrivePath> RequestDrivePathAsync(
+        IRoutingService routingService,
+        IReadOnlyList<(double Latitude, double Longitude)> stops,
+        CancellationToken cancellationToken)
+    {
+        var origin = stops[0];
+        var destination = stops[^1];
+        var allIntermediates = stops.Skip(1).Take(Math.Max(0, stops.Count - 2)).ToList();
+        var intermediates = CapIntermediateWaypoints(allIntermediates);
+        var path = await routingService
+            .ComputeDrivePathAsync(origin, destination, intermediates, cancellationToken)
+            .ConfigureAwait(false);
+        return new RequestedDrivePath(
+            path,
+            intermediates,
+            Math.Max(0, allIntermediates.Count - intermediates.Count));
+    }
+
+    private readonly record struct RequestedDrivePath(
+        DrivePathResult Path,
+        IReadOnlyList<(double Latitude, double Longitude)> Intermediates,
+        int DroppedIntermediates);
 
     /// <summary>
     /// Evenly samples intermediates so a long stop list stays within the Routes API cap.
@@ -153,8 +214,22 @@ public sealed class DrivePathRefreshResult
     public string? Message { get; init; }
     public DrivePathResult? Path { get; init; }
 
-    public static DrivePathRefreshResult Succeeded(DrivePathResult path) =>
-        new() { Success = true, Path = path, Message = "Drive path refreshed." };
+    /// <summary>Intermediate stops left out of the Routes API call because of <see cref="RouteDrivePathRefresher.MaxIntermediateWaypoints"/>.</summary>
+    public int DroppedIntermediateCount { get; init; }
+
+    public static DrivePathRefreshResult Succeeded(DrivePathResult path, int droppedIntermediates = 0)
+    {
+        var message = droppedIntermediates > 0
+            ? $"Drive path refreshed. {droppedIntermediates} intermediate stop(s) omitted (Google Routes allows {RouteDrivePathRefresher.MaxIntermediateWaypoints} intermediates)."
+            : "Drive path refreshed.";
+        return new DrivePathRefreshResult
+        {
+            Success = true,
+            Path = path,
+            Message = message,
+            DroppedIntermediateCount = droppedIntermediates
+        };
+    }
 
     public static DrivePathRefreshResult Failed(string message) =>
         new() { Success = false, Message = message };

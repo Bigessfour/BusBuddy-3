@@ -172,11 +172,6 @@ namespace BusBuddy.Core.Models
         public string? UpdatedBy { get; set; }
 
         /// <summary>
-        /// Navigation property: Activities that use this destination
-        /// </summary>
-        public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
-
-        /// <summary>
         /// Full formatted address for display
         /// </summary>
         [NotMapped]

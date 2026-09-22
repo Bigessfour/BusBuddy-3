@@ -86,4 +86,32 @@ public class DistrictSettingsAccessorTests
             }
         }
     }
+
+    [Test]
+    public void Current_CoercesPlannerValues_AndReturnsASnapshot()
+    {
+        var accessor = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings
+        {
+            TargetRidersPerCell = 0,
+            MaxPickupGapMinutes = 0,
+            AverageSpeedMph = -5,
+            MaxRideMinutes = 0,
+            StopSuggestMaxMeters = 0,
+            CatalogStopClusterMinHomes = 0,
+            DepotLatitude = 38.0866,
+            DepotLongitude = -102.6201
+        }));
+
+        var snapshot = accessor.Current;
+        Assert.That(snapshot.TargetRidersPerCell, Is.EqualTo(20));
+        Assert.That(snapshot.MaxPickupGapMinutes, Is.EqualTo(12));
+        Assert.That(snapshot.AverageSpeedMph, Is.EqualTo(25));
+        Assert.That(snapshot.MaxRideMinutes, Is.EqualTo(45));
+        Assert.That(snapshot.StopSuggestMaxMeters, Is.EqualTo(400));
+        Assert.That(snapshot.CatalogStopClusterMinHomes, Is.EqualTo(2));
+        Assert.That(snapshot.DepotLatitude, Is.EqualTo(38.0866).Within(0.0001));
+
+        snapshot.DepotName = "mutated";
+        Assert.That(accessor.Current.DepotName, Is.Null);
+    }
 }

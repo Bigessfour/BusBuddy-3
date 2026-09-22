@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using BusBuddy.WPF;
 using BusBuddy.WPF.ViewModels.Activity;
@@ -21,6 +22,19 @@ namespace BusBuddy.WPF.Views.Activity
                     ?? new ActivityManagementViewModel();
                 Log.ForContext<ActivityManagementView>().Information("ActivityManagementView DataContext initialized");
             }
+        }
+
+        private void AuditLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            var window = new Window
+            {
+                Title = "Activity log",
+                Content = new ActivityTimelineView(),
+                Width = 1100,
+                Height = 700,
+                Owner = Window.GetWindow(this)
+            };
+            window.Show();
         }
 
         private void TripScheduler_AppointmentTapped(object sender, AppointmentTappedArgs e)

@@ -1,6 +1,6 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -289,12 +289,6 @@ public sealed class DestinationService : IDestinationService
                 t => t.FromDestinationId == destinationId || t.ToDestinationId == destinationId,
                 cancellationToken)
             .ConfigureAwait(false))
-        {
-            return true;
-        }
-
-        if (await context.Activities.AnyAsync(a => a.DestinationId == destinationId, cancellationToken)
-                .ConfigureAwait(false))
         {
             return true;
         }

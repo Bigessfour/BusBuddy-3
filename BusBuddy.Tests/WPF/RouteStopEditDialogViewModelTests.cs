@@ -31,5 +31,13 @@ public class RouteStopEditDialogViewModelTests
         Assert.That(vm.HasValidatedCoordinates, Is.True);
         Assert.That(vm.SaveCommand.CanExecute(null), Is.True);
         Assert.That(vm.CoordinateStatus, Does.Contain("38.15"));
+        Assert.That(vm.SaveToolTip, Does.Contain("validated"));
+    }
+
+    [Test]
+    public void SaveToolTip_BlockedUntilNameAndCoordinates()
+    {
+        var vm = new RouteStopEditDialogViewModel(string.Empty, string.Empty);
+        Assert.That(vm.SaveToolTip, Does.Contain("stop name"));
     }
 }

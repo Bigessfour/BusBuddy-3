@@ -40,3 +40,19 @@ public class RouteValidationResult
     public List<string> Issues { get; set; } = new();
     public string Summary => IsValid ? "Route is valid" : $"{Issues.Count} issue(s) found";
 }
+
+/// <summary>
+/// Riders on this route row's session for one school day, after same-day not-riding exceptions.
+/// Capacity is the session bus seating count. Zero means no default bus is assigned.
+/// </summary>
+public sealed class RouteSessionLoad
+{
+    public int RouteId { get; init; }
+    public string Session { get; init; } = string.Empty;
+    public RouteTimeSlot Slot { get; init; }
+    public int AssignedCount { get; init; }
+    public int NotRidingCount { get; init; }
+    public int LoadCount { get; init; }
+    public int Capacity { get; init; }
+    public string? Warning { get; init; }
+}

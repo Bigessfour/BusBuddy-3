@@ -9,7 +9,8 @@
         MinWidth="760"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
-        AutomationProperties.Name="Route Schedule">
+        AutomationProperties.Name="Route Schedule"
+        ToolTipService.ShowOnDisabled="True">
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -88,18 +89,20 @@
                                    AllowEditing="False"
                                    AllowFiltering="False"
                                    AllowSorting="False"
+                                   AllowResizingColumns="True"
                                    SelectionMode="Single"
                                    GridLinesVisibility="Both"
+                                   ColumnSizer="Star"
                                    AutomationProperties.Name="Route schedule stops">
                 <syncfusion:SfDataGrid.Columns>
-                    <syncfusion:GridTextColumn HeaderText="#" MappingName="Sequence" Width="40"/>
-                    <syncfusion:GridTextColumn HeaderText="Student / stop" MappingName="Name" Width="200"/>
-                    <syncfusion:GridTextColumn HeaderText="Address" MappingName="Address" Width="200"/>
-                    <syncfusion:GridTextColumn HeaderText="Arrive" MappingName="Arrival" Width="70"/>
-                    <syncfusion:GridTextColumn HeaderText="Depart" MappingName="Departure" Width="70"/>
-                    <syncfusion:GridTextColumn HeaderText="Leg mi" MappingName="Miles" Width="70"/>
-                    <syncfusion:GridTextColumn HeaderText="Cum mi" MappingName="Cumulative" Width="70"/>
-                    <syncfusion:GridTextColumn HeaderText="Riders" MappingName="Riders" Width="70"/>
+                    <syncfusion:GridTextColumn HeaderText="#" MappingName="Sequence" MinimumWidth="40" MaximumWidth="56"/>
+                    <syncfusion:GridTextColumn HeaderText="Student / stop" MappingName="Name" MinimumWidth="140"/>
+                    <syncfusion:GridTextColumn HeaderText="Address" MappingName="Address" MinimumWidth="140"/>
+                    <syncfusion:GridTextColumn HeaderText="Arrive" MappingName="Arrival" MinimumWidth="64"/>
+                    <syncfusion:GridTextColumn HeaderText="Depart" MappingName="Departure" MinimumWidth="64"/>
+                    <syncfusion:GridTextColumn HeaderText="Leg mi" MappingName="Miles" MinimumWidth="64"/>
+                    <syncfusion:GridTextColumn HeaderText="Cum mi" MappingName="Cumulative" MinimumWidth="64"/>
+                    <syncfusion:GridTextColumn HeaderText="Riders" MappingName="Riders" MinimumWidth="64"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
         </DockPanel>
@@ -111,14 +114,16 @@
                                    AllowEditing="False"
                                    AllowFiltering="False"
                                    AllowSorting="False"
+                                   AllowResizingColumns="True"
                                    SelectionMode="Single"
                                    GridLinesVisibility="Both"
+                                   ColumnSizer="Star"
                                    AutomationProperties.Name="Route schedule roster">
                 <syncfusion:SfDataGrid.Columns>
-                    <syncfusion:GridTextColumn HeaderText="Student" MappingName="Name" Width="220"/>
-                    <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="70"/>
-                    <syncfusion:GridTextColumn HeaderText="Matched stop" MappingName="Stop" Width="220"/>
-                    <syncfusion:GridTextColumn HeaderText="Today" MappingName="Status" Width="140"/>
+                    <syncfusion:GridTextColumn HeaderText="Student" MappingName="Name" MinimumWidth="140"/>
+                    <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" MinimumWidth="56" MaximumWidth="80"/>
+                    <syncfusion:GridTextColumn HeaderText="Matched stop" MappingName="Stop" MinimumWidth="140"/>
+                    <syncfusion:GridTextColumn HeaderText="Today" MappingName="Status" MinimumWidth="100"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
         </DockPanel>
@@ -130,12 +135,14 @@
                                       Height="40"
                                       Margin="0,0,8,0"
                                       Command="{Binding ReTimeCommand}"
+                                      ToolTip="{Binding ReTimeToolTip}"
                                       AutomationProperties.Name="Re-time route schedule"/>
                 <syncfusion:ButtonAdv Label="Print"
                                       MinWidth="90"
                                       Height="40"
                                       Margin="0,0,8,0"
                                       Command="{Binding PrintCommand}"
+                                      ToolTip="{Binding PrintToolTip}"
                                       AutomationProperties.Name="Print route schedule"/>
                 <syncfusion:ButtonAdv Label="Close"
                                       MinWidth="90"
@@ -143,9 +150,14 @@
                                       Command="{Binding CloseCommand}"
                                       AutomationProperties.Name="Close route schedule"/>
             </StackPanel>
-            <TextBlock Text="{Binding StatusMessage}"
-                       VerticalAlignment="Center"
-                       TextWrapping="Wrap"/>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding StatusMessage}"
+                           TextWrapping="Wrap"/>
+                <TextBlock Text="Working…"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource BusBuddy.Brush.Primary}"
+                           Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            </StackPanel>
         </DockPanel>
     </Grid>
 </syncfusion:ChromelessWindow>

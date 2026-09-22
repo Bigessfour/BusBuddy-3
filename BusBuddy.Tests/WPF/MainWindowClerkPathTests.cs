@@ -65,6 +65,10 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("BusBuddyInputStyles.xaml"));
         Assert.That(xaml, Does.Contain("controls:PlacesAddressBox"));
         Assert.That(xaml, Does.Contain("SfTimePicker"));
+        var inputStyles = XamlViewFile.Read("Resources/BusBuddyInputStyles.xaml");
+        Assert.That(inputStyles, Does.Contain("BusBuddySfTimeSelectorStyle"));
+        Assert.That(inputStyles, Does.Contain("SelectorStyle"));
+        Assert.That(inputStyles, Does.Contain("BusBuddy.Brush.Surface.Medium"));
         Assert.That(xaml, Does.Contain("ValidateSchoolAddressButton_Click"));
         Assert.That(xaml, Does.Not.Contain("SchoolStartBox"));
         var codeBehind = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml.cs");

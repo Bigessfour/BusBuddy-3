@@ -152,206 +152,6 @@ namespace BusBuddy.Core.Migrations
                     b.ToTable("AIInsights", (string)null);
                 });
 
-            modelBuilder.Entity("BusBuddy.Core.Models.Activity", b =>
-                {
-                    b.Property<int>("ActivityId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ActivityId"));
-
-                    b.Property<string>("ActivityCategory")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ActivityName")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("");
-
-                    b.Property<string>("ActivityType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("");
-
-                    b.Property<decimal?>("ActualCost")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<DateTime?>("ApprovalDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("ApprovalRequired")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Approved")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("ApprovedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("AssignedDriverId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("AssignedVehicleId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<TimeSpan>("DepartureTime")
-                        .HasColumnType("interval");
-
-                    b.Property<string>("Description")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasDefaultValue("Activity");
-
-                    b.Property<string>("Destination")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasDefaultValue("");
-
-                    b.Property<int?>("DestinationId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal?>("DestinationLatitude")
-                        .HasColumnType("decimal(10,8)");
-
-                    b.Property<decimal?>("DestinationLongitude")
-                        .HasColumnType("decimal(11,8)");
-
-                    b.Property<string>("DestinationOverride")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Directions")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<decimal?>("DistanceMiles")
-                        .HasColumnType("decimal(8,2)");
-
-                    b.Property<int?>("DriverId")
-                        .HasColumnType("integer");
-
-                    b.Property<TimeSpan>("EstimatedArrival")
-                        .HasColumnType("interval");
-
-                    b.Property<decimal?>("EstimatedCost")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<TimeSpan?>("EstimatedTravelTime")
-                        .HasColumnType("interval");
-
-                    b.Property<TimeSpan>("EventTime")
-                        .HasColumnType("interval");
-
-                    b.Property<int?>("ExpectedPassengers")
-                        .HasColumnType("integer");
-
-                    b.Property<TimeSpan>("LeaveTime")
-                        .HasColumnType("interval");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<decimal?>("PickupLatitude")
-                        .HasColumnType("decimal(10,8)");
-
-                    b.Property<string>("PickupLocation")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<decimal?>("PickupLongitude")
-                        .HasColumnType("decimal(11,8)");
-
-                    b.Property<int?>("RecurringSeriesId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RequestedBy")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasDefaultValue("");
-
-                    b.Property<TimeSpan>("ReturnTime")
-                        .HasColumnType("interval");
-
-                    b.Property<int?>("RouteId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Scheduled");
-
-                    b.Property<int?>("StudentsCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("ActivityId");
-
-                    b.HasIndex("ActivityType")
-                        .HasDatabaseName("IX_Activities_ActivityType");
-
-                    b.HasIndex("ApprovalRequired")
-                        .HasDatabaseName("IX_Activities_ApprovalRequired");
-
-                    b.HasIndex("AssignedVehicleId")
-                        .HasDatabaseName("IX_Activities_VehicleId");
-
-                    b.HasIndex("Date")
-                        .HasDatabaseName("IX_Activities_Date");
-
-                    b.HasIndex("DestinationId");
-
-                    b.HasIndex("DriverId")
-                        .HasDatabaseName("IX_Activities_DriverId");
-
-                    b.HasIndex("RouteId")
-                        .HasDatabaseName("IX_Activities_RouteId");
-
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_Activities_Status");
-
-                    b.HasIndex("AssignedVehicleId", "Date", "LeaveTime")
-                        .HasDatabaseName("IX_Activities_BusSchedule");
-
-                    b.HasIndex("Date", "LeaveTime", "EventTime")
-                        .HasDatabaseName("IX_Activities_DateTimeRange");
-
-                    b.HasIndex("DriverId", "Date", "LeaveTime")
-                        .HasDatabaseName("IX_Activities_DriverSchedule");
-
-                    b.ToTable("Activities", (string)null);
-                });
-
             modelBuilder.Entity("BusBuddy.Core.Models.ActivityLog", b =>
                 {
                     b.Property<int>("Id")
@@ -388,105 +188,6 @@ namespace BusBuddy.Core.Migrations
                         .HasDatabaseName("IX_ActivityLogs_Timestamp");
 
                     b.ToTable("ActivityLogs", (string)null);
-                });
-
-            modelBuilder.Entity("BusBuddy.Core.Models.ActivitySchedule", b =>
-                {
-                    b.Property<int>("ActivityScheduleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ActivityScheduleId"));
-
-                    b.Property<int?>("ActivityId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("RequestedBy")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasDefaultValue("");
-
-                    b.Property<DateTime>("ScheduledDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ScheduledDestination")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasDefaultValue("");
-
-                    b.Property<int>("ScheduledDriverId")
-                        .HasColumnType("integer");
-
-                    b.Property<TimeSpan>("ScheduledEventTime")
-                        .HasColumnType("interval");
-
-                    b.Property<TimeSpan>("ScheduledLeaveTime")
-                        .HasColumnType("interval");
-
-                    b.Property<int?>("ScheduledRiders")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ScheduledVehicleId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("");
-
-                    b.Property<int?>("TripEventId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("TripType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("ActivityScheduleId");
-
-                    b.HasIndex("ActivityId");
-
-                    b.HasIndex("ScheduledDate")
-                        .HasDatabaseName("IX_ActivitySchedule_Date");
-
-                    b.HasIndex("ScheduledDriverId")
-                        .HasDatabaseName("IX_ActivitySchedule_DriverId");
-
-                    b.HasIndex("ScheduledVehicleId")
-                        .HasDatabaseName("IX_ActivitySchedule_VehicleId");
-
-                    b.HasIndex("TripEventId");
-
-                    b.HasIndex("TripType")
-                        .HasDatabaseName("IX_ActivitySchedule_TripType");
-
-                    b.ToTable("ActivitySchedule", (string)null);
                 });
 
             modelBuilder.Entity("BusBuddy.Core.Models.Bus", b =>
@@ -574,7 +275,7 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasDefaultValue("");
+                        .HasDefaultValue("Unknown");
 
                     b.Property<decimal?>("MilesPerGallon")
                         .HasColumnType("decimal(6,2)");
@@ -584,7 +285,7 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasDefaultValue("");
+                        .HasDefaultValue("Unknown");
 
                     b.Property<DateTime?>("NextMaintenanceDue")
                         .HasColumnType("timestamp with time zone");
@@ -890,7 +591,7 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasDefaultValue("");
+                        .HasDefaultValue("Unknown Driver");
 
                     b.Property<string>("DriverPhone")
                         .HasMaxLength(20)
@@ -901,7 +602,7 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasDefaultValue("")
+                        .HasDefaultValue("Standard")
                         .HasColumnName("DriversLicenseType");
 
                     b.Property<DateTime?>("DrugTestDate")
@@ -990,7 +691,7 @@ namespace BusBuddy.Core.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasDefaultValue("");
+                        .HasDefaultValue("Active");
 
                     b.Property<bool>("TrainingComplete")
                         .HasColumnType("boolean");
@@ -1865,7 +1566,7 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasDefaultValue("");
+                        .HasDefaultValue("Scheduled");
 
                     b.Property<DateTime?>("UpdatedDate")
                         .HasColumnType("timestamp with time zone");
@@ -2254,8 +1955,10 @@ namespace BusBuddy.Core.Migrations
 
                     b.Property<string>("Reason")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("");
 
                     b.Property<int>("RiderExceptionCount")
                         .HasColumnType("integer");
@@ -2298,9 +2001,6 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StudentScheduleId"));
-
-                    b.Property<int?>("ActivityScheduleId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("AssignmentType")
                         .IsRequired()
@@ -2348,9 +2048,6 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("StudentScheduleId");
-
-                    b.HasIndex("ActivityScheduleId")
-                        .HasDatabaseName("IX_StudentSchedules_ActivityScheduleId");
 
                     b.HasIndex("AssignmentType")
                         .HasDatabaseName("IX_StudentSchedules_AssignmentType");
@@ -2687,71 +2384,6 @@ namespace BusBuddy.Core.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("BusBuddy.Core.Models.Activity", b =>
-                {
-                    b.HasOne("BusBuddy.Core.Models.Bus", "AssignedVehicle")
-                        .WithMany("Activities")
-                        .HasForeignKey("AssignedVehicleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_Activities_Vehicle");
-
-                    b.HasOne("BusBuddy.Core.Models.Destination", "DestinationEntity")
-                        .WithMany("Activities")
-                        .HasForeignKey("DestinationId");
-
-                    b.HasOne("BusBuddy.Core.Models.Driver", "Driver")
-                        .WithMany("Activities")
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_Activities_Driver");
-
-                    b.HasOne("BusBuddy.Core.Models.Route", "Route")
-                        .WithMany()
-                        .HasForeignKey("RouteId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("FK_Activities_Route");
-
-                    b.Navigation("AssignedVehicle");
-
-                    b.Navigation("DestinationEntity");
-
-                    b.Navigation("Driver");
-
-                    b.Navigation("Route");
-                });
-
-            modelBuilder.Entity("BusBuddy.Core.Models.ActivitySchedule", b =>
-                {
-                    b.HasOne("BusBuddy.Core.Models.Activity", null)
-                        .WithMany("ActivitySchedules")
-                        .HasForeignKey("ActivityId");
-
-                    b.HasOne("BusBuddy.Core.Models.Driver", "ScheduledDriver")
-                        .WithMany("ScheduledActivities")
-                        .HasForeignKey("ScheduledDriverId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_ActivitySchedule_Driver");
-
-                    b.HasOne("BusBuddy.Core.Models.Bus", "ScheduledVehicle")
-                        .WithMany("ScheduledActivities")
-                        .HasForeignKey("ScheduledVehicleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_ActivitySchedule_Vehicle");
-
-                    b.HasOne("BusBuddy.Core.Models.Trips.TripEvent", "TripEvent")
-                        .WithMany()
-                        .HasForeignKey("TripEventId");
-
-                    b.Navigation("ScheduledDriver");
-
-                    b.Navigation("ScheduledVehicle");
-
-                    b.Navigation("TripEvent");
-                });
-
             modelBuilder.Entity("BusBuddy.Core.Models.DriverTrainingRecord", b =>
                 {
                     b.HasOne("BusBuddy.Core.Models.Driver", "Driver")
@@ -2965,12 +2597,6 @@ namespace BusBuddy.Core.Migrations
 
             modelBuilder.Entity("BusBuddy.Core.Models.StudentSchedule", b =>
                 {
-                    b.HasOne("BusBuddy.Core.Models.ActivitySchedule", "ActivitySchedule")
-                        .WithMany("StudentSchedules")
-                        .HasForeignKey("ActivityScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_StudentSchedules_ActivitySchedule");
-
                     b.HasOne("BusBuddy.Core.Models.Schedule", "Schedule")
                         .WithMany("StudentSchedules")
                         .HasForeignKey("ScheduleId")
@@ -2983,8 +2609,6 @@ namespace BusBuddy.Core.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_StudentSchedules_Student");
-
-                    b.Navigation("ActivitySchedule");
 
                     b.Navigation("Schedule");
 
@@ -3069,21 +2693,9 @@ namespace BusBuddy.Core.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("BusBuddy.Core.Models.Activity", b =>
-                {
-                    b.Navigation("ActivitySchedules");
-                });
-
-            modelBuilder.Entity("BusBuddy.Core.Models.ActivitySchedule", b =>
-                {
-                    b.Navigation("StudentSchedules");
-                });
-
             modelBuilder.Entity("BusBuddy.Core.Models.Bus", b =>
                 {
                     b.Navigation("AMRoutes");
-
-                    b.Navigation("Activities");
 
                     b.Navigation("FuelRecords");
 
@@ -3091,25 +2703,14 @@ namespace BusBuddy.Core.Migrations
 
                     b.Navigation("PMRoutes");
 
-                    b.Navigation("ScheduledActivities");
-
                     b.Navigation("Schedules");
-                });
-
-            modelBuilder.Entity("BusBuddy.Core.Models.Destination", b =>
-                {
-                    b.Navigation("Activities");
                 });
 
             modelBuilder.Entity("BusBuddy.Core.Models.Driver", b =>
                 {
                     b.Navigation("AMRoutes");
 
-                    b.Navigation("Activities");
-
                     b.Navigation("PMRoutes");
-
-                    b.Navigation("ScheduledActivities");
 
                     b.Navigation("Schedules");
 

@@ -143,7 +143,11 @@ public class GoogleRouteOptimizationServiceTests
     {
         var handler = new StubHandler(HttpStatusCode.OK, """{"routes":[]}""");
         using var http = new HttpClient(handler);
-        var svc = new GoogleRouteOptimizationService(http, Options.Create(TestOptions));
+        var svc = new GoogleRouteOptimizationService(
+            http,
+            Options.Create(TestOptions),
+            ownsHttpClient: false,
+            accessTokens: new StaticAccessToken("unit-test-token"));
         var problem = RouteOptimizationVisitOrder.ForPinnedEnds(
             [
                 new RouteOptimizationStop { Label = "start", Latitude = 38.09, Longitude = -102.62 },
@@ -158,8 +162,36 @@ public class GoogleRouteOptimizationServiceTests
         Assert.That(handler.LastRequest, Is.Not.Null);
         Assert.That(handler.LastRequest!.Method, Is.EqualTo(HttpMethod.Post));
         Assert.That(handler.LastRequest.RequestUri!.AbsolutePath, Does.Contain("projects/busbuddy-507301:optimizeTours"));
-        Assert.That(handler.LastRequest.Headers.Contains("X-Goog-Api-Key"), Is.True);
+        Assert.That(handler.LastRequest.Headers.Authorization?.Scheme, Is.EqualTo("Bearer"));
+        Assert.That(handler.LastRequest.Headers.Authorization?.Parameter, Is.EqualTo("unit-test-token"));
+        Assert.That(handler.LastRequest.Headers.Contains("X-Goog-Api-Key"), Is.False);
         Assert.That(handler.LastRequestBody, Does.Contain("costPerHour"));
+    }
+
+    [Test]
+    public async Task OptimizeTours_WithoutGoogleSignIn_DoesNotCallGoogle()
+    {
+        var handler = new StubHandler(HttpStatusCode.OK, """{"routes":[]}""");
+        using var http = new HttpClient(handler);
+        var svc = new GoogleRouteOptimizationService(
+            http,
+            Options.Create(TestOptions),
+            ownsHttpClient: false,
+            accessTokens: new StaticAccessToken(null));
+        var problem = RouteOptimizationVisitOrder.ForPinnedEnds(
+            [
+                new RouteOptimizationStop { Label = "start", Latitude = 38.09, Longitude = -102.62 },
+                new RouteOptimizationStop { Label = "a", Latitude = 38.10, Longitude = -102.61 },
+                new RouteOptimizationStop { Label = "end", Latitude = 38.08, Longitude = -102.62 },
+            ],
+            12,
+            DateTime.UtcNow);
+
+        var result = await svc.OptimizeToursAsync(problem);
+
+        Assert.That(result.Succeeded, Is.False);
+        Assert.That(result.Error, Does.Contain("application-default login"));
+        Assert.That(handler.LastRequest, Is.Null);
     }
 
     [Test]
@@ -167,7 +199,11 @@ public class GoogleRouteOptimizationServiceTests
     {
         var handler = new StubHandler(HttpStatusCode.Forbidden, """{"error":{"status":"PERMISSION_DENIED"}}""");
         using var http = new HttpClient(handler);
-        var svc = new GoogleRouteOptimizationService(http, Options.Create(TestOptions));
+        var svc = new GoogleRouteOptimizationService(
+            http,
+            Options.Create(TestOptions),
+            ownsHttpClient: false,
+            accessTokens: new StaticAccessToken("unit-test-token"));
         var problem = RouteOptimizationVisitOrder.ForPinnedEnds(
             [
                 new RouteOptimizationStop { Label = "start", Latitude = 38.09, Longitude = -102.62 },
@@ -179,7 +215,17 @@ public class GoogleRouteOptimizationServiceTests
 
         var result = await svc.OptimizeToursAsync(problem);
         Assert.That(result.Succeeded, Is.False);
-        Assert.That(result.Error, Does.Contain("not authorized"));
+        Assert.That(result.Error, Does.Contain("rejected the Google sign-in"));
+    }
+
+    private sealed class StaticAccessToken : IGoogleCloudAccessTokenSource
+    {
+        private readonly string? _token;
+
+        public StaticAccessToken(string? token) => _token = token;
+
+        public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(_token);
     }
 
     private sealed class StubHandler : HttpMessageHandler

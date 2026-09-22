@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Data.UnitOfWork;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -76,7 +76,12 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 totalStopwatch.Stop();
-                Logger.Error(ex, "Error fetching dashboard metrics after {ElapsedMs}ms", totalStopwatch.ElapsedMilliseconds);
+                if (DatabaseUserMessage.IsConnectivityFailure(ex))
+                {
+                    throw;
+                }
+
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error fetching dashboard metrics after {ElapsedMs}ms", totalStopwatch.ElapsedMilliseconds);
 
                 result["BusCount"] = 0;
                 result["DriverCount"] = 0;

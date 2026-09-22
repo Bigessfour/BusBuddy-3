@@ -13,7 +13,7 @@ Runtime: Syncfusion SfMap with **Google Map Tiles API** roadmap tiles when `GOOG
 | [Address Validation](https://developers.google.com/maps/documentation/address-validation)                  | Student/school validate + geocode (`IMapsGeoService`)                                                                                    |
 | [Places API (New)](https://developers.google.com/maps/documentation/places/web-service/place-autocomplete) | Address type-ahead on student, school, driver, depot, pickup stop, route stop, transfer, and trip destination forms (`PlacesAddressBox`) |
 | [Routes API](https://developers.google.com/maps/documentation/routes)                                      | `computeRoutes` drive polyline + `computeRouteMatrix` ranking                                                                            |
-| [Route Optimization API](https://developers.google.com/maps/documentation/route-optimization)              | Clerk-initiated stop order + same-day trip fleet (`optimizeTours`)                                                                   |
+| [Route Optimization API](https://developers.google.com/maps/documentation/route-optimization)              | Clerk-initiated stop order + same-day trip fleet (`optimizeTours`)                                                                       |
 | [Map Tiles API](https://developers.google.com/maps/documentation/tile)                                     | District Map base imagery (ToS-compliant with Google content)                                                                            |
 
 Students entered in the system are eligible — there is no geofence.
@@ -48,14 +48,14 @@ Desktop WPF cannot use Android/iOS/HTTP-referrer restrictions. For a single dist
 
 Every Google call sends the key in the `X-Goog-Api-Key` header (never in the URL) — the endpoints below are the ones that document header auth:
 
-| Client                            | Endpoint                                                                                                                                                                                |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GoogleAddressValidationClient`   | `POST addressvalidation.googleapis.com/v1:validateAddress`                                                                                                                              |
-| Geocoding fallback (same client)  | `GET geocode.googleapis.com/v4/geocode/address/{address}?regionCode=` + `X-Goog-FieldMask`                                                                                              |
-| `GooglePlacesAutocompleteService` | `POST places.googleapis.com/v1/places:autocomplete`                                                                                                                                     |
-| `GoogleRoutingService`            | `POST routes.googleapis.com/directions/v2:computeRoutes` + `X-Goog-FieldMask`                                                                                                           |
-| `GoogleRouteOptimizationService`  | `POST routeoptimization.googleapis.com/v1/projects/{project}:optimizeTours` (API key header; vendor REST also documents OAuth `cloud-platform` + IAM `routeoptimization.locations.use`) |
-| `GoogleMapTileSessionService`     | `POST tile.googleapis.com/v1/createSession`; `GET …/v1/2dtiles/{z}/{x}/{y}`; `GET …/tile/v1/viewport` (copyright)                                                                       |
+| Client                            | Endpoint                                                                                                                                                                                                                                                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GoogleAddressValidationClient`   | `POST addressvalidation.googleapis.com/v1:validateAddress`                                                                                                                                                                                                             |
+| Geocoding fallback (same client)  | `GET geocode.googleapis.com/v4/geocode/address/{address}?regionCode=` + `X-Goog-FieldMask`                                                                                                                                                                             |
+| `GooglePlacesAutocompleteService` | `POST places.googleapis.com/v1/places:autocomplete`                                                                                                                                                                                                                    |
+| `GoogleRoutingService`            | `POST routes.googleapis.com/directions/v2:computeRoutes` + `X-Goog-FieldMask`                                                                                                                                                                                          |
+| `GoogleRouteOptimizationService`  | `POST routeoptimization.googleapis.com/v1/projects/{project}:optimizeTours` with `Authorization: Bearer` from gcloud application-default credentials (scope `cloud-platform`, IAM `routeoptimization.locations.use`). The Maps API key is not accepted on this method. |
+| `GoogleMapTileSessionService`     | `POST tile.googleapis.com/v1/createSession`; `GET …/v1/2dtiles/{z}/{x}/{y}`; `GET …/tile/v1/viewport` (copyright)                                                                                                                                                      |
 
 The Map Tiles session token is scoped to the session and tiles are not written to the local tile cache; the `viewport` copyright string is displayed in the District Map attribution as the Map Tiles API Policies require.
 

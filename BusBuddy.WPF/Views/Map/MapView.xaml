@@ -14,6 +14,8 @@
              xmlns:local="clr-namespace:BusBuddy.WPF.Views.Map"
              xmlns:viewModels="clr-namespace:BusBuddy.WPF.ViewModels.Map"
              xmlns:utils="clr-namespace:BusBuddy.WPF.Utilities"
+             xmlns:models="clr-namespace:BusBuddy.Core.Models;assembly=BusBuddy.Core"
+             xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200"
              d:DataContext="{d:DesignInstance viewModels:MapViewModel}">
@@ -91,6 +93,7 @@
                 </Style.Triggers>
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:HexColorToBrushConverter x:Key="HexColorToBrushConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -146,11 +149,12 @@
                                      VerticalAlignment="Center"
                                      Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding StatusMessage}"
+                                       ToolTip="{Binding StatusMessage}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
-                                       MaxWidth="280"
-                                       TextTrimming="CharacterEllipsis"
-                                                                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                       MaxWidth="420"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                         </StackPanel>
                     </Border>
 
@@ -166,7 +170,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Control Panel — Commands bind to MapViewModel (CenterOnFleet, ShowRoutes, ShowSchools) -->
+            <!-- Control Panel — Commands bind to MapViewModel (ShowRoutes, ShowSchools, CenterOnStops) -->
     <Border Grid.Column="0"
             Background="{DynamicResource PrimaryBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
@@ -191,7 +195,7 @@
                 <syncfusion:ButtonAdv Label="Center on Stops"
                               AutomationProperties.Name="Center on plotted stops"
                               ToolTip="Center on plotted schools, stops, and route markers (live fleet GPS is deferred)"
-                              Command="{Binding CenterOnFleetCommand}"/>
+                              Command="{Binding CenterOnStopsCommand}"/>
 
                 <TextBlock Text="Live fleet GPS tracking is deferred — not enabled in this build"
                            FontSize="12"
@@ -207,18 +211,47 @@
                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                            Margin="0,0,0,4"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Routes}"
-                                        DisplayMemberPath="RouteName"
                                         SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                                         IsEditable="False"
-                                        MaxDropDownHeight="240"
+                                        MaxDropDownHeight="280"
                                         Margin="0,0,0,8"
-                                        ToolTip="Select a route to display on the map"
-                                        AutomationProperties.Name="Route selector"/>
+                                        ToolTip="Route name, session (AM/PM/Special Needs), and id — homes and trail follow this row"
+                                        AutomationProperties.Name="Route selector">
+                    <syncfusion:ComboBoxAdv.ItemTemplate>
+                        <DataTemplate DataType="{x:Type models:Route}">
+                            <StackPanel Margin="2,4">
+                                <TextBlock FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                           Text="{Binding RouteName}"/>
+                                <TextBlock FontSize="11"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}">
+                                    <Run Text="{Binding Session, Mode=OneWay}"/>
+                                    <Run Text=" · id "/>
+                                    <Run Text="{Binding RouteId, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </syncfusion:ComboBoxAdv.ItemTemplate>
+                </syncfusion:ComboBoxAdv>
+
+                <TextBlock Text="{Binding SelectedRouteBusLabel}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,8"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                           AutomationProperties.Name="Route bus number"
+                           ToolTip="Bus number stored on the selected route. This is not a live GPS position."/>
 
                 <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
-                              ToolTip="Show the first route with waypoints; refreshes the drive path via Google Routes when a key is configured"
+                              ToolTip="Refresh the selected route and its Google drive path. Pick a route in the list first."
                               Command="{Binding ShowRoutesCommand}"/>
+
+                <syncfusion:ButtonAdv Label="Optimize Order"
+                              AutomationProperties.Name="Optimize stop order"
+                              ToolTip="Publish assigned homes as stops if this route has none, then reorder the middle stops with Google Route Optimization. Start and end stay pinned."
+                              Command="{Binding OptimizeStopOrderCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Export Route"
                               AutomationProperties.Name="Export Route"
@@ -227,7 +260,7 @@
 
                 <syncfusion:ButtonAdv Label="Show Schools"
                               AutomationProperties.Name="Show Schools"
-                              ToolTip="Schools only — hides every other pin. Refresh brings the full district back"
+                              ToolTip="Schools only — hides every other pin and the route line. Refresh restores the base map and the selected route."
                               Command="{Binding ShowSchoolsCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Plot Pickup Stops"
@@ -237,7 +270,7 @@
 
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                     <syncfusion:ButtonAdv Label="Plot Students"
-                                          ToolTip="Plot catalog pickup stops when assigned, otherwise validated home coordinates already on the student"
+                                          ToolTip="Plot assigned riders on the selected route (catalog pickup or stored home GPS — no geocoding)"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
                                           AutomationProperties.Name="Plot Students"/>
 
@@ -266,7 +299,7 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" Margin="0,3">
                                                 <Ellipse Width="12" Height="12"
-                                                         Fill="{Binding FillHex}"
+                                                         Fill="{Binding FillHex, Converter={StaticResource HexColorToBrushConverter}}"
                                                          Stroke="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                                          StrokeThickness="1"
                                                          VerticalAlignment="Center"
@@ -284,6 +317,29 @@
                                            TextWrapping="Wrap"
                                            Margin="0,8,0,0"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                                <TextBlock Text="Needs validation"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Margin="0,14,0,4"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                <TextBlock Text="{Binding NeedsValidationSummary}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,6"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                                           AutomationProperties.Name="Places that need address validation"/>
+                                <ItemsControl ItemsSource="{Binding NeedsValidation}"
+                                              AutomationProperties.Name="Unvalidated places">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0"
+                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -314,7 +370,7 @@
                                     Pin colour is per kind (MapMarkerLabels.FillHex → MapMarker.FillBrush): school black,
                                     pickup orange, route stop gold, bus barn purple, student green, home blue. Stroke turns
                                     gold when the selected route stops at that pin. Captions are opaque so a neighbour's
-                                    text cannot bleed through — the "Lamar Stop 7 chool" overprint came from two pins on one spot.
+                                    text cannot bleed through — overlapping captions came from two pins on one spot.
                                 -->
                                 <DataTemplate x:Key="SchoolMarkerTemplate">
                                     <StackPanel Orientation="Vertical"
@@ -428,7 +484,13 @@
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="Bing">
                                         <maps:ImageryLayer.SubShapeFileLayers>
-                                            <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
+                                            <maps:SubShapeFileLayer x:Name="RouteTrailLayer" ShapeType="Polyline">
+                                                <!-- ShapeFill is the polyline color (Syncfusion shapetype sample). Transparent hides the road. -->
+                                                <maps:SubShapeFileLayer.ShapeSettings>
+                                                    <maps:ShapeSetting ShapeFill="Gold"
+                                                                       ShapeStroke="Gold"
+                                                                       ShapeStrokeThickness="4"/>
+                                                </maps:SubShapeFileLayer.ShapeSettings>
                                                 <maps:SubShapeFileLayer.MapElements>
                                                     <maps:MapPolyline x:Name="RouteTrail"
                                                                       Stroke="Gold"
@@ -456,9 +518,12 @@
                                                                VerticalAlignment="Center"
                                                                AnimationType="Flight"/>
                                     <TextBlock Grid.Row="1"
-                                               Text="Loading Map..."
+                                               Text="{Binding StatusMessage}"
                                                Margin="0,12,0,0"
                                                FontSize="16"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               MaxWidth="420"
                                                Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                                HorizontalAlignment="Center"/>
                                 </Grid>
@@ -485,7 +550,7 @@
                                               Command="{Binding ZoomOutCommand}"/>
                         <syncfusion:ButtonAdv Label="Home"
                                               Style="{StaticResource MapOverlayButtonStyle}"
-                                              ToolTip="Reset map view"
+                                              ToolTip="Recenter on the bus barn / district home view (keeps the selected route trail)"
                                               AutomationProperties.Name="Reset Map View"
                                               Command="{Binding ResetViewCommand}"/>
                         <syncfusion:ButtonAdv Label="Refresh"
@@ -496,7 +561,7 @@
                                               Margin="8,0,0,0"/>
                         <syncfusion:ButtonAdv Label="Print"
                                               Style="{StaticResource MapOverlayButtonStyle}"
-                                              ToolTip="Print Route Map"
+                                              ToolTip="Preview the route sheet, then print it"
                                               AutomationProperties.Name="Print Route Map"
                                               Command="{Binding PrintRouteMapsCommand}"
                                               Margin="8,0,0,0"/>
@@ -529,6 +594,42 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+            </Border>
+            <Border x:Name="PrintPreviewPanel"
+                    Background="{DynamicResource BusBuddy.Brush.Panel.Background}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Margin="16"
+                    Visibility="Collapsed"
+                    Panel.ZIndex="30">
+                <DockPanel>
+                    <Border DockPanel.Dock="Bottom"
+                            Padding="12"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <syncfusion:ButtonAdv Label="Close"
+                                                  Style="{StaticResource MapOverlayButtonStyle}"
+                                                  AutomationProperties.Name="Close print preview"
+                                                  Click="OnClosePrintPreview"/>
+                            <syncfusion:ButtonAdv Label="Print"
+                                                  Style="{StaticResource MapOverlayButtonStyle}"
+                                                  AutomationProperties.Name="Print the preview"
+                                                  Click="OnConfirmPrintPreview"
+                                                  Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Route sheet preview"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="16,12,16,4"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <FlowDocumentScrollViewer x:Name="PrintPreviewViewer"
+                                              Margin="8,0,8,8"
+                                              VerticalScrollBarVisibility="Auto"/>
+                </DockPanel>
             </Border>
         </Grid>
     </Grid>

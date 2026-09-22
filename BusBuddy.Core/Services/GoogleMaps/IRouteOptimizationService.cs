@@ -2,7 +2,7 @@ namespace BusBuddy.Core.Services.GoogleMaps;
 
 /// <summary>
 /// Google Route Optimization API (<c>optimizeTours</c>). Proposes visit order / vehicle
-/// assignment. Does not replace <see cref="Interfaces.IRoutingService"/> (polylines)
+/// assignment. Does not replace <see cref="BusBuddy.Core.Services.IRoutingService"/> (polylines)
 /// and must not run unattended — clerk initiates.
 /// </summary>
 public interface IRouteOptimizationService

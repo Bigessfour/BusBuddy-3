@@ -36,6 +36,10 @@ public static class StudentRecordNormalizer
         if (student.RequiresSpecialNeedsBus)
         {
             student.PickupStopId = null;
+            if (student.StudentId <= 0)
+            {
+                student.RequiresAide = true;
+            }
         }
     }
 

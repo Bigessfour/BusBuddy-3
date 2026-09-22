@@ -17,6 +17,7 @@ public partial class RouteManagementView : UserControl
     private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
     private DateTime _loadStartedUtc;
     private bool _auditRun;
+    private bool _dataInitialized;
 
     public RouteManagementView()
     {
@@ -61,8 +62,9 @@ public partial class RouteManagementView : UserControl
 
         try
         {
-            if (DataContext is RouteManagementViewModel routeVm)
+            if (DataContext is RouteManagementViewModel routeVm && !_dataInitialized)
             {
+                _dataInitialized = true;
                 await routeVm.InitializeAsync().ConfigureAwait(true);
             }
 
@@ -75,18 +77,4 @@ public partial class RouteManagementView : UserControl
         }
     }
 
-    private void RoutesDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        try
-        {
-            if (DataContext is RouteManagementViewModel vm && vm.OpenRouteAssignmentCommand.CanExecute(null))
-            {
-                vm.OpenRouteAssignmentCommand.Execute(null);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Double-click manage route failed");
-        }
-    }
 }

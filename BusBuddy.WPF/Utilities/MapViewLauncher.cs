@@ -27,6 +27,7 @@ public static class MapViewLauncher
             Logger.Debug("Activating existing district map window");
             TrySetOwner(_mapWindow, effectiveOwner);
             ApplyConfigure(configure);
+            _ = ResolveMapViewModel()?.OnDistrictMapSurfaceActivatedAsync();
             BringToFront(_mapWindow);
             return;
         }

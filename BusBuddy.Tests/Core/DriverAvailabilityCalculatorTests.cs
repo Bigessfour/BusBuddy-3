@@ -1,4 +1,5 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
 using NUnit.Framework;
 
@@ -37,27 +38,27 @@ public class DriverAvailabilityCalculatorTests
     }
 
     [Test]
-    public void AvailableDates_SkipsDaysWithActivityTrip()
+    public void AvailableDates_SkipsDaysWithTripLoan()
     {
         var from = new DateTime(2026, 8, 17);
         var schedules = Array.Empty<Schedule>();
-        var activities = new[]
+        var trips = new[]
         {
-            new ActivitySchedule
+            new TripEvent
             {
-                ScheduledDriverId = 1,
-                ScheduledDate = from.AddDays(1),
-                Status = "Scheduled"
+                DriverId = 1,
+                TripDate = from.AddDays(1),
+                Status = TripStatus.Assigned
             },
-            new ActivitySchedule
+            new TripEvent
             {
-                ScheduledDriverId = 1,
-                ScheduledDate = from.AddDays(2),
-                Status = "Cancelled"
+                DriverId = 1,
+                TripDate = from.AddDays(2),
+                Status = TripStatus.Cancelled
             }
         };
 
-        var available = DriverAvailabilityCalculator.AvailableDates(schedules, activities, driverId: 1, from, 4);
+        var available = DriverAvailabilityCalculator.AvailableDates(schedules, trips, driverId: 1, from, 4);
 
         Assert.That(available, Is.EqualTo(new[]
         {
