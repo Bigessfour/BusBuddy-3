@@ -29,7 +29,6 @@ graph TB
     subgraph "Infrastructure"
         K[DatabasePerformanceOptimizer]
         L[CachingService]
-        M[DataIntegrityService]
         N[SeedDataService]
     end
 
@@ -397,21 +396,6 @@ public class DatabasePerformanceOptimizer
 }
 ```
 
-### **DataIntegrityService**
-
-```csharp
-/// <summary>
-/// Data validation and integrity checking
-/// </summary>
-public class DataIntegrityService
-{
-    public async Task<IntegrityReport> ValidateDataIntegrityAsync();
-    public async Task<List<OrphanedRecord>> FindOrphanedRecordsAsync();
-    public async Task<bool> FixDataInconsistenciesAsync();
-    public async Task<ValidationResult> ValidateBusinessRulesAsync();
-}
-```
-
 ---
 
 ## 🔧 **Utility & Helper Services**
@@ -450,53 +434,13 @@ public class PdfReportService
 
 ## 🏗️ **Service Registration & Dependency Injection**
 
-### **Service Container Configuration**
+WPF startup registers Core services in `BusBuddy.WPF/App.Composition.cs` (`ConfigureServices` and `ConfigureServicesForMigration`) by calling `AddDataServices`.
+
+`IUnitOfWork` and `IActivityService` are registered in `BusBuddy.Core/Extensions/ServiceCollectionExtensions.cs`, along with the other repositories and services the app resolves at runtime.
 
 ```csharp
-// Located in: BusBuddy.Core/Services/ServiceContainer.cs
-public static class ServiceContainer
-{
-    public static IServiceCollection RegisterCoreServices(this IServiceCollection services)
-    {
-        // Entity Services
-        services.AddScoped<IStudentService, StudentService>();
-        services.AddScoped<IDriverService, DriverService>();
-        services.AddScoped<IBusService, BusService>();
-        services.AddScoped<IRouteService, RouteService>();
-
-        // Business Logic Services
-        services.AddScoped<IActivityService, ActivityService>();
-        services.AddScoped<IScheduleService, ScheduleService>();
-        services.AddScoped<IMaintenanceService, MaintenanceService>();
-        services.AddScoped<IFuelService, FuelService>();
-
-        // Infrastructure Services
-        services.AddScoped<DatabasePerformanceOptimizer>();
-        services.AddScoped<DataIntegrityService>();
-        services.AddScoped<ISeedDataService, SeedDataService>();
-
-        // External Integration Services
-        services.AddScoped<IAddressValidationService, AddressValidationService>();
-        services.AddScoped<IGeoDataService, GeoDataService>();
-        services.AddScoped<PdfReportService>();
-
-        return services;
-    }
-}
-```
-
-### **Usage in Startup Configuration**
-
-```csharp
-// In Program.cs or Startup.cs
-services.RegisterCoreServices();
-
-// Additional configuration
-services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-services.AddLogging(builder =>
-    builder.AddSerilog());
+// BusBuddy.WPF/App.Composition.cs
+services.AddDataServices(configuration);
 ```
 
 ---
@@ -593,7 +537,8 @@ public class StudentServiceIntegrationTests
     public void Setup()
     {
         var services = new ServiceCollection();
-        services.RegisterCoreServices();
+        var configuration = new ConfigurationBuilder().Build();
+        services.AddDataServices(configuration);
         services.AddDbContext<AppDbContext>(options =>
             options.UseInMemoryDatabase("TestDb"));
 
@@ -621,6 +566,7 @@ public class StudentServiceIntegrationTests
 | ------- | ------------ | ------------------------------------------------ |
 | 1.0     | Aug 21, 2025 | Initial comprehensive API reference              |
 | 1.1     | Aug 21, 2025 | Added visual diagrams and performance guidelines |
+| 1.2     | Sep 22, 2026 | DI is `AddDataServices`; dropped the unused stub |
 
 **Maintained by**: BusBuddy Development Team  
 **Contact**: See CONTRIBUTING.md for contribution guidelines
