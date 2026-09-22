@@ -211,6 +211,7 @@ public class RouteDeterminationServiceTests
                 City = "Wiley",
                 State = "CO",
                 Zip = "81092",
+                RidesAm = true,
                 AMRoute = "North"
             };
             ctx.Students.Add(student);
