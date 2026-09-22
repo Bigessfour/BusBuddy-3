@@ -67,7 +67,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 - Special-needs students appear on the special-needs route (example: AM Bus #5), not on a general in-town catalog-stop route, unless a clerk explicitly reassigns them.
 - Transfer assignments show as a separate in-day movement, not as a duplicate child.
 - Parent/guardian notification of pickup place and time comes from the **published route**, not from live GPS (live GPS is out of scope).
-- Clerk deletes a student only after choosing Mistake, Moved, or Not attending (optional brief note). Published routes stay; the student's assignment and exception rows are removed with the record and counted in the deletion log.
+- Clerk deletes a student only after choosing Mistake, Moved, or Not attending (optional brief note). The route row stays. The student's assignment, exception rows, and a home stop that names only that student are removed with the record and counted in the deletion log. A shared stop keeps the other riders.
 
 ## Out of scope
 

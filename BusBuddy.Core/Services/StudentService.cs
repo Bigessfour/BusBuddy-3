@@ -799,6 +799,7 @@ public class StudentService : IStudentService
                 context.StudentSchedules.RemoveRange(schedules);
                 context.StudentSchoolTransfers.RemoveRange(transfers);
                 context.RouteRiderExceptions.RemoveRange(exceptions);
+                var removedStops = await RemoveStudentHomeStopsAsync(context, student).ConfigureAwait(false);
                 context.StudentDeletionLogs.Add(log);
                 context.Students.Remove(student);
 
@@ -806,6 +807,13 @@ public class StudentService : IStudentService
                 if (result > 0)
                 {
                     WriteStudentDeletionLog(log);
+                    if (removedStops > 0)
+                    {
+                        Logger.Information(
+                            "Student delete removed home stops StudentId={StudentId} Stops={StopCount}",
+                            student.StudentId,
+                            removedStops);
+                    }
                 }
 
                 return result > 0;
@@ -823,6 +831,51 @@ public class StudentService : IStudentService
             DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student record {StudentId}", studentId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Drops a home stop that names only this student. A shared stop keeps the other riders.
+    /// The route row stays. specs/students.md: assignment rows leave with the student.
+    /// </summary>
+    private static async Task<int> RemoveStudentHomeStopsAsync(BusBuddyDbContext context, Student student)
+    {
+        var name = student.StudentName?.Trim() ?? string.Empty;
+        var idText = student.StudentId.ToString(CultureInfo.InvariantCulture);
+        var candidates = await context.RouteStops
+            .AsTracking()
+            .Where(s =>
+                s.StopName == name
+                || (s.Notes != null && s.Notes.Contains(idText)))
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        var removed = 0;
+        foreach (var stop in candidates)
+        {
+            var named = RouteSummarySheetBuilder.ParseStudentIds(stop.Notes);
+            var idMatch = NotesNameStudent(stop.Notes, student.StudentId);
+            var nameMatch = name.Length > 0
+                && string.Equals(stop.StopName?.Trim(), name, StringComparison.OrdinalIgnoreCase);
+            if (!idMatch && !nameMatch)
+            {
+                continue;
+            }
+
+            var others = named.Where(id => id != student.StudentId).ToList();
+            if (others.Count > 0)
+            {
+                stop.Notes = others.Count == 1
+                    ? $"StudentId={others[0]}"
+                    : $"StudentIds={string.Join(",", others)}";
+                stop.UpdatedDate = DateTime.UtcNow;
+                continue;
+            }
+
+            context.RouteStops.Remove(stop);
+            removed++;
+        }
+
+        return removed;
     }
 
     /// <summary>

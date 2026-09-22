@@ -742,7 +742,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 if (route is not null)
                 {
                     await EnsureRouteWaypointsAsync(route).ConfigureAwait(true);
-                    publishedStops = await LoadPublishedStopsAsync(route.RouteId).ConfigureAwait(true);
+                    publishedStops = await LoadPublishedStopsAsync(route).ConfigureAwait(true);
                     if (!_trail.IsCurrent(generation))
                     {
                         return;
@@ -907,7 +907,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             try
             {
-                var published = await LoadPublishedStopsAsync(route.RouteId).ConfigureAwait(true);
+                var published = await LoadPublishedStopsAsync(route).ConfigureAwait(true);
                 var validatedCount = published.Count(s => s.HasValidatedCoordinates);
                 if (validatedCount >= 2)
                 {
@@ -992,7 +992,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
-        private async Task<IReadOnlyList<RouteStop>> LoadPublishedStopsAsync(int routeId)
+        private async Task<IReadOnlyList<RouteStop>> LoadPublishedStopsAsync(RouteModel route)
         {
             try
             {
@@ -1003,14 +1003,22 @@ namespace BusBuddy.WPF.ViewModels.Map
                     return Array.Empty<RouteStop>();
                 }
 
-                var result = await routes.GetRouteStopsAsync(routeId).ConfigureAwait(true);
-                return result.IsSuccess && result.Value is not null
-                    ? result.Value.ToList()
-                    : Array.Empty<RouteStop>();
+                var result = await routes.GetRouteStopsAsync(route.RouteId).ConfigureAwait(true);
+                if (!result.IsSuccess || result.Value is null)
+                {
+                    return Array.Empty<RouteStop>();
+                }
+
+                var slot = RouteSession.ToAssignmentSlot(route);
+                var roster = await routes.GetStudentsForRouteAsync(route.RouteId, slot).ConfigureAwait(true);
+                var students = roster.IsSuccess && roster.Value is not null
+                    ? roster.Value
+                    : new List<BusBuddy.Core.Models.Student>();
+                return AssignedRouteStops.ForRouting(result.Value, students);
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "LoadPublishedStopsAsync failed RouteId={RouteId}", routeId);
+                Logger.Warning(ex, "LoadPublishedStopsAsync failed RouteId={RouteId}", route.RouteId);
                 return Array.Empty<RouteStop>();
             }
         }
@@ -1319,7 +1327,14 @@ namespace BusBuddy.WPF.ViewModels.Map
                 var stops = stopsResult.IsSuccess && stopsResult.Value is not null
                     ? stopsResult.Value.ToList()
                     : new List<RouteStop>();
-                var validated = stops.Where(s => s.HasValidatedCoordinates).ToList();
+                var slot = RouteSession.ToAssignmentSlot(route);
+                var roster = await routes.GetStudentsForRouteAsync(route.RouteId, slot).ConfigureAwait(true);
+                var students = roster.IsSuccess && roster.Value is not null
+                    ? roster.Value
+                    : new List<BusBuddy.Core.Models.Student>();
+                var validated = AssignedRouteStops.ForRouting(stops, students)
+                    .Where(s => s.HasValidatedCoordinates)
+                    .ToList();
                 if (optimization is null || !optimization.IsConfigured)
                 {
                     StatusMessage = validated.Count >= 2
@@ -1352,7 +1367,9 @@ namespace BusBuddy.WPF.ViewModels.Map
                     return;
                 }
 
-                var reorder = await routes.ReorderRouteStopsAsync(route.RouteId, ordered.Value.ToList())
+                var reorder = await routes.ReorderRouteStopsAsync(
+                    route.RouteId,
+                    AssignedRouteStops.OrderPreservingUnroutable(stops, ordered.Value.ToList()))
                     .ConfigureAwait(true);
                 if (!reorder.IsSuccess)
                 {

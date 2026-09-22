@@ -19,7 +19,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST keep live fleet GPS off. `IsLiveTrackingEnabled` stays deferred. Bus numbers may appear as labels on a route, not as moving pings.
 - MUST NOT treat `MappingService.cs` as a map service. That type is AutoMapper (object mapping).
 - MUST NOT invent a second geo stack. Extend `IMapsGeoService`, `IGeoDataService`, `IGeocodingService`, `IRoutingService`, `MapViewModel`.
-- Default: district overlay of schools + catalog stops; selecting a route adds homes on that run and the path.
+- Default: district overlay of schools + catalog stops; selecting a route adds homes on that run and the path. Student-home pins and the path use `AssignedRouteStops`: a home is drawn only when that student is assigned to the selected route.
 - Exception: trip focus plots origin/destination/path for that outing without destroying the idea of the published daily map.
 
 ## What the map shows

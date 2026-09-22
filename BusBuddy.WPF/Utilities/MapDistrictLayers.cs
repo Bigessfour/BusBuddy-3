@@ -166,7 +166,19 @@ internal sealed class MapDistrictLayers
                     continue;
                 }
 
-                stops = result.Value;
+                var route = await routes.GetRouteByIdAsync(routeId).ConfigureAwait(true);
+                IReadOnlyList<Student> students = Array.Empty<Student>();
+                if (route.IsSuccess && route.Value is not null)
+                {
+                    var slot = RouteSession.ToAssignmentSlot(route.Value);
+                    var roster = await routes.GetStudentsForRouteAsync(routeId, slot).ConfigureAwait(true);
+                    if (roster.IsSuccess && roster.Value is not null)
+                    {
+                        students = roster.Value;
+                    }
+                }
+
+                stops = AssignedRouteStops.ForRouting(result.Value, students);
             }
             catch (Exception ex)
             {

@@ -639,8 +639,22 @@ namespace BusBuddy.Core.Services
                 .OrderBy(s => s.StopOrder)
                 .ToListAsync()
                 .ConfigureAwait(false);
+            var assigned = await context.Students.AsNoTracking()
+                .Where(s => s.Active)
+                .WhereOnRoute(route)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            var routable = AssignedRouteStops.ForRouting(coords, assigned);
+            if (routable.Count != coords.Count)
+            {
+                Logger.Information(
+                    "Drive path omitted unassigned student stops RouteId={RouteId} Kept={Kept} Omitted={Omitted}",
+                    routeId,
+                    routable.Count,
+                    coords.Count - routable.Count);
+            }
 
-            var validated = coords
+            var validated = routable
                 .Where(s => RouteStop.IsValidatedCoordinate(s.Latitude, s.Longitude))
                 .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
                 .ToList();

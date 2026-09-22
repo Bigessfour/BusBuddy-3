@@ -235,6 +235,46 @@ public class RoutePublishedPathTests
         Assert.That(stops.Select(s => s.Latitude), Does.Not.Contain(38.99));
     }
 
+    [Test]
+    public async Task WaypointRebuild_SkipsStudentStopWithNoAssignedRider()
+    {
+        var options = CreateOptions();
+        var factory = new TestDbContextFactory(options);
+        int routeId;
+        await using (var seed = factory.CreateWriteDbContext())
+        {
+            var route = new Route
+            {
+                RouteName = "Special Needs Route",
+                Date = DateTime.Today,
+                IsActive = true,
+                School = "Wiley K-12 School"
+            };
+            seed.Routes.Add(route);
+            await seed.SaveChangesAsync();
+            routeId = route.RouteId;
+            seed.RouteStops.Add(Stop("District Bus Barn", 38.0872m, -102.6208m, 1, routeId));
+            seed.RouteStops.Add(Stop("TEST_STUDENT_SN_01", 38.1512m, -102.7210m, 2, routeId));
+            seed.RouteStops.Add(Stop("Wiley K-12 School", 38.1535m, -102.7195m, 3, routeId));
+            seed.Students.Add(new Student
+            {
+                StudentName = "Assigned Rider",
+                Active = true,
+                AmRouteId = routeId,
+                HomeAddress = "710 S 4th Street",
+                Latitude = 38.0822m,
+                Longitude = -102.6178m,
+                CreatedDate = DateTime.UtcNow
+            });
+            await seed.SaveChangesAsync();
+        }
+
+        var json = await new RouteWaypointRebuildService(factory).RebuildAndPersistAsync(routeId);
+        var stops = RouteWaypointSerializer.ParseStops(json);
+        Assert.That(stops.Select(s => s.Latitude), Does.Not.Contain(38.1512));
+        Assert.That(stops, Has.Count.EqualTo(2));
+    }
+
     private static RouteStop Stop(string name, decimal lat, decimal lon, int order, int routeId = 0) =>
         new()
         {

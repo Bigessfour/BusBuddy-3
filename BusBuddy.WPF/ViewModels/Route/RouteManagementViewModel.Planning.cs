@@ -1,4 +1,6 @@
 using System.Windows;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.WPF.Logging;
 
@@ -104,8 +106,16 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
+                var allStops = stopsResult.Value.ToList();
+                var slot = RouteSession.ToAssignmentSlot(SelectedRoute);
+                var roster = await _routeService.GetStudentsForRouteAsync(SelectedRoute.RouteId, slot)
+                    .ConfigureAwait(true);
+                var students = roster.IsSuccess && roster.Value is not null
+                    ? roster.Value
+                    : new List<BusBuddy.Core.Models.Student>();
+                var routable = AssignedRouteStops.ForRouting(allStops, students).ToList();
                 var ordered = await RouteStopOrderPlanner.ComputePinnedOrderAsync(
-                    stopsResult.Value.ToList(),
+                    routable,
                     _routeOptimization,
                     SelectedRoute.MaxCapacity,
                     DateTime.UtcNow).ConfigureAwait(true);
@@ -115,7 +125,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
-                var reorder = await _routeService.ReorderRouteStopsAsync(SelectedRoute.RouteId, ordered.Value.ToList())
+                var reorder = await _routeService.ReorderRouteStopsAsync(
+                    SelectedRoute.RouteId,
+                    AssignedRouteStops.OrderPreservingUnroutable(allStops, ordered.Value.ToList()))
                     .ConfigureAwait(true);
                 if (!reorder.IsSuccess)
                 {

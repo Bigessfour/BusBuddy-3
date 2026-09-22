@@ -30,13 +30,12 @@ public static class RouteSummarySheetBuilder
     {
         ArgumentNullException.ThrowIfNull(route);
 
-        var ordered = (stops ?? Array.Empty<RouteStop>())
+        var roster = (students ?? Array.Empty<Student>()).ToList();
+        var ordered = AssignedRouteStops.ForRouting(stops, roster)
             .OrderBy(ArrivalClock)
             .ThenBy(s => s.StopOrder)
             .ThenBy(s => s.StopName, StringComparer.OrdinalIgnoreCase)
             .ToList();
-
-        var roster = (students ?? Array.Empty<Student>()).ToList();
         var claimed = new HashSet<int>();
         var ridersByStop = ordered
             .Select(stop => ResolveRiders(stop, roster, claimed))

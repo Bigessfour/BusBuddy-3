@@ -12,6 +12,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST belong to exactly one session: `AM`, `PM`, `Transfer`, or `SpecialNeeds`. Core keys AM and PM as **two route rows** (for example `Draft-School-cell-1` and `Draft-School-cell-1-PM`). `Route.Session` plus `RouteSession.Infer` name the session. Do not add a second session structure on the same row.
 - MUST be an ordered list of stops. Each stop carries a validated, geocoded name/address/lat/lng plus a target time. The clerk picks the place from the location catalog (school `Destination`, `PickupStop`, or a validated student home); the stop then **denormalizes** those fields. There is no `RouteStop.LocationId` column — do not invent a parallel location graph.
 - MUST use those stops as Google Routes waypoints. The map polyline is derived from the published stop list, not freehand drawing as source of truth.
+- MUST NOT send the drive path, the map, or the printed sheet to a student-home stop unless that student is assigned to the route (`AssignedRouteStops`). School, depot, and catalog stops stay. Generated stops that still carry `StudentId` notes stay when the route has no roster yet.
 - MUST keep year-default bus and driver on `Route.AMVehicleId` / `AMDriverId` (and the PM pair). Substitutes and spares are session exceptions on `Schedule`; they do not rewrite the published pairing unless the clerk changes the default. Leftover AM*/PM* columns on a single row are those year-default pairings (Hop 4b), not a second session.
 - MUST keep published stop times stable and parent-visible. Same-day “student not riding” is a **rider exception**, not a new route version.
 - MUST NOT invent a dated `RouteVersion` table. Mid-year structural edits (add/remove/reorder stop, change target time) update the current published stop list in place. `CloneRouteAsync` copies a run onto another calendar date when the clerk needs a dated variant. Do not silently drop stops.
@@ -116,17 +117,18 @@ Implementation: **two route rows** (5 AM and 5 PM). Core already keys routes tha
 
 ## Code anchors
 
-| Spec term              | Existing code                                                   |
-| ---------------------- | --------------------------------------------------------------- |
-| Route record           | `BusBuddy.Core.Models.Route`                                    |
-| Session                | `Route.Session`, `RouteSession`                                 |
-| Stop / waypoint access | `IGeoDataService`, `IMapsGeoService`                            |
-| Drive path             | `IRoutingService`, `RouteDrivePathRefresher`, Google Routes API |
-| Visit order            | `IRouteOptimizationService` (`optimizeTours`); pins start/end   |
-| Polyline on map        | `MapViewModel.RouteLinePoints`, `RouteLineUpdated`              |
-| Students on the run    | `Student.AmRouteId` / `PmRouteId` via `StudentRouteAssignment`  |
-| Default bus            | `IBusService` + `Route.AMVehicleId` / `PMVehicleId`             |
-| AutoMapper (not maps)  | `MappingService`                                                |
+| Spec term               | Existing code                                                         |
+| ----------------------- | --------------------------------------------------------------------- |
+| Route record            | `BusBuddy.Core.Models.Route`                                          |
+| Session                 | `Route.Session`, `RouteSession`                                       |
+| Stop / waypoint access  | `IGeoDataService`, `IMapsGeoService`                                  |
+| Drive path              | `IRoutingService`, `RouteDrivePathRefresher`, Google Routes API       |
+| Visit order             | `IRouteOptimizationService` (`optimizeTours`); pins start/end         |
+| Polyline on map         | `MapViewModel.RouteLinePoints`, `RouteLineUpdated`                    |
+| Students on the run     | `Student.AmRouteId` / `PmRouteId` via `StudentRouteAssignment`        |
+| Stops the bus may visit | `AssignedRouteStops` — student homes only when that rider is assigned |
+| Default bus             | `IBusService` + `Route.AMVehicleId` / `PMVehicleId`                   |
+| AutoMapper (not maps)   | `MappingService`                                                      |
 
 ## Worked examples
 

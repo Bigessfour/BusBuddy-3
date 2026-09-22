@@ -95,12 +95,14 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             return null;
         }
 
+        var students = await LoadAssignedStudentsAsync(context, route, cancellationToken).ConfigureAwait(false);
         var publishedStops = await context.RouteStops.AsNoTracking()
             .Where(s => s.RouteId == routeId)
             .OrderBy(s => s.StopOrder)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        var publishedCoords = publishedStops
+        var routableStops = AssignedRouteStops.ForRouting(publishedStops, students);
+        var publishedCoords = routableStops
             .Where(s => s.HasValidatedCoordinates)
             .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
             .ToList();
@@ -110,18 +112,12 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             route.WaypointsJson = fromStops;
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             Logger.Information(
-                "Rebuilt WaypointsJson from published stops RouteId={RouteId} Points={Count}",
+                "Rebuilt WaypointsJson from assigned stops RouteId={RouteId} Points={Count} OmittedStudentStops={Omitted}",
                 routeId,
-                publishedCoords.Count);
+                publishedCoords.Count,
+                publishedStops.Count - routableStops.Count);
             return fromStops;
         }
-
-        var students = await context.Students.AsNoTracking()
-            .Where(s => s.Active)
-            .WhereOnRoute(route)
-            .OrderBy(s => s.StudentName)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
 
         var studentIds = students.Select(s => s.StudentId).ToList();
         var transfers = studentIds.Count == 0
@@ -240,17 +236,12 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             .Where(s => s.RouteId == routeId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
-        if (existing.Count(s => s.HasValidatedCoordinates) >= 2)
+        var students = await LoadAssignedStudentsAsync(context, route, cancellationToken).ConfigureAwait(false);
+        var routableExisting = AssignedRouteStops.ForRouting(existing, students);
+        if (routableExisting.Count(s => s.HasValidatedCoordinates) >= 2)
         {
             return 0;
         }
-
-        var students = await context.Students.AsNoTracking()
-            .Where(s => s.Active)
-            .WhereOnRoute(route)
-            .OrderBy(s => s.StudentName)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
 
         Destination? school = null;
         if (!string.IsNullOrWhiteSpace(route.School))
@@ -417,6 +408,19 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
         }
 
         return ids.Count == 1 ? $"StudentId={ids[0]}" : $"StudentIds={string.Join(",", ids)}";
+    }
+
+    private static async Task<List<Student>> LoadAssignedStudentsAsync(
+        BusBuddyDbContext context,
+        Route route,
+        CancellationToken cancellationToken)
+    {
+        return await context.Students.AsNoTracking()
+            .Where(s => s.Active)
+            .WhereOnRoute(route)
+            .OrderBy(s => s.StudentName)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static void TryAdd(List<(double Lat, double Lon)> points, decimal? lat, decimal? lon)
