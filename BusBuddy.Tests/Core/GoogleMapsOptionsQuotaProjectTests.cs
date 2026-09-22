@@ -120,4 +120,45 @@ public class GoogleMapsOptionsQuotaProjectTests
             sp.GetRequiredService<IOptions<GoogleMapsOptions>>().Value.QuotaProject,
             Is.EqualTo(string.Empty));
     }
+
+    [Test]
+    public void Normalize_ClampsBiasRadiusAndDropsPartialCoordinates()
+    {
+        var partial = new GoogleMapsOptions
+        {
+            AutocompleteBiasRadiusMeters = 80_000,
+            AutocompleteBiasLatitude = 38.0872
+        };
+        partial.Normalize();
+
+        Assert.That(partial.AutocompleteBiasRadiusMeters, Is.EqualTo(GoogleMapsOptions.MaxAutocompleteBiasRadiusMeters));
+        Assert.That(partial.AutocompleteBiasLatitude, Is.Null);
+        Assert.That(partial.AutocompleteBiasLongitude, Is.Null);
+
+        var invalidRadius = new GoogleMapsOptions { AutocompleteBiasRadiusMeters = 0 };
+        invalidRadius.Normalize();
+        Assert.That(invalidRadius.AutocompleteBiasRadiusMeters, Is.EqualTo(GoogleMapsOptions.MaxAutocompleteBiasRadiusMeters));
+    }
+
+    [Test]
+    public void AddGoogleMapsOptions_NormalizesCompleteBias()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"{GoogleMapsOptions.SectionName}:AutocompleteBiasRadiusMeters"] = "80000",
+                [$"{GoogleMapsOptions.SectionName}:AutocompleteBiasLatitude"] = "38.0872",
+                [$"{GoogleMapsOptions.SectionName}:AutocompleteBiasLongitude"] = "-102.6208",
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddGoogleMapsOptions(configuration);
+        using var sp = services.BuildServiceProvider();
+        var opts = sp.GetRequiredService<IOptions<GoogleMapsOptions>>().Value;
+
+        Assert.That(opts.AutocompleteBiasRadiusMeters, Is.EqualTo(GoogleMapsOptions.MaxAutocompleteBiasRadiusMeters));
+        Assert.That(opts.AutocompleteBiasLatitude, Is.EqualTo(38.0872).Within(0.0001));
+        Assert.That(opts.AutocompleteBiasLongitude, Is.EqualTo(-102.6208).Within(0.0001));
+    }
 }

@@ -25,6 +25,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
     public DistrictSettingsAccessor(IOptions<RoutingDistrictSettings>? options = null)
     {
         _current = Copy(options?.Value ?? new RoutingDistrictSettings());
+        _current.CoercePlannerValues();
     }
 
     public RoutingDistrictSettings Current
@@ -33,7 +34,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
         {
             lock (_gate)
             {
-                return _current;
+                return Copy(_current);
             }
         }
     }
@@ -46,6 +47,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
         {
             var next = Copy(_current);
             ApplyUserOverlay(next, userSettings);
+            next.CoercePlannerValues();
             _current = next;
         }
     }
@@ -53,16 +55,18 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
     public void Replace(RoutingDistrictSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
+        var next = Copy(settings);
+        next.CoercePlannerValues();
         lock (_gate)
         {
-            _current = Copy(settings);
+            _current = next;
         }
     }
 
     public static RoutingDistrictSettings Copy(RoutingDistrictSettings source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        return new RoutingDistrictSettings
+        var copy = new RoutingDistrictSettings
         {
             BoundingBoxMinLat = source.BoundingBoxMinLat,
             BoundingBoxMinLon = source.BoundingBoxMinLon,
@@ -83,6 +87,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
             DepotLatitude = source.DepotLatitude,
             DepotLongitude = source.DepotLongitude
         };
+        return copy;
     }
 
     public static async Task WriteToUserAsync(IUserSettingsService userSettings, RoutingDistrictSettings settings)

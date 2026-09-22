@@ -112,6 +112,8 @@ namespace BusBuddy.Core.Extensions
             services.AddGoogleMapsOptions(configuration);
             services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                 configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
+            services.PostConfigure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(opts =>
+                opts.CoercePlannerValues());
             services.TryAddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
                 BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
             services.AddSingleton(sp =>
@@ -189,6 +191,7 @@ namespace BusBuddy.Core.Extensions
             services.PostConfigure<BusBuddy.Core.Configuration.GoogleMapsOptions>(opts =>
             {
                 opts.QuotaProject = BusBuddy.Core.Configuration.GoogleMapsOptions.ResolveQuotaProject(opts.QuotaProject);
+                opts.Normalize();
             });
             return services;
         }

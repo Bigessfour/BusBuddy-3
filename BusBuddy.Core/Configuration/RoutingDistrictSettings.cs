@@ -89,4 +89,43 @@ public sealed class RoutingDistrictSettings
         maxLon = east;
         return true;
     }
+
+    /// <summary>
+    /// Replace non-positive planner knobs with the property defaults. Depot and bounding box are left alone
+    /// so an unconfigured district stays unconfigured.
+    /// </summary>
+    public void CoercePlannerValues()
+    {
+        var defaults = new RoutingDistrictSettings();
+
+        if (TargetRidersPerCell < 1)
+        {
+            TargetRidersPerCell = defaults.TargetRidersPerCell;
+        }
+
+        if (MaxPickupGapMinutes < 1)
+        {
+            MaxPickupGapMinutes = defaults.MaxPickupGapMinutes;
+        }
+
+        if (double.IsNaN(AverageSpeedMph) || double.IsInfinity(AverageSpeedMph) || AverageSpeedMph <= 0)
+        {
+            AverageSpeedMph = defaults.AverageSpeedMph;
+        }
+
+        if (MaxRideMinutes is <= 0)
+        {
+            MaxRideMinutes = defaults.MaxRideMinutes;
+        }
+
+        if (double.IsNaN(StopSuggestMaxMeters) || double.IsInfinity(StopSuggestMaxMeters) || StopSuggestMaxMeters <= 0)
+        {
+            StopSuggestMaxMeters = defaults.StopSuggestMaxMeters;
+        }
+
+        if (CatalogStopClusterMinHomes < 1)
+        {
+            CatalogStopClusterMinHomes = defaults.CatalogStopClusterMinHomes;
+        }
+    }
 }

@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Windows;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Configuration;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
@@ -72,10 +71,6 @@ namespace BusBuddy.WPF
                 services.AddScoped<BusBuddy.Core.Services.RouteDetermination.AssignFitnessEvaluator>();
                 services.AddScoped<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService,
                     BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
-                services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
-                    configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
-                services.TryAddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
-                    BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
                 services.AddScoped<IDriverService, DriverService>();
                 services.AddScoped<IRouteService, RouteService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();

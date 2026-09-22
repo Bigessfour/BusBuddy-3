@@ -37,7 +37,7 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
     /// Places Autocomplete (New) circle radius max is 50,000 m. See
     /// https://developers.google.com/maps/documentation/places/web-service/place-autocomplete
     /// </summary>
-    internal const double MaxAutocompleteBiasRadiusMeters = 50_000;
+    internal const double MaxAutocompleteBiasRadiusMeters = GoogleMapsOptions.MaxAutocompleteBiasRadiusMeters;
 
     private readonly HttpClient _httpClient;
     private readonly GoogleMapsOptions _options;

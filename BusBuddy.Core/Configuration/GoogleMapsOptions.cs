@@ -13,8 +13,8 @@ public sealed class GoogleMapsOptions
     /// </summary>
     public const string CanonicalProjectId = "busbuddy-507301";
 
-    /// <summary>Obsolete alias — prefer <see cref="CanonicalProjectId"/>. Empty default: API keys do not need <c>X-Goog-User-Project</c>.</summary>
-    public const string DefaultQuotaProject = "";
+    /// <summary>Places Autocomplete (New) locationBias circle radius max, in meters.</summary>
+    public const double MaxAutocompleteBiasRadiusMeters = 50_000;
 
     /// <summary>API key; prefer env <c>GOOGLE_MAPS_API_KEY</c> over placeholder appsettings values.</summary>
     public string ApiKey { get; set; } = string.Empty;
@@ -105,7 +105,30 @@ public sealed class GoogleMapsOptions
     public double? AutocompleteBiasLongitude { get; set; }
 
     /// <summary>
-    /// Places Autocomplete (New) locationBias circle radius in meters. Vendor max is 50,000.
+    /// Places Autocomplete (New) locationBias circle radius in meters. Vendor max is <see cref="MaxAutocompleteBiasRadiusMeters"/>.
     /// </summary>
-    public double AutocompleteBiasRadiusMeters { get; set; } = 50_000;
+    public double AutocompleteBiasRadiusMeters { get; set; } = MaxAutocompleteBiasRadiusMeters;
+
+    /// <summary>
+    /// Clamp autocomplete bias to a complete, in-range coordinate pair and a vendor-legal radius.
+    /// A partial or invalid pair is cleared so Places falls through to district geography.
+    /// </summary>
+    public void Normalize()
+    {
+        if (double.IsNaN(AutocompleteBiasRadiusMeters)
+            || double.IsInfinity(AutocompleteBiasRadiusMeters)
+            || AutocompleteBiasRadiusMeters <= 0
+            || AutocompleteBiasRadiusMeters > MaxAutocompleteBiasRadiusMeters)
+        {
+            AutocompleteBiasRadiusMeters = MaxAutocompleteBiasRadiusMeters;
+        }
+
+        var latitudeOk = AutocompleteBiasLatitude is double latitude && latitude is >= -90 and <= 90;
+        var longitudeOk = AutocompleteBiasLongitude is double longitude && longitude is >= -180 and <= 180;
+        if (!latitudeOk || !longitudeOk)
+        {
+            AutocompleteBiasLatitude = null;
+            AutocompleteBiasLongitude = null;
+        }
+    }
 }
