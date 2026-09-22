@@ -1,3 +1,4 @@
+using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace BusBuddy.Core.Utilities;
@@ -32,9 +33,6 @@ public static class EntityFrameworkPostgresExtensions
 
         return optionsBuilder.UseNpgsql(
             connectionString,
-            npgsql => npgsql.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(10),
-                errorCodesToAdd: null));
+            npgsql => npgsql.ExecutionStrategy(dependencies => new BusBuddyNpgsqlExecutionStrategy(dependencies)));
     }
 }

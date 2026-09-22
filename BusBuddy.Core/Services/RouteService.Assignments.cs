@@ -42,7 +42,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving available buses");
-                return Result.FailureResult<List<Bus>>($"Error retrieving buses: {ex.Message}");
+                return Result.FailureResult<List<Bus>>($"Error retrieving buses: {ex.Message}", ex);
             }
         }
 
@@ -70,7 +70,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving available drivers");
-                return Result.FailureResult<List<Driver>>($"Error retrieving drivers: {ex.Message}");
+                return Result.FailureResult<List<Driver>>($"Error retrieving drivers: {ex.Message}", ex);
             }
         }
 
@@ -573,7 +573,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving unassigned students");
-                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}", ex);
             }
         }
 
@@ -610,7 +610,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving unassigned students for slot {Slot}", timeSlot);
-                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}", ex);
             }
         }
 
@@ -654,7 +654,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students for route {RouteId} ({Slot})", routeId, timeSlot);
-                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}", ex);
             }
         }
 

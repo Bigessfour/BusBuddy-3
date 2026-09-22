@@ -52,7 +52,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving active routes");
-                return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}");
+                return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}", ex);
             }
         }
 
@@ -86,7 +86,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all routes");
-                return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}");
+                return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}", ex);
             }
         }
 

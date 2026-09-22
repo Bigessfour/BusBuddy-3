@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using BusBuddy.WPF.Logging;
@@ -174,8 +175,10 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                Logger.Error(ex, "Dashboard refresh failed after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                SystemStatus = $"Error loading data: {ex.Message}";
+                DatabaseUserMessage.LogFailure(Logger, ex, "Dashboard refresh failed after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+                SystemStatus = DatabaseUserMessage.IsConnectivityFailure(ex)
+                    ? DatabaseUserMessage.UnavailableShort
+                    : $"Error loading data: {ex.Message}";
             }
             finally
             {
