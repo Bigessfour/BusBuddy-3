@@ -143,4 +143,46 @@ public class ScheduleServiceTests
         Assert.That(byId, Is.Not.Null);
         Assert.That(byId!.DriverId, Is.EqualTo(ids.DriverId));
     }
+
+    [Test]
+    public async Task AddSchedule_SameRouteBusDeparture_RefreshesExistingRow()
+    {
+        var factory = CreateFactory();
+        var ids = await SeedRouteBusDriverAsync(factory);
+        var sut = new ScheduleService(factory);
+        var depart = new DateTime(2026, 9, 21, 7, 0, 0, DateTimeKind.Utc);
+
+        await sut.AddScheduleAsync(new Schedule
+        {
+            RouteId = ids.RouteId,
+            BusId = ids.BusId,
+            DriverId = ids.DriverId,
+            ScheduleDate = depart.Date,
+            DepartureTime = depart,
+            ArrivalTime = depart.AddMinutes(45),
+            Location = "Hop1 Proof School",
+            Notes = "first generate",
+            Status = "Scheduled"
+        });
+
+        var second = new Schedule
+        {
+            RouteId = ids.RouteId,
+            BusId = ids.BusId,
+            DriverId = ids.DriverId,
+            ScheduleDate = depart.Date,
+            DepartureTime = depart,
+            ArrivalTime = depart.AddMinutes(60),
+            Location = "Hop1 Proof School",
+            Notes = "second generate",
+            Status = "Scheduled"
+        };
+        await sut.AddScheduleAsync(second);
+
+        var all = (await sut.GetSchedulesAsync()).ToList();
+        Assert.That(all, Has.Count.EqualTo(1));
+        Assert.That(second.ScheduleId, Is.EqualTo(all[0].ScheduleId));
+        Assert.That(all[0].ArrivalTime, Is.EqualTo(depart.AddMinutes(60)));
+        Assert.That(all[0].Notes, Is.EqualTo("second generate"));
+    }
 }
