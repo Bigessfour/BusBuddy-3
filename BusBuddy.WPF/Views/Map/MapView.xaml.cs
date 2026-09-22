@@ -40,9 +40,12 @@ namespace BusBuddy.WPF.Views.Map
         private bool _pendingMarkerRefresh;
         private bool _placingMarkers;
         private bool _syncingCenterFromLayer;
+        private Window? _hostWindow;
+        private readonly Action<IReadOnlyList<Point>> _paintRouteLine;
 
         public MapView()
         {
+            _paintRouteLine = PaintRouteLine;
             using (LogContext.PushProperty("ViewInitialization", "MapView"))
             {
                 InitializeComponent();
@@ -80,9 +83,16 @@ namespace BusBuddy.WPF.Views.Map
 
         private async void MapView_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= MapView_Loaded;
+            HookHostWindowClosed();
+            if (DataContext is MapViewModel bound)
+            {
+                AttachViewModel(bound);
+            }
+
             if (_mapLayerInitialized)
             {
+                ReplayRouteLineFromViewModel(DataContext as MapViewModel);
+                TryApplyCameraThenMarkers();
                 return;
             }
 
@@ -163,6 +173,10 @@ namespace BusBuddy.WPF.Views.Map
 
         private void MapView_Unloaded(object sender, RoutedEventArgs e)
         {
+            // Dock/theme passes can Unload this control and not run Loaded again
+            // (the first load used to unsubscribe itself). Keep the route-line hook
+            // until the host window closes so the next Google path still paints.
+            Logger.Information("MapView unloaded — route-line subscription stays until the host window closes");
             _attributionTimer?.Stop();
             _markerHostRetry?.Stop();
             if (DistrictTilesLayer is ImageryLayer layer)
@@ -170,6 +184,27 @@ namespace BusBuddy.WPF.Views.Map
                 layer.MarkerSelected -= OnImageryMarkerSelected;
                 layer.CenterChanged -= OnImageryCenterChanged;
             }
+        }
+
+        private void HookHostWindowClosed()
+        {
+            var window = Window.GetWindow(this);
+            if (window is null || ReferenceEquals(window, _hostWindow))
+            {
+                return;
+            }
+
+            if (_hostWindow is not null)
+            {
+                _hostWindow.Closed -= OnHostWindowClosed;
+            }
+
+            _hostWindow = window;
+            _hostWindow.Closed += OnHostWindowClosed;
+        }
+
+        private void OnHostWindowClosed(object? sender, EventArgs e)
+        {
             DetachViewModel(_boundViewModel);
             _boundViewModel = null;
         }
@@ -192,19 +227,26 @@ namespace BusBuddy.WPF.Views.Map
 
         private void AttachViewModel(MapViewModel vm)
         {
-            if (_boundViewModel == vm)
+            if (!ReferenceEquals(_boundViewModel, vm))
             {
-                return;
+                DetachViewModel(_boundViewModel);
+                _boundViewModel = vm;
             }
 
-            DetachViewModel(_boundViewModel);
-            _boundViewModel = vm;
+            // -= / += heals a handler dropped by an earlier detach on this same instance.
+            vm.ViewResetRequested -= OnViewResetRequested;
             vm.ViewResetRequested += OnViewResetRequested;
+            vm.RouteLineUpdated -= OnRouteLineUpdated;
             vm.RouteLineUpdated += OnRouteLineUpdated;
+            vm.PrintRequested -= OnPrintRequested;
             vm.PrintRequested += OnPrintRequested;
+            vm.CaptureSnapshotRequested -= OnCaptureSnapshotRequested;
             vm.CaptureSnapshotRequested += OnCaptureSnapshotRequested;
+            vm.MapMarkersChanged -= OnMapMarkersChanged;
             vm.MapMarkersChanged += OnMapMarkersChanged;
+            vm.PropertyChanged -= OnViewModelPropertyChanged;
             vm.PropertyChanged += OnViewModelPropertyChanged;
+            vm.RouteLinePaint = _paintRouteLine;
         }
 
         private void DetachViewModel(MapViewModel? viewModel)
@@ -220,6 +262,10 @@ namespace BusBuddy.WPF.Views.Map
             viewModel.MapMarkersChanged -= OnMapMarkersChanged;
             viewModel.ViewResetRequested -= OnViewResetRequested;
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            if (ReferenceEquals(viewModel.RouteLinePaint, _paintRouteLine))
+            {
+                viewModel.RouteLinePaint = null;
+            }
         }
 
         private void ApplyDistrictImagery()
@@ -318,7 +364,14 @@ namespace BusBuddy.WPF.Views.Map
                 }
             }
 
-            if (!TryPlaceMarkers())
+            var placed = TryPlaceMarkers();
+            // The road line is not a marker. Paint it even when the pin host is not ready.
+            if (DataContext is MapViewModel trailVm)
+            {
+                ReplayRouteLineFromViewModel(trailVm);
+            }
+
+            if (!placed)
             {
                 ScheduleMarkerHostRetry();
                 return false;
@@ -546,7 +599,23 @@ namespace BusBuddy.WPF.Views.Map
         }
 
         private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e) =>
-            Dispatcher.Invoke(() => ReplayRouteLine(e.Points));
+            PaintRouteLine(e.Points);
+
+        private void PaintRouteLine(IReadOnlyList<Point> points)
+        {
+            if (Dispatcher.HasShutdownStarted)
+            {
+                return;
+            }
+
+            if (Dispatcher.CheckAccess())
+            {
+                ReplayRouteLine(points);
+                return;
+            }
+
+            Dispatcher.Invoke(() => ReplayRouteLine(points));
+        }
 
         private void ReplayRouteLineFromViewModel(MapViewModel? vm)
         {
@@ -582,6 +651,7 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 ReplayRouteLineFromViewModel(DataContext as MapViewModel);
+                mapElement.UpdateLayout();
                 OnCaptureSnapshotRequested(sender, e);
 
                 var printDlg = new PrintDialog();
@@ -600,15 +670,32 @@ namespace BusBuddy.WPF.Views.Map
                     Height = printDlg.PrintableAreaHeight,
                 };
 
-                var rect = new System.Windows.Shapes.Rectangle
+                var mapHeight = fixedPage.Height * 0.8;
+                FrameworkElement printedMap = new System.Windows.Shapes.Rectangle
                 {
                     Width = fixedPage.Width,
-                    Height = fixedPage.Height * 0.8,
+                    Height = mapHeight,
                     Fill = new VisualBrush(mapElement),
                 };
-                FixedPage.SetLeft(rect, 0);
-                FixedPage.SetTop(rect, 0);
-                fixedPage.Children.Add(rect);
+                if (DataContext is MapViewModel snap && snap.LatestMapSnapshotPng is { Length: > 0 } png)
+                {
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.StreamSource = new MemoryStream(png);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    printedMap = new Image
+                    {
+                        Width = fixedPage.Width,
+                        Height = mapHeight,
+                        Stretch = Stretch.Uniform,
+                        Source = bitmap,
+                    };
+                }
+                FixedPage.SetLeft(printedMap, 0);
+                FixedPage.SetTop(printedMap, 0);
+                fixedPage.Children.Add(printedMap);
 
                 var routeLabel = DataContext is MapViewModel mapVm && mapVm.SelectedRoute is not null
                     ? mapVm.SelectedRoute.RouteName ?? "Route map printout"

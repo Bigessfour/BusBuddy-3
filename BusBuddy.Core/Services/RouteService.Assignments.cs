@@ -109,6 +109,12 @@ namespace BusBuddy.Core.Services
                     return Result.FailureResult<bool>("Specify AM or PM time slot for assignment");
                 }
 
+                var slotCheck = await RejectMismatchedSessionSlotAsync<bool>(routeId, timeSlot).ConfigureAwait(false);
+                if (slotCheck is not null)
+                {
+                    return slotCheck;
+                }
+
                 if (_fitnessEvaluator is not null)
                 {
                     var slotKind = timeSlot == RouteTimeSlot.AM
@@ -122,6 +128,11 @@ namespace BusBuddy.Core.Services
                         var detail = fitness.Reasons.Count > 0
                             ? string.Join("; ", fitness.Reasons)
                             : "Assignment blocked by fitness check";
+                        if (fitness.SuggestedRouteIds.Count > 0)
+                        {
+                            detail += ". Suggested route ids: " + string.Join(", ", fitness.SuggestedRouteIds);
+                        }
+
                         return Result.FailureResult<bool>(detail);
                     }
 
@@ -146,6 +157,18 @@ namespace BusBuddy.Core.Services
                     if (route is null)
                     {
                         return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    if (timeSlot == RouteTimeSlot.AM && !student.RidesAm)
+                    {
+                        return Result.FailureResult<bool>(
+                            $"Student {studentId} is not eligible for the AM run.");
+                    }
+
+                    if (timeSlot == RouteTimeSlot.PM && !student.RidesPm)
+                    {
+                        return Result.FailureResult<bool>(
+                            $"Student {studentId} is not eligible for the PM run.");
                     }
 
                     if (StudentRouteAssignment.Matches(student, route, timeSlot))
@@ -370,6 +393,57 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<Result<bool>> ClearRiderExceptionAsync(int routeId, int studentId, DateTime exceptionDate)
+        {
+            try
+            {
+                if (routeId <= 0 || studentId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid routeId or studentId");
+                }
+
+                var day = DateTime.SpecifyKind(exceptionDate.Date, DateTimeKind.Utc);
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var existing = await context.RouteRiderExceptions.FirstOrDefaultAsync(e =>
+                        e.RouteId == routeId
+                        && e.StudentId == studentId
+                        && e.ExceptionDate == day);
+                    if (existing is null)
+                    {
+                        return Result.SuccessResult(true);
+                    }
+
+                    context.RouteRiderExceptions.Remove(existing);
+                    await context.SaveChangesAsync();
+                    Logger.Information(
+                        "Cleared rider exception RouteId={RouteId} StudentId={StudentId} Date={Date} — year assignment unchanged",
+                        routeId,
+                        studentId,
+                        day);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(
+                    Logger,
+                    ex,
+                    "Error clearing rider exception RouteId={RouteId} StudentId={StudentId}",
+                    routeId,
+                    studentId);
+                return Result.FailureResult<bool>($"Error clearing rider exception: {ex.Message}");
+            }
+        }
+
         public async Task<Result<IReadOnlyList<int>>> GetRiderExceptionStudentIdsAsync(int routeId, DateTime exceptionDate)
         {
             try
@@ -407,6 +481,69 @@ namespace BusBuddy.Core.Services
                     "Error loading rider exceptions RouteId={RouteId}",
                     routeId);
                 return Result.FailureResult<IReadOnlyList<int>>($"Error loading rider exceptions: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<RouteSessionLoad>> GetSessionLoadAsync(int routeId, DateTime serviceDate)
+        {
+            try
+            {
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<RouteSessionLoad>("Invalid routeId");
+                }
+
+                var day = DateTime.SpecifyKind(serviceDate.Date, DateTimeKind.Utc);
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var route = await context.Routes.AsNoTracking().FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<RouteSessionLoad>($"Route with ID {routeId} not found");
+                    }
+
+                    var slot = RouteSession.ToAssignmentSlot(route);
+                    var assignedIds = await context.Students.AsNoTracking()
+                        .WhereOnSlot(route.RouteId, route.RouteName, slot)
+                        .Select(s => s.StudentId)
+                        .ToListAsync();
+                    var exceptionIds = await context.RouteRiderExceptions.AsNoTracking()
+                        .Where(e => e.RouteId == routeId && e.ExceptionDate == day)
+                        .Select(e => e.StudentId)
+                        .ToListAsync();
+                    var notRiding = assignedIds.Intersect(exceptionIds).Count();
+                    var capacity = await GetCapacityForSlotAsync(context, route, slot);
+                    string? warning = capacity <= 0
+                        ? $"No default bus is assigned for this {slot} run, so seating capacity is unknown."
+                        : null;
+                    var load = new RouteSessionLoad
+                    {
+                        RouteId = routeId,
+                        Session = RouteSession.IsKnown(route.Session) ? route.Session! : RouteSession.Infer(route),
+                        Slot = slot,
+                        AssignedCount = assignedIds.Count,
+                        NotRidingCount = notRiding,
+                        LoadCount = Math.Max(0, assignedIds.Count - notRiding),
+                        Capacity = capacity,
+                        Warning = warning
+                    };
+                    return warning is null
+                        ? Result.SuccessResult(load)
+                        : Result.SuccessResult(load, warning);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error loading session load RouteId={RouteId}", routeId);
+                return Result.FailureResult<RouteSessionLoad>($"Error loading session load: {ex.Message}");
             }
         }
 
@@ -535,14 +672,36 @@ namespace BusBuddy.Core.Services
                     return Result.FailureResult<List<Student>>("Specify AM or PM time slot for auto-assign");
                 }
 
+                var slotCheck = await RejectMismatchedSessionSlotAsync<List<Student>>(routeId, timeSlot)
+                    .ConfigureAwait(false);
+                if (slotCheck is not null)
+                {
+                    return slotCheck;
+                }
+
+                var routeResult = await GetRouteByIdAsync(routeId).ConfigureAwait(false);
+                if (!routeResult.IsSuccess || routeResult.Value is null)
+                {
+                    return Result.FailureResult<List<Student>>(routeResult.Error ?? $"Route with ID {routeId} not found");
+                }
+
+                var school = routeResult.Value.School?.Trim();
                 var unassignedResult = await GetUnassignedStudentsAsync(timeSlot);
                 if (!unassignedResult.IsSuccess || unassignedResult.Value is null)
                 {
                     return Result.FailureResult<List<Student>>(unassignedResult.Error ?? "Failed to load unassigned students");
                 }
 
+                var candidates = unassignedResult.Value;
+                if (!string.IsNullOrWhiteSpace(school))
+                {
+                    candidates = candidates
+                        .Where(s => string.Equals(s.School?.Trim(), school, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
                 var assigned = new List<Student>();
-                foreach (var student in unassignedResult.Value)
+                foreach (var student in candidates)
                 {
                     var assignResult = await AssignStudentToRouteAsync(student.StudentId, routeId, timeSlot);
                     if (!assignResult.IsSuccess)
@@ -574,14 +733,13 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetReadContext();
                 try
                 {
-                    var routes = await context.Routes.Where(r => r.IsActive).ToListAsync();
+                    var routes = await context.Routes.AsNoTracking().Where(r => r.IsActive).ToListAsync();
+                    var loads = await LoadSessionSeatCountsAsync(context, routes);
                     var result = new List<Route>();
                     foreach (var route in routes)
                     {
-                        var capacity = await GetRouteCapacityAsync(context, route);
-                        if (capacity <= 0) capacity = 30; // default capacity
-                        var assigned = await context.Students.WhereOnRoute(route).CountAsync();
-                        if (assigned < capacity)
+                        var (assigned, capacity) = loads[route.RouteId];
+                        if (capacity > 0 && assigned < capacity)
                         {
                             route.StudentCount = assigned;
                             result.Add(route);
@@ -611,26 +769,35 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetReadContext();
                 try
                 {
-                    var routes = await context.Routes.ToListAsync();
+                    var routes = await context.Routes.AsNoTracking().ToListAsync();
                     var totalRoutes = routes.Count;
-                    var allStudents = await context.Students.ToListAsync();
-                    var totalAssigned = allStudents.Count(StudentRouteAssignment.IsAssignedAny);
-                    var totalUnassigned = allStudents.Count - totalAssigned;
+                    var assignmentFlags = await context.Students.AsNoTracking()
+                        .Select(s => new { s.AmRouteId, s.PmRouteId, s.AMRoute, s.PMRoute })
+                        .ToListAsync();
+                    var totalAssigned = assignmentFlags.Count(s =>
+                        s.AmRouteId is > 0 || s.PmRouteId is > 0
+                        || !string.IsNullOrWhiteSpace(s.AMRoute)
+                        || !string.IsNullOrWhiteSpace(s.PMRoute));
+                    var totalUnassigned = assignmentFlags.Count - totalAssigned;
+                    var loads = await LoadSessionSeatCountsAsync(context, routes);
 
                     int totalCapacity = 0;
                     double utilizationSum = 0;
                     int routesAtCapacity = 0;
                     int underutilized = 0;
+                    int ratedRoutes = 0;
 
                     foreach (var route in routes)
                     {
-                        var capacity = await GetRouteCapacityAsync(context, route);
-                        if (capacity <= 0) capacity = 30;
-                        var assigned = allStudents.Count(s =>
-                            StudentRouteAssignment.Matches(s, route, RouteTimeSlot.AM)
-                            || StudentRouteAssignment.Matches(s, route, RouteTimeSlot.PM));
+                        var (assigned, capacity) = loads[route.RouteId];
+                        if (capacity <= 0)
+                        {
+                            continue;
+                        }
+
+                        ratedRoutes++;
                         totalCapacity += capacity;
-                        var utilization = capacity > 0 ? (double)assigned / capacity : 0.0;
+                        var utilization = (double)assigned / capacity;
                         utilizationSum += utilization;
                         if (assigned >= capacity) routesAtCapacity++;
                         if (utilization < 0.5) underutilized++;
@@ -642,7 +809,7 @@ namespace BusBuddy.Core.Services
                         TotalAssignedStudents = totalAssigned,
                         TotalUnassignedStudents = totalUnassigned,
                         TotalCapacity = totalCapacity,
-                        AverageUtilizationRate = totalRoutes > 0 ? utilizationSum / totalRoutes : 0.0,
+                        AverageUtilizationRate = ratedRoutes > 0 ? utilizationSum / ratedRoutes : 0.0,
                         RoutesAtCapacity = routesAtCapacity,
                         UnderutilizedRoutes = underutilized,
                         TotalEstimatedDistance = routes.Sum(r => (double)(r.Distance ?? 0)),
@@ -675,45 +842,109 @@ namespace BusBuddy.Core.Services
                 .CountAsync();
         }
 
+        /// <summary>
+        /// Seating capacity of the bus on this slot. Zero when that slot has no bus — do not invent seats.
+        /// </summary>
         private static async Task<int> GetCapacityForSlotAsync(BusBuddyDbContext context, Route route, RouteTimeSlot timeSlot)
         {
-            if (timeSlot == RouteTimeSlot.AM && route.AMVehicleId.HasValue)
+            var vehicleId = SessionVehicleId(route, timeSlot);
+            if (vehicleId is not int id)
             {
-                var am = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.AMVehicleId.Value);
-                if (am != null && am.SeatingCapacity > 0)
-                {
-                    return am.SeatingCapacity;
-                }
+                return 0;
             }
 
-            if (timeSlot == RouteTimeSlot.PM && route.PMVehicleId.HasValue)
-            {
-                var pm = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.PMVehicleId.Value);
-                if (pm != null && pm.SeatingCapacity > 0)
-                {
-                    return pm.SeatingCapacity;
-                }
-            }
-
-            return 30;
+            var bus = await context.Buses.AsNoTracking().FirstOrDefaultAsync(b => b.BusId == id);
+            return bus is not null && bus.SeatingCapacity > 0 ? bus.SeatingCapacity : 0;
         }
 
-        // Helper to compute route capacity from assigned buses
-        private static async Task<int> GetRouteCapacityAsync(BusBuddyDbContext context, Route route)
+        private static int? SessionVehicleId(Route route, RouteTimeSlot timeSlot) =>
+            timeSlot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+
+        /// <summary>
+        /// One roster read and one bus read for the whole list. Counts the row's session slot only.
+        /// </summary>
+        private static async Task<Dictionary<int, (int Assigned, int Capacity)>> LoadSessionSeatCountsAsync(
+            BusBuddyDbContext context,
+            IReadOnlyList<Route> routes)
         {
-            var amCap = 0;
-            var pmCap = 0;
-            if (route.AMVehicleId.HasValue)
+            var result = new Dictionary<int, (int Assigned, int Capacity)>();
+            if (routes.Count == 0)
             {
-                var am = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.AMVehicleId.Value);
-                if (am != null) amCap = am.SeatingCapacity;
+                return result;
             }
-            if (route.PMVehicleId.HasValue)
+
+            var names = await context.Routes.AsNoTracking()
+                .Select(r => r.RouteName)
+                .ToListAsync();
+            var vehicleIds = routes
+                .Select(r => SessionVehicleId(r, RouteSession.ToAssignmentSlot(r)))
+                .Where(id => id is > 0)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+            var capacities = vehicleIds.Count == 0
+                ? new Dictionary<int, int>()
+                : await context.Buses.AsNoTracking()
+                    .Where(b => vehicleIds.Contains(b.BusId))
+                    .Select(b => new { b.BusId, b.SeatingCapacity })
+                    .ToDictionaryAsync(b => b.BusId, b => b.SeatingCapacity);
+
+            var roster = await context.Students.AsNoTracking()
+                .Select(s => new { s.AmRouteId, s.PmRouteId, s.AMRoute, s.PMRoute })
+                .ToListAsync();
+
+            foreach (var route in routes)
             {
-                var pm = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.PMVehicleId.Value);
-                if (pm != null) pmCap = pm.SeatingCapacity;
+                var slot = RouteSession.ToAssignmentSlot(route);
+                var uniqueName = names.Count(n => NamesEqual(n, route.RouteName)) == 1;
+                var assigned = roster.Count(s => slot == RouteTimeSlot.PM
+                    ? s.PmRouteId == route.RouteId
+                        || (uniqueName && s.PmRouteId == null && NamesEqual(s.PMRoute, route.RouteName))
+                    : s.AmRouteId == route.RouteId
+                        || (uniqueName && s.AmRouteId == null && NamesEqual(s.AMRoute, route.RouteName)));
+                var capacity = 0;
+                var vehicleId = SessionVehicleId(route, slot);
+                if (vehicleId is int id && capacities.TryGetValue(id, out var seats) && seats > 0)
+                {
+                    capacity = seats;
+                }
+
+                result[route.RouteId] = (assigned, capacity);
             }
-            return Math.Max(amCap, pmCap);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Null when the requested slot matches this row. Otherwise a failure the caller can return.
+        /// </summary>
+        private async Task<Result<T>?> RejectMismatchedSessionSlotAsync<T>(int routeId, RouteTimeSlot timeSlot)
+        {
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                var route = await context.Routes.AsNoTracking().FirstOrDefaultAsync(r => r.RouteId == routeId);
+                if (route is null)
+                {
+                    return Result.FailureResult<T>($"Route with ID {routeId} not found");
+                }
+
+                var expected = RouteSession.ToAssignmentSlot(route);
+                if (timeSlot == expected)
+                {
+                    return null;
+                }
+
+                return Result.FailureResult<T>(
+                    $"Route '{route.RouteName}' is the {expected} run. Assign this student on the {expected} slot.");
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
 
         public async Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, RouteTimeSlot timeSlot)
@@ -752,8 +983,9 @@ namespace BusBuddy.Core.Services
 
                     RouteVehicleLinker.Apply(route, bus, timeSlot);
 
-                    // Single SaveChanges is atomic; do not wrap in BeginTransactionAsync —
-                    // NpgsqlRetryingExecutionStrategy rejects user-initiated transactions.
+                    // BusBuddyDbContext defaults to NoTracking. Find can return an untracked
+                    // route, and SaveChanges would then skip the pairing columns.
+                    context.Entry(route).State = EntityState.Modified;
                     await context.SaveChangesAsync();
 
                     Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {TimeSlot} OpId={OpId}", vehicleId, routeId, timeSlot, opId);

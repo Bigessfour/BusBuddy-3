@@ -47,8 +47,9 @@ public static class RouteDrivePathRefresher
             {
                 var origin = stops[0];
                 var destination = stops[^1];
-                var intermediates = CapIntermediateWaypoints(
-                    stops.Skip(1).Take(stops.Count - 2).ToList());
+                var allIntermediates = stops.Skip(1).Take(stops.Count - 2).ToList();
+                var intermediates = CapIntermediateWaypoints(allIntermediates);
+                var droppedIntermediates = Math.Max(0, allIntermediates.Count - intermediates.Count);
                 var path = await routingService
                     .ComputeDrivePathAsync(origin, destination, intermediates, cancellationToken)
                     .ConfigureAwait(false);
@@ -68,15 +69,16 @@ public static class RouteDrivePathRefresher
                 ApplyPathMetrics(route, path);
 
                 Logger.Information(
-                    "Drive path computed RouteId={RouteId} Stops={StopCount} Intermediates={Intermediates} DistanceMeters={DistanceMeters} Duration={Duration} ViaService={ViaService}",
+                    "Drive path computed RouteId={RouteId} Stops={StopCount} Intermediates={Intermediates} DroppedIntermediates={Dropped} DistanceMeters={DistanceMeters} Duration={Duration} ViaService={ViaService}",
                     route.RouteId,
                     stops.Count,
                     intermediates.Count,
+                    droppedIntermediates,
                     path.DistanceMeters,
                     path.Duration,
                     true);
 
-                return DrivePathRefreshResult.Succeeded(path);
+                return DrivePathRefreshResult.Succeeded(path, droppedIntermediates);
             }
             catch (Exception ex)
             {
@@ -153,8 +155,22 @@ public sealed class DrivePathRefreshResult
     public string? Message { get; init; }
     public DrivePathResult? Path { get; init; }
 
-    public static DrivePathRefreshResult Succeeded(DrivePathResult path) =>
-        new() { Success = true, Path = path, Message = "Drive path refreshed." };
+    /// <summary>Intermediate stops left out of the Routes API call because of <see cref="RouteDrivePathRefresher.MaxIntermediateWaypoints"/>.</summary>
+    public int DroppedIntermediateCount { get; init; }
+
+    public static DrivePathRefreshResult Succeeded(DrivePathResult path, int droppedIntermediates = 0)
+    {
+        var message = droppedIntermediates > 0
+            ? $"Drive path refreshed. {droppedIntermediates} intermediate stop(s) omitted (Google Routes allows {RouteDrivePathRefresher.MaxIntermediateWaypoints} intermediates)."
+            : "Drive path refreshed.";
+        return new DrivePathRefreshResult
+        {
+            Success = true,
+            Path = path,
+            Message = message,
+            DroppedIntermediateCount = droppedIntermediates
+        };
+    }
 
     public static DrivePathRefreshResult Failed(string message) =>
         new() { Success = false, Message = message };

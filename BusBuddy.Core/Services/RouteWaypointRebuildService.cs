@@ -18,6 +18,12 @@ public interface IRouteWaypointRebuildService
     Task<string?> RebuildAndPersistAsync(int routeId, CancellationToken cancellationToken = default);
 
     Task RebuildForStudentRoutesAsync(int studentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes home and school <see cref="RouteStop"/> rows when the route has no geocoded stop list.
+    /// Clerk Optimize Order calls this so visit-order has stops to reorder. Does not replace an existing list.
+    /// </summary>
+    Task<int> PublishRosterStopsIfMissingAsync(int routeId, CancellationToken cancellationToken = default);
 }
 
 public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
@@ -218,6 +224,199 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             students.Count,
             transfersByStudent.Count);
         return json;
+    }
+
+    public async Task<int> PublishRosterStopsIfMissingAsync(int routeId, CancellationToken cancellationToken = default)
+    {
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId, cancellationToken)
+            .ConfigureAwait(false);
+        if (route is null)
+        {
+            return 0;
+        }
+
+        var existing = await context.RouteStops
+            .Where(s => s.RouteId == routeId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        if (existing.Count(s => s.HasValidatedCoordinates) >= 2)
+        {
+            return 0;
+        }
+
+        var students = await context.Students.AsNoTracking()
+            .Where(s => s.Active)
+            .WhereOnRoute(route)
+            .OrderBy(s => s.StudentName)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        Destination? school = null;
+        if (!string.IsNullOrWhiteSpace(route.School))
+        {
+            school = await context.Destinations.AsNoTracking()
+                .FirstOrDefaultAsync(
+                    d => d.IsActive && !d.IsDeleted && d.Name == route.School,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (school is null)
+        {
+            var destinationIds = students
+                .Where(s => s.DestinationId.HasValue)
+                .Select(s => s.DestinationId!.Value)
+                .Distinct()
+                .ToList();
+            if (destinationIds.Count == 1)
+            {
+                school = await context.Destinations.AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.DestinationId == destinationIds[0], cancellationToken)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        var stops = new List<RouteStop>();
+        var isPm = route.RouteName.EndsWith("-PM", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(route.Session, "PM", StringComparison.OrdinalIgnoreCase);
+        if (!isPm && DistrictDepot.TryGetCoordinates(DistrictSettings, out var depotLat, out var depotLon))
+        {
+            AddPublishedStop(stops, routeId, DistrictDepot.GetDisplayName(DistrictSettings), "Bus barn", (decimal)depotLat, (decimal)depotLon);
+        }
+
+        if (isPm)
+        {
+            AddPublishedStop(stops, routeId, school?.Name ?? "School", school?.Address, school?.Latitude, school?.Longitude);
+        }
+
+        foreach (var student in students)
+        {
+            AddPublishedStop(
+                stops,
+                routeId,
+                string.IsNullOrWhiteSpace(student.StudentName) ? $"Student {student.StudentId}" : student.StudentName.Trim(),
+                student.HomeAddress,
+                student.Latitude,
+                student.Longitude,
+                student.StudentId);
+        }
+
+        if (!isPm)
+        {
+            AddPublishedStop(stops, routeId, school?.Name ?? "School", school?.Address, school?.Latitude, school?.Longitude);
+        }
+        else if (DistrictDepot.TryGetCoordinates(DistrictSettings, out var endLat, out var endLon))
+        {
+            AddPublishedStop(stops, routeId, DistrictDepot.GetDisplayName(DistrictSettings), "Bus barn", (decimal)endLat, (decimal)endLon);
+        }
+
+        if (stops.Count < 2)
+        {
+            Logger.Information(
+                "Roster stop publish skipped RouteId={RouteId} — need ≥2 validated places (have {Count})",
+                routeId,
+                stops.Count);
+            return 0;
+        }
+
+        if (existing.Count > 0)
+        {
+            context.RouteStops.RemoveRange(existing);
+        }
+
+        var order = 1;
+        foreach (var stop in stops)
+        {
+            stop.StopOrder = order++;
+            context.RouteStops.Add(stop);
+        }
+
+        route.StopCount = stops.Count;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Logger.Information(
+            "Published roster stops RouteId={RouteId} Stops={Count} Students={Students}",
+            routeId,
+            stops.Count,
+            students.Count);
+        return stops.Count;
+    }
+
+    private static void AddPublishedStop(
+        List<RouteStop> stops,
+        int routeId,
+        string? name,
+        string? address,
+        decimal? lat,
+        decimal? lon,
+        int? studentId = null)
+    {
+        if (!RouteStop.IsValidatedCoordinate(lat, lon))
+        {
+            return;
+        }
+
+        var latitude = (double)lat!.Value;
+        var longitude = (double)lon!.Value;
+        var samePlace = stops.FirstOrDefault(s =>
+            Math.Abs((double)s.Latitude!.Value - latitude) < 1e-5
+            && Math.Abs((double)s.Longitude!.Value - longitude) < 1e-5);
+        if (samePlace is not null)
+        {
+            if (studentId is int id)
+            {
+                samePlace.Notes = MergeStudentNotes(samePlace.Notes, id);
+            }
+
+            return;
+        }
+
+        var arrival = TimeSpan.FromHours(7).Add(TimeSpan.FromMinutes(stops.Count * 5));
+        var departure = arrival.Add(TimeSpan.FromMinutes(1));
+        var day = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var notes = studentId is int riderId ? $"StudentId={riderId}" : null;
+        stops.Add(new RouteStop
+        {
+            RouteId = routeId,
+            StopName = string.IsNullOrWhiteSpace(name) ? "Stop" : name.Trim(),
+            StopAddress = address?.Trim() ?? string.Empty,
+            Latitude = lat,
+            Longitude = lon,
+            ScheduledArrival = arrival,
+            ScheduledDeparture = departure,
+            Status = "Scheduled",
+            CreatedDate = DateTime.UtcNow,
+            EstimatedArrivalTime = day.Add(arrival),
+            EstimatedDepartureTime = day.Add(departure),
+            Notes = notes
+        });
+    }
+
+    private static string MergeStudentNotes(string? notes, int studentId)
+    {
+        var idText = studentId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        const string many = "StudentIds=";
+        const string single = "StudentId=";
+        var ids = new List<string>();
+        if (!string.IsNullOrWhiteSpace(notes) && notes.StartsWith(many, StringComparison.Ordinal))
+        {
+            ids.AddRange(notes[many.Length..].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
+        }
+        else if (!string.IsNullOrWhiteSpace(notes) && notes.StartsWith(single, StringComparison.Ordinal))
+        {
+            ids.Add(notes[single.Length..]);
+        }
+        else if (!string.IsNullOrWhiteSpace(notes))
+        {
+            return notes;
+        }
+
+        if (!ids.Contains(idText, StringComparer.Ordinal))
+        {
+            ids.Add(idText);
+        }
+
+        return ids.Count == 1 ? $"StudentId={ids[0]}" : $"StudentIds={string.Join(",", ids)}";
     }
 
     private static void TryAdd(List<(double Lat, double Lon)> points, decimal? lat, decimal? lon)

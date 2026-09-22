@@ -395,9 +395,31 @@ namespace BusBuddy.Core.Services
                         }
 
                         context.RouteStops.Remove(stop);
-
-                        // Persist changes asynchronously
                         await context.SaveChangesAsync();
+
+                        var remaining = await context.RouteStops
+                            .AsTracking()
+                            .Where(rs => rs.RouteId == routeId)
+                            .OrderBy(rs => rs.StopOrder)
+                            .ThenBy(rs => rs.RouteStopId)
+                            .ToListAsync();
+                        var order = 1;
+                        foreach (var remainingStop in remaining)
+                        {
+                            if (remainingStop.StopOrder != order)
+                            {
+                                remainingStop.StopOrder = order;
+                                remainingStop.UpdatedDate = DateTime.UtcNow;
+                                context.Entry(remainingStop).Property(s => s.StopOrder).IsModified = true;
+                            }
+
+                            order++;
+                        }
+
+                        if (remaining.Count > 0)
+                        {
+                            await context.SaveChangesAsync();
+                        }
 
                         Logger.Information("Removed stop {StopId} from route {RouteId} OpId={OpId}", stopId, routeId, opId);
                         await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
@@ -449,14 +471,22 @@ namespace BusBuddy.Core.Services
                             .OrderBy(s => s.StopOrder)
                             .ToListAsync();
 
+                        var cloneDate = newDate == default
+                            ? DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc)
+                            : newDate.Date;
+                        var cloneName = string.IsNullOrWhiteSpace(newRouteName)
+                            ? $"Copy of {source.RouteName}"
+                            : newRouteName.Trim();
+                        if (await RouteNameExistsOnDateAsync(context, cloneName, cloneDate).ConfigureAwait(false))
+                        {
+                            return Result.FailureResult<Route>(
+                                $"A route with name '{cloneName}' already exists for {cloneDate:yyyy-MM-dd}");
+                        }
+
                         var clone = new Route
                         {
-                            Date = newDate == default
-                                ? DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc)
-                                : newDate.Date,
-                            RouteName = string.IsNullOrWhiteSpace(newRouteName)
-                                ? $"Copy of {source.RouteName}"
-                                : newRouteName.Trim(),
+                            Date = cloneDate,
+                            RouteName = cloneName,
                             Description = source.Description,
                             IsActive = false,
                             School = source.School,
@@ -468,6 +498,10 @@ namespace BusBuddy.Core.Services
                             WaypointsJson = source.WaypointsJson,
                             Distance = source.Distance,
                             EstimatedDuration = source.EstimatedDuration,
+                            AMVehicleId = source.AMVehicleId,
+                            PMVehicleId = source.PMVehicleId,
+                            AMDriverId = source.AMDriverId,
+                            PMDriverId = source.PMDriverId,
                             StopCount = stops.Count,
                             StudentCount = 0
                         };

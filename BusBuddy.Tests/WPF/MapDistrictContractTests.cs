@@ -25,6 +25,10 @@ public class MapDistrictContractTests
         Assert.That(vm, Does.Contain("LoadDistrictBaseLayersAsync"));
         Assert.That(vm, Does.Not.Contain("PlotStoredStudentsAsync()"));
         Assert.That(vm, Does.Not.Contain("BulkPlotStudentsAsync()"));
+        Assert.That(vm, Does.Not.Contain("LoadAllRoutesOnMapAsync"));
+        var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
+        Assert.That(layers, Does.Not.Contain("BulkPlotStudentsAsync"));
+        Assert.That(layers, Does.Not.Contain("LoadDistrictLayersAsync"));
     }
 
     [Test]

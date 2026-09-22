@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using BusBuddy.Core.Configuration;
@@ -19,32 +20,46 @@ public sealed class GoogleRouteOptimizationService : IRouteOptimizationService, 
     private readonly HttpClient _httpClient;
     private readonly GoogleMapsOptions _options;
     private readonly bool _ownsHttpClient;
+    private readonly IGoogleCloudAccessTokenSource _accessTokens;
 
     public GoogleRouteOptimizationService(
         HttpClient httpClient,
         IOptions<GoogleMapsOptions> options,
         bool ownsHttpClient = false)
+        : this(httpClient, options, ownsHttpClient, accessTokens: null)
+    {
+    }
+
+    internal GoogleRouteOptimizationService(
+        HttpClient httpClient,
+        IOptions<GoogleMapsOptions> options,
+        bool ownsHttpClient,
+        IGoogleCloudAccessTokenSource? accessTokens)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _ownsHttpClient = ownsHttpClient;
+        _accessTokens = accessTokens ?? GoogleCloudPlatformAccessTokenSource.Instance;
     }
 
-    public bool IsConfigured => !string.IsNullOrWhiteSpace(GoogleAddressValidationClient.ResolveApiKey(_options));
+    public bool IsConfigured =>
+        !string.IsNullOrWhiteSpace(GoogleAddressValidationClient.ResolveApiKey(_options))
+        || GoogleCloudPlatformAccessTokenSource.CredentialPaths().Any(File.Exists);
 
     public async Task<OptimizeToursResult> OptimizeToursAsync(
         OptimizeToursProblem problem,
         CancellationToken cancellationToken = default)
     {
-        var key = GoogleAddressValidationClient.ResolveApiKey(_options);
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            return OptimizeToursResult.Fail("Mapping is not configured.");
-        }
-
         if (problem.Shipments.Count == 0 || problem.Vehicles.Count == 0)
         {
             return OptimizeToursResult.Fail("Need at least one shipment and one vehicle.");
+        }
+
+        var accessToken = await _accessTokens.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return OptimizeToursResult.Fail(
+                "Route Optimization needs a Google sign-in on this PC. Run: gcloud auth application-default login");
         }
 
         var project = string.IsNullOrWhiteSpace(_options.QuotaProject)
@@ -56,7 +71,7 @@ public sealed class GoogleRouteOptimizationService : IRouteOptimizationService, 
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, uri);
-            request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             request.Content = new StringContent(BuildRequestJson(problem), Encoding.UTF8, "application/json");
 
             using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
@@ -66,11 +81,11 @@ public sealed class GoogleRouteOptimizationService : IRouteOptimizationService, 
             if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
             {
                 Logger.Warning(
-                    "Route Optimization HTTP {Status} — vendor REST requires OAuth cloud-platform + IAM routeoptimization.locations.use when API keys are rejected. ElapsedMs={ElapsedMs}",
+                    "Route Optimization HTTP {Status}. The bearer token was rejected. ElapsedMs={ElapsedMs}",
                     (int)response.StatusCode,
                     sw.ElapsedMilliseconds);
                 return OptimizeToursResult.Fail(
-                    "Route Optimization is not authorized for this key. Enable routeoptimization.googleapis.com and IAM routeoptimization.locations.use.");
+                    "Route Optimization rejected the Google sign-in. That account needs roles/routeoptimization.editor on busbuddy-507301.");
             }
 
             if (!response.IsSuccessStatusCode)

@@ -38,7 +38,7 @@ namespace BusBuddy.Core.Services
 
                 await context.SaveChangesAsync();
                 Logger.Information(
-                    "Map demo geo ensured SchoolStudentsSeeded=true RouteHasWaypoints={HasWaypoints}",
+                    "Map demo geo ensured StudentsSeeded=false RouteHasWaypoints={HasWaypoints}",
                     route is not null && !string.IsNullOrWhiteSpace(route.WaypointsJson));
             }
             catch (Exception ex)
@@ -243,188 +243,17 @@ namespace BusBuddy.Core.Services
                 messages.Add($"Created regular route '{regularRouteName}'");
             }
 
-            // Synthetic tokens only — never anything that could be mistaken for a real child.
-            // specs/students.md: student PII must not be committed to git.
-            var specialStudentSpecs = new[]
-            {
-                new
-                {
-                    Name = "TEST_STUDENT_SN_01",
-                    Guardian = "TEST_GUARDIAN_SN_01",
-                    Grade = "5",
-                    Address = "100 Test St",
-                    City = "TESTVILLE",
-                    Lat = 38.1512m,
-                    Lon = -102.7210m,
-                    Wheelchair = false,
-                    Aide = true,
-                    Notes = "TEST DATA: requires aide assistance boarding"
-                },
-                new
-                {
-                    Name = "TEST_STUDENT_SN_02",
-                    Guardian = "TEST_GUARDIAN_SN_02",
-                    Grade = "3",
-                    Address = "200 Test St",
-                    City = "TESTVILLE",
-                    Lat = 38.1548m,
-                    Lon = -102.7162m,
-                    Wheelchair = true,
-                    Aide = true,
-                    Notes = "TEST DATA: wheelchair lift; secure tie-downs required"
-                },
-                new
-                {
-                    Name = "TEST_STUDENT_SN_03",
-                    Guardian = "TEST_GUARDIAN_SN_03",
-                    Grade = "7",
-                    Address = "300 Test St",
-                    City = "TESTVILLE",
-                    Lat = 38.1485m,
-                    Lon = -102.7248m,
-                    Wheelchair = false,
-                    Aide = false,
-                    Notes = "TEST DATA: seat belt harness; monitor at drop-off"
-                }
-            };
-
-            var snCount = 0;
-            foreach (var spec in specialStudentSpecs)
-            {
-                var existing = await context.Students
-                    .FirstOrDefaultAsync(s => s.StudentName == spec.Name);
-                if (existing is null)
-                {
-                    existing = new Student
-                    {
-                        StudentName = spec.Name,
-                        Grade = spec.Grade,
-                        HomeAddress = spec.Address,
-                        City = spec.City,
-                        State = "CO",
-                        Zip = "00000",
-                        Latitude = spec.Lat,
-                        Longitude = spec.Lon,
-                        ParentGuardian = spec.Guardian,
-                        CellPhone = "555-0100",
-                        School = schoolName,
-                        DestinationId = school.DestinationId,
-                        RequiresSpecialNeedsBus = true,
-                        RequiresWheelchair = spec.Wheelchair,
-                        RequiresAide = spec.Aide,
-                        RequiresSeatBelt = true,
-                        HasMedicalNeeds = spec.Wheelchair,
-                        TransportationNotes = spec.Notes,
-                        // Assigned to both runs, so state eligibility for both — the model no longer
-                        // assumes it and the grid/scheduler read these flags, not the route strings.
-                        RidesAm = true,
-                        RidesPm = true,
-                        SchoolYear = StudentRecordNormalizer.CurrentSchoolYear(),
-                        Active = true,
-                        EnrollmentDate = todayUtc,
-                        CreatedDate = DateTime.UtcNow,
-                        CreatedBy = "SeedDataService"
-                    };
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, route);
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, route);
-                    StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(existing);
-                    context.Students.Add(existing);
-                    snCount++;
-                }
-                else
-                {
-                    existing.RequiresSpecialNeedsBus = true;
-                    existing.RequiresWheelchair = spec.Wheelchair;
-                    existing.RequiresAide = spec.Aide;
-                    existing.RequiresSeatBelt = true;
-                    existing.DestinationId = school.DestinationId;
-                    existing.School = schoolName;
-                    existing.Latitude ??= spec.Lat;
-                    existing.Longitude ??= spec.Lon;
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, route);
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, route);
-                    existing.RidesAm = true;
-                    existing.RidesPm = true;
-                    existing.TransportationNotes = spec.Notes;
-                    StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(existing);
-                    snCount++;
-                }
-            }
-
-            await context.SaveChangesAsync();
-            messages.Add($"Prepared {snCount} special-needs student(s) on '{routeName}'");
-
-            // Synthetic tokens only — see note on specialStudentSpecs above.
-            // Both rows deliberately share one address so sibling grouping stays exercised.
-            var regularStudentSpecs = new[]
-            {
-                new { Name = "TEST_STUDENT_REG_01", Grade = "3", Address = "400 Test St", City = "TESTVILLE", Lat = 38.1555m, Lon = -102.7180m },
-                new { Name = "TEST_STUDENT_REG_02", Grade = "1", Address = "400 Test St", City = "TESTVILLE", Lat = 38.1556m, Lon = -102.7181m }
-            };
-
-            var regCount = 0;
-            foreach (var spec in regularStudentSpecs)
-            {
-                var existing = await context.Students
-                    .FirstOrDefaultAsync(s => s.StudentName == spec.Name);
-                if (existing is null)
-                {
-                    existing = new Student
-                    {
-                        StudentName = spec.Name,
-                        Grade = spec.Grade,
-                        HomeAddress = spec.Address,
-                        City = spec.City,
-                        State = "CO",
-                        Zip = "00000",
-                        Latitude = spec.Lat,
-                        Longitude = spec.Lon,
-                        ParentGuardian = "TEST_GUARDIAN_REG",
-                        CellPhone = "555-0200",
-                        School = schoolName,
-                        DestinationId = school.DestinationId,
-                        RidesAm = true,
-                        RidesPm = true,
-                        SchoolYear = StudentRecordNormalizer.CurrentSchoolYear(),
-                        Active = true,
-                        EnrollmentDate = todayUtc,
-                        CreatedDate = DateTime.UtcNow,
-                        CreatedBy = "SeedDataService"
-                    };
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, regularRoute);
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, regularRoute);
-                    context.Students.Add(existing);
-                    regCount++;
-                }
-                else if (existing.RequiresSpecialNeedsBus)
-                {
-                    // leave SN students alone
-                }
-                else
-                {
-                    existing.DestinationId = school.DestinationId;
-                    existing.School = schoolName;
-                    existing.Latitude ??= spec.Lat;
-                    existing.Longitude ??= spec.Lon;
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.AM, regularRoute);
-                    StudentRouteAssignment.SetSlot(existing, RouteTimeSlot.PM, regularRoute);
-
-                    // Assigned to both runs on this seed, so both are stated.
-                    existing.RidesAm = true;
-                    existing.RidesPm = true;
-                    regCount++;
-                }
-            }
-
-            await context.SaveChangesAsync();
-            messages.Add($"Prepared {regCount} regular student(s) for contrast routing");
+            // specs/students.md: the roster is clerk-entered. Do not insert sample students here.
+            // This method used to recreate TEST_STUDENT_* rows whenever they were missing, so a
+            // clerk delete disappeared from the grid and came back on the next launch.
+            messages.Add("Student roster was not seeded. Deleted students stay deleted.");
 
             route.StudentCount = await context.Students.WhereOnRoute(route).CountAsync();
             await context.SaveChangesAsync();
 
             Logger.Information(
-                "Special-needs transport prep complete Route={RouteId} Students={SnCount}",
-                route.RouteId, snCount);
+                "Special-needs transport prep complete Route={RouteId} StudentsSeeded=0",
+                route.RouteId);
 
             return new SpecialNeedsPrepSummary
             {
@@ -433,8 +262,8 @@ namespace BusBuddy.Core.Services
                 SpecialNeedsRouteName = route.RouteName,
                 SpecialNeedsDriverId = driver.DriverId,
                 SpecialNeedsBusId = bus.BusId,
-                SpecialNeedsStudentsPrepared = snCount,
-                RegularStudentsPrepared = regCount,
+                SpecialNeedsStudentsPrepared = 0,
+                RegularStudentsPrepared = 0,
                 Messages = messages
             };
         }

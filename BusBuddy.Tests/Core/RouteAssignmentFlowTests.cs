@@ -88,7 +88,8 @@ namespace BusBuddy.Tests.Core
                 City = "Oakridge",
                 State = "CO",
                 Zip = "81092",
-                Active = true
+                Active = true,
+                RidesAm = true
             });
             Assert.That(added.StudentId, Is.GreaterThan(0));
 
@@ -97,6 +98,9 @@ namespace BusBuddy.Tests.Core
             Assert.That(assignResult.IsSuccess, Is.True, assignResult.Error);
 
             var csvStudent = csvStudents.First();
+            var csvRow = await _dbContext.Students.AsTracking().FirstAsync(s => s.StudentId == csvStudent.StudentId);
+            csvRow.RidesAm = true;
+            await _dbContext.SaveChangesAsync();
             var csvAssign = await _routeService.AssignStudentToRouteAsync(
                 csvStudent.StudentId, route.RouteId, RouteTimeSlot.AM);
             Assert.That(csvAssign.IsSuccess, Is.True, csvAssign.Error);

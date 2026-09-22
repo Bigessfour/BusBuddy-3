@@ -79,7 +79,7 @@ public class MapRouteTrailTests
         var plot = MapRouteTrail.Build(route, publishedValidatedStopCount: 14);
 
         Assert.That(plot.StatusMessage, Does.Contain("14 published stop"));
-        Assert.That(plot.StatusMessage, Does.Not.Contain("4 published"));
+        Assert.That(plot.StatusMessage, Does.Not.Match(@"(?<!\d)4 published"));
     }
 
     [Test]

@@ -36,8 +36,15 @@ namespace BusBuddy.Core.Services
             int studentId,
             DateTime exceptionDate,
             string? reason = null);
+        /// <summary>Removes a same-day not-riding row. The year assignment and published stops stay.</summary>
+        Task<Result<bool>> ClearRiderExceptionAsync(int routeId, int studentId, DateTime exceptionDate);
         /// <summary>Student ids with a not-riding row on that UTC calendar day. Does not change clocks.</summary>
         Task<Result<IReadOnlyList<int>>> GetRiderExceptionStudentIdsAsync(int routeId, DateTime exceptionDate);
+        /// <summary>
+        /// Session roster for one school day: assigned students on this row's slot, minus not-riding exceptions.
+        /// Capacity is that slot's bus. A missing bus yields capacity 0 and a warning.
+        /// </summary>
+        Task<Result<RouteSessionLoad>> GetSessionLoadAsync(int routeId, DateTime serviceDate);
         /// <summary>Active students with neither AM nor PM assigned. Prefer the slot overload for fill work.</summary>
         Task<Result<List<Student>>> GetUnassignedStudentsAsync();
         /// <summary>Active students missing that slot. AM-assigned/PM-empty children are returned for PM, and vice versa.</summary>
@@ -50,7 +57,12 @@ namespace BusBuddy.Core.Services
         Task<Result<RouteUtilizationStats>> GetRouteUtilizationStatsAsync();
 
         // Route Building Methods
-        Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);
+        Task<Result<Route>> CreateNewRouteAsync(
+            string routeName,
+            DateTime routeDate,
+            string? description = null,
+            string? session = null,
+            string? school = null);
         Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
         Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
         Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);

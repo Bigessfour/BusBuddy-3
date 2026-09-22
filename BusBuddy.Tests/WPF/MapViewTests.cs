@@ -32,8 +32,12 @@ public class MapViewTests
         // Sidebar ButtonAdv: Label + Command only — no local Background (stomps Fluent pressed chrome).
         Assert.That(xaml, Does.Not.Contain("Command=\"{Binding ShowSchoolsCommand}\"\n                              Background="));
         var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
-        Assert.That(mapVm, Does.Contain("LoadAllRoutesOnMapAsync"));
-        Assert.That(mapVm, Does.Contain("UpdateMapForRouteAsync(withWaypoints, refreshDrivePath: true)"));
+        Assert.That(mapVm, Does.Not.Contain("LoadAllRoutesOnMapAsync"));
+        Assert.That(mapVm, Does.Contain("OptimizeStopOrderAsync"));
+        Assert.That(xaml, Does.Contain("ShapeType=\"Polyline\""));
+        Assert.That(xaml, Does.Contain("Label=\"Optimize Order\""));
+        Assert.That(mapVm, Does.Contain("Select a route, then press Show Routes"));
+        Assert.That(mapVm, Does.Contain("SelectedRouteBusLabel"));
         Assert.That(mapVm, Does.Contain("IRoutingService"));
         Assert.That(xaml, Does.Contain("Label=\"Export Route\""));
         Assert.That(xaml, Does.Contain("utils:GoogleMapTilesImageryLayer"));
@@ -132,7 +136,12 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrailLayer\""));
         Assert.That(xaml, Does.Contain("SubShapeFileLayers"));
         Assert.That(xaml, Does.Contain("maps:MapPolyline"));
-        Assert.That(XamlViewFile.Read("Utilities/MapRouteTrailLayer.cs"), Does.Contain("polyline.Points.Clear"));
+        Assert.That(xaml, Does.Contain("ShapeFill=\"Gold\""));
+        Assert.That(xaml, Does.Not.Contain("ShapeFill=\"Transparent\""));
+        var trail = XamlViewFile.Read("Utilities/MapRouteTrailLayer.cs");
+        Assert.That(trail, Does.Contain("polyline.Points = CopyPoints"));
+        Assert.That(trail, Does.Contain("ShapeFill = Brushes.Gold"));
+        Assert.That(trail, Does.Not.Contain("polyline.Points.Clear"));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
         Assert.That(xaml, Does.Not.Contain("ZoomLevel=\"13\""));
         Assert.That(xaml, Does.Contain("Live fleet GPS tracking is deferred"));
@@ -180,7 +189,7 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("SelectedBus"));
         Assert.That(xaml, Does.Contain("Pin Legend"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding MarkerLegend}\""));
-        Assert.That(xaml, Does.Contain("Fill=\"{Binding FillHex}\""));
+        Assert.That(xaml, Does.Contain("Fill=\"{Binding FillHex, Converter={StaticResource HexColorToBrushConverter}}\""));
 
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(vm, Does.Not.Contain("ActiveBuses"));

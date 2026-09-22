@@ -173,6 +173,7 @@ public class RouteDrivePathRefresherTests
         var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
 
         result.Success.Should().BeTrue();
+        result.DroppedIntermediateCount.Should().Be(0);
         route.WaypointsJson.Should().Contain("encodedPolyline");
         route.WaypointsJson.Should().Contain("stops");
         route.WaypointsJson.Should().NotContain("\"points\"");
@@ -226,6 +227,39 @@ public class RouteDrivePathRefresherTests
         capped.Should().HaveCount(RouteDrivePathRefresher.MaxIntermediateWaypoints);
         capped[0].Should().Be(many[0]);
         capped[^1].Should().Be(many[^1]);
+    }
+
+    [Test]
+    public async Task TryRefresh_ReportsIntermediateStopsOmittedByTheRoutesCap()
+    {
+        var points = Enumerable.Range(0, RouteDrivePathRefresher.MaxIntermediateWaypoints + 4)
+            .Select(i => (38.0 + (i * 0.001), -102.0))
+            .ToList();
+        var route = new Route
+        {
+            RouteId = 9,
+            WaypointsJson = RouteWaypointSerializer.FromPairs(points)
+        };
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default))
+            .ReturnsAsync(new DrivePathResult
+            {
+                EncodedPolyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+                Points = new List<(double, double)> { points[0], points[^1] },
+                DistanceMeters = 1000,
+                Duration = "120s"
+            });
+
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
+
+        result.Success.Should().BeTrue();
+        result.DroppedIntermediateCount.Should().Be(points.Count - 2 - RouteDrivePathRefresher.MaxIntermediateWaypoints);
+        result.Message.Should().Contain("omitted");
+        result.Message.Should().Contain(RouteDrivePathRefresher.MaxIntermediateWaypoints.ToString());
     }
 
     [Test]

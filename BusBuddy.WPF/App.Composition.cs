@@ -174,9 +174,9 @@ namespace BusBuddy.WPF
                             maxRetries: 3
                         );
 
-                        // Do not auto-seed students. EnsureMapDemoGeo / JSON / CSV seed re-inserts
-                        // deleted TEST_STUDENT_* rows on every launch. Roster is clerk-entered
-                        // (Add Student / Import CSV). DbPrep hops may still call seed explicitly.
+                        // Do not auto-seed students. SeedSpecialNeedsTransportPrep used to re-insert
+                        // deleted TEST_STUDENT_* rows on every launch. That insert is gone.
+                        // Roster is clerk-entered (Add Student / Import CSV).
                         Log.Information(
                             "Startup student seed skipped (SeedFromJson/EnsureMapDemoGeo). Use Import CSV to load a roster.");
                     }

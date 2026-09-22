@@ -47,6 +47,8 @@ public class RouteOptimizationSurfaceTests
         var client = CoreSourceFile.Read("Services/GoogleMaps/GoogleRouteOptimizationService.cs");
         Assert.That(client, Does.Contain("routeoptimization.googleapis.com/v1/projects/"));
         Assert.That(client, Does.Contain("optimizeTours"));
+        Assert.That(client, Does.Contain("Authorization = new AuthenticationHeaderValue(\"Bearer\""));
+        Assert.That(client, Does.Not.Contain("X-Goog-Api-Key"));
         Assert.That(client, Does.Contain("costPerHour"));
         Assert.That(client, Does.Not.Contain("IsTrip"));
     }

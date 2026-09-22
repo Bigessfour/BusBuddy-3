@@ -170,7 +170,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Control Panel — Commands bind to MapViewModel (CenterOnFleet, ShowRoutes, ShowSchools) -->
+            <!-- Control Panel — Commands bind to MapViewModel (ShowRoutes, ShowSchools, CenterOnStops) -->
     <Border Grid.Column="0"
             Background="{DynamicResource PrimaryBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
@@ -234,10 +234,24 @@
                     </syncfusion:ComboBoxAdv.ItemTemplate>
                 </syncfusion:ComboBoxAdv>
 
+                <TextBlock Text="{Binding SelectedRouteBusLabel}"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,8"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                           AutomationProperties.Name="Route bus number"
+                           ToolTip="Bus number stored on the selected route. This is not a live GPS position."/>
+
                 <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
-                              ToolTip="Refresh the selected route (Google drive path when keyed), or load the first route with stored waypoints if none is selected"
+                              ToolTip="Refresh the selected route and its Google drive path. Pick a route in the list first."
                               Command="{Binding ShowRoutesCommand}"/>
+
+                <syncfusion:ButtonAdv Label="Optimize Order"
+                              AutomationProperties.Name="Optimize stop order"
+                              ToolTip="Publish assigned homes as stops if this route has none, then reorder the middle stops with Google Route Optimization. Start and end stay pinned."
+                              Command="{Binding OptimizeStopOrderCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Export Route"
                               AutomationProperties.Name="Export Route"
@@ -246,7 +260,7 @@
 
                 <syncfusion:ButtonAdv Label="Show Schools"
                               AutomationProperties.Name="Show Schools"
-                              ToolTip="Schools only — hides every other pin. Refresh brings the full district back"
+                              ToolTip="Schools only — hides every other pin and the route line. Refresh restores the base map and the selected route."
                               Command="{Binding ShowSchoolsCommand}"/>
 
                 <syncfusion:ButtonAdv Label="Plot Pickup Stops"
@@ -303,6 +317,29 @@
                                            TextWrapping="Wrap"
                                            Margin="0,8,0,0"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                                <TextBlock Text="Needs validation"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Margin="0,14,0,4"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                <TextBlock Text="{Binding NeedsValidationSummary}"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,6"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                                           AutomationProperties.Name="Places that need address validation"/>
+                                <ItemsControl ItemsSource="{Binding NeedsValidation}"
+                                              AutomationProperties.Name="Unvalidated places">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"
+                                                       FontSize="12"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,2,0,0"
+                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -447,7 +484,13 @@
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="Bing">
                                         <maps:ImageryLayer.SubShapeFileLayers>
-                                            <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
+                                            <maps:SubShapeFileLayer x:Name="RouteTrailLayer" ShapeType="Polyline">
+                                                <!-- ShapeFill is the polyline color (Syncfusion shapetype sample). Transparent hides the road. -->
+                                                <maps:SubShapeFileLayer.ShapeSettings>
+                                                    <maps:ShapeSetting ShapeFill="Gold"
+                                                                       ShapeStroke="Gold"
+                                                                       ShapeStrokeThickness="4"/>
+                                                </maps:SubShapeFileLayer.ShapeSettings>
                                                 <maps:SubShapeFileLayer.MapElements>
                                                     <maps:MapPolyline x:Name="RouteTrail"
                                                                       Stroke="Gold"
@@ -475,9 +518,12 @@
                                                                VerticalAlignment="Center"
                                                                AnimationType="Flight"/>
                                     <TextBlock Grid.Row="1"
-                                               Text="Loading Map..."
+                                               Text="{Binding StatusMessage}"
                                                Margin="0,12,0,0"
                                                FontSize="16"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"
+                                               MaxWidth="420"
                                                Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                                HorizontalAlignment="Center"/>
                                 </Grid>

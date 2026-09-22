@@ -147,6 +147,12 @@ namespace BusBuddy.Core.Services
                         }
                     }
 
+                    if (await RouteNameExistsOnDateAsync(context, route.RouteName, route.Date).ConfigureAwait(false))
+                    {
+                        return Result.FailureResult<Route>(
+                            $"A route with name '{route.RouteName}' already exists for {route.Date:yyyy-MM-dd}");
+                    }
+
                     context.Routes.Add(route);
                     await context.SaveChangesAsync();
 
@@ -413,7 +419,12 @@ namespace BusBuddy.Core.Services
 
         #region Route Building Methods
 
-        public async Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null)
+        public async Task<Result<Route>> CreateNewRouteAsync(
+            string routeName,
+            DateTime routeDate,
+            string? description = null,
+            string? session = null,
+            string? school = null)
         {
             try
             {
@@ -430,28 +441,23 @@ namespace BusBuddy.Core.Services
                     return Result.FailureResult<Route>("Route date cannot be in the past");
                 }
 
-                // Check for duplicate route name on the same date
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var existingRoute = await context.Routes
-                        .FirstOrDefaultAsync(r => r.RouteName == routeName && r.Date.Date == routeDate.Date);
-
-                    if (existingRoute != null)
+                    if (await RouteNameExistsOnDateAsync(context, routeName.Trim(), routeDate).ConfigureAwait(false))
                     {
                         return Result.FailureResult<Route>($"A route with name '{routeName}' already exists for {routeDate:yyyy-MM-dd}");
                     }
 
-                    // Create new route
                     var newRoute = new Route
                     {
-                        RouteName = routeName,
+                        RouteName = routeName.Trim(),
                         Date = routeDate,
                         Description = description,
-                        IsActive = false, // Start inactive until fully configured
-                        School = "Default School" // This should come from configuration
+                        IsActive = false,
+                        School = string.IsNullOrWhiteSpace(school) ? null : school.Trim()
                     };
-                    newRoute.Session = RouteSession.Infer(newRoute);
+                    newRoute.Session = CanonicalSession(session) ?? RouteSession.Infer(newRoute);
 
                     context.Routes.Add(newRoute);
                     await context.SaveChangesAsync();
@@ -492,21 +498,53 @@ namespace BusBuddy.Core.Services
                         return Result.SuccessResult(validationResult);
                     }
 
-                    // Basic validation - route exists and has a name
                     if (string.IsNullOrWhiteSpace(route.RouteName))
                     {
                         validationResult.Issues.Add("Route name is required");
                     }
 
-                    if (route.Date.Date < DateTime.UtcNow.Date)
+                    var session = RouteSession.IsKnown(route.Session)
+                        ? route.Session!
+                        : RouteSession.Infer(route);
+                    if (!RouteSession.IsKnown(session))
                     {
-                        validationResult.Issues.Add("Route date cannot be in the past");
+                        validationResult.Issues.Add("Session must be AM, PM, Transfer, or SpecialNeeds");
                     }
 
-                    // Name + date is the intended scope here. Bus/driver/stop/student checks live
-                    // in the assign and stop services so this stays a cheap pre-save gate.
+                    var slot = RouteSession.ToAssignmentSlot(new Route
+                    {
+                        RouteName = route.RouteName,
+                        Session = session,
+                        Description = route.Description,
+                        IsSpecialNeedsRoute = route.IsSpecialNeedsRoute
+                    });
+                    var vehicleId = slot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+                    if (vehicleId is not > 0)
+                    {
+                        validationResult.Issues.Add($"Assign a default bus for the {slot} run before activation.");
+                    }
+                    else
+                    {
+                        var busExists = await context.Buses.AsNoTracking()
+                            .AnyAsync(b => b.BusId == vehicleId.Value);
+                        if (!busExists)
+                        {
+                            validationResult.Issues.Add("The default bus for this run no longer exists.");
+                        }
+                    }
+
+                    var stops = await context.RouteStops.AsNoTracking()
+                        .Where(s => s.RouteId == routeId)
+                        .ToListAsync();
+                    var validatedStops = stops.Count(s => s.HasValidatedCoordinates);
+                    if (validatedStops < 2)
+                    {
+                        validationResult.Issues.Add(
+                            "At least two validated stops are required before this route can be official.");
+                    }
 
                     validationResult.IsValid = validationResult.Issues.Count == 0;
+                    validationResult.CanActivate = validationResult.IsValid;
 
                     Logger.Information("Route validation completed. Valid: {IsValid}, Issues: {IssueCount}",
                         validationResult.IsValid, validationResult.Issues.Count);
@@ -533,7 +571,6 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Activating route {RouteId}", routeId);
-                // Skip validation here (already covered in separate tests)
 
                 var (context, dispose) = GetWriteContext();
                 try
@@ -549,6 +586,24 @@ namespace BusBuddy.Core.Services
                         Logger.Information("ActivateRoute — route {RouteId} already active", routeId);
                         return Result.SuccessResult(true); // idempotent
                     }
+
+                    var validation = await ValidateRouteForActivationAsync(routeId).ConfigureAwait(false);
+                    if (!validation.IsSuccess || validation.Value is null)
+                    {
+                        return Result.FailureResult<bool>(validation.Error ?? "Route validation failed");
+                    }
+
+                    if (!validation.Value.IsValid)
+                    {
+                        return Result.FailureResult<bool>(string.Join(" ", validation.Value.Issues));
+                    }
+
+                    if (!RouteSession.IsKnown(route.Session))
+                    {
+                        route.Session = RouteSession.Infer(route);
+                        context.Entry(route).Property(r => r.Session).IsModified = true;
+                    }
+
                     route.IsActive = true;
                     context.Entry(route).Property(r => r.IsActive).IsModified = true; // force persistence
                     await context.SaveChangesAsync();
@@ -614,6 +669,27 @@ namespace BusBuddy.Core.Services
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error deactivating route {RouteId}", routeId);
                 return Result.FailureResult<bool>($"Error deactivating route: {ex.Message}");
             }
+        }
+
+        /// <summary>(Date, RouteName) is unique. Comparison is the calendar day of <paramref name="routeDate"/>.</summary>
+        private static async Task<bool> RouteNameExistsOnDateAsync(
+            BusBuddyDbContext context,
+            string routeName,
+            DateTime routeDate)
+        {
+            var day = routeDate.Date;
+            return await context.Routes.AnyAsync(r => r.RouteName == routeName && r.Date.Date == day)
+                .ConfigureAwait(false);
+        }
+
+        private static string? CanonicalSession(string? session)
+        {
+            if (!RouteSession.IsKnown(session))
+            {
+                return null;
+            }
+
+            return RouteSession.All.First(s => string.Equals(s, session, StringComparison.OrdinalIgnoreCase));
         }
 
         #endregion

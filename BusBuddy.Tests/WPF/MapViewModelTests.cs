@@ -386,10 +386,13 @@ public class MapViewModelTests
         Assert.That(home.RouteStopLabel, Is.EqualTo("Ada"));
 
         vm.ResetViewCommand.Execute(null);
-        await WaitUntilAsync(() => vm.MapMarkers.All(m => m.Kind != MapMarkerLabels.Kind.Waypoint));
-        Assert.That(vm.MapMarkers.Count, Is.EqualTo(2));
-        Assert.That(vm.MapMarkers.All(m => m.RouteStopLabel is null), Is.True, "reset clears sequence tags too");
-        Assert.That(tagged.DisplayCaption, Is.EqualTo("Lamar High School"));
+        await WaitUntilAsync(() => vm.StatusMessage.Contains("Resetting", StringComparison.Ordinal)
+            || vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.Waypoint));
+
+        Assert.That(vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.Waypoint), Is.True,
+            "Home recenters and keeps stop pins");
+        Assert.That(tagged.RouteStopLabel, Is.EqualTo("Stop 7"));
+        Assert.That(tagged.DisplayCaption, Is.EqualTo("Lamar High School (Stop 7)"));
     }
 
     [Test]
@@ -521,6 +524,102 @@ public class MapViewModelTests
         Assert.That(vm.SelectedRoute!.RouteId, Is.EqualTo(2));
         Assert.That(vm.SelectedRoute.RouteName, Is.EqualTo("Second-With-Waypoints"));
         Assert.That(vm.RouteLinePoints.Count, Is.GreaterThanOrEqualTo(2));
+    }
+
+    [Test]
+    public async Task ShowRoutes_WithoutSelection_DoesNotGuessARoute()
+    {
+        var geo = new Mock<IGeoDataService>();
+        geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route>
+        {
+            new()
+            {
+                RouteId = 1,
+                RouteName = "First-With-Waypoints",
+                WaypointsJson = RouteWaypointSerializer.FromPairs([(38.10, -102.70), (38.11, -102.71)])
+            }
+        });
+        var vm = await CreateSettledViewModelAsync(geo.Object);
+
+        await ((IAsyncRelayCommand)vm.ShowRoutesCommand).ExecuteAsync(null);
+
+        Assert.That(vm.SelectedRoute, Is.Null);
+        Assert.That(vm.RouteLinePoints, Is.Empty);
+        Assert.That(vm.StatusMessage, Does.Contain("Select a route"));
+    }
+
+    [Test]
+    public async Task SelectedRoute_ShowsBusNumberLabel_NotAMovingPin()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.SelectedRoute = new Route
+        {
+            RouteId = 8,
+            RouteName = "AM Special Needs Bus 5",
+            BusNumber = "5",
+            WaypointsJson = RouteWaypointSerializer.FromPairs([(38.15, -102.72), (38.16, -102.71)])
+        };
+        await WaitUntilAsync(() => vm.StatusMessage.Contains("Bus 5", StringComparison.Ordinal));
+
+        Assert.That(vm.SelectedRouteBusLabel, Is.EqualTo("Bus 5"));
+        Assert.That(vm.StatusMessage, Does.Contain("Bus 5"));
+        Assert.That(vm.MapMarkers.Any(m => m.Label != null && m.Label.Contains("GPS", StringComparison.OrdinalIgnoreCase)), Is.False);
+    }
+
+    [Test]
+    public async Task InitializeMapData_ListsSchoolsAndStopsThatNeedValidation()
+    {
+        var dest = new Mock<IDestinationService>();
+        dest.Setup(d => d.GetActiveSchoolsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new Destination { Name = "Wiley School", Latitude = 38.1535m, Longitude = -102.7195m },
+                new Destination { Name = "Unvalidated School" }
+            });
+        var pickups = new Mock<IPickupStopService>();
+        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new PickupStop { PickupStopId = 3, Name = "No GPS Stop" }
+            });
+
+        var vm = await CreateSettledViewModelAsync(destinations: dest.Object, pickupStops: pickups.Object);
+
+        Assert.That(vm.NeedsValidation, Does.Contain("School: Unvalidated School"));
+        Assert.That(vm.NeedsValidation, Does.Contain("Pickup: No GPS Stop"));
+        Assert.That(vm.NeedsValidation.Any(n => n.Contains("Wiley School", StringComparison.Ordinal)), Is.False);
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForSchool("Wiley School")), Is.True);
+    }
+
+    [Test]
+    public async Task ShowSchools_WhenDatabaseIsDown_DoesNotClaimSchoolsNeedValidation()
+    {
+        var dest = new Mock<IDestinationService>();
+        dest.Setup(d => d.GetActiveSchoolsAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TimeoutException("Failed to connect to 192.168.64.1:5432"));
+        var vm = await CreateSettledViewModelAsync(destinations: dest.Object);
+        vm.PlotStop(38.14, -102.73, null, MapMarkerLabels.ForHome("Bea"));
+
+        await ((IAsyncRelayCommand)vm.ShowSchoolsCommand).ExecuteAsync(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("Database is unavailable"));
+        Assert.That(vm.StatusMessage, Does.Not.Contain("validated"));
+        Assert.That(vm.MapMarkers.Any(m => m.Kind == MapMarkerLabels.Kind.Home), Is.True,
+            "a failed school query must not wipe pins already on the map");
+    }
+
+    [Test]
+    public async Task PlotPickupStops_WhenDatabaseIsDown_DoesNotClaimStopsNeedValidation()
+    {
+        var pickups = new Mock<IPickupStopService>();
+        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new TimeoutException("Failed to connect to 192.168.64.1:5432"));
+        var vm = await CreateSettledViewModelAsync(pickupStops: pickups.Object);
+
+        await ((IAsyncRelayCommand)vm.PlotPickupStopsCommand).ExecuteAsync(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("Database is unavailable"));
+        Assert.That(vm.StatusMessage, Does.Not.Contain("No pickup"));
     }
 
     [Test]
@@ -1405,7 +1504,9 @@ public class MapViewModelTests
         Assert.That(vm, Does.Contain("PlotDepotPins()"));
         Assert.That(vm, Does.Contain("PlotSchoolsAsync()"));
         Assert.That(vm, Does.Contain("PlotPickupsAsync()"));
-        Assert.That(vm, Does.Contain("PlotStoredStudentsAsync()"));
+        Assert.That(vm, Does.Not.Contain("PlotStoredStudentsAsync()"));
+        Assert.That(vm, Does.Contain("PlotAssignedStudentsForRouteAsync"));
+        Assert.That(vm, Does.Contain("ListNeedsValidationAsync"));
         Assert.That(vm, Does.Not.Contain("UpdateMapForRouteAsync(routeWithTrail, refreshDrivePath: true)"));
         Assert.That(vm, Does.Contain("no auto trail"));
         Assert.That(vm, Does.Not.Contain("GenerateEligibilityRoutePdf"));
@@ -1416,10 +1517,10 @@ public class MapViewModelTests
         Assert.That(layers, Does.Contain("StudentPlotLocation.PinsFromStored"));
         Assert.That(layers, Does.Contain("HasValidatedCoordinates"));
         Assert.That(layers, Does.Contain("MapStudentPlot.Draw"));
-        Assert.That(layers, Does.Contain("LoadDistrictLayersAsync"));
-        Assert.That(layers, Does.Contain("PlotStoredStudentsAsync"));
+        Assert.That(layers, Does.Contain("LoadDistrictBaseLayersAsync"));
+        Assert.That(layers, Does.Not.Contain("LoadDistrictLayersAsync"));
+        Assert.That(layers, Does.Not.Contain("BulkPlotStudentsAsync"));
         Assert.That(layers, Does.Not.Contain("IGeocodingService"));
-        Assert.That(layers, Does.Contain("Geocoded=0"));
         Assert.That(layers, Does.Not.Contain("IMapsGeoService"));
         Assert.That(layers, Does.Contain("PlotDepot"));
         Assert.That(layers, Does.Not.Contain("SeedAsync"));
@@ -1474,6 +1575,7 @@ public class MapViewModelTests
         Assert.That(codeBehind, Does.Contain("ScheduleAttributionRefresh"));
         Assert.That(codeBehind, Does.Contain("_attributionTimer"));
         Assert.That(codeBehind, Does.Not.Contain("MapInteractionDiagnostics"));
+        Assert.That(codeBehind, Does.Contain("LatestMapSnapshotPng"));
         Assert.That(codeBehind, Does.Contain("ReplayRouteLineFromViewModel"));
         Assert.That(codeBehind, Does.Contain("MapRouteTrailLayer.Apply"));
         Assert.That(codeBehind, Does.Contain("ApplyMarkerTemplates"));

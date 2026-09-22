@@ -98,7 +98,7 @@ internal static class Program
         if (!optimized.Succeeded)
         {
             Console.WriteLine($"WARN: Route Optimization — {optimized.Error}");
-            Console.WriteLine("Enable routeoptimization.googleapis.com and IAM routeoptimization.locations.use if the key is rejected.");
+            Console.WriteLine("Sign in with: gcloud auth application-default login");
         }
         else
         {
