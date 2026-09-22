@@ -29,7 +29,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         : result.Error;
                     StatusMessage = error;
                     UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", "failed", result.Error);
-                    MessageBox.Show(error, "Drive Path", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowClerkNotice(error, "Drive Path", MessageBoxImage.Warning);
                     return;
                 }
 
@@ -48,11 +48,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                         "RouteManagementView",
                         "refreshed",
                         routeName);
-                    MessageBox.Show(
+                    ShowClerkNotice(
                         $"{routeName}\n\nRoad path saved ({pathCaption ?? $"{meters} m, {duration}"}).\n\n"
                         + "Open Manage Route to plot the line on the map. Use Time Route there to publish stop clocks.",
                         "Drive Path",
-                        MessageBoxButton.OK,
                         MessageBoxImage.Information);
                     return;
                 }
@@ -64,10 +63,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 UiProofLog.Write(Logger, "Drive Path", "RouteManagementView", outcome, skip);
                 if (refresh.Skipped)
                 {
-                    MessageBox.Show(
+                    ShowClerkNotice(
                         $"{SelectedRoute.RouteName} has {SelectedRoute.StopCount ?? 0} geocoded stop(s).\n\n{skip}",
                         "Drive Path",
-                        MessageBoxButton.OK,
                         MessageBoxImage.Information);
                 }
             }
@@ -158,6 +156,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsBusy = false;
             }
+        }
+
+        /// <summary>
+        /// Clerk dialog. Headless runs (CI, unit tests) have no WPF application, and
+        /// <see cref="MessageBox.Show(string)"/> would block the test host until the job is cancelled.
+        /// </summary>
+        private static void ShowClerkNotice(string message, string title, MessageBoxImage image)
+        {
+            if (Application.Current is null)
+            {
+                return;
+            }
+
+            MessageBox.Show(message, title, MessageBoxButton.OK, image);
         }
 
         private async Task CopyRouteAsync()

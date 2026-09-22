@@ -447,6 +447,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
         routeService.Setup(s => s.GetRouteStopsAsync(4))
             .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routeService.Setup(s => s.GetStudentsForRouteAsync(4, It.IsAny<RouteTimeSlot>()))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>()));
         routeService.Setup(s => s.ReorderRouteStopsAsync(4, It.Is<List<int>>(ids => ids.SequenceEqual(new[] { 10, 11, 12 }))))
             .ReturnsAsync(Result.SuccessResult(true));
         routeService.Setup(s => s.GetRouteByIdAsync(4))
