@@ -708,6 +708,40 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task UpdateHomeGeocodeAsync_ClerkPin_IsNotReplacedByLaterGeocode()
+        {
+            var seeded = await SeedStudentAsync();
+            _dbContext.ChangeTracker.Clear();
+            var locked = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId,
+                38.0872m,
+                -102.6208m,
+                null,
+                homePickupClerkAdjusted: true);
+            _dbContext.ChangeTracker.Clear();
+
+            var geocode = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId,
+                38.2000m,
+                -102.8000m,
+                "ChIJ_GOOGLE");
+            var cleared = await _studentService.UpdateHomeGeocodeAsync(
+                seeded.StudentId,
+                null,
+                null,
+                null);
+
+            locked.Should().BeTrue();
+            geocode.Should().BeTrue();
+            cleared.Should().BeTrue();
+            var reloaded = await _dbContext.Students.AsNoTracking()
+                .FirstAsync(s => s.StudentId == seeded.StudentId);
+            reloaded.HomePickupClerkAdjusted.Should().BeTrue();
+            reloaded.Latitude.Should().Be(38.0872m);
+            reloaded.Longitude.Should().Be(-102.6208m);
+        }
+
+        [Test]
         public async Task UpdateHomeGeocodeAsync_UnknownStudent_ReturnsFalse()
         {
             var ok = await _studentService.UpdateHomeGeocodeAsync(999_001, 38.1m, -102.7m, null);

@@ -32,8 +32,11 @@ public partial class StudentService
                 student.EnrollmentDate = DateTime.UtcNow.Date;
             }
 
-            // Geocode on add when coordinates are not provided and a geocoder is available
-            if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
+            // Geocode on add when coordinates are not provided and a geocoder is available.
+            // A clerk driveway pin already on the new row is kept.
+            if (_geocodingService != null
+                && !student.HomePickupClerkAdjusted
+                && (!student.Latitude.HasValue || !student.Longitude.HasValue))
             {
                 try
                 {
@@ -84,8 +87,26 @@ public partial class StudentService
 
             StudentRecordNormalizer.NormalizeForPersistence(student);
 
-            // Geocode if coordinates missing and address present
-            if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
+            var (policyContext, policyDispose) = GetWriteContext();
+            try
+            {
+                var stored = await policyContext.Students.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.StudentId == student.StudentId)
+                    .ConfigureAwait(false);
+                HomePickupPin.ApplyOnSave(student, stored);
+            }
+            finally
+            {
+                if (policyDispose)
+                {
+                    await policyContext.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+
+            // Geocode if coordinates missing and address present. A clerk driveway pin is never a missing coordinate.
+            if (_geocodingService != null
+                && !student.HomePickupClerkAdjusted
+                && (!student.Latitude.HasValue || !student.Longitude.HasValue))
             {
                 try
                 {
@@ -155,11 +176,27 @@ public partial class StudentService
         }
     }
 
-    public async Task<bool> UpdateHomeGeocodeAsync(
+    public Task<bool> UpdateHomeGeocodeAsync(
         int studentId,
         decimal? latitude,
         decimal? longitude,
-        string? placeId)
+        string? placeId) =>
+        WriteHomeGeocodeAsync(studentId, latitude, longitude, placeId, homePickupClerkAdjusted: null);
+
+    public Task<bool> UpdateHomeGeocodeAsync(
+        int studentId,
+        decimal? latitude,
+        decimal? longitude,
+        string? placeId,
+        bool homePickupClerkAdjusted) =>
+        WriteHomeGeocodeAsync(studentId, latitude, longitude, placeId, homePickupClerkAdjusted);
+
+    private async Task<bool> WriteHomeGeocodeAsync(
+        int studentId,
+        decimal? latitude,
+        decimal? longitude,
+        string? placeId,
+        bool? homePickupClerkAdjusted)
     {
         if (studentId <= 0)
         {
@@ -178,8 +215,27 @@ public partial class StudentService
                 return false;
             }
 
+            // Address Validation and other geocoders pass null. A clerk pin stays until the pin window
+            // writes true or false, or the street address changes on a full save.
+            if (row.HomePickupClerkAdjusted && homePickupClerkAdjusted is null)
+            {
+                Logger.Information(
+                    "Clerk home pickup pin kept StudentId={StudentId}",
+                    studentId);
+                return true;
+            }
+
             row.Latitude = latitude;
             row.Longitude = longitude;
+            if (homePickupClerkAdjusted is bool adjusted)
+            {
+                row.HomePickupClerkAdjusted = adjusted;
+            }
+            else if (!LocationCoordinate.IsValidated(latitude, longitude))
+            {
+                row.HomePickupClerkAdjusted = false;
+            }
+
             if (!string.IsNullOrWhiteSpace(placeId))
             {
                 row.PlaceId = placeId;

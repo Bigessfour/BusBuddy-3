@@ -1784,6 +1784,11 @@ namespace BusBuddy.Core.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<bool>("HomePickupClerkAdjusted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<decimal?>("Latitude")
                         .HasColumnType("decimal(10,8)");
 

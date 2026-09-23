@@ -85,4 +85,28 @@ public class StudentHomePinViewModelTests
         Assert.That(vm.MapMarkers.All(m => m.Kind != MapMarkerLabels.Kind.Home ||
             Math.Abs(m.LatitudeDegrees - 38.14) < 0.0001), Is.True);
     }
+
+    [Test]
+    public void StoredHome_CameraOpensOnThePickup_NotTheOcean()
+    {
+        var student = new Student { Latitude = 38.14m, Longitude = -102.73m };
+        var vm = new StudentHomePinViewModel(student, validatedAddress: (38.14, -102.73));
+
+        Assert.That(vm.MapCenter.X, Is.EqualTo(38.14).Within(0.000001));
+        Assert.That(vm.MapCenter.Y, Is.EqualTo(-102.73).Within(0.000001));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(16));
+        Assert.That(vm.PersistClerkAdjustment, Is.False);
+    }
+
+    [Test]
+    public void ClickAwayFromValidatedAddress_PersistsClerkAdjustment()
+    {
+        var student = new Student { Latitude = 38.14m, Longitude = -102.73m };
+        var vm = new StudentHomePinViewModel(student, validatedAddress: (38.14, -102.73));
+
+        vm.ApplyMapClick(38.1412, -102.7311);
+
+        Assert.That(vm.PersistClerkAdjustment, Is.True);
+        Assert.That(vm.MapCenter.X, Is.EqualTo(38.14).Within(0.000001), "a click moves the pin, not the opening camera");
+    }
 }

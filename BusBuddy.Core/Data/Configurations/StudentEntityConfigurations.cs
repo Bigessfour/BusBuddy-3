@@ -25,6 +25,7 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
         entity.Property(e => e.State).HasMaxLength(2);
         entity.Property(e => e.Zip).HasMaxLength(10);
         entity.Property(e => e.PlaceId).HasMaxLength(256);
+        entity.Property(e => e.HomePickupClerkAdjusted).HasDefaultValue(false);
         entity.Property(e => e.SchoolYear).HasMaxLength(9);
         entity.Property(e => e.HasMedicalNeeds).HasDefaultValue(false);
         entity.Property(e => e.RequiresSpecialNeedsBus).HasDefaultValue(false);

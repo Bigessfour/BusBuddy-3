@@ -24,6 +24,10 @@ public sealed class StudentHomePinViewModel : INotifyPropertyChanged
     private readonly double? _validatedLatitude;
     private readonly double? _validatedLongitude;
     private readonly PickupStop? _catalogStop;
+    private readonly bool _openedClerkAdjusted;
+    private readonly bool _openedWithPin;
+    private readonly double _openedLatitude;
+    private readonly double _openedLongitude;
     private bool _hasMapPick;
     private string _mapHint = "Click the driveway or gate. Do not type coordinates.";
 
@@ -55,12 +59,12 @@ public sealed class StudentHomePinViewModel : INotifyPropertyChanged
             ApplyMapClick(lat, lon);
             MapHint = "Google placed this pin from the street address. Click the map to move pickup to the driveway or gate.";
         }
-        else
-        {
-            var camera = DistrictCameraUi.Resolve();
-            MapCenter = new Point(camera.Latitude, camera.Longitude);
-            MapZoomLevel = camera.ZoomLevel;
-        }
+
+        _openedClerkAdjusted = student.HomePickupClerkAdjusted;
+        _openedWithPin = HasMapPick;
+        _openedLatitude = _latitudeValue;
+        _openedLongitude = _longitudeValue;
+        PlaceOpeningCamera();
 
         if (HasValidatedAddressPin && HasMapPick && !SameAsValidated(_latitudeValue, _longitudeValue))
         {
@@ -84,6 +88,37 @@ public sealed class StudentHomePinViewModel : INotifyPropertyChanged
     public double LatitudeValue => _latitudeValue;
     public double LongitudeValue => _longitudeValue;
     public bool HasValidatedAddressPin => _validatedLatitude is not null && _validatedLongitude is not null;
+
+    /// <summary>
+    /// True when the confirmed blue pin is not Google's street geocode, so later validation must not move it.
+    /// </summary>
+    public bool PersistClerkAdjustment
+    {
+        get
+        {
+            if (!HasMapPick)
+            {
+                return false;
+            }
+
+            if (HasValidatedAddressPin)
+            {
+                return !SameAsValidated(_latitudeValue, _longitudeValue);
+            }
+
+            if (_openedClerkAdjusted)
+            {
+                return true;
+            }
+
+            return _openedWithPin
+                && !StudentPlotLocation.SameSpot(
+                    _latitudeValue,
+                    _longitudeValue,
+                    _openedLatitude,
+                    _openedLongitude);
+        }
+    }
 
     public bool HasMapPick
     {
@@ -137,6 +172,27 @@ public sealed class StudentHomePinViewModel : INotifyPropertyChanged
         RefreshMarkers();
         OnPropertyChanged(nameof(LatitudeValue));
         OnPropertyChanged(nameof(LongitudeValue));
+    }
+
+    private void PlaceOpeningCamera()
+    {
+        if (HasMapPick)
+        {
+            MapCenter = new Point(_latitudeValue, _longitudeValue);
+            MapZoomLevel = 16;
+            return;
+        }
+
+        if (_validatedLatitude is { } lat && _validatedLongitude is { } lon)
+        {
+            MapCenter = new Point(lat, lon);
+            MapZoomLevel = 16;
+            return;
+        }
+
+        var camera = DistrictCameraUi.Resolve();
+        MapCenter = new Point(camera.Latitude, camera.Longitude);
+        MapZoomLevel = camera.ZoomLevel;
     }
 
     private bool SameAsValidated(double latitude, double longitude) =>

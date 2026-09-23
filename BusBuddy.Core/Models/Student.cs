@@ -105,6 +105,12 @@ public class Student : INotifyPropertyChanged
     [Display(Name = "Place Id")]
     public string? PlaceId { get; set; }
 
+    /// <summary>
+    /// Plotted home is a clerk map click (driveway or gate), not the Address Validation geocode.
+    /// Re-validation of the same street keeps this point. A new street address clears it.
+    /// </summary>
+    public bool HomePickupClerkAdjusted { get; set; }
+
     [StringLength(50, ErrorMessage = "City cannot exceed 50 characters")]
     [Display(Name = "City")]
     public string? City

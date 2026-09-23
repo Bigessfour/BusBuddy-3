@@ -82,8 +82,21 @@ public interface IStudentService
     /// Writes home coordinates (Address Validation or a clerk map click after validation).
     /// Also moves published home <c>RouteStop</c> rows on the student's AM/PM routes that
     /// name this student. Does not run full intake validation.
+    /// A row already marked as a clerk pickup pin is left unchanged by this overload so a
+    /// later Address Validation cannot move the driveway.
     /// </summary>
     Task<bool> UpdateHomeGeocodeAsync(int studentId, decimal? latitude, decimal? longitude, string? placeId);
+
+    /// <summary>
+    /// Same write as <see cref="UpdateHomeGeocodeAsync(int, decimal?, decimal?, string?)"/>,
+    /// and sets whether the plotted point is a clerk map adjustment.
+    /// </summary>
+    Task<bool> UpdateHomeGeocodeAsync(
+        int studentId,
+        decimal? latitude,
+        decimal? longitude,
+        string? placeId,
+        bool homePickupClerkAdjusted);
 
     /// <summary>
     /// Archives a student who may return. The row stays on the roster with Active=false.
