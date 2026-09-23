@@ -40,7 +40,7 @@ namespace BusBuddy.WPF.ViewModels.Analytics
         private ObservableCollection<AnalyticsChartPoint> fleetPerformance = new();
 
         [ObservableProperty]
-        private ObservableCollection<AnalyticsChartPoint> routeEfficiency = new();
+        private ObservableCollection<AnalyticsChartPoint> studentAssignments = new();
 
         [ObservableProperty]
         private ObservableCollection<AnalyticsChartPoint> maintenanceMetrics = new();
@@ -75,13 +75,13 @@ namespace BusBuddy.WPF.ViewModels.Analytics
                 if (utilization.IsSuccess && utilization.Value != null)
                 {
                     var stats = utilization.Value;
-                    RouteEfficiency = CreatePoints(
+                    StudentAssignments = CreatePoints(
                         ("Assigned", stats.TotalAssignedStudents),
                         ("Unassigned", stats.TotalUnassignedStudents));
                 }
                 else
                 {
-                    RouteEfficiency = new ObservableCollection<AnalyticsChartPoint>();
+                    StudentAssignments = new ObservableCollection<AnalyticsChartPoint>();
                 }
 
                 var maintenance = (await _maintenanceService.GetAllMaintenanceRecordsAsync()).ToList();

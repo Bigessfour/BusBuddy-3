@@ -14,24 +14,27 @@ namespace BusBuddy.Core.Services;
 /// <summary>
 /// Clerk trip board on Core <see cref="TripEvent"/>. Route != Trip: never sets RouteId, never clones Route.
 /// </summary>
-public sealed class TripEventService : ITripEventService
+public sealed partial class TripEventService : ITripEventService
 {
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IRoutingService? _routingService;
     private readonly IRouteOptimizationService? _routeOptimization;
     private readonly IDistrictSettingsAccessor? _district;
+    private readonly IBusService _busService;
     private static readonly ILogger Logger = Log.ForContext<TripEventService>();
 
     public TripEventService(
         IBusBuddyDbContextFactory contextFactory,
         IRoutingService? routingService = null,
         IRouteOptimizationService? routeOptimization = null,
-        IDistrictSettingsAccessor? district = null)
+        IDistrictSettingsAccessor? district = null,
+        IBusService? buses = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _routingService = routingService;
         _routeOptimization = routeOptimization;
         _district = district;
+        _busService = buses ?? new BusService(contextFactory, PassthroughBusCache.Instance);
     }
 
     public async Task<IEnumerable<TripEvent>> GetAllTripsAsync()
@@ -83,11 +86,24 @@ public sealed class TripEventService : ITripEventService
     public async Task<IEnumerable<TripEvent>> GetUnassignedTripsAsync()
     {
         using var context = _contextFactory.CreateDbContext();
+        var rows = await context.TripEvents.AsNoTracking().ToListAsync().ConfigureAwait(false);
+        return rows
+            .Where(TripBoardSelection.IsUnassigned)
+            .OrderBy(t => t.TripDate)
+            .ThenBy(t => t.PickupTime)
+            .ToList();
+    }
+
+    public async Task<IEnumerable<TripEvent>> GetIncompleteTripsAsync()
+    {
+        using var context = _contextFactory.CreateDbContext();
         return await context.TripEvents
             .AsNoTracking()
-            .Where(t => t.Status == TripStatus.MissingInfo || t.Status == TripStatus.Draft)
+            .Where(t => t.Status == TripStatus.MissingInfo)
             .OrderBy(t => t.TripDate)
-            .ToListAsync();
+            .ThenBy(t => t.PickupTime)
+            .ToListAsync()
+            .ConfigureAwait(false);
     }
 
     public async Task AddTripAsync(TripEvent tripEvent)
@@ -106,34 +122,72 @@ public sealed class TripEventService : ITripEventService
     public async Task UpdateTripAsync(TripEvent tripEvent)
     {
         ArgumentNullException.ThrowIfNull(tripEvent);
-        tripEvent.RouteId = null;
-        ApplyLeaveReturn(tripEvent);
-        tripEvent.UpdatedDate = DateTime.UtcNow;
-
         using var context = _contextFactory.CreateWriteDbContext();
-        var previous = await context.TripEvents.AsNoTracking()
+        var existing = await context.TripEvents
             .FirstOrDefaultAsync(t => t.TripEventId == tripEvent.TripEventId)
             .ConfigureAwait(false);
-        ApplyBoardStatus(
-            tripEvent,
-            previous?.Status,
-            previous is null ? null : Snapshot(previous),
-            isNew: previous is null);
-        context.TripEvents.Update(tripEvent);
-        await context.SaveChangesAsync();
-    }
-
-    public async Task DeleteTripAsync(int id)
-    {
-        using var context = _contextFactory.CreateWriteDbContext();
-        var trip = await context.TripEvents.FindAsync(id);
-        if (trip is null)
+        if (existing is null)
         {
             return;
         }
 
+        CopyBoardOntoTracked(context, existing, tripEvent);
+        await context.SaveChangesAsync().ConfigureAwait(false);
+    }
+
+    public async Task<Result> CancelTripAsync(int id, CancellationToken cancellationToken = default)
+    {
+        using var context = _contextFactory.CreateWriteDbContext();
+        var trip = await context.TripEvents
+            .FirstOrDefaultAsync(t => t.TripEventId == id, cancellationToken)
+            .ConfigureAwait(false);
+        if (trip is null)
+        {
+            return Result.Failure("Trip not found.");
+        }
+
+        var status = TripStatus.Normalize(trip.Status);
+        if (status == TripStatus.Completed)
+        {
+            return Result.Failure("A completed trip stays on the calendar.");
+        }
+
+        if (status == TripStatus.Cancelled)
+        {
+            return Result.Success();
+        }
+
+        trip.Status = TripStatus.Cancelled;
+        trip.UpdatedDate = DateTime.UtcNow;
+        context.Entry(trip).Property(t => t.Status).IsModified = true;
+        context.Entry(trip).Property(t => t.UpdatedDate).IsModified = true;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Logger.Information("Cancelled trip {TripEventId} ticket {Ticket}", trip.TripEventId, trip.ExternalTicketNo);
+        return Result.Success();
+    }
+
+    public async Task<bool> DeleteTripAsync(int id)
+    {
+        using var context = _contextFactory.CreateWriteDbContext();
+        var trip = await context.TripEvents.FindAsync(id).ConfigureAwait(false);
+        if (trip is null)
+        {
+            return false;
+        }
+
+        var status = TripStatus.Normalize(trip.Status);
+        if (status is not (TripStatus.MissingInfo or TripStatus.Draft))
+        {
+            Logger.Warning(
+                "Refused hard-delete of trip {TripEventId} in status {Status}. Cancel keeps the ticket.",
+                trip.TripEventId,
+                status);
+            return false;
+        }
+
         context.TripEvents.Remove(trip);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync().ConfigureAwait(false);
+        return true;
     }
 
     public async Task<bool> HasConflictsAsync(
@@ -341,56 +395,8 @@ public sealed class TripEventService : ITripEventService
         };
     }
 
-    public async Task<Result> ConfirmTripAsync(int tripEventId, CancellationToken cancellationToken = default)
-    {
-        using var context = _contextFactory.CreateWriteDbContext();
-        var trip = await context.TripEvents
-            .AsTracking()
-            .Include(t => t.DestinationLocation)
-            .Include(t => t.Vehicle)
-            .FirstOrDefaultAsync(t => t.TripEventId == tripEventId, cancellationToken);
-
-        if (trip is null)
-        {
-            return Result.Failure("Trip not found.");
-        }
-
-        if (!trip.HasValidatedDestination)
-        {
-            return Result.Failure("Confirmed requires a validated destination.");
-        }
-
-        if (!trip.HasTimes || (!trip.ReturnClockTime.HasValue && !trip.ReturnTime.HasValue))
-        {
-            return Result.Failure("Confirmed requires pickup and return times.");
-        }
-
-        if (!trip.DriverId.HasValue)
-        {
-            return Result.Failure("Confirmed requires an assigned driver.");
-        }
-
-        if (trip.IsMultiAsset)
-        {
-            return Result.Failure("Multi-asset trips cannot be confirmed as a single bus. Split assets first.");
-        }
-
-        if (!trip.VehicleId.HasValue)
-        {
-            return Result.Failure("Confirmed requires an assigned bus.");
-        }
-
-        if (trip.Vehicle is not null && !trip.Vehicle.IsAvailable)
-        {
-            return Result.Failure($"Bus {trip.Vehicle.BusNumber} is not available (Out of Service).");
-        }
-
-        trip.Status = TripStatus.Confirmed;
-        trip.UpdatedDate = DateTime.UtcNow;
-        context.Entry(trip).Property(t => t.Status).IsModified = true;
-        await context.SaveChangesAsync(cancellationToken);
-        return Result.Success();
-    }
+    public Task<Result> ConfirmTripAsync(int tripEventId, CancellationToken cancellationToken = default) =>
+        ConfirmTripAsync(tripEventId, overrideSeating: false, cancellationToken);
 
     public async Task RefreshPathMilesAsync(int tripEventId, CancellationToken cancellationToken = default)
     {

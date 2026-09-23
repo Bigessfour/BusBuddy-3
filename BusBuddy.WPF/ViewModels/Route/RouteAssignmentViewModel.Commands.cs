@@ -901,8 +901,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
 
             var result = MessageBox.Show(
-                $"Delete or retire route '{SelectedRoute.RouteName}'?\n\nEmpty routes are removed. Routes still referenced by schedules or student keys are retired.",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                $"Retire route '{SelectedRoute.RouteName}'?\n\nThis hides the route. Students, stops, schedules, and trip history stay with it.\nOnly an empty unpublished draft is permanently deleted.",
+                "Retire route", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (result != MessageBoxResult.Yes)
             {

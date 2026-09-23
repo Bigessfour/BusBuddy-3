@@ -34,20 +34,6 @@ public class MapToolbarSmokeTests
     [Test]
     public async Task Toolbar_ExecutesEachMapCommandOnce()
     {
-        var dest = new Mock<IDestinationService>();
-        dest.Setup(d => d.GetActiveSchoolsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new Destination { Name = "Wiley School", Latitude = 38.1535m, Longitude = -102.7195m }
-            });
-
-        var pickups = new Mock<IPickupStopService>();
-        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new[]
-            {
-                new PickupStop { PickupStopId = 7, Name = "Oak & 4th", Latitude = 38.16m, Longitude = -102.71m }
-            });
-
         var students = new Mock<IStudentService>();
         students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
         [
@@ -74,6 +60,18 @@ public class MapToolbarSmokeTests
         var geo = new Mock<IGeoDataService>();
         geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route> { route });
         geo.Setup(g => g.GetRouteGeoDataAsync(22)).ReturnsAsync(route);
+        geo.Setup(g => g.GetDistrictMapAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DistrictMapSnapshot
+            {
+                Schools =
+                [
+                    new DistrictMapPlace { Id = 1, Name = "Wiley School", Latitude = 38.1535, Longitude = -102.7195 }
+                ],
+                CatalogStops =
+                [
+                    new DistrictMapPlace { Id = 7, Name = "Oak & 4th", Latitude = 38.16, Longitude = -102.71 }
+                ]
+            });
 
         var routeService = new Mock<IRouteService>();
         routeService.Setup(r => r.GetRouteStopsAsync(22)).ReturnsAsync(
@@ -110,8 +108,6 @@ public class MapToolbarSmokeTests
 
         var vm = await CreateSettledViewModelAsync(
             geo.Object,
-            pickupStops: pickups.Object,
-            destinations: dest.Object,
             students: students.Object,
             districtSettings: district,
             scopes: scopes);
@@ -246,11 +242,10 @@ public class MapToolbarSmokeTests
         var geo = new Mock<IGeoDataService>();
         geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route>());
         geo.Setup(g => g.GetRouteGeoDataAsync(It.IsAny<int>())).ReturnsAsync((Route?)null);
-        var pickups = new Mock<IPickupStopService>();
-        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<PickupStop>());
+        geo.Setup(g => g.GetDistrictMapAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(DistrictMapSnapshot.Empty);
 
-        var vm = await CreateSettledViewModelAsync(geo.Object, pickupStops: pickups.Object);
+        var vm = await CreateSettledViewModelAsync(geo.Object);
         vm.ResetViewCommand.Execute(null);
         await WaitUntilAsync(() => vm.MapMarkers.Count == 0);
 
@@ -282,8 +277,6 @@ public class MapToolbarSmokeTests
 
     private static MapViewModel CreateViewModel(
         IGeoDataService? geoData = null,
-        IPickupStopService? pickupStops = null,
-        IDestinationService? destinations = null,
         IStudentService? students = null,
         IDistrictSettingsAccessor? districtSettings = null,
         IServiceScopeFactory? scopes = null)
@@ -293,6 +286,8 @@ public class MapToolbarSmokeTests
             var geo = new Mock<IGeoDataService>();
             geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route>());
             geo.Setup(g => g.GetRouteGeoDataAsync(It.IsAny<int>())).ReturnsAsync((Route?)null);
+            geo.Setup(g => g.GetDistrictMapAsync(It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(DistrictMapSnapshot.Empty);
             geoData = geo.Object;
         }
 
@@ -300,20 +295,16 @@ public class MapToolbarSmokeTests
             geoData,
             studentService: students,
             scopeFactory: scopes,
-            pickupStops: pickupStops,
-            destinations: destinations,
             districtSettings: districtSettings);
     }
 
     private static async Task<MapViewModel> CreateSettledViewModelAsync(
         IGeoDataService? geoData = null,
-        IPickupStopService? pickupStops = null,
-        IDestinationService? destinations = null,
         IStudentService? students = null,
         IDistrictSettingsAccessor? districtSettings = null,
         IServiceScopeFactory? scopes = null)
     {
-        var vm = CreateViewModel(geoData, pickupStops, destinations, students, districtSettings, scopes);
+        var vm = CreateViewModel(geoData, students, districtSettings, scopes);
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (DateTime.UtcNow < deadline)
         {

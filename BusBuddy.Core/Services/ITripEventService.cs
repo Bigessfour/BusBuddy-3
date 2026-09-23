@@ -10,10 +10,28 @@ namespace BusBuddy.Core.Services
         Task<TripEvent?> GetTripByIdAsync(int id);
         Task<IEnumerable<TripEvent>> GetTripsByTypeAsync(TripType tripType);
         Task<IEnumerable<TripEvent>> GetTripsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        /// <summary>
+        /// Open trips missing a bus, a driver, or both.
+        /// Multi-asset rows omit BusId on purpose, so only a missing driver counts.
+        /// </summary>
         Task<IEnumerable<TripEvent>> GetUnassignedTripsAsync();
+
+        /// <summary>Ticket rows still missing a place or time. Status MissingInfo. Kept on the board.</summary>
+        Task<IEnumerable<TripEvent>> GetIncompleteTripsAsync();
+
         Task AddTripAsync(TripEvent tripEvent);
         Task UpdateTripAsync(TripEvent tripEvent);
-        Task DeleteTripAsync(int id);
+
+        /// <summary>
+        /// Clerk cancel. Sets Cancelled and keeps the ticket. Completed rows stay completed.
+        /// </summary>
+        Task<Result> CancelTripAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Hard-delete for an import mistake that is still MissingInfo or Draft.
+        /// Confirmed, changed, completed, and cancelled rows stay.
+        /// </summary>
+        Task<bool> DeleteTripAsync(int id);
         Task<bool> HasConflictsAsync(int? vehicleId, int? driverId, DateTime startTime, DateTime endTime, int? excludeTripId = null);
         Task<IEnumerable<TripEvent>> GetConflictingTripsAsync(int? vehicleId, int? driverId, DateTime startTime, DateTime endTime);
 
@@ -32,8 +50,18 @@ namespace BusBuddy.Core.Services
         /// <summary>Clerk import of the office trip board. Upserts by ExternalTicketNo. Does not create students.</summary>
         Task<TripBoardImportResult> ImportBoardCsvAsync(string csv, CancellationToken cancellationToken = default);
 
-        /// <summary>Confirmed requires validated destination + times + driver + bus.</summary>
+        /// <summary>Confirmed requires validated destination + times + driver + bus, and bus capacity.</summary>
         Task<Result> ConfirmTripAsync(int tripEventId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Same as <see cref="ConfirmTripAsync(int, CancellationToken)"/>.
+        /// Seating or wheelchair overflow blocks unless <paramref name="overrideSeating"/> is set
+        /// and the district allows a seating override.
+        /// </summary>
+        Task<Result> ConfirmTripAsync(
+            int tripEventId,
+            bool overrideSeating,
+            CancellationToken cancellationToken = default);
 
         /// <summary>Refresh PathMiles from Google Routes only after origin and destination are validated.</summary>
         Task RefreshPathMilesAsync(int tripEventId, CancellationToken cancellationToken = default);

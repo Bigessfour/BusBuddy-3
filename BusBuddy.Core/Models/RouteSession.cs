@@ -16,9 +16,29 @@ public static class RouteSession
 
     public static string[] GetAll() => All;
 
-    public static bool IsKnown(string? session) =>
-        !string.IsNullOrWhiteSpace(session)
-        && All.Any(s => string.Equals(s, session, StringComparison.OrdinalIgnoreCase));
+    public static bool IsKnown(string? session) => Canonical(session) is not null;
+
+    /// <summary>
+    /// Canonical spelling from <see cref="All"/>, or null when the value is not a session.
+    /// One pass so a known-check cannot succeed and then fail to find a row.
+    /// </summary>
+    public static string? Canonical(string? session)
+    {
+        if (string.IsNullOrWhiteSpace(session))
+        {
+            return null;
+        }
+
+        foreach (var known in All)
+        {
+            if (string.Equals(known, session, StringComparison.OrdinalIgnoreCase))
+            {
+                return known;
+            }
+        }
+
+        return null;
+    }
 
     /// <summary>
     /// Names the session from existing two-row keying plus special-needs / transfer flags.

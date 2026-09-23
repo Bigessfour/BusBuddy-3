@@ -19,7 +19,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST NOT invent a parallel route model. Extend `BusBuddy.Core.Models.Route`, `IGeoDataService`, `IRoutingService`, `RouteDrivePathRefresher`. WPF binds that Core type — do not add a `RouteViewModel` DTO.
 - MUST NOT use live vehicle position to define the path.
 - Default: the published stop list is the official run. Core uniqueness is `(Date, RouteName)` because generate/clone persist calendar-dated rows. School year lives on `Student.SchoolYear`, not on `Route`.
-- Official vs retired: `Route.IsActive` is the published/active flag. Clerk **Delete** hard-deletes only when no `Schedules`, student AM/PM keys, or leftover `TripEvents.RouteId` remain. Otherwise it sets `IsActive = false` and keeps those rows (same class of Restrict FK as bus/driver retire). Do not Cascade `FK_Schedules_Route`.
+- Official vs retired: `Route.IsActive` is the published/active flag. Clerk **Retire** sets `IsActive = false` and keeps students, stops, schedules, and trip rows. Hard-delete only an empty unpublished draft: `IsActive` is already false, and there are no stops, student AM/PM keys or name mirrors, `Schedules`, or `TripEvents.RouteId`. Do not Cascade `FK_Schedules_Route`.
 - Exception: rider absence that day, spare bus, substitute driver, weather/road notice in notes, or a cloned row on another date.
 
 ## Relationships
@@ -85,7 +85,7 @@ Rider exceptions do not delete the student from the year assignment.
 - Adding a mid-year catalog stop: new location first, then insert it on the current published list. Clone the route to another date if the clerk needs a dated variant.
 - Transfer session routes move students school-to-school during the day. They are routes, not trips, because they repeat on the bell schedule.
 - Special-needs session routes are home-pickup heavy. Do not force those students onto in-town catalog stops.
-- Capacity warning uses the default (or session) bus vs that session’s riders.
+- Capacity check uses the default bus on that session versus the session roster (assigned riders minus same-day not-riding) and wheelchair riders versus that bus's wheelchair stations. A missing bus warns and does not invent seats. Assign with seating override off blocks overflow. The check lives on route assign (`RouteBusCapacity`), not on `IBusService`.
 - Print / PDF of the route may embed a map snapshot. That is a picture of the published path, not a live track.
 
 ## AM vs PM vs transfer

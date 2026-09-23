@@ -1,6 +1,7 @@
 
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services;
 
@@ -67,15 +68,15 @@ public interface IStudentService
     /// Adds a new student to the database
     /// </summary>
     /// <param name="student">Student to add</param>
-    /// <returns>The created student with ID</returns>
-    Task<Student> AddStudentAsync(Student student);
+    /// <returns>The created student with ID, or a failure when validation rejects the row</returns>
+    Task<Result<Student>> AddStudentAsync(Student student);
 
     /// <summary>
     /// Updates an existing student
     /// </summary>
     /// <param name="student">Student to update</param>
-    /// <returns>True if successful, false otherwise</returns>
-    Task<bool> UpdateStudentAsync(Student student);
+    /// <returns>Success with true when a row changed, success with false when nothing changed, or a validation failure</returns>
+    Task<Result<bool>> UpdateStudentAsync(Student student);
 
     /// <summary>
     /// Writes home coordinates (Address Validation or a clerk map click after validation).
@@ -130,13 +131,6 @@ public interface IStudentService
     Task<Dictionary<string, int>> GetStudentStatisticsAsync();
 
     /// <summary>
-    /// Name-based leftover. Resolves each unique route name to a key and calls
-    /// <c>IRouteService.AssignStudentToRouteAsync</c>. Ambiguous or unknown names fail closed.
-    /// Empty/null slot is a no-op. Dual-write of key + name stays inside RouteService.
-    /// </summary>
-    Task<bool> AssignStudentToRouteAsync(int studentId, string? amRoute, string? pmRoute);
-
-    /// <summary>
     /// Updates student active status
     /// </summary>
     /// <param name="studentId">Student ID</param>
@@ -178,8 +172,8 @@ public interface IStudentService
     /// <param name="city">City</param>
     /// <param name="state">State (2-letter abbreviation)</param>
     /// <param name="zip">ZIP code</param>
-    /// <returns>True if successful</returns>
-    Task<bool> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip);
+    /// <returns>Success when the address was written, or a failure when the address fails format checks</returns>
+    Task<Result<bool>> UpdateStudentAddressAsync(int studentId, string homeAddress, string city, string state, string zip);
 
 #if DEBUG
     /// <summary>

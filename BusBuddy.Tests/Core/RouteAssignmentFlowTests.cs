@@ -76,7 +76,7 @@ namespace BusBuddy.Tests.Core
             var route = await EnsureActiveRouteAsync();
             var stop = await AddProofStopAsync(route.RouteId);
 
-            var added = await _studentService.AddStudentAsync(new Student
+            var addedResult = await _studentService.AddStudentAsync(new Student
             {
                 StudentName = ProofStudentName,
                 Grade = "3",
@@ -91,6 +91,8 @@ namespace BusBuddy.Tests.Core
                 Active = true,
                 RidesAm = true
             });
+            Assert.That(addedResult.IsSuccess, Is.True, addedResult.Error);
+            var added = addedResult.Value;
             Assert.That(added.StudentId, Is.GreaterThan(0));
 
             var assignResult = await _routeService.AssignStudentToRouteAsync(

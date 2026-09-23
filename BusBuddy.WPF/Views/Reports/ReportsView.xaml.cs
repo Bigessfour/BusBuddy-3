@@ -6,7 +6,6 @@ using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Reports;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Tools.Controls;
 
 namespace BusBuddy.WPF.Views.Reports
@@ -28,20 +27,27 @@ namespace BusBuddy.WPF.Views.Reports
             {
                 if (this.DataContext is not ReportsViewModel)
                 {
-                    this.DataContext = App.ServiceProvider?.GetService<ReportsViewModel>()
-                        ?? new ReportsViewModel();
-                    Log.Information("{ViewName}: DataContext set to ReportsViewModel", nameof(ReportsView));
+                    var resolved = App.ServiceProvider?.GetService<ReportsViewModel>();
+                    if (resolved is null)
+                    {
+                        this.DataContext = ReportsViewModel.CreateUnavailable();
+                        Log.Warning("{ViewName}: ReportsViewModel is not registered; showing unavailable status", nameof(ReportsView));
+                    }
+                    else
+                    {
+                        this.DataContext = resolved;
+                        Log.Information("{ViewName}: DataContext set to ReportsViewModel", nameof(ReportsView));
+                    }
                 }
             }
             catch (System.Exception ex)
             {
+                this.DataContext = ReportsViewModel.CreateUnavailable();
                 Log.Warning(ex, "{ViewName}: failed to set DataContext to ReportsViewModel", nameof(ReportsView));
             }
 
-            // Apply Syncfusion theme with fallback (centralized manager logs details)
             try
             {
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
                 SyncfusionThemeManager.ApplyTheme(this);
                 Log.Information("Theme applied for {ViewName}", nameof(ReportsView));
             }
@@ -68,11 +74,7 @@ namespace BusBuddy.WPF.Views.Reports
 
         private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
         {
-            try
-            {
-                Log.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
-            }
-            catch { }
+            Log.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
         }
 
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)

@@ -27,6 +27,11 @@ internal static class StudentFormFieldErrorMap
             return (StudentFormFields.Zip, message);
         }
 
+        if (Mentions(message, "cell phone"))
+        {
+            return (StudentFormFields.CellPhone, message);
+        }
+
         if (Mentions(message, "home phone"))
         {
             return (StudentFormFields.HomePhone, message);

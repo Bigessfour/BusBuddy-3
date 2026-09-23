@@ -135,6 +135,18 @@ public sealed class StudentFormSaveCoordinator
             return false;
         }
 
+        var phoneErrors = _validation.GetValidationErrorsWithFields()
+            .Where(error => error.FieldKey is StudentFormFields.HomePhone
+                or StudentFormFields.CellPhone
+                or StudentFormFields.EmergencyPhone)
+            .ToList();
+        if (phoneErrors.Count > 0)
+        {
+            Logger.Information("Phone validation failed on {ErrorCount} field(s)", phoneErrors.Count);
+            _validation.ReportFieldValidation(phoneErrors);
+            return false;
+        }
+
         if (_validation.Policy.SkipFieldValidation)
         {
             _validation.ValidationErrors.Clear();
@@ -145,9 +157,9 @@ public sealed class StudentFormSaveCoordinator
             return true;
         }
 
-        if (!_validation.IsValidStudent())
+        var errors = _validation.GetValidationErrorsWithFields();
+        if (errors.Count > 0)
         {
-            var errors = _validation.GetValidationErrorsWithFields();
             Logger.Information("Validation failed on {ErrorCount} field(s)", errors.Count);
             _validation.ReportFieldValidation(errors);
             return false;

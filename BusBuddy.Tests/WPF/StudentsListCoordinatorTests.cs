@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -88,7 +89,7 @@ public class StudentsListCoordinatorTests
             });
         service
             .Setup(s => s.UpdateStudentAsync(It.IsAny<Student>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(Result.Success(true));
 
         return (new StudentsListCoordinator(new TestDbContextFactory(_dbOptions), service.Object), service);
     }

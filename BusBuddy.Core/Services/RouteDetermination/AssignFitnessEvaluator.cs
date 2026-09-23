@@ -1,6 +1,7 @@
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -60,11 +61,14 @@ public sealed class AssignFitnessEvaluator
         }
 
         var timeSlot = slot == RouteTimeSlotKind.AM ? RouteTimeSlot.AM : RouteTimeSlot.PM;
-        var capacity = await ResolveCapacityAsync(context, route, timeSlot, cancellationToken)
-            .ConfigureAwait(false);
-        var assigned = await context.Students.AsNoTracking()
-            .WhereOnSlot(route.RouteId, route.RouteName, timeSlot)
-            .CountAsync(cancellationToken)
+        var busCapacity = await RouteBusCapacity.ForCandidateAsync(
+                context,
+                route,
+                timeSlot,
+                student.StudentId,
+                student.RequiresWheelchair,
+                overrideSeating && District.AllowSeatingOverride,
+                cancellationToken)
             .ConfigureAwait(false);
 
         var reasons = new List<string>();
@@ -88,27 +92,40 @@ public sealed class AssignFitnessEvaluator
                 studentId, routeId, msg);
         }
 
-        if (capacity > 0 && assigned + 1 > capacity)
+        if (busCapacity.Blocked)
         {
-            var msg = $"Seating capacity {capacity} would be exceeded ({assigned} already assigned)";
-            if (overrideSeating && District.AllowSeatingOverride)
+            var msg = busCapacity.Message ?? "Seating capacity would be exceeded";
+            reasons.Add(msg);
+            severity = AssignFitnessSeverity.Block;
+            allowed = false;
+            suggestNew = true;
+            Logger.Information(
+                "Assign fitness Blocked Student={Id} Route={RouteId} Reasons={Reasons}",
+                studentId, routeId, msg);
+        }
+        else if (busCapacity.Message is not null)
+        {
+            reasons.Add(busCapacity.Message);
+            if (severity == AssignFitnessSeverity.None)
             {
-                reasons.Add(msg + " (override recorded)");
                 severity = AssignFitnessSeverity.Warn;
-                Logger.Information(
-                    "Assign fitness Warned Student={Id} Route={RouteId} Reasons={Reasons} Override=true",
-                    studentId, routeId, msg);
             }
-            else
+
+            Logger.Information(
+                "Assign fitness Warned Student={Id} Route={RouteId} Reasons={Reasons} Override=true",
+                studentId, routeId, busCapacity.Message);
+        }
+        else if (busCapacity.Warning is not null)
+        {
+            reasons.Add(busCapacity.Warning);
+            if (severity == AssignFitnessSeverity.None)
             {
-                reasons.Add(msg);
-                severity = AssignFitnessSeverity.Block;
-                allowed = false;
-                suggestNew = true;
-                Logger.Information(
-                    "Assign fitness Blocked Student={Id} Route={RouteId} Reasons={Reasons}",
-                    studentId, routeId, msg);
+                severity = AssignFitnessSeverity.Warn;
             }
+
+            Logger.Information(
+                "Assign fitness Warned Student={Id} Route={RouteId} Reasons={Reasons}",
+                studentId, routeId, busCapacity.Warning);
         }
 
         // Soft: ride-time comfort (Haversine to school campus when available)
@@ -219,13 +236,16 @@ public sealed class AssignFitnessEvaluator
                 continue;
             }
 
-            var cap = await ResolveCapacityAsync(context, route, timeSlot, cancellationToken)
+            var room = await RouteBusCapacity.ForCandidateAsync(
+                    context,
+                    route,
+                    timeSlot,
+                    student.StudentId,
+                    student.RequiresWheelchair,
+                    overrideSeating: false,
+                    cancellationToken)
                 .ConfigureAwait(false);
-            var count = await context.Students.AsNoTracking()
-                .WhereOnSlot(route.RouteId, route.RouteName, timeSlot)
-                .CountAsync(cancellationToken)
-                .ConfigureAwait(false);
-            if (cap <= 0 || count + 1 <= cap)
+            if (!room.Blocked && room.Warning is null)
             {
                 suggestions.Add(route.RouteId);
             }
@@ -237,33 +257,6 @@ public sealed class AssignFitnessEvaluator
         }
 
         return suggestions;
-    }
-
-    private static async Task<int> ResolveCapacityAsync(
-        BusBuddyDbContext context,
-        Route route,
-        RouteTimeSlot timeSlot,
-        CancellationToken cancellationToken)
-    {
-        var vehicleId = timeSlot == RouteTimeSlot.AM ? route.AMVehicleId : route.PMVehicleId;
-        if (vehicleId is int id)
-        {
-            var bus = await context.Buses.AsNoTracking()
-                .FirstOrDefaultAsync(b => b.BusId == id, cancellationToken)
-                .ConfigureAwait(false);
-            if (bus is not null && bus.SeatingCapacity > 0)
-            {
-                return bus.SeatingCapacity;
-            }
-        }
-
-        var largest = await context.Buses.AsNoTracking()
-            .Where(b => b.Status == "Active" && b.SeatingCapacity > 0)
-            .OrderByDescending(b => b.SeatingCapacity)
-            .Select(b => b.SeatingCapacity)
-            .FirstOrDefaultAsync(cancellationToken)
-            .ConfigureAwait(false);
-        return largest > 0 ? largest : 72;
     }
 
     private static AssignFitnessResult Blocked(string reason) =>

@@ -243,11 +243,11 @@
                                               AutomationProperties.Name="Deactivate Route"
                                               ToolTip="Deactivate selected route" />
                         <syncfusion:ButtonAdv x:Name="DeleteButton"
-                                              Label="Delete"
+                                              Label="Retire"
                                               Command="{Binding DeleteRouteCommand}"
                                               Style="{StaticResource DangerButtonAdv}"
-                                              AutomationProperties.Name="Delete Route"
-                                              ToolTip="Delete selected route" />
+                                              AutomationProperties.Name="Retire Route"
+                                              ToolTip="Retire the selected route. An empty unpublished draft is permanently deleted." />
                         <syncfusion:ButtonAdv x:Name="GenerateRoutesButton"
                                               Label="Generate Routes"
                                               Command="{Binding GenerateRoutesCommand}"

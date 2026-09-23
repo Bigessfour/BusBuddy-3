@@ -3,6 +3,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Tests.WPF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -138,6 +139,37 @@ public class RoutePublishedPathTests
         Assert.That(stops, Has.Count.EqualTo(2), persisted.WaypointsJson ?? "<null>");
         Assert.That(stops[0].Latitude, Is.EqualTo(38.08).Within(0.0001));
         Assert.That(stops[1].Latitude, Is.EqualTo(38.10).Within(0.0001));
+    }
+
+    [Test]
+    public async Task UpdateRoute_PersistsGoogleDistanceAndDuration()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        var service = new RouteService(factory);
+        var created = await service.CreateRouteAsync(new Route
+        {
+            RouteName = "AM-5",
+            Date = DateTime.Today,
+            IsActive = true,
+            School = "Wiley",
+            Session = RouteSession.AM
+        });
+        Assert.That(created.IsSuccess, Is.True, created.Error);
+
+        var route = created.Value!;
+        RouteDrivePathRefresher.ApplyPathMetrics(route, new DrivePathResult
+        {
+            DistanceMeters = 16093,
+            Duration = "2160s"
+        });
+
+        var saved = await service.UpdateRouteAsync(route);
+        Assert.That(saved.IsSuccess, Is.True, saved.Error);
+
+        await using var verify = factory.CreateDbContext();
+        var persisted = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == route.RouteId);
+        Assert.That(persisted.Distance, Is.EqualTo(10.00m));
+        Assert.That(persisted.EstimatedDuration, Is.EqualTo(36));
     }
 
     [Test]

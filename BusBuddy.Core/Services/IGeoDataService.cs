@@ -1,3 +1,4 @@
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 
 namespace BusBuddy.Core.Services
@@ -17,5 +18,13 @@ namespace BusBuddy.Core.Services
         /// Gets geographic data for a specific route
         /// </summary>
         Task<Route?> GetRouteGeoDataAsync(int routeId);
+
+        /// <summary>
+        /// Schools, catalog stops, and — when <paramref name="routeId"/> is set — that
+        /// route's stored path, published stops, and assigned homes. No Google HTTP.
+        /// </summary>
+        Task<DistrictMapSnapshot> GetDistrictMapAsync(
+            int? routeId,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -12,8 +12,24 @@ public static class StudentRecordNormalizer
         NormalizeOptionalForeignKeys(student);
         NormalizeDateTimes(student);
         NormalizeSchoolYear(student);
+        NormalizePhones(student);
         EnforceSpecialNeedsHomePickup(student);
     }
+
+    /// <summary>
+    /// Rewrites a normalizable phone to <c>(NPA) NXX-XXXX</c>. A value that cannot be normalized
+    /// is left unchanged so validation can reject it.
+    /// </summary>
+    public static void NormalizePhones(Student student)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        student.HomePhone = CanonicalPhone(student.HomePhone);
+        student.CellPhone = CanonicalPhone(student.CellPhone);
+        student.EmergencyPhone = CanonicalPhone(student.EmergencyPhone);
+    }
+
+    private static string? CanonicalPhone(string? phone) =>
+        StudentPhone.TryNormalize(phone, out var normalized) ? normalized : phone;
 
     /// <summary>
     /// SchoolYear is required by the domain contract; default a blank one to the current year so an

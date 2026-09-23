@@ -765,10 +765,10 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 var confirm = System.Windows.MessageBox.Show(
-                    $"Remove '{routeToDelete.RouteName}' from the route list?\n\n"
-                    + "Routes with no students, schedules, or trip history are permanently deleted.\n"
-                    + "Otherwise the route is retired and hidden here until you turn on Show retired routes.",
-                    "Confirm Delete",
+                    $"Retire '{routeToDelete.RouteName}'?\n\n"
+                    + "This hides the route. Students, stops, schedules, and trip history stay with it.\n"
+                    + "Only an empty unpublished draft is permanently deleted.",
+                    "Retire route",
                     System.Windows.MessageBoxButton.YesNo,
                     System.Windows.MessageBoxImage.Warning);
                 if (confirm != System.Windows.MessageBoxResult.Yes)

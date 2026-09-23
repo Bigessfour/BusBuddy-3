@@ -1,7 +1,10 @@
 using System.Windows.Media;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using RouteModel = BusBuddy.Core.Models.Route;
 using StudentModel = BusBuddy.Core.Models.Student;
 
 namespace BusBuddy.WPF.ViewModels.Student;
@@ -44,7 +47,7 @@ public sealed class StudentFormRouteSuggestionCoordinator
             _validation.IsValidating = true;
             _validation.SetStatus("Analyzing address with AI...", Brushes.Orange);
 
-            var suggested = await GetSuggestedRouteNamesAsync(student.City).ConfigureAwait(true);
+            var suggested = await GetSuggestedRoutesAsync(student.City).ConfigureAwait(true);
             if (suggested.Count == 0)
             {
                 _validation.SetStatus("⚠️ No optimal routes found for this location", Brushes.Orange);
@@ -52,10 +55,10 @@ public sealed class StudentFormRouteSuggestionCoordinator
                 return;
             }
 
-            student.AMRoute = suggested[0];
+            StudentRouteAssignment.SetSlot(student, RouteTimeSlot.AM, suggested[0]);
             if (suggested.Count > 1)
             {
-                student.PMRoute = suggested[1];
+                StudentRouteAssignment.SetSlot(student, RouteTimeSlot.PM, suggested[1]);
             }
 
             _validation.SetStatus($"✓ AI suggested {suggested.Count} optimal routes", Brushes.Green);
@@ -74,10 +77,10 @@ public sealed class StudentFormRouteSuggestionCoordinator
     }
 
     /// <summary>
-    /// City-matched active routes first, then any active routes. Only real route names are returned:
-    /// AMRoute/PMRoute are validated against the Routes table on save, so an invented name would fail.
+    /// City-matched active routes first, then any active routes. Suggestions carry the route key
+    /// so save treats <c>AMRoute</c>/<c>PMRoute</c> as the display mirror of that key.
     /// </summary>
-    private static async Task<List<string>> GetSuggestedRouteNamesAsync(string? city)
+    private static async Task<List<RouteModel>> GetSuggestedRoutesAsync(string? city)
     {
         var sp = App.ServiceProvider;
         if (sp is null)
@@ -98,15 +101,16 @@ public sealed class StudentFormRouteSuggestionCoordinator
             return [];
         }
 
-        var named = result.Value
-            .Select(r => r.RouteName)
-            .Where(n => !string.IsNullOrWhiteSpace(n))
+        var routes = result.Value
+            .Where(r => r.RouteId > 0 && !string.IsNullOrWhiteSpace(r.RouteName))
             .ToList();
 
         var cityMatches = string.IsNullOrWhiteSpace(city)
             ? []
-            : named.Where(n => n!.Contains(city, StringComparison.OrdinalIgnoreCase)).Take(MaxSuggestions).ToList();
+            : routes.Where(r => r.RouteName.Contains(city, StringComparison.OrdinalIgnoreCase))
+                .Take(MaxSuggestions)
+                .ToList();
 
-        return (cityMatches.Count > 0 ? cityMatches : named.Take(MaxSuggestions).ToList())!;
+        return cityMatches.Count > 0 ? cityMatches : routes.Take(MaxSuggestions).ToList();
     }
 }

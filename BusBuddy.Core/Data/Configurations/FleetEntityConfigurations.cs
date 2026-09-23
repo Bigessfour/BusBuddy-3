@@ -28,6 +28,8 @@ internal sealed class BusConfiguration : IEntityTypeConfiguration<Bus>
         entity.Property(e => e.MilesPerGallon).HasColumnType("decimal(6,2)");
         entity.Property(e => e.InsurancePolicyNumber).HasMaxLength(100);
         entity.Property(e => e.SpecialEquipment).HasMaxLength(1000);
+        entity.Property(e => e.WheelchairStations).HasDefaultValue(0);
+        entity.Property(e => e.HasLift).HasDefaultValue(false);
         entity.Property(e => e.Notes).HasMaxLength(1000);
         entity.Property(e => e.CreatedBy).HasMaxLength(100);
         entity.Property(e => e.UpdatedBy).HasMaxLength(100);

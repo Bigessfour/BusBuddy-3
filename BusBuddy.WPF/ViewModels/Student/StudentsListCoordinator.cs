@@ -190,7 +190,14 @@ public sealed class StudentsListCoordinator
             {
                 if (studentService is not null)
                 {
-                    if (!await studentService.UpdateStudentAsync(student).ConfigureAwait(true))
+                    var updated = await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+                    if (updated.IsFailure)
+                    {
+                        errors.Add(updated.Error);
+                        continue;
+                    }
+
+                    if (!updated.Value)
                     {
                         Logger.Debug("No changes persisted for student {StudentId}", student.StudentId);
                     }

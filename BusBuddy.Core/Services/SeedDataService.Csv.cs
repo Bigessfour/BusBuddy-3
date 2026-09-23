@@ -690,8 +690,8 @@ TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TE
                 students.Count(s => s.RidesAm),
                 students.Count(s => s.RidesPm));
 
-            // A student whose AMRoute has no matching Routes row fails ValidateStudentAsync, which
-            // would lock the clerk out of editing the record at all.
+            // A student whose AMRoute names no route, or more than one, fails ValidateStudentAsync,
+            // which would lock the clerk out of editing the record at all.
             await ReconcileRouteAssignmentsAsync(context, students, createdBy);
 
             return await FinalizeImportAsync(context, students, families, dedupeByName: true);

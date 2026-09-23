@@ -5,9 +5,7 @@ namespace BusBuddy.Core.Utilities;
 /// <summary>Keeps <see cref="Route.BusNumber"/> aligned with AM/PM vehicle FKs.</summary>
 public static class RouteVehicleLinker
 {
-    public static bool IsAssignableStatus(string? status) =>
-        string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(status, "InService", StringComparison.OrdinalIgnoreCase);
+    public static bool IsAssignableStatus(string? status) => Bus.IsAssignableStatus(status);
 
     public static void Apply(Route route, Bus bus, RouteTimeSlot timeSlot = RouteTimeSlot.Both)
     {

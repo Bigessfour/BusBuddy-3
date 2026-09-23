@@ -36,9 +36,9 @@ namespace BusBuddy.Core.Services
         /// existing spelling, any name with no route row at all gets one created, and unique names
         /// dual-write <c>AmRouteId</c>/<c>PmRouteId</c>.
         /// <para>
-        /// Needed because <c>StudentService.ValidateStudentAsync</c> matches <c>Routes.RouteName</c>
-        /// exactly, so a student assigned to a route that does not exist cannot be saved — or even
-        /// edited — from the form.
+        /// Needed because <c>StudentService.ValidateStudentAsync</c> accepts a route key, or a
+        /// route name only when that name matches exactly one route. A name that matches nothing
+        /// cannot be saved from the form.
         /// </para>
         /// </summary>
         /// <returns>The number of route rows created.</returns>

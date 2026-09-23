@@ -16,7 +16,6 @@ namespace BusBuddy.Core.Services
         private static readonly ILogger Logger = Log.ForContext<BusService>();
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IBusCachingService _cacheService;
-        private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
         // Removed unused lists that were previously used for sample data fallback
 
@@ -34,9 +33,6 @@ namespace BusBuddy.Core.Services
         // Entity Framework methods for actual database operations using caching
         public async Task<List<Bus>> GetAllBusEntitiesAsync()
         {
-            await _semaphore.WaitAsync();
-            try
-            {
                 using (LogContext.PushProperty("QueryType", "GetAllBusEntities"))
                 using (LogContext.PushProperty("OperationName", "DatabaseQuery"))
                 {
@@ -81,6 +77,8 @@ namespace BusBuddy.Core.Services
                                         NextMaintenanceMileage = v.NextMaintenanceMileage,
                                         LastServiceDate = v.LastServiceDate,
                                         SpecialEquipment = v.SpecialEquipment,
+                                        WheelchairStations = v.WheelchairStations,
+                                        HasLift = v.HasLift,
                                         GPSTracking = v.GPSTracking,
                                         GPSDeviceId = v.GPSDeviceId,
                                         Notes = v.Notes
@@ -124,11 +122,6 @@ namespace BusBuddy.Core.Services
                         throw; // Propagate exception to caller - no fallback to sample data
                     }
                 }
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
         }
 
         public async Task<(List<Bus> Buses, int TotalCount)> GetBusesPaginatedAsync(int pageNumber, int pageSize, string? sortColumn = null, bool isAscending = true)
@@ -281,6 +274,7 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Adding new bus entity: {BusNumber}", bus.BusNumber);
 
                 using var context = _contextFactory.CreateWriteDbContext();
+                await EnsureUniqueBusNumberAsync(context, bus.BusNumber, excludeBusId: null).ConfigureAwait(false);
                 context.Buses.Add(bus);
 
                 using (LogContext.PushProperty("OperationName", "AddBus"))
@@ -341,6 +335,7 @@ namespace BusBuddy.Core.Services
                     return false;
                 }
 
+                await EnsureUniqueBusNumberAsync(context, bus.BusNumber, bus.BusId).ConfigureAwait(false);
                 context.Entry(existing).CurrentValues.SetValues(bus);
                 // Preserve key / identity; SetValues may overwrite BusId with same value (OK).
 
@@ -702,6 +697,65 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<IEnumerable<Bus>> GetBusesByKindAsync(BusVehicleKind kind)
+        {
+            using (LogContext.PushProperty("QueryType", "GetBusesByKind"))
+            using (LogContext.PushProperty("Kind", kind))
+            {
+                Logger.Information("Retrieving buses with kind: {Kind}", kind);
+                using var context = _contextFactory.CreateDbContext();
+                var buses = await context.Buses.AsNoTracking().ToListAsync().ConfigureAwait(false);
+                return buses.Where(b => b.VehicleKind == kind).ToList();
+            }
+        }
+
+        public async Task<BusHomeRoute?> GetHomeRouteAsync(int busId, CancellationToken cancellationToken = default)
+        {
+            if (busId <= 0)
+            {
+                return null;
+            }
+
+            using var context = _contextFactory.CreateDbContext();
+            var rows = await context.Routes.AsNoTracking()
+                .Where(r => r.AMVehicleId == busId || r.PMVehicleId == busId)
+                .Select(r => new { r.RouteId, r.RouteName, r.Date, r.IsActive, r.AMVehicleId, r.PMVehicleId })
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            var home = rows
+                .OrderByDescending(r => r.IsActive)
+                .ThenByDescending(r => r.Date)
+                .FirstOrDefault();
+            if (home is null)
+            {
+                return null;
+            }
+
+            var slot = home.AMVehicleId == busId && home.PMVehicleId == busId
+                ? RouteTimeSlot.Both
+                : home.PMVehicleId == busId && home.AMVehicleId != busId
+                    ? RouteTimeSlot.PM
+                    : RouteTimeSlot.AM;
+            return new BusHomeRoute
+            {
+                BusId = busId,
+                RouteId = home.RouteId,
+                RouteName = home.RouteName ?? string.Empty,
+                Slot = slot
+            };
+        }
+
+        public async Task<Result<BusSessionLoad>> GetSessionLoadAsync(
+            int busId,
+            int routeId,
+            RouteTimeSlot slot,
+            CancellationToken cancellationToken = default)
+        {
+            using var context = _contextFactory.CreateDbContext();
+            return await BusSessionLoadReader.ReadAsync(context, busId, routeId, slot, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         public async Task<IEnumerable<Bus>> SearchBusesAsync(string searchTerm)
         {
             using (LogContext.PushProperty("QueryType", "SearchBuses"))
@@ -796,6 +850,23 @@ namespace BusBuddy.Core.Services
 
 
         #endregion
+
+        private static async Task EnsureUniqueBusNumberAsync(BusBuddyDbContext context, string? busNumber, int? excludeBusId)
+        {
+            var number = busNumber?.Trim();
+            if (string.IsNullOrEmpty(number))
+            {
+                throw new InvalidOperationException("Bus number is required.");
+            }
+
+            var taken = await context.Buses.AsNoTracking()
+                .AnyAsync(b => b.BusNumber == number && (excludeBusId == null || b.BusId != excludeBusId))
+                .ConfigureAwait(false);
+            if (taken)
+            {
+                throw new InvalidOperationException($"Bus number {number} is already in the fleet.");
+            }
+        }
 
         public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int busId)
         {

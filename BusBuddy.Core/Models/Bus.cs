@@ -129,6 +129,19 @@ public class Bus : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Wheelchair positions on this bus. Zero on a bus with no stations. specs/buses.md.</summary>
+    [Range(0, 20)]
+    [Display(Name = "Wheelchair Stations")]
+    public int WheelchairStations { get; set; }
+
+    /// <summary>Lift equipped. Required for a special-needs body. specs/buses.md.</summary>
+    [Display(Name = "Wheelchair Lift")]
+    public bool HasLift { get; set; }
+
+    /// <summary>Regular or SpecialNeeds from <see cref="FleetType"/>. Not a second vehicle model.</summary>
+    [NotMapped]
+    public BusVehicleKind VehicleKind => BusVehicleKindMapping.FromFleetType(FleetType);
+
     [Required]
     [Range(1, 100)]
     [Display(Name = "Seating Capacity")]
@@ -474,9 +487,14 @@ public class Bus : INotifyPropertyChanged
             ? $"{CurrentLatitude.Value:0.####}, {CurrentLongitude.Value:0.####}"
             : "No GPS";
 
+    /// <summary>Assignable for a route or trip. Out of service, retired, and shop statuses are not.</summary>
+    public static bool IsAssignableStatus(string? status) =>
+        string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(status, "InService", StringComparison.OrdinalIgnoreCase);
+
     [NotMapped]
     [Display(Name = "Is Available")]
-    public bool IsAvailable => Status == "Active";
+    public bool IsAvailable => IsAssignableStatus(Status);
 
     [NotMapped]
     [Display(Name = "Needs Attention")]

@@ -191,6 +191,45 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task GenerateAsync_PageKinds_WriteDistinctCsvHeaders()
+        {
+            async Task<string> Header(OperationalReportKind kind)
+            {
+                var result = await _service.GenerateAsync(new OperationalReportRequest
+                {
+                    Kind = kind,
+                    OutputDirectory = _dir,
+                    AsCsv = true
+                });
+                var text = await File.ReadAllTextAsync(result.FilePath);
+                return text.Split('\n', 2)[0].Trim();
+            }
+
+            var headers = new[]
+            {
+                await Header(OperationalReportKind.StudentRoster),
+                await Header(OperationalReportKind.PrintStudentLists),
+                await Header(OperationalReportKind.EnrollmentSummary),
+                await Header(OperationalReportKind.PdfExport),
+                await Header(OperationalReportKind.ExcelExport),
+                await Header(OperationalReportKind.DailySchedule),
+                await Header(OperationalReportKind.PrintSchedules),
+                await Header(OperationalReportKind.PrintRouteMaps),
+                await Header(OperationalReportKind.DriverRoster),
+                await Header(OperationalReportKind.Compliance),
+                await Header(OperationalReportKind.FleetInventory),
+                await Header(OperationalReportKind.FleetUtilization),
+                await Header(OperationalReportKind.RouteEfficiency),
+                await Header(OperationalReportKind.MaintenanceSchedule)
+            };
+
+            Assert.That(headers, Is.Unique);
+            Assert.That(await Header(OperationalReportKind.CsvExport), Is.EqualTo("Name,Grade,AM,PM,School"));
+            Assert.That(await Header(OperationalReportKind.EnrollmentSummary), Is.EqualTo("Grade,Count"));
+            Assert.That(await Header(OperationalReportKind.StudentRoster), Does.Not.Contain("Phone"));
+        }
+
+        [Test]
         public async Task GenerateAsync_CsvFormat_RewritesPdfExtension()
         {
             var requested = Path.Combine(_dir, "roster.pdf");

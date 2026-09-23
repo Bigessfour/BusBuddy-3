@@ -76,7 +76,7 @@ namespace BusBuddy.Tests.Core
                 Zip = "12345"
             };
 
-            var added = await _studentService.AddStudentAsync(s);
+            var added = await AddRequiredAsync(s);
 
             added.StudentId.Should().BeGreaterThan(0);
             added.EnrollmentDate.Should().NotBeNull();
@@ -89,32 +89,26 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task ValidateStudentAsync_InvalidPhoneAndZip_ReturnsErrors()
         {
-            var prevMode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
-            Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", "strict");
-            try
+            var s = new Student
             {
-                var s = new Student
-                {
-                    StudentName = "Bob",
-                    Grade = "3",
-                    School = "Test",
-                    ParentGuardian = "P",
-                    EmergencyPhone = "bad",
-                    HomePhone = "also-bad",
-                    HomeAddress = "1 A St",
-                    City = "City",
-                    State = "CO",
-                    Zip = "9999"
-                };
+                StudentName = "Bob",
+                Grade = "3",
+                School = "Test",
+                ParentGuardian = "P",
+                EmergencyPhone = "bad",
+                HomePhone = "also-bad",
+                CellPhone = "nope",
+                HomeAddress = "1 A St",
+                City = "City",
+                State = "CO",
+                Zip = "9999"
+            };
 
-                var errors = await _studentService.ValidateStudentAsync(s);
-                errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase));
-                errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", prevMode);
-            }
+            var errors = await _studentService.ValidateStudentAsync(s);
+            errors.Should().Contain(e => e.Contains("home phone", StringComparison.OrdinalIgnoreCase));
+            errors.Should().Contain(e => e.Contains("cell phone", StringComparison.OrdinalIgnoreCase));
+            errors.Should().Contain(e => e.Contains("emergency phone", StringComparison.OrdinalIgnoreCase));
+            errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
         }
 
         [Test]
@@ -228,7 +222,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task AssignStudentToRouteAsync_UpdatesAMandPM()
+        public async Task AddStudentAsync_NormalizesPhoneAndResolvesUniqueRouteName()
         {
             var s = new Student
             {
@@ -236,26 +230,25 @@ namespace BusBuddy.Tests.Core
                 Grade = "2",
                 School = "T",
                 ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555",
+                EmergencyPhone = "+1 (555) 555-5555",
+                HomePhone = "5555555555",
+                AMRoute = "East Route",
+                PMRoute = "West Route",
                 RidesAm = true,
                 RidesPm = true
             };
-            _dbContext.Students.Add(s);
-            await _dbContext.SaveChangesAsync();
 
-            var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", "West Route");
-            ok.Should().BeTrue();
-
-            _dbContext.ChangeTracker.Clear();
-            var updated = await _dbContext.Students.FindAsync(s.StudentId);
-            updated!.AMRoute.Should().Be("East Route");
-            updated.PMRoute.Should().Be("West Route");
-            updated.AmRouteId.Should().Be(1);
-            updated.PmRouteId.Should().Be(2);
+            var added = await AddRequiredAsync(s);
+            added.HomePhone.Should().Be("(555) 555-5555");
+            added.EmergencyPhone.Should().Be("(555) 555-5555");
+            added.AmRouteId.Should().Be(1);
+            added.PmRouteId.Should().Be(2);
+            added.AMRoute.Should().Be("East Route");
+            added.PMRoute.Should().Be("West Route");
         }
 
         [Test]
-        public async Task UpdateStudentAsync_ClearingRouteNames_PersistsUnassignedOnNewContext()
+        public async Task UpdateStudentAsync_KeyedSlotRewritesStaleName_ClearingKeyUnassigns()
         {
             var s = new Student
             {
@@ -267,27 +260,40 @@ namespace BusBuddy.Tests.Core
                 AMRoute = "East Route",
                 PMRoute = "West Route"
             };
-            var added = await _studentService.AddStudentAsync(s);
+            var added = await AddRequiredAsync(s);
             added.AmRouteId.Should().Be(1);
             added.PmRouteId.Should().Be(2);
 
-            added.AMRoute = null;
+            added.AMRoute = "not the real name";
+            added.PmRouteId = null;
             added.PMRoute = null;
-            var ok = await _studentService.UpdateStudentAsync(added);
-            ok.Should().BeTrue();
+            var rewritten = await _studentService.UpdateStudentAsync(added);
+            rewritten.IsSuccess.Should().BeTrue(rewritten.Error);
+            rewritten.Value.Should().BeTrue();
+
+            await using var mirrored = new BusBuddyDbContext(_dbOptions);
+            var stillKeyed = await mirrored.Students.AsNoTracking()
+                .FirstAsync(row => row.StudentId == added.StudentId);
+            stillKeyed.AmRouteId.Should().Be(1);
+            stillKeyed.AMRoute.Should().Be("East Route");
+            stillKeyed.PmRouteId.Should().BeNull();
+            stillKeyed.PMRoute.Should().BeNull();
+
+            stillKeyed.AmRouteId = null;
+            stillKeyed.AMRoute = null;
+            var cleared = await _studentService.UpdateStudentAsync(stillKeyed);
+            cleared.IsSuccess.Should().BeTrue(cleared.Error);
 
             await using var nextSession = new BusBuddyDbContext(_dbOptions);
             var reloaded = await nextSession.Students.AsNoTracking()
                 .FirstAsync(row => row.StudentId == added.StudentId);
             StudentRouteAssignment.IsAssignedAny(reloaded).Should().BeFalse();
             reloaded.AmRouteId.Should().BeNull();
-            reloaded.PmRouteId.Should().BeNull();
             reloaded.AMRoute.Should().BeNull();
-            reloaded.PMRoute.Should().BeNull();
         }
 
         [Test]
-        public async Task AssignStudentToRouteAsync_SharedName_FailsClosedWithoutWriting()
+        public async Task UpdateStudentAsync_SharedNameDoesNotReplaceExistingKey()
         {
             _dbContext.Routes.AddRange(
                 new Route
@@ -306,28 +312,31 @@ namespace BusBuddy.Tests.Core
                     IsActive = true,
                     School = "T"
                 });
-            var s = new Student
+            await _dbContext.SaveChangesAsync();
+
+            var added = await AddRequiredAsync(new Student
             {
-                StudentName = "Orphan",
+                StudentName = "Keyed",
                 Grade = "2",
                 School = "T",
                 ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555"
-            };
-            _dbContext.Students.Add(s);
-            await _dbContext.SaveChangesAsync();
+                EmergencyPhone = "555-555-5555",
+                RidesAm = true,
+                AMRoute = "East Route"
+            });
+            added.AMRoute = "North Elementary";
 
-            var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "North Elementary", null);
-            ok.Should().BeFalse();
+            var updated = await _studentService.UpdateStudentAsync(added);
+            updated.IsSuccess.Should().BeTrue(updated.Error);
 
-            _dbContext.ChangeTracker.Clear();
-            var updated = await _dbContext.Students.FindAsync(s.StudentId);
-            updated!.AMRoute.Should().BeNull();
-            updated.AmRouteId.Should().BeNull();
+            await using var next = new BusBuddyDbContext(_dbOptions);
+            var saved = await next.Students.AsNoTracking().FirstAsync(x => x.StudentId == added.StudentId);
+            saved.AmRouteId.Should().Be(1);
+            saved.AMRoute.Should().Be("East Route");
         }
 
         [Test]
-        public void UpdateStudentAddressAsync_InvalidState_Throws()
+        public async Task UpdateStudentAddressAsync_InvalidState_ReturnsFailure()
         {
             var s = new Student
             {
@@ -340,8 +349,9 @@ namespace BusBuddy.Tests.Core
             _dbContext.Students.Add(s);
             _dbContext.SaveChanges();
 
-            Func<Task> act = async () => await _studentService.UpdateStudentAddressAsync(s.StudentId, "123", "City", "Colorado", "12345");
-            act.Should().ThrowAsync<ArgumentException>().WithMessage("*State must be a 2-letter abbreviation*");
+            var result = await _studentService.UpdateStudentAddressAsync(s.StudentId, "123", "City", "Colorado", "12345");
+            result.IsFailure.Should().BeTrue();
+            result.Error.Should().Contain("State must be a 2-letter abbreviation");
         }
 
         [Test]
@@ -426,7 +436,8 @@ namespace BusBuddy.Tests.Core
 
             var ok = await _studentService.UpdateStudentAddressAsync(s.StudentId, "2 New St", "Lamar", "CO", "81052");
 
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
+            ok.Value.Should().BeTrue();
             _dbContext.ChangeTracker.Clear();
             var saved = await _dbContext.Students.AsNoTracking().FirstAsync(x => x.StudentId == s.StudentId);
             saved.HomeAddress.Should().Be("2 New St");
@@ -436,30 +447,6 @@ namespace BusBuddy.Tests.Core
             var stop = await _dbContext.RouteStops.AsNoTracking().FirstAsync(x => x.Notes == $"StudentId={s.StudentId}");
             stop.Latitude.Should().BeNull();
             stop.Longitude.Should().BeNull();
-        }
-
-        [Test]
-        public async Task AssignStudentToRouteAsync_RefusesWhenEligibilityIsOff()
-        {
-            var s = new Student
-            {
-                StudentName = "No AM",
-                Grade = "2",
-                School = "T",
-                ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555",
-                RidesAm = false,
-                RidesPm = true
-            };
-            _dbContext.Students.Add(s);
-            await _dbContext.SaveChangesAsync();
-
-            var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", null);
-
-            ok.Should().BeFalse();
-            _dbContext.ChangeTracker.Clear();
-            var saved = await _dbContext.Students.AsNoTracking().FirstAsync(x => x.StudentId == s.StudentId);
-            saved.AmRouteId.Should().BeNull();
         }
 
         [Test]
@@ -477,16 +464,45 @@ namespace BusBuddy.Tests.Core
                 AMRoute = "East Route",
                 PMRoute = "West Route"
             };
-            var added = await _studentService.AddStudentAsync(s);
+            var added = await AddRequiredAsync(s);
             added.RidesAm = false;
             var ok = await _studentService.UpdateStudentAsync(added);
 
-            ok.Should().BeTrue();
+            ok.IsSuccess.Should().BeTrue(ok.Error);
+            ok.Value.Should().BeTrue();
             await using var next = new BusBuddyDbContext(_dbOptions);
             var saved = await next.Students.AsNoTracking().FirstAsync(x => x.StudentId == added.StudentId);
             saved.AmRouteId.Should().BeNull();
             saved.AMRoute.Should().BeNull();
             saved.PmRouteId.Should().Be(2);
+        }
+
+        [Test]
+        public async Task UpdateStudentAsync_ValidationFailure_LeavesRouteAssignmentOnTheCaller()
+        {
+            var s = new Student
+            {
+                StudentName = "Still Assigned",
+                Grade = "2",
+                School = "T",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-555-5555",
+                RidesAm = true,
+                AMRoute = "East Route"
+            };
+            var added = await AddRequiredAsync(s);
+            added.RidesAm = false;
+            added.StudentName = " ";
+
+            var failed = await _studentService.UpdateStudentAsync(added);
+
+            failed.IsSuccess.Should().BeFalse();
+            added.AmRouteId.Should().Be(1);
+            added.AMRoute.Should().Be("East Route");
+            await using var next = new BusBuddyDbContext(_dbOptions);
+            var saved = await next.Students.AsNoTracking().FirstAsync(x => x.StudentId == added.StudentId);
+            saved.RidesAm.Should().BeTrue();
+            saved.AmRouteId.Should().Be(1);
         }
 
         [Test]
@@ -504,10 +520,17 @@ namespace BusBuddy.Tests.Core
                 PickupStopId = 9
             };
 
-            var added = await _studentService.AddStudentAsync(s);
+            var added = await AddRequiredAsync(s);
 
             added.RequiresAide.Should().BeTrue();
             added.PickupStopId.Should().BeNull();
+        }
+
+        private async Task<Student> AddRequiredAsync(Student student)
+        {
+            var result = await _studentService.AddStudentAsync(student);
+            result.IsSuccess.Should().BeTrue(result.Error);
+            return result.Value;
         }
     }
 }

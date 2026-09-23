@@ -90,15 +90,15 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Copy Route"
                 AutomationProperties.HelpText="Clone the selected route"/>
-            <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="Delete Route"
+            <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="Retire Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding DeleteRouteCommand}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                AutomationProperties.Name="Delete Route"
-                AutomationProperties.HelpText="Delete the selected route"/>
+                AutomationProperties.Name="Retire Route"
+                AutomationProperties.HelpText="Retire the selected route. An empty unpublished draft is permanently deleted."/>
             <syncfusion:ButtonAdv Name="ManageRouteButton" Label="Manage Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding OpenRouteAssignmentCommand}"

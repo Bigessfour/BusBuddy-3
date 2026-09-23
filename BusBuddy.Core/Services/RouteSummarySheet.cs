@@ -19,6 +19,7 @@ public sealed class RouteSummarySheet
     public required string DepartureText { get; init; }
     public required string ArrivalText { get; init; }
     public required string TotalMilesText { get; init; }
+    public required string DriveTimeText { get; init; }
     public required int RosterCount { get; init; }
     public required string? GenerateStopsOnlyNote { get; init; }
     public required IReadOnlyList<StopRow> Stops { get; init; }

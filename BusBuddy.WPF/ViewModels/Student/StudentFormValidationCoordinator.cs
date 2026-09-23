@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using Serilog;
 using StudentModel = BusBuddy.Core.Models.Student;
@@ -165,7 +166,23 @@ public sealed class StudentFormValidationCoordinator : INotifyPropertyChanged
             errors.Add((StudentFormFields.Grade, "Grade is required."));
         }
 
+        AddPhoneError(errors, student.HomePhone, StudentFormFields.HomePhone, "Invalid home phone number format");
+        AddPhoneError(errors, student.CellPhone, StudentFormFields.CellPhone, "Invalid cell phone number format");
+        AddPhoneError(errors, student.EmergencyPhone, StudentFormFields.EmergencyPhone, "Invalid emergency phone number format");
+
         return errors;
+    }
+
+    private static void AddPhoneError(
+        List<(string FieldKey, string Message)> errors,
+        string? phone,
+        string fieldKey,
+        string message)
+    {
+        if (!StudentPhone.TryNormalize(phone, out _))
+        {
+            errors.Add((fieldKey, message));
+        }
     }
 
     /// <summary>Run service-layer rules before persist so VM and DB stay aligned.</summary>

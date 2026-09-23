@@ -468,8 +468,8 @@ namespace BusBuddy.Core.Services
             // Activities (one-off trips) are not seeded: the Trip Board is clerk-entered only.
             await EnsureMapDemoGeoAsync();
 
-            // Leave no student pointing at a route name that has no Routes row, or the form refuses
-            // to save them (StudentService.ValidateStudentAsync matches RouteName exactly).
+            // Leave no student pointing at a route name that is missing or shared, or the form
+            // refuses to save them (ValidateStudentAsync accepts a key, or a unique route name).
             await EnsureRoutesForStudentAssignmentsAsync();
 
             Logger.Information("Development data seeding completed");

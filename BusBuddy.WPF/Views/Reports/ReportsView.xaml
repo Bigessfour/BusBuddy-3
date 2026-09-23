@@ -15,6 +15,7 @@
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="SizeMode" Value="Normal"/>
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 <Style TargetType="GroupBox">
@@ -69,7 +70,7 @@
                                 Command="{Binding GenerateStudentRosterCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Student Roster Report"
-                                AutomationProperties.HelpText="Generate complete student roster with contact information"/>
+                                AutomationProperties.HelpText="Roster of student name, grade, school, and AM/PM route"/>
 
                         <syncfusion:ButtonAdv Label="Student Route Assignments"
                                 Command="{Binding GenerateStudentRouteReportCommand}"
@@ -81,7 +82,7 @@
                                 Command="{Binding GenerateEnrollmentSummaryCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Enrollment Summary"
-                                AutomationProperties.HelpText="Generate summary of student enrollment by grade and school"/>
+                                AutomationProperties.HelpText="Count of students in each grade"/>
 
                         <syncfusion:ButtonAdv Label="Unassigned Students Report"
                                 Command="{Binding GenerateUnassignedStudentsCommand}"
@@ -107,7 +108,7 @@
                                 Command="{Binding GenerateDailyScheduleCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Daily Schedule Report"
-                                AutomationProperties.HelpText="Generate daily transportation schedule"/>
+                                AutomationProperties.HelpText="Each route's date, school, and AM/PM begin times"/>
 
                         <syncfusion:ButtonAdv Label="Vehicle Assignment Report"
                                 Command="{Binding GenerateVehicleAssignmentCommand}"
@@ -119,7 +120,7 @@
                                 Command="{Binding GenerateRouteEfficiencyCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Route Efficiency Report"
-                                AutomationProperties.HelpText="Generate route efficiency and optimization analysis"/>
+                                AutomationProperties.HelpText="Rider count compared with the assigned bus capacity"/>
                     </StackPanel>
                 </GroupBox>
 
@@ -133,7 +134,7 @@
                                 Command="{Binding GenerateDriverRosterCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Surface.Border}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Driver Roster Report"
-                                AutomationProperties.HelpText="Generate complete driver roster with contact information"/>
+                                AutomationProperties.HelpText="Driver name, status, phone, and licence type"/>
 
                         <syncfusion:ButtonAdv Label="License Expiration Report"
                                 Command="{Binding GenerateLicenseExpirationCommand}"
@@ -151,7 +152,7 @@
                                 Command="{Binding GenerateComplianceReportCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Compliance Report"
-                                AutomationProperties.HelpText="Generate driver compliance and certification report"/>
+                                AutomationProperties.HelpText="Training, license status, and drivers who need attention"/>
                     </StackPanel>
                 </GroupBox>
 
@@ -165,13 +166,13 @@
                                 Command="{Binding GenerateFleetInventoryCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Surface.Border}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Fleet Inventory Report"
-                                AutomationProperties.HelpText="Generate complete fleet inventory with vehicle details"/>
+                                AutomationProperties.HelpText="Bus number, make, model, year, seats, plate, and status"/>
 
                         <syncfusion:ButtonAdv Label="Maintenance Schedule Report"
                                 Command="{Binding GenerateMaintenanceScheduleCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Maintenance Schedule Report"
-                                AutomationProperties.HelpText="Generate upcoming maintenance schedule"/>
+                                AutomationProperties.HelpText="Scheduled and in-progress maintenance"/>
 
                         <syncfusion:ButtonAdv Label="Fuel Usage Report"
                                 Command="{Binding GenerateFuelUsageCommand}"
@@ -183,7 +184,7 @@
                                 Command="{Binding GenerateFleetUtilizationCommand}"
                                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                 AutomationProperties.Name="Generate Fleet Utilization Report"
-                                AutomationProperties.HelpText="Generate vehicle utilization and efficiency report"/>
+                                AutomationProperties.HelpText="How many route slots use each bus"/>
                     </StackPanel>
                 </GroupBox>
 
@@ -202,19 +203,19 @@
                                     Command="{Binding ExportAllDataToCsvCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                     AutomationProperties.Name="Export All Data to CSV"
-                                    AutomationProperties.HelpText="Export all system data to CSV format"/>
+                                    AutomationProperties.HelpText="Export the student roster as CSV"/>
 
                             <syncfusion:ButtonAdv Label="Export to PDF"
                                     Command="{Binding ExportAllDataToPdfCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Error}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                     AutomationProperties.Name="Export All Data to PDF"
-                                    AutomationProperties.HelpText="Export formatted reports to PDF"/>
+                                    AutomationProperties.HelpText="Export a one-page count summary as PDF"/>
 
                             <syncfusion:ButtonAdv Label="Export Excel-ready CSV"
                                     Command="{Binding ExportAllDataToExcelCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                     AutomationProperties.Name="Export Excel-ready CSV"
-                                    AutomationProperties.HelpText="Export data as a CSV file that opens in Excel"/>
+                                    AutomationProperties.HelpText="Export route rider counts as a CSV that opens in Excel"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
@@ -224,7 +225,7 @@
                                     Command="{Binding PrintStudentListsCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                     AutomationProperties.Name="Save Student Lists PDF"
-                                    AutomationProperties.HelpText="Save a student-list PDF for printing"/>
+                                    AutomationProperties.HelpText="Save a name, grade, and school list as PDF"/>
 
                             <syncfusion:ButtonAdv Label="Save route list (PDF)"
                                     Command="{Binding PrintRouteMapsCommand}"
@@ -236,7 +237,7 @@
                                     Command="{Binding PrintSchedulesCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" Margin="0,5"
                                     AutomationProperties.Name="Save Schedules PDF"
-                                    AutomationProperties.HelpText="Save a schedule PDF for printing"/>
+                                    AutomationProperties.HelpText="Save route date, drivers, and buses as PDF"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -252,8 +253,10 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Text="Recent Reports (SfDataGrid)" FontWeight="SemiBold" Margin="4,0,0,4" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
-                <syncfusion:SfDataGrid Grid.Row="1" ItemsSource="{Binding GeneratedReports}" AutoGenerateColumns="False" Height="110"
-                                       AllowFiltering="True" AllowSorting="True" ColumnSizer="Star">
+                <syncfusion:SfDataGrid Grid.Row="1" ItemsSource="{Binding GeneratedReports}" AutoGenerateColumns="False" Height="180"
+                                       AllowFiltering="True" AllowSorting="True" ColumnSizer="Star"
+                                       SelectionMode="Single" GridLinesVisibility="Both"
+                                       AutomationProperties.Name="Recent generated reports">
                     <syncfusion:SfDataGrid.Columns>
                         <syncfusion:GridTextColumn HeaderText="Report" MappingName="Name" Width="180"/>
                         <syncfusion:GridTextColumn HeaderText="Time" MappingName="GeneratedAt" Width="80"/>

@@ -28,6 +28,7 @@ namespace BusBuddy.Core.Services
         private readonly IRouteWaypointRebuildService? _waypointRebuild;
         private readonly AssignFitnessEvaluator? _fitnessEvaluator;
         private readonly IRoutingService? _routingService;
+        private readonly IBusService _busService;
 
         // Minimal op timing helper (basic only; can expand later)
         private static (Guid OpId, Stopwatch Sw) StartOp(string name, object? routeId = null)
@@ -70,12 +71,14 @@ namespace BusBuddy.Core.Services
             IBusBuddyDbContextFactory contextFactory,
             IRouteWaypointRebuildService? waypointRebuild,
             AssignFitnessEvaluator? fitnessEvaluator,
-            IRoutingService? routingService)
+            IRoutingService? routingService,
+            IBusService? busService = null)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _waypointRebuild = waypointRebuild;
             _fitnessEvaluator = fitnessEvaluator;
             _routingService = routingService;
+            _busService = busService ?? new BusService(contextFactory, PassthroughBusCache.Instance);
         }
 
         // Context helpers: only dispose when using the concrete runtime factory

@@ -61,7 +61,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Fleet Performance" FontWeight="SemiBold" Margin="0,0,0,8"
                                Foreground="{DynamicResource PrimaryTextBrush}"/>
-                    <syncfusion:SfChart Grid.Row="1">
+                    <syncfusion:SfChart Grid.Row="1" AutomationProperties.Name="Fleet performance chart">
                         <syncfusion:SfChart.PrimaryAxis>
                             <syncfusion:CategoryAxis Header="Status"/>
                         </syncfusion:SfChart.PrimaryAxis>
@@ -94,7 +94,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Student Assignments" FontWeight="SemiBold" Margin="0,0,0,8"
                                Foreground="{DynamicResource PrimaryTextBrush}"/>
-                    <syncfusion:SfChart Grid.Row="1">
+                    <syncfusion:SfChart Grid.Row="1" AutomationProperties.Name="Student assignments chart">
                         <syncfusion:SfChart.PrimaryAxis>
                             <syncfusion:CategoryAxis Header="Status"/>
                         </syncfusion:SfChart.PrimaryAxis>
@@ -104,7 +104,7 @@
                         <syncfusion:ColumnSeries Label="Students"
                                                  XBindingPath="Label"
                                                  YBindingPath="Value"
-                                                 ItemsSource="{Binding RouteEfficiency}"
+                                                 ItemsSource="{Binding StudentAssignments}"
                                                  ShowTooltip="True"
                                                  EnableAnimation="True">
                             <syncfusion:ColumnSeries.AdornmentsInfo>
@@ -127,7 +127,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Maintenance Metrics" FontWeight="SemiBold" Margin="0,0,0,8"
                                Foreground="{DynamicResource PrimaryTextBrush}"/>
-                    <syncfusion:SfChart Grid.Row="1">
+                    <syncfusion:SfChart Grid.Row="1" AutomationProperties.Name="Maintenance metrics chart">
                         <syncfusion:SfChart.Legend>
                             <syncfusion:ChartLegend DockPosition="Bottom" Orientation="Horizontal"/>
                         </syncfusion:SfChart.Legend>
@@ -160,7 +160,7 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Fuel Analytics (30 days)" FontWeight="SemiBold" Margin="0,0,0,8"
                                Foreground="{DynamicResource PrimaryTextBrush}"/>
-                    <syncfusion:SfChart Grid.Row="1">
+                    <syncfusion:SfChart Grid.Row="1" AutomationProperties.Name="Fuel analytics chart">
                         <syncfusion:SfChart.Legend>
                             <syncfusion:ChartLegend DockPosition="Bottom" Orientation="Horizontal"/>
                         </syncfusion:SfChart.Legend>
@@ -205,10 +205,11 @@
         <TextBlock Grid.Row="2" Margin="20,0,20,12" Text="{Binding StatusMessage}"
                    Foreground="{DynamicResource SecondaryTextBrush}"/>
 
-        <Border Grid.RowSpan="3" Background="#80000000"
+        <Border Grid.RowSpan="3" Background="{DynamicResource BusBuddy.Brush.Overlay.Dim}"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <syncfusion:SfBusyIndicator IsBusy="{Binding IsLoading}"
                                         Header="{Binding StatusMessage}"
+                                        AutomationProperties.Name="Analytics loading"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"/>
         </Border>
