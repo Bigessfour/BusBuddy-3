@@ -31,7 +31,7 @@ public class ButtonAccessibilityAuditTests
     [Test]
     public void StudentDeletionLog_IsInformationNotWarning()
     {
-        var service = CoreSourceFile.Read("Services/StudentService.cs");
+        var service = CoreSourceFile.Read("Services/StudentService.Persist.cs");
         Assert.That(service, Does.Contain("Logger.Information("));
         Assert.That(service, Does.Contain("Student deleted StudentId={StudentId}"));
         Assert.That(
