@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 
 namespace BusBuddy.Core.Services;
@@ -41,6 +42,7 @@ public static class RouteSummarySheetBuilder
             .Select(stop => ResolveRiders(stop, roster, claimed))
             .ToList();
 
+        var googleMiles = route.Distance is decimal storedMiles && storedMiles > 0;
         var stopRows = new List<RouteSummarySheet.StopRow>(ordered.Count);
         double? cumulative = null;
         var anyLeg = false;
@@ -49,7 +51,8 @@ public static class RouteSummarySheetBuilder
         {
             var stop = ordered[i];
             string milesText = "—";
-            if (previous is not null
+            if (!googleMiles
+                && previous is not null
                 && previous.HasValidatedCoordinates
                 && stop.HasValidatedCoordinates)
             {
@@ -130,6 +133,7 @@ public static class RouteSummarySheetBuilder
             DepartureText = ordered.Count > 0 ? FormatClock(ArrivalClock(ordered[0])) : "—",
             ArrivalText = ordered.Count > 0 ? FormatClock(ArrivalClock(ordered[^1])) : "—",
             TotalMilesText = totalMiles,
+            DriveTimeText = RoutePathMetrics.DriveTimeText(route.EstimatedDuration),
             RosterCount = roster.Count,
             GenerateStopsOnlyNote = generateNote,
             Stops = stopRows,

@@ -42,6 +42,8 @@ public class RouteSummarySheetBuilderTests
         }));
         Assert.That(sheet.Stops.All(s => s.Miles == "—" && s.Cumulative == "—"), Is.True);
         Assert.That(sheet.TotalMilesText, Is.EqualTo("—"));
+        Assert.That(sheet.DriveTimeText, Is.EqualTo("361 min"));
+        Assert.That(sheet.DepartureText, Is.EqualTo("07:00"));
         Assert.That(sheet.RosterCount, Is.EqualTo(0));
         Assert.That(sheet.GenerateStopsOnlyNote, Is.EqualTo(RouteSummarySheetBuilder.GenerateStopsOnlyMessage));
         Assert.That(sheet.DisplayName, Does.Contain("Wiley School"));
@@ -72,7 +74,7 @@ public class RouteSummarySheetBuilderTests
     [Test]
     public void Build_PrefersRouteDistance_ForHeaderMiles()
     {
-        var route = new Route { RouteName = "Town AM", Distance = 12.4m };
+        var route = new Route { RouteName = "Town AM", Distance = 12.4m, EstimatedDuration = 36 };
         var a = Stop(1, "Barn", new TimeSpan(7, 0, 0), new TimeSpan(7, 1, 0));
         a.Latitude = 38.0872m;
         a.Longitude = -102.6208m;
@@ -83,6 +85,10 @@ public class RouteSummarySheetBuilderTests
         var sheet = RouteSummarySheetBuilder.Build(route, new[] { a, b }, Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
 
         Assert.That(sheet.TotalMilesText, Is.EqualTo("12.4"));
+        Assert.That(sheet.DriveTimeText, Is.EqualTo("36 min"));
+        Assert.That(sheet.Stops.All(s => s.Miles == "—" && s.Cumulative == "—"), Is.True);
+        Assert.That(sheet.DepartureText, Is.EqualTo("07:00"));
+        Assert.That(sheet.ArrivalText, Is.EqualTo("07:20"));
     }
 
     [Test]

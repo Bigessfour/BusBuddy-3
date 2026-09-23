@@ -178,7 +178,8 @@ internal sealed class MapRouteTrail
         }
 
         var routeName = route?.RouteName ?? "Unknown";
-        IReadOnlyList<RouteStop> published = Array.Empty<RouteStop>();
+        IReadOnlyList<DistrictMapStop> published = [];
+        IReadOnlyList<DistrictMapHome> homes = [];
         if (route is not null)
         {
             await OmitUnlistedSchoolsAsync(route, cancellationToken).ConfigureAwait(false);
@@ -187,32 +188,54 @@ internal sealed class MapRouteTrail
                 return MapRouteDraw.Stale();
             }
 
-            var loaded = await LoadStopsAsync(route).ConfigureAwait(false);
+            if (geoData is not null)
+            {
+                var snapshot = await geoData.GetDistrictMapAsync(route.RouteId, cancellationToken).ConfigureAwait(false);
+                var selected = snapshot.SelectedRoute;
+                if (selected is not null)
+                {
+                    published = selected.PublishedStops;
+                    homes = selected.Homes;
+                    if (string.IsNullOrWhiteSpace(route.WaypointsJson)
+                        && !string.IsNullOrWhiteSpace(selected.WaypointsJson))
+                    {
+                        route.WaypointsJson = selected.WaypointsJson;
+                    }
+                }
+            }
+
             if (!IsCurrent(generation))
             {
                 return MapRouteDraw.Stale();
             }
 
-            published = loaded.Routable;
             var rebuilt = await EnsureWaypointsAsync(route, published, geoData, cancellationToken).ConfigureAwait(false);
             if (!IsCurrent(generation))
             {
                 return MapRouteDraw.Stale();
             }
 
-            if (rebuilt)
+            if (rebuilt && geoData is not null)
             {
-                loaded = await LoadStopsAsync(route).ConfigureAwait(false);
+                var again = await geoData.GetDistrictMapAsync(route.RouteId, cancellationToken).ConfigureAwait(false);
+                if (again.SelectedRoute is not null)
+                {
+                    published = again.SelectedRoute.PublishedStops;
+                    homes = again.SelectedRoute.Homes;
+                    if (!string.IsNullOrWhiteSpace(again.SelectedRoute.WaypointsJson))
+                    {
+                        route.WaypointsJson = again.SelectedRoute.WaypointsJson;
+                    }
+                }
+
                 if (!IsCurrent(generation))
                 {
                     return MapRouteDraw.Stale();
                 }
-
-                published = loaded.Routable;
             }
         }
 
-        var validated = published.Where(s => s.HasValidatedCoordinates).ToList();
+        var validated = published.Where(s => LocationCoordinate.IsValidated(s.Latitude, s.Longitude)).ToList();
         var persist = default(MapRouteTrailPersist);
         if (refreshDrivePath && route is not null)
         {
@@ -258,6 +281,7 @@ internal sealed class MapRouteTrail
         {
             Line = line,
             PublishedStops = validated,
+            Homes = homes,
             Plot = plot,
             Persist = persist,
             RouteName = routeName,
@@ -298,11 +322,11 @@ internal sealed class MapRouteTrail
 
     private async Task<bool> EnsureWaypointsAsync(
         Route route,
-        IReadOnlyList<RouteStop> published,
+        IReadOnlyList<DistrictMapStop> published,
         IGeoDataService? geoData,
         CancellationToken cancellationToken)
     {
-        var validatedCount = published.Count(s => s.HasValidatedCoordinates);
+        var validatedCount = published.Count(s => LocationCoordinate.IsValidated(s.Latitude, s.Longitude));
         if (validatedCount >= 2)
         {
             var payload = RouteWaypointSerializer.ParsePayload(route.WaypointsJson);
@@ -415,7 +439,9 @@ internal sealed class MapRouteDraw
 
     public IReadOnlyList<Point> Line { get; init; } = Array.Empty<Point>();
 
-    public IReadOnlyList<RouteStop> PublishedStops { get; init; } = Array.Empty<RouteStop>();
+    public IReadOnlyList<DistrictMapStop> PublishedStops { get; init; } = [];
+
+    public IReadOnlyList<DistrictMapHome> Homes { get; init; } = [];
 
     public MapRouteTrailPlot Plot { get; init; }
 

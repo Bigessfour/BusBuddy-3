@@ -73,32 +73,65 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             return;
         }
 
-        var routeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (!string.IsNullOrWhiteSpace(student.AMRoute))
+        var routeIds = new HashSet<int>();
+        if (student.AmRouteId is > 0)
         {
-            routeNames.Add(student.AMRoute!);
+            routeIds.Add(student.AmRouteId.Value);
+        }
+        else
+        {
+            AddUniqueNamedRoute(routeIds, await UniqueRouteIdAsync(context, student.AMRoute, cancellationToken).ConfigureAwait(false));
         }
 
-        if (!string.IsNullOrWhiteSpace(student.PMRoute))
+        if (student.PmRouteId is > 0)
         {
-            routeNames.Add(student.PMRoute!);
+            routeIds.Add(student.PmRouteId.Value);
+        }
+        else
+        {
+            AddUniqueNamedRoute(routeIds, await UniqueRouteIdAsync(context, student.PMRoute, cancellationToken).ConfigureAwait(false));
         }
 
-        if (routeNames.Count == 0)
+        if (routeIds.Count == 0)
         {
             return;
         }
-
-        var routeIds = await context.Routes.AsNoTracking()
-            .Where(r => routeNames.Contains(r.RouteName))
-            .Select(r => r.RouteId)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
 
         foreach (var routeId in routeIds)
         {
             await RebuildAndPersistAsync(routeId, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private static void AddUniqueNamedRoute(HashSet<int> routeIds, int? routeId)
+    {
+        if (routeId is > 0)
+        {
+            routeIds.Add(routeId.Value);
+        }
+    }
+
+    /// <summary>Name fallback only when the slot key is null, and only when that name is unique.</summary>
+    private static async Task<int?> UniqueRouteIdAsync(
+        BusBuddyDbContext context,
+        string? routeName,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(routeName))
+        {
+            return null;
+        }
+
+        var nameLower = routeName.Trim().ToLowerInvariant();
+#pragma warning disable CA1311, CA1862
+        var matches = await context.Routes.AsNoTracking()
+            .Where(r => r.RouteName.ToLower() == nameLower)
+            .Select(r => r.RouteId)
+            .Take(2)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+#pragma warning restore CA1311, CA1862
+        return matches.Count == 1 ? matches[0] : null;
     }
 
     public async Task<string?> RebuildAndPersistAsync(int routeId, CancellationToken cancellationToken = default)

@@ -109,8 +109,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             BusBuddy.Core.Services.IStudentService? studentService = null,
             IServiceScopeFactory? scopeFactory = null,
             IRoutingService? routingService = null,
-            IPickupStopService? pickupStops = null,
-            IDestinationService? destinations = null,
             IDistrictSettingsAccessor? districtSettings = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
@@ -120,8 +118,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             _districtSettings = districtSettings;
             _trail = new MapRouteTrail(_routingService, _scopeFactory);
             _layers = new MapDistrictLayers(
-                pickupStops,
-                destinations,
+                _geoDataService,
                 scopeFactory,
                 (lat, lon, names, label, ids) => PlotStop(lat, lon, names, label, studentIds: ids),
                 ResolveDepotMarker);
@@ -634,8 +631,8 @@ namespace BusBuddy.WPF.ViewModels.Map
                 StatusMessage = "Refreshing map...";
 
                 // Restore district base overlay (schools/pickups/depot — not all student homes).
-                await _layers.LoadDistrictBaseLayersAsync();
-                await RefreshNeedsValidationAsync().ConfigureAwait(true);
+                var loaded = await _layers.LoadDistrictBaseLayersAsync();
+                ApplyNeedsValidation(loaded);
 
                 if (SelectedRoute is not null)
                 {
@@ -669,8 +666,9 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 var routesLoaded = await LoadRoutesAsync();
 
-                var seeded = await _layers.LoadDistrictBaseLayersAsync();
-                await RefreshNeedsValidationAsync().ConfigureAwait(true);
+                var loaded = await _layers.LoadDistrictBaseLayersAsync();
+                ApplyNeedsValidation(loaded);
+                var seeded = loaded.Counts;
 
                 if (MapMarkers.Count > 0)
                 {
@@ -765,12 +763,12 @@ namespace BusBuddy.WPF.ViewModels.Map
                 {
                     foreach (var stop in draw.PublishedStops.OrderBy(s => s.StopOrder))
                     {
-                        var name = string.IsNullOrWhiteSpace(stop.StopName)
+                        var name = string.IsNullOrWhiteSpace(stop.Name)
                             ? $"Stop {stop.StopOrder}"
-                            : stop.StopName;
+                            : stop.Name;
                         PlotStop(
-                            (double)stop.Latitude!.Value,
-                            (double)stop.Longitude!.Value,
+                            stop.Latitude,
+                            stop.Longitude,
                             null,
                             MapMarkerLabels.ForRouteStop(name),
                             MapMarkerLabels.Kind.Waypoint);
@@ -796,17 +794,16 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
                 else if (draw.PublishedStops.Count > 0)
                 {
-                    CenterOnPoints(draw.PublishedStops.Select(s =>
-                        new Point((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
+                    CenterOnPoints(draw.PublishedStops.Select(s => new Point(s.Latitude, s.Longitude)));
                 }
                 else if (draw.Plot.Markers.Count > 0)
                 {
                     CenterOnPoints(draw.Plot.Markers.Select(s => new Point(s.Latitude, s.Longitude)));
                 }
 
-                if (draw.HasRoute && route is not null)
+                if (draw.HasRoute)
                 {
-                    await _layers.PlotAssignedStudentsForRouteAsync(route).ConfigureAwait(true);
+                    _layers.PlotHomes(draw.Homes);
                 }
 
                 if (!_trail.IsCurrent(generation))
@@ -915,8 +912,8 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
 
                 ClearRouteRosterFromMap();
-                await _layers.LoadDistrictBaseLayersAsync().ConfigureAwait(true);
-                await RefreshNeedsValidationAsync().ConfigureAwait(true);
+                var loaded = await _layers.LoadDistrictBaseLayersAsync().ConfigureAwait(true);
+                ApplyNeedsValidation(loaded);
 
                 if (!routesLoaded)
                 {
@@ -944,24 +941,20 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
-        private async Task RefreshNeedsValidationAsync()
+        private void ApplyNeedsValidation(MapDistrictLoad loaded)
         {
-            IReadOnlyList<string> lines;
-            try
+            if (loaded.Failure is not null)
             {
-                lines = await _layers.ListNeedsValidationAsync().ConfigureAwait(true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Needs-validation list skipped");
+                Logger.Warning(loaded.Failure, "Needs-validation list skipped");
                 NeedsValidation.Clear();
-                NeedsValidationSummary = DatabaseUserMessage.IsConnectivityFailure(ex)
+                NeedsValidationSummary = DatabaseUserMessage.IsConnectivityFailure(loaded.Failure)
                     ? DatabaseUserMessage.UnavailableShort
                     : "Could not check which schools and stops need validation.";
                 OnPropertyChanged(nameof(NeedsValidationSummary));
                 return;
             }
 
+            var lines = loaded.NeedsValidation;
             NeedsValidation.Clear();
             foreach (var line in lines)
             {
@@ -1361,7 +1354,9 @@ namespace BusBuddy.WPF.ViewModels.Map
                     route?.RouteName,
                     FormatBusLabel(route),
                     MapMarkers,
-                    directions);
+                    directions,
+                    route?.Distance,
+                    route?.EstimatedDuration);
                 PrintRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)

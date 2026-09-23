@@ -1,10 +1,13 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
+using BusBuddy.WPF.Views.Reports;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -31,14 +34,22 @@ namespace BusBuddy.WPF.ViewModels.Reports
         {
             _reportService = reportService ?? throw new ArgumentNullException(nameof(reportService));
             InitializeCommands();
-            StatusMessage = "Ready to generate reports";
+            StatusMessage = reportService is MissingOperationalReportService
+                ? "Reports are unavailable until the application finishes starting."
+                : "Ready to generate reports";
         }
+
+        /// <summary>
+        /// Visible page state when DI has not registered the report service yet.
+        /// Commands stay bound and explain the gap instead of leaving DataContext null.
+        /// </summary>
+        public static ReportsViewModel CreateUnavailable() =>
+            new(new MissingOperationalReportService());
 
         private static IOperationalReportService CreateDefaultReportService()
         {
             return App.ServiceProvider?.GetService<IOperationalReportService>()
-                ?? throw new InvalidOperationException(
-                    "IOperationalReportService is not registered. Open Reports after the application finishes starting.");
+                ?? new MissingOperationalReportService();
         }
 
         #region Properties
@@ -245,10 +256,10 @@ namespace BusBuddy.WPF.ViewModels.Reports
             {
                 var generated = await _reportService.GenerateAsync(kind);
                 AIReportSummary = generated.AiSummary;
-                return generated.Status;
+                return generated;
             });
 
-        private async Task ExecuteReportGeneration(string reportName, Func<Task<string>> reportAction)
+        private async Task ExecuteReportGeneration(string reportName, Func<Task<OperationalReportResult>> reportAction)
         {
             try
             {
@@ -256,16 +267,17 @@ namespace BusBuddy.WPF.ViewModels.Reports
                 IsGeneratingReport = true;
                 StatusMessage = $"Generating {reportName}...";
 
-                var result = await reportAction();
+                var generated = await reportAction();
 
-                StatusMessage = result;
+                StatusMessage = generated.Status;
                 LastReportGenerated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                Logger.Information("Report generated Name={Report} Result={Result}", reportName, result);
+                Logger.Information("Report generated Name={Report} Result={Result}", reportName, generated.Status);
+                TryPreviewPdf(generated.FileBytes, reportName);
                 GeneratedReports.Insert(0, new ReportEntry
                 {
                     Name = reportName,
                     GeneratedAt = DateTime.Now.ToString("HH:mm:ss"),
-                    Result = result
+                    Result = generated.Status
                 });
                 if (GeneratedReports.Count > 8)
                 {
@@ -283,7 +295,47 @@ namespace BusBuddy.WPF.ViewModels.Reports
             }
         }
 
+        private static void TryPreviewPdf(byte[] bytes, string title)
+        {
+            if (!PdfPreviewWindow.IsPdfPayload(bytes))
+            {
+                return;
+            }
+
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null)
+            {
+                return;
+            }
+
+            void Open()
+            {
+                var preview = new PdfPreviewWindow(bytes, title);
+                DialogOwner.Assign(preview);
+                preview.Show();
+            }
+
+            if (dispatcher.CheckAccess())
+            {
+                Open();
+            }
+            else
+            {
+                dispatcher.Invoke(Open);
+            }
+        }
+
         #endregion
+
+        private sealed class MissingOperationalReportService : IOperationalReportService
+        {
+            public Task<OperationalReportResult> GenerateAsync(OperationalReportKind kind, string? outputDirectory = null) =>
+                GenerateAsync(new OperationalReportRequest { Kind = kind, OutputDirectory = outputDirectory });
+
+            public Task<OperationalReportResult> GenerateAsync(OperationalReportRequest request) =>
+                throw new InvalidOperationException(
+                    "Reports are unavailable until the application finishes starting.");
+        }
 
         /// <summary>
         /// Simple entry model for GeneratedReports SfDataGrid (Finish UI proof; no new files)

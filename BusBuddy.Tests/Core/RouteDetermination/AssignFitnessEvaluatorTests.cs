@@ -213,4 +213,43 @@ public class AssignFitnessEvaluatorTests
         Assert.That(result.Allowed, Is.False);
         Assert.That(result.Reasons.Any(r => r.Contains("special-needs", StringComparison.OrdinalIgnoreCase)), Is.True);
     }
+
+    [Test]
+    public async Task Evaluate_MissingBus_DoesNotInventSeats()
+    {
+        var (factory, studentId, routeId) = await SeedAsync(seatingCapacity: 72, alreadyAssigned: 80);
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var route = await ctx.Routes.FindAsync(routeId);
+            Assert.That(route, Is.Not.Null);
+            route!.AMVehicleId = null;
+            await ctx.SaveChangesAsync();
+        }
+
+        var evaluator = new AssignFitnessEvaluator(factory);
+        var result = await evaluator.EvaluateAsync(studentId, routeId, RouteTimeSlotKind.AM);
+
+        Assert.That(result.Allowed, Is.True);
+        Assert.That(result.Reasons.Any(r => r.Contains("would be exceeded", StringComparison.OrdinalIgnoreCase)), Is.False);
+        Assert.That(result.Reasons.Any(r => r.Contains("unknown", StringComparison.OrdinalIgnoreCase)), Is.True);
+    }
+
+    [Test]
+    public async Task Evaluate_WheelchairOverflow_Blocks()
+    {
+        var (factory, studentId, routeId) = await SeedAsync(seatingCapacity: 20, alreadyAssigned: 0);
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var student = await ctx.Students.FindAsync(studentId);
+            Assert.That(student, Is.Not.Null);
+            student!.RequiresWheelchair = true;
+            await ctx.SaveChangesAsync();
+        }
+
+        var evaluator = new AssignFitnessEvaluator(factory);
+        var result = await evaluator.EvaluateAsync(studentId, routeId, RouteTimeSlotKind.AM);
+
+        Assert.That(result.Allowed, Is.False);
+        Assert.That(result.Reasons.Any(r => r.Contains("Wheelchair", StringComparison.OrdinalIgnoreCase)), Is.True);
+    }
 }

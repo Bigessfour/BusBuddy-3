@@ -97,7 +97,16 @@ public sealed class StudentsBulkRouteCoordinator
             {
                 if (studentService is not null)
                 {
-                    await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+                    var updated = await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+                    if (updated.IsFailure)
+                    {
+                        errors++;
+                        Logger.Warning(
+                            "Bulk route assign failed for student {StudentId}: {Error}",
+                            student.StudentId,
+                            updated.Error);
+                        continue;
+                    }
                 }
                 else
                 {

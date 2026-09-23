@@ -69,7 +69,7 @@ public sealed class TripFleetOptimizer
             };
         }
 
-        var unassigned = eligible.Where(t => !t.VehicleId.HasValue).ToList();
+        var unassigned = eligible.Where(TripBoardSelection.NeedsBus).ToList();
         if (unassigned.Count == 0)
         {
             return new TripFleetOptimizeResult

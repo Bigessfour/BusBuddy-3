@@ -92,7 +92,7 @@ namespace BusBuddy.Tests.Core
                 Assert.That(imported.HomeAddress, Does.Contain("100 Main"));
                 Assert.That(imported.HomeAddress, Does.Contain("Oakridge"));
                 Assert.That(imported.HomeAddress, Does.Contain("Prowers"));
-                Assert.That(imported.HomePhone, Is.EqualTo("719-555-0100"));
+                Assert.That(imported.HomePhone, Is.EqualTo("(719) 555-0100"));
                 Assert.That(imported.StudentNumber, Is.EqualTo("STU0001"));
             }
             finally

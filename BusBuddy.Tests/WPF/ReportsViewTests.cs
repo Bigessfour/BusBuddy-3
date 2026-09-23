@@ -17,6 +17,12 @@ public class ReportsViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateUnassignedStudentsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateRouteSummaryCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ExportAllDataToCsvCommand}\""));
+        Assert.That(xaml, Does.Contain("SizeMode\" Value=\"Normal\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Recent generated reports\""));
+        Assert.That(xaml, Does.Contain("SelectionMode=\"Single\""));
+        Assert.That(xaml, Does.Contain("GridLinesVisibility=\"Both\""));
+        Assert.That(xaml, Does.Contain("Count of students in each grade"));
+        Assert.That(xaml, Does.Contain("Roster of student name, grade, school, and AM/PM route"));
     }
 
     private static string FindView(string relative)

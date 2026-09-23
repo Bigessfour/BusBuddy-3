@@ -1,3 +1,4 @@
+using BusBuddy.Core.Mapping;
 using BusBuddy.WPF.ViewModels.Map;
 
 namespace BusBuddy.WPF.Utilities;
@@ -17,7 +18,9 @@ internal sealed class MapPrintBrief
         string? routeName,
         string? busLabel,
         IEnumerable<MapMarker> markers,
-        IReadOnlyList<string>? directions)
+        IReadOnlyList<string>? directions,
+        decimal? distanceMiles = null,
+        int? durationMinutes = null)
     {
         var title = string.IsNullOrWhiteSpace(routeName) ? "District map" : routeName.Trim();
         var subtitle = string.IsNullOrWhiteSpace(busLabel)
@@ -25,9 +28,20 @@ internal sealed class MapPrintBrief
             : $"{busLabel.Trim()} · Published path — not live tracking. Begin at Start.";
 
         var lines = new List<string>();
+        var metrics = RoutePathMetrics.Caption(distanceMiles, durationMinutes);
+        if (metrics is not null)
+        {
+            lines.Add(metrics);
+        }
+
         var stops = OrderStops(markers).ToList();
         if (stops.Count > 0)
         {
+            if (lines.Count > 0)
+            {
+                lines.Add(string.Empty);
+            }
+
             lines.Add("Stops");
             for (var i = 0; i < stops.Count; i++)
             {

@@ -111,7 +111,7 @@ try
             var stamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var students = new StudentService(factory);
             // Coordinates stand in for a successful Maps ValidateAndGeocode (clerks never type them as SSOT).
-            var student = await students.AddStudentAsync(new Student
+            var added = await students.AddStudentAsync(new Student
             {
                 StudentName = $"TEST_HOP2_STUDENT_{stamp}",
                 Grade = "3",
@@ -123,7 +123,7 @@ try
                 State = "CO",
                 Zip = "81092",
                 ParentGuardian = "TEST_GUARDIAN",
-                EmergencyPhone = "555-0100",
+                EmergencyPhone = "7195550100",
                 Latitude = 38.1541m,
                 Longitude = -102.7201m,
                 Active = true,
@@ -133,7 +133,13 @@ try
                 CreatedDate = DateTime.UtcNow,
                 CreatedBy = "Hop2Proof"
             });
+            if (added.IsFailure)
+            {
+                Console.Error.WriteLine(added.Error);
+                return 1;
+            }
 
+            var student = added.Value;
             var row = await lookup.Students.AsNoTracking()
                 .SingleAsync(s => s.StudentId == student.StudentId);
 

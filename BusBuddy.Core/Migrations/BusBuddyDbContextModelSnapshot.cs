@@ -253,6 +253,11 @@ namespace BusBuddy.Core.Migrations
                     b.Property<bool>("GPSTracking")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("HasLift")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("InsuranceExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -331,6 +336,11 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("character varying(17)")
                         .HasDefaultValue("")
                         .HasColumnName("VIN");
+
+                    b.Property<int>("WheelchairStations")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<int>("Year")
                         .HasColumnType("integer");

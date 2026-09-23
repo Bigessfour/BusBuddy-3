@@ -43,7 +43,9 @@ public static class StudentDiagnostics
                                       !string.IsNullOrEmpty(student.EmergencyPhone) &&
                                       !string.IsNullOrEmpty(student.HomeAddress) &&
                                       !string.IsNullOrEmpty(student.Grade) },
-                { "HasRouteAssignment", !string.IsNullOrEmpty(student.AMRoute) || !string.IsNullOrEmpty(student.PMRoute) },
+                { "HasRouteAssignment", student.AmRouteId is > 0 || student.PmRouteId is > 0
+                    || (student.AmRouteId is null && !string.IsNullOrEmpty(student.AMRoute))
+                    || (student.PmRouteId is null && !string.IsNullOrEmpty(student.PMRoute)) },
                 { "HasBusStopAssignment", !string.IsNullOrEmpty(student.BusStop) },
                 { "HasMedicalNotes", !string.IsNullOrEmpty(student.MedicalNotes) },
                 { "HasSpecialNeeds", student.SpecialNeeds },
@@ -74,8 +76,14 @@ public static class StudentDiagnostics
             metrics["TotalStudentCount"] = await context.Students.CountAsync();
             metrics["ActiveStudentCount"] = await context.Students.CountAsync(s => s.Active);
             metrics["InactiveStudentCount"] = await context.Students.CountAsync(s => !s.Active);
-            metrics["StudentsWithRoutes"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute));
-            metrics["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
+            metrics["StudentsWithRoutes"] = await context.Students.CountAsync(s =>
+                s.AmRouteId != null || s.PmRouteId != null
+                || (s.AmRouteId == null && s.AMRoute != null && s.AMRoute != "")
+                || (s.PmRouteId == null && s.PMRoute != null && s.PMRoute != ""));
+            metrics["StudentsWithoutRoutes"] = await context.Students.CountAsync(s =>
+                s.AmRouteId == null && s.PmRouteId == null
+                && (s.AMRoute == null || s.AMRoute == "")
+                && (s.PMRoute == null || s.PMRoute == ""));
             metrics["StudentsWithBusStops"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.BusStop));
             metrics["StudentsWithoutBusStops"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.BusStop));
             metrics["StudentsWithSpecialNeeds"] = await context.Students.CountAsync(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));

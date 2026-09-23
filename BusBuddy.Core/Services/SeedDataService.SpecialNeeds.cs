@@ -79,6 +79,8 @@ namespace BusBuddy.Core.Services
                     VINNumber = "1T8SNBUS21W000001",
                     LicenseNumber = "SN1001",
                     Status = "Active",
+                    HasLift = true,
+                    WheelchairStations = 2,
                     Description = "Wheelchair lift, tie-downs, aide seating",
                     DateLastInspection = DateTime.UtcNow.AddMonths(-2),
                     PurchaseDate = DateTime.SpecifyKind(new DateTime(2021, 6, 1), DateTimeKind.Utc),

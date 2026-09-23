@@ -21,5 +21,13 @@ public class AnalyticsDashboardViewTests
         Assert.That(xaml, Does.Contain("IsBusy=\"{Binding IsLoading}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding FuelGallons}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding FuelRecords}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding StudentAssignments}\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Fleet performance chart\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Student assignments chart\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Maintenance metrics chart\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Fuel analytics chart\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Analytics loading\""));
+        Assert.That(xaml, Does.Contain("BusBuddy.Brush.Overlay.Dim"));
+        Assert.That(xaml, Does.Not.Contain("#80000000"));
     }
 }

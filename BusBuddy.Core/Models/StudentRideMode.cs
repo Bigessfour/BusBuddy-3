@@ -60,8 +60,10 @@ public static class StudentRideModeHelper
             return false;
         }
 
-        student.RidesAm = !string.IsNullOrWhiteSpace(student.AMRoute);
-        student.RidesPm = !string.IsNullOrWhiteSpace(student.PMRoute);
+        student.RidesAm = student.AmRouteId is > 0
+            || (student.AmRouteId is null && !string.IsNullOrWhiteSpace(student.AMRoute));
+        student.RidesPm = student.PmRouteId is > 0
+            || (student.PmRouteId is null && !string.IsNullOrWhiteSpace(student.PMRoute));
         return student.RidesAm || student.RidesPm;
     }
 

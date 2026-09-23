@@ -307,7 +307,9 @@ namespace BusBuddy.WPF.ViewModels.Activity
             }
 
             await LoadTripsAsync().ConfigureAwait(true);
-            StatusMessage = "Trip confirmed.";
+            StatusMessage = string.IsNullOrWhiteSpace(result.Error)
+                ? "Trip confirmed."
+                : $"Trip confirmed. {result.Error}";
         }
 
         private async Task CalculateDistanceAsync()

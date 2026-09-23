@@ -343,6 +343,11 @@ namespace BusBuddy.Tests.Core
             StudentRideModeHelper.ApplyRouteDerivedEligibility(amOnly).Should().BeTrue();
             amOnly.RidesAm.Should().BeTrue();
             amOnly.RidesPm.Should().BeFalse("a blank PMRoute is not a PM assignment");
+
+            var keyedOnly = new Student { StudentName = "TEST_STUDENT_KEYED", AmRouteId = 4 };
+            StudentRideModeHelper.ApplyRouteDerivedEligibility(keyedOnly).Should().BeTrue();
+            keyedOnly.RidesAm.Should().BeTrue();
+            keyedOnly.RidesPm.Should().BeFalse();
         }
 
         [Test]

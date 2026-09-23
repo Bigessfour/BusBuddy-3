@@ -99,10 +99,7 @@ namespace BusBuddy.Core.Services
             var (headers, rows, facts) = BuildTable(kind, students, routes, drivers, buses, fuel, maintenance);
             var ai = await TryCommentaryAsync(title, facts).ConfigureAwait(false);
             var isCsv = request.AsCsv || kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
-            var writeRouteSheets = !isCsv
-                && kind is OperationalReportKind.RouteSummary
-                    or OperationalReportKind.DailySchedule
-                    or OperationalReportKind.PrintSchedules;
+            var writeRouteSheets = !isCsv && kind is OperationalReportKind.RouteSummary;
             var sheetRoutes = new List<Route>();
             if (writeRouteSheets)
             {
@@ -158,7 +155,9 @@ namespace BusBuddy.Core.Services
             var prefix = kind.ToString().StartsWith("Print", StringComparison.Ordinal) ? "Saved PDF for print" : "Wrote";
             var routeNote = sheetRoutes.Count switch
             {
-                0 => string.Empty,
+                0 => request.RouteId.HasValue && route is not null
+                    ? $", route {route.RouteName}"
+                    : string.Empty,
                 1 => $", route {sheetRoutes[0].RouteName}",
                 _ => $", {sheetRoutes.Count} route sheets"
             };
@@ -311,15 +310,46 @@ namespace BusBuddy.Core.Services
 
             return kind switch
             {
-                OperationalReportKind.StudentRoster or OperationalReportKind.PdfExport
-                    or OperationalReportKind.PrintStudentLists or OperationalReportKind.CsvExport
-                    or OperationalReportKind.ExcelExport => (
+                OperationalReportKind.StudentRoster or OperationalReportKind.CsvExport => (
                     new[] { "Name", "Grade", "AM", "PM", "School" },
                     students.Select(s => (IReadOnlyList<string>)new[]
                     {
                         s.StudentName, s.Grade ?? "", s.AMRoute ?? "", s.PMRoute ?? "", s.School ?? ""
                     }).ToList(),
                     $"{students.Count} students; {unassigned.Count} unassigned"),
+
+                OperationalReportKind.PrintStudentLists => (
+                    new[] { "Name", "Grade", "School" },
+                    students.Select(s => (IReadOnlyList<string>)new[]
+                    {
+                        s.StudentName, s.Grade ?? "", s.School ?? ""
+                    }).ToList(),
+                    $"{students.Count} students on the print list"),
+
+                OperationalReportKind.PdfExport => (
+                    new[] { "Item", "Count" },
+                    new List<IReadOnlyList<string>>
+                    {
+                        new[] { "Students", students.Count.ToString(CultureInfo.InvariantCulture) },
+                        new[] { "Unassigned", unassigned.Count.ToString(CultureInfo.InvariantCulture) },
+                        new[] { "Routes", routes.Count.ToString(CultureInfo.InvariantCulture) },
+                        new[] { "Drivers", drivers.Count.ToString(CultureInfo.InvariantCulture) },
+                        new[] { "Buses", buses.Count.ToString(CultureInfo.InvariantCulture) },
+                        new[] { "Fuel records", fuel.Count.ToString(CultureInfo.InvariantCulture) },
+                        new[] { "Maintenance records", maintenance.Count.ToString(CultureInfo.InvariantCulture) }
+                    },
+                    $"{students.Count} students, {routes.Count} routes, {buses.Count} buses"),
+
+                OperationalReportKind.ExcelExport => (
+                    new[] { "Route", "School", "AM riders", "PM riders" },
+                    routes.Select(r => (IReadOnlyList<string>)new[]
+                    {
+                        r.RouteName ?? "",
+                        r.School ?? "",
+                        RiderCount(students, r, RouteTimeSlot.AM),
+                        RiderCount(students, r, RouteTimeSlot.PM)
+                    }).ToList(),
+                    $"{routes.Count} routes in the Excel-ready CSV"),
 
                 OperationalReportKind.StudentRouteAssignment => (
                     new[] { "Name", "AM Route", "PM Route" },
@@ -345,19 +375,52 @@ namespace BusBuddy.Core.Services
                     }).ToList(),
                     $"{unassigned.Count} students missing AM and PM routes"),
 
-                OperationalReportKind.RouteSummary or OperationalReportKind.DailySchedule
-                    or OperationalReportKind.PrintSchedules or OperationalReportKind.PrintRouteMaps => (
+                OperationalReportKind.RouteSummary => (
                     new[] { "Route", "School", "AM riders", "PM riders" },
                     routes.Select(r => (IReadOnlyList<string>)new[]
                     {
                         r.RouteName ?? "",
                         r.School ?? "",
-                        students.Count(s => StudentRouteAssignment.Matches(s, r, RouteTimeSlot.AM))
-                            .ToString(CultureInfo.InvariantCulture),
-                        students.Count(s => StudentRouteAssignment.Matches(s, r, RouteTimeSlot.PM))
-                            .ToString(CultureInfo.InvariantCulture)
+                        RiderCount(students, r, RouteTimeSlot.AM),
+                        RiderCount(students, r, RouteTimeSlot.PM)
                     }).ToList(),
                     $"{routes.Count} active routes"),
+
+                OperationalReportKind.DailySchedule => (
+                    new[] { "Route", "Date", "School", "AM begin", "PM begin" },
+                    routes.Select(r => (IReadOnlyList<string>)new[]
+                    {
+                        r.RouteName ?? "",
+                        r.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        r.School ?? "",
+                        FormatTime(r.AMBeginTime),
+                        FormatTime(r.PMBeginTime)
+                    }).ToList(),
+                    $"{routes.Count} routes on the daily schedule"),
+
+                OperationalReportKind.PrintSchedules => (
+                    new[] { "Route", "Date", "AM driver", "PM driver", "AM bus", "PM bus" },
+                    routes.Select(r => (IReadOnlyList<string>)new[]
+                    {
+                        r.RouteName ?? "",
+                        r.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        PersonName(drivers, r.AMDriverId),
+                        PersonName(drivers, r.PMDriverId),
+                        BusNumber(buses, r.AMVehicleId),
+                        BusNumber(buses, r.PMVehicleId)
+                    }).ToList(),
+                    $"{routes.Count} routes on the schedule sheet"),
+
+                OperationalReportKind.PrintRouteMaps => (
+                    new[] { "Route", "School", "Stops", "Miles" },
+                    routes.Select(r => (IReadOnlyList<string>)new[]
+                    {
+                        r.RouteName ?? "",
+                        r.School ?? "",
+                        (r.StopCount ?? 0).ToString(CultureInfo.InvariantCulture),
+                        (r.Distance ?? 0).ToString("0.0", CultureInfo.InvariantCulture)
+                    }).ToList(),
+                    $"{routes.Count} routes on the route list"),
 
                 OperationalReportKind.VehicleAssignment => (
                     new[] { "Route", "AM bus", "PM bus" },
@@ -370,29 +433,42 @@ namespace BusBuddy.Core.Services
                     $"{routes.Count(r => r.AMVehicleId.HasValue || r.PMVehicleId.HasValue)} routes with a vehicle"),
 
                 OperationalReportKind.RouteEfficiency => (
-                    new[] { "Route", "Assigned", "Notes" },
+                    new[] { "Route", "Riders", "Seats", "Load" },
                     routes.Select(r =>
                     {
-                        var count = students.Count(s => StudentRouteAssignment.MatchesEither(s, r));
+                        var riders = students.Count(s => StudentRouteAssignment.MatchesEither(s, r));
+                        var seats = BusSeats(buses, r.AMVehicleId ?? r.PMVehicleId);
                         return (IReadOnlyList<string>)new[]
                         {
                             r.RouteName ?? "",
-                            count.ToString(CultureInfo.InvariantCulture),
-                            count == 0 ? "empty" : "in service"
+                            riders.ToString(CultureInfo.InvariantCulture),
+                            seats.ToString(CultureInfo.InvariantCulture),
+                            LoadPercent(riders, seats)
                         };
                     }).ToList(),
                     $"{routes.Count} routes; {unassigned.Count} still unassigned"),
 
-                OperationalReportKind.DriverRoster or OperationalReportKind.Compliance => (
-                    new[] { "Driver", "Status", "Training", "License" },
+                OperationalReportKind.DriverRoster => (
+                    new[] { "Driver", "Status", "Phone", "Licence type" },
                     drivers.Select(d => (IReadOnlyList<string>)new[]
                     {
                         d.DriverName,
                         d.Status ?? "",
-                        d.TrainingComplete ? "Complete" : "Incomplete",
-                        d.LicenseExpiryDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? ""
+                        d.Phone ?? "",
+                        d.DriversLicenceType ?? ""
                     }).ToList(),
-                    $"{drivers.Count} drivers; {drivers.Count(d => d.NeedsAttention)} need attention"),
+                    $"{drivers.Count} drivers on the roster"),
+
+                OperationalReportKind.Compliance => (
+                    new[] { "Driver", "Training", "License status", "Attention" },
+                    drivers.Select(d => (IReadOnlyList<string>)new[]
+                    {
+                        d.DriverName,
+                        d.TrainingComplete ? "Complete" : "Incomplete",
+                        d.LicenseStatus ?? "",
+                        d.NeedsAttention ? "Needs attention" : "Clear"
+                    }).ToList(),
+                    $"{drivers.Count(d => d.NeedsAttention)} of {drivers.Count} drivers need attention"),
 
                 OperationalReportKind.LicenseExpiration => (
                     new[] { "Driver", "Expires", "Status" },
@@ -414,20 +490,38 @@ namespace BusBuddy.Core.Services
                     }).ToList(),
                     $"{drivers.Count(d => !d.TrainingComplete)} drivers missing training"),
 
-                OperationalReportKind.FleetInventory or OperationalReportKind.FleetUtilization => (
-                    new[] { "Bus", "Status", "Seats", "Year" },
+                OperationalReportKind.FleetInventory => (
+                    new[] { "Bus", "Make", "Model", "Year", "Seats", "Plate", "Status" },
+                    buses.Select(b => (IReadOnlyList<string>)new[]
+                    {
+                        b.BusNumber ?? "",
+                        b.Make ?? "",
+                        b.Model ?? "",
+                        b.Year.ToString(CultureInfo.InvariantCulture),
+                        b.SeatingCapacity.ToString(CultureInfo.InvariantCulture),
+                        b.LicensePlate ?? "",
+                        b.Status ?? ""
+                    }).ToList(),
+                    $"{buses.Count} buses; {buses.Count(b => string.Equals(b.Status, "Active", StringComparison.OrdinalIgnoreCase))} active"),
+
+                OperationalReportKind.FleetUtilization => (
+                    new[] { "Bus", "Status", "Route slots", "Seats" },
                     buses.Select(b => (IReadOnlyList<string>)new[]
                     {
                         b.BusNumber ?? "",
                         b.Status ?? "",
-                        b.SeatingCapacity.ToString(CultureInfo.InvariantCulture),
-                        b.Year.ToString(CultureInfo.InvariantCulture)
+                        routes.Count(r => r.AMVehicleId == b.BusId || r.PMVehicleId == b.BusId)
+                            .ToString(CultureInfo.InvariantCulture),
+                        b.SeatingCapacity.ToString(CultureInfo.InvariantCulture)
                     }).ToList(),
-                    $"{buses.Count} buses; {buses.Count(b => string.Equals(b.Status, "Active", StringComparison.OrdinalIgnoreCase))} active"),
+                    $"{buses.Count} buses across {routes.Count} routes"),
 
                 OperationalReportKind.MaintenanceSchedule => (
                     new[] { "Date", "Vehicle", "Work", "Priority" },
-                    maintenance.OrderByDescending(m => m.Date).Take(40)
+                    maintenance
+                        .Where(m => IsOpenMaintenance(m.Status))
+                        .OrderBy(m => m.Date)
+                        .Take(40)
                         .Select(m => (IReadOnlyList<string>)new[]
                         {
                             m.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -435,7 +529,7 @@ namespace BusBuddy.Core.Services
                             m.MaintenanceCompleted ?? "",
                             m.Priority ?? ""
                         }).ToList(),
-                    $"{maintenance.Count} maintenance records"),
+                    $"{maintenance.Count(m => IsOpenMaintenance(m.Status))} open of {maintenance.Count} maintenance records"),
 
                 OperationalReportKind.FuelUsage => (
                     new[] { "Date", "Vehicle", "Gallons", "Cost" },
@@ -460,8 +554,37 @@ namespace BusBuddy.Core.Services
             };
         }
 
+        private static string RiderCount(IReadOnlyList<Student> students, Route route, RouteTimeSlot slot) =>
+            students.Count(s => StudentRouteAssignment.Matches(s, route, slot)).ToString(CultureInfo.InvariantCulture);
+
+        private static string FormatTime(TimeSpan? time) =>
+            time.HasValue ? time.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture) : "(none)";
+
+        private static string PersonName(IReadOnlyList<Driver> drivers, int? id) =>
+            id.HasValue
+                ? drivers.FirstOrDefault(d => d.DriverId == id.Value)?.DriverName ?? id.Value.ToString(CultureInfo.InvariantCulture)
+                : "(none)";
+
         private static string BusNumber(IReadOnlyList<Bus> buses, int? id) =>
             id.HasValue ? buses.FirstOrDefault(b => b.BusId == id.Value)?.BusNumber ?? id.Value.ToString(CultureInfo.InvariantCulture) : "(none)";
+
+        private static int BusSeats(IReadOnlyList<Bus> buses, int? id) =>
+            id.HasValue ? buses.FirstOrDefault(b => b.BusId == id.Value)?.SeatingCapacity ?? 0 : 0;
+
+        private static string LoadPercent(int riders, int seats)
+        {
+            if (seats <= 0)
+            {
+                return riders == 0 ? "no bus" : "no capacity";
+            }
+
+            var percent = (int)Math.Round(100.0 * riders / seats, MidpointRounding.AwayFromZero);
+            return percent.ToString(CultureInfo.InvariantCulture) + "%";
+        }
+
+        private static bool IsOpenMaintenance(string? status) =>
+            string.Equals(status, "Scheduled", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(status, "In Progress", StringComparison.OrdinalIgnoreCase);
 
         private static string DisplayName(OperationalReportKind kind) => kind switch
         {

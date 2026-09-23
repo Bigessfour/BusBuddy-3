@@ -291,70 +291,45 @@ namespace BusBuddy.Core.Services
                     var studentFkCount = await context.Students.CountAsync(s =>
                         s.AmRouteId == id || s.PmRouteId == id);
                     var tripCount = await context.TripEvents.CountAsync(t => t.RouteId == id);
-                    var blockers = scheduleCount + studentFkCount + tripCount;
-                    if (blockers > 0)
+                    var stopCount = await context.RouteStops.CountAsync(s => s.RouteId == id);
+                    var routeNameLower = routeName.ToLowerInvariant();
+
+                    // CA1311/CA1862: ToLowerInvariant and StringComparison overloads have no SQL translation;
+                    // ToLower() is the form EF maps to the database LOWER() function, which is what runs here.
+#pragma warning disable CA1311, CA1862
+                    var nameOnlyCount = await context.Students.CountAsync(s =>
+                        (s.AmRouteId == null && s.AMRoute != null && s.AMRoute.ToLower() == routeNameLower)
+                        || (s.PmRouteId == null && s.PMRoute != null && s.PMRoute.ToLower() == routeNameLower));
+#pragma warning restore CA1311, CA1862
+
+                    // specs/routes.md: retire is the clerk action. Hard-delete only an empty unpublished draft.
+                    var wasActive = route.IsActive;
+                    var emptyDraft = !wasActive
+                        && scheduleCount == 0
+                        && studentFkCount == 0
+                        && nameOnlyCount == 0
+                        && tripCount == 0
+                        && stopCount == 0;
+                    if (!emptyDraft)
                     {
                         route.IsActive = false;
                         await context.SaveChangesAsync();
                         var message = RouteDeleteClerkMessages.BuildRetiredMessage(
                             routeName,
                             scheduleCount,
-                            studentFkCount,
-                            tripCount);
+                            studentFkCount + nameOnlyCount,
+                            tripCount,
+                            stopCount);
                         Logger.Information(
-                            "Soft-retired route {RouteId} Schedules={Schedules} Students={Students} Trips={Trips}",
+                            "Retired route {RouteId} ActiveWas={WasActive} Schedules={Schedules} Students={Students} NameOnly={NameOnly} Trips={Trips} Stops={Stops}",
                             id,
+                            wasActive,
                             scheduleCount,
                             studentFkCount,
-                            tripCount);
+                            nameOnlyCount,
+                            tripCount,
+                            stopCount);
                         return Result.SuccessResult(true, message);
-                    }
-
-                    var assignmentIds = await context.RouteAssignments
-                        .Where(a => a.RouteId == id)
-                        .Select(a => a.RouteAssignmentId)
-                        .ToListAsync();
-
-                    var routeNameLower = routeName.ToLowerInvariant();
-
-                    // CA1311/CA1862: ToLowerInvariant and StringComparison overloads have no SQL translation;
-                    // ToLower() is the form EF maps to the database LOWER() function, which is what runs here.
-#pragma warning disable CA1311, CA1862
-                    var assignedStudents = await context.Students
-                        .Where(s => s.AmRouteId == id
-                                 || s.PmRouteId == id
-                                 || (s.AMRoute != null && s.AMRoute.ToLower() == routeNameLower)
-                                 || (s.PMRoute != null && s.PMRoute.ToLower() == routeNameLower))
-                        .ToListAsync();
-#pragma warning restore CA1311, CA1862
-                    if (assignmentIds.Count > 0)
-                    {
-                        var linked = await context.Students
-                            .Where(s => s.RouteAssignmentId != null && assignmentIds.Contains(s.RouteAssignmentId.Value))
-                            .ToListAsync();
-                        assignedStudents = assignedStudents
-                            .Concat(linked)
-                            .DistinctBy(s => s.StudentId)
-                            .ToList();
-                    }
-
-                    foreach (var student in assignedStudents)
-                    {
-                        if (StudentRouteAssignment.Matches(student, route, RouteTimeSlot.AM))
-                        {
-                            StudentRouteAssignment.SetSlot(student, RouteTimeSlot.AM, route: null);
-                        }
-
-                        if (StudentRouteAssignment.Matches(student, route, RouteTimeSlot.PM))
-                        {
-                            StudentRouteAssignment.SetSlot(student, RouteTimeSlot.PM, route: null);
-                        }
-
-                        if (student.RouteAssignmentId is > 0
-                            && assignmentIds.Contains(student.RouteAssignmentId.Value))
-                        {
-                            student.RouteAssignmentId = null;
-                        }
                     }
 
                     var assignments = await context.RouteAssignments
@@ -363,14 +338,6 @@ namespace BusBuddy.Core.Services
                     if (assignments.Count > 0)
                     {
                         context.RouteAssignments.RemoveRange(assignments);
-                    }
-
-                    var stops = await context.RouteStops
-                        .Where(s => s.RouteId == id)
-                        .ToListAsync();
-                    if (stops.Count > 0)
-                    {
-                        context.RouteStops.RemoveRange(stops);
                     }
 
                     var exceptions = await context.RouteRiderExceptions
@@ -385,10 +352,8 @@ namespace BusBuddy.Core.Services
                     await context.SaveChangesAsync();
 
                     Logger.Information(
-                        "Hard-deleted route {RouteId} after unassigning {StudentCount} name-only riders, {AssignmentCount} vehicle assignments",
-                        id,
-                        assignedStudents.Count,
-                        assignments.Count);
+                        "Hard-deleted empty draft route {RouteId}",
+                        id);
                     return Result.SuccessResult(true);
                 }
                 finally
@@ -449,15 +414,21 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<Route>($"A route with name '{routeName}' already exists for {routeDate:yyyy-MM-dd}");
                     }
 
+                    var schoolName = await ResolveCatalogSchoolAsync(context, school).ConfigureAwait(false);
+                    if (schoolName.IsFailure)
+                    {
+                        return Result.FailureResult<Route>(schoolName.Error);
+                    }
+
                     var newRoute = new Route
                     {
                         RouteName = routeName.Trim(),
                         Date = routeDate,
                         Description = description,
                         IsActive = false,
-                        School = string.IsNullOrWhiteSpace(school) ? null : school.Trim()
+                        School = schoolName.Value
                     };
-                    newRoute.Session = CanonicalSession(session) ?? RouteSession.Infer(newRoute);
+                    newRoute.Session = RouteSession.Canonical(session) ?? RouteSession.Infer(newRoute);
 
                     context.Routes.Add(newRoute);
                     await context.SaveChangesAsync();
@@ -671,6 +642,35 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        /// <summary>
+        /// Blank stays unset. A typed school must be an active school destination; the stored value is the catalog name.
+        /// </summary>
+        private static async Task<Result<string?>> ResolveCatalogSchoolAsync(
+            BusBuddyDbContext context,
+            string? school)
+        {
+            if (string.IsNullOrWhiteSpace(school))
+            {
+                return Result.SuccessResult<string?>(null);
+            }
+
+            var wanted = school.Trim();
+            var schools = await context.Destinations.AsNoTracking()
+                .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                .Select(d => d.Name)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            var match = schools.FirstOrDefault(name =>
+                string.Equals(name, wanted, StringComparison.OrdinalIgnoreCase));
+            if (match is null)
+            {
+                return Result.FailureResult<string?>(
+                    $"School '{wanted}' is not an active destination. Pick a school from the destination catalog.");
+            }
+
+            return Result.SuccessResult<string?>(match);
+        }
+
         /// <summary>(Date, RouteName) is unique. Comparison is the calendar day of <paramref name="routeDate"/>.</summary>
         private static async Task<bool> RouteNameExistsOnDateAsync(
             BusBuddyDbContext context,
@@ -680,16 +680,6 @@ namespace BusBuddy.Core.Services
             var day = routeDate.Date;
             return await context.Routes.AnyAsync(r => r.RouteName == routeName && r.Date.Date == day)
                 .ConfigureAwait(false);
-        }
-
-        private static string? CanonicalSession(string? session)
-        {
-            if (!RouteSession.IsKnown(session))
-            {
-                return null;
-            }
-
-            return RouteSession.All.First(s => string.Equals(s, session, StringComparison.OrdinalIgnoreCase));
         }
 
         #endregion

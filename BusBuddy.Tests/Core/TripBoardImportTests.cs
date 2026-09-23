@@ -503,6 +503,205 @@ public class TripBoardImportTests
         Assert.That(routeSource, Does.Not.Contain("public bool IsTrip"));
     }
 
+    [Test]
+    public async Task Unassigned_IsMissingBusOrDriver_Incomplete_IsMissingInfo()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+        int driverId;
+        int busId;
+        using (var db = factory.CreateDbContext())
+        {
+            driverId = db.Drivers.Select(d => d.DriverId).First();
+            busId = db.Buses.Select(b => b.BusId).First();
+        }
+
+        await service.AddTripAsync(OpenTrip("playoff", driverId: null, busId: null, place: null));
+        await service.AddTripAsync(OpenTrip("driver-only", driverId, busId: null));
+        await service.AddTripAsync(OpenTrip("bus-only", driverId: null, busId));
+        await service.AddTripAsync(OpenTrip("both", driverId, busId));
+        await service.AddTripAsync(new TripEvent
+        {
+            ExternalTicketNo = "multi",
+            TripDate = new DateTime(2026, 9, 8),
+            PickupTime = TimeSpan.FromHours(9),
+            ReturnClockTime = TimeSpan.FromHours(15),
+            DestinationName = "Field",
+            IsMultiAsset = true,
+            DriverId = null,
+            Status = TripStatus.Assigned
+        });
+        var staffedMulti = new TripEvent
+        {
+            ExternalTicketNo = "multi-driver",
+            TripDate = new DateTime(2026, 9, 8),
+            PickupTime = TimeSpan.FromHours(9),
+            ReturnClockTime = TimeSpan.FromHours(15),
+            DestinationName = "Field",
+            IsMultiAsset = true,
+            DriverId = driverId,
+            Status = TripStatus.Assigned
+        };
+        await service.AddTripAsync(staffedMulti);
+        var cancelled = OpenTrip("cancelled", driverId: null, busId: null);
+        await service.AddTripAsync(cancelled);
+        await service.CancelTripAsync(cancelled.TripEventId);
+
+        var unassigned = (await service.GetUnassignedTripsAsync()).Select(t => t.ExternalTicketNo).ToList();
+        var incomplete = (await service.GetIncompleteTripsAsync()).Select(t => t.ExternalTicketNo).ToList();
+
+        Assert.That(unassigned, Is.EquivalentTo(new[] { "playoff", "driver-only", "bus-only", "multi" }));
+        Assert.That(incomplete, Is.EquivalentTo(new[] { "playoff" }));
+    }
+
+    [Test]
+    public async Task Cancel_KeepsTicket_Delete_OnlyRemovesImportMistakes()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        var service = new TripEventService(factory);
+        var draft = OpenTrip("draft-ticket", driverId: null, busId: null, place: "Gym");
+        draft.PickupTime = TimeSpan.FromHours(8);
+        draft.ReturnClockTime = TimeSpan.FromHours(12);
+        await service.AddTripAsync(draft);
+
+        var cancelled = await service.CancelTripAsync(draft.TripEventId);
+        Assert.That(cancelled.IsSuccess, Is.True, cancelled.Error);
+        var kept = await service.GetTripByIdAsync(draft.TripEventId);
+        Assert.That(kept!.Status, Is.EqualTo(TripStatus.Cancelled));
+        Assert.That(kept.ExternalTicketNo, Is.EqualTo("draft-ticket"));
+        Assert.That(await service.DeleteTripAsync(draft.TripEventId), Is.False);
+        Assert.That(await service.GetTripByIdAsync(draft.TripEventId), Is.Not.Null);
+
+        var mistake = OpenTrip("mistake", driverId: null, busId: null, place: null);
+        await service.AddTripAsync(mistake);
+        Assert.That(mistake.Status, Is.EqualTo(TripStatus.MissingInfo));
+        Assert.That(await service.DeleteTripAsync(mistake.TripEventId), Is.True);
+        Assert.That(await service.GetTripByIdAsync(mistake.TripEventId), Is.Null);
+    }
+
+    [Test]
+    public async Task UpdateTrip_CopiesBoardColumns_AndLeavesPathMilesCreatedDateAndNavigations()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+        var trip = OpenTrip("edit", driverId: null, busId: null);
+        await service.AddTripAsync(trip);
+        var created = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var row = await db.TripEvents.SingleAsync(t => t.TripEventId == trip.TripEventId);
+            row.CreatedDate = created;
+            row.PathMiles = 4.25m;
+            await db.SaveChangesAsync();
+        }
+
+        var stored = await service.GetTripByIdAsync(trip.TripEventId);
+        stored!.CreatedDate = default;
+        stored.PathMiles = 99m;
+        stored.RouteId = 9;
+        stored.PickupTime = TimeSpan.FromHours(10);
+        stored.Vehicle = new Bus
+        {
+            BusNumber = "ghost",
+            Year = 2020,
+            Make = "IC",
+            Model = "CE",
+            SeatingCapacity = 20,
+            VINNumber = "VINGHOST",
+            LicenseNumber = "LGHOST",
+            Status = "Active"
+        };
+        await service.UpdateTripAsync(stored);
+
+        var saved = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(saved!.PickupTime, Is.EqualTo(TimeSpan.FromHours(10)));
+        Assert.That(saved.CreatedDate, Is.EqualTo(created));
+        Assert.That(saved.PathMiles, Is.EqualTo(4.25m));
+        Assert.That(saved.RouteId, Is.Null);
+        using var check = factory.CreateDbContext();
+        Assert.That(await check.Buses.CountAsync(b => b.BusNumber == "ghost"), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task Confirm_BlocksWhenPlannedHeadcountExceedsSeats_OverrideRecordsAndConfirms()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+        int tripId;
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var dest = ValidatedDestination();
+            db.Destinations.Add(dest);
+            await db.SaveChangesAsync();
+            var bus = db.Buses.First(b => b.BusNumber == "EXP");
+            var driver = db.Drivers.First();
+            var trip = new TripEvent
+            {
+                ExternalTicketNo = "crowded",
+                TripDate = new DateTime(2026, 9, 8),
+                PickupTime = TimeSpan.FromHours(8),
+                ReturnClockTime = TimeSpan.FromHours(14),
+                DestinationName = dest.Name,
+                DestinationLocationId = dest.DestinationId,
+                DriverId = driver.DriverId,
+                VehicleId = bus.BusId,
+                PlannedHeadcount = 20,
+                Status = TripStatus.Assigned
+            };
+            db.TripEvents.Add(trip);
+            await db.SaveChangesAsync();
+            tripId = trip.TripEventId;
+        }
+
+        var blocked = await service.ConfirmTripAsync(tripId);
+        Assert.That(blocked.IsFailure, Is.True);
+        Assert.That(blocked.Error, Does.Contain("20 planned"));
+        Assert.That((await service.GetTripByIdAsync(tripId))!.Status, Is.EqualTo(TripStatus.Assigned));
+
+        var overridden = await service.ConfirmTripAsync(tripId, overrideSeating: true);
+        Assert.That(overridden.IsSuccess, Is.True, overridden.Error);
+        Assert.That(overridden.Error, Does.Contain("override recorded"));
+        Assert.That((await service.GetTripByIdAsync(tripId))!.Status, Is.EqualTo(TripStatus.Confirmed));
+    }
+
+    [Test]
+    public void Capacity_BlocksWheelchairDemandAboveStations()
+    {
+        var bus = new Bus
+        {
+            BusNumber = "5",
+            SeatingCapacity = 12,
+            WheelchairStations = 1
+        };
+
+        var blocked = TripBoardCapacity.Evaluate(bus, plannedHeadcount: 4, plannedWheelchair: 2, overrideSeating: false);
+        Assert.That(blocked.Blocked, Is.True);
+        Assert.That(blocked.Message, Does.Contain("Wheelchair capacity 1"));
+
+        var allowed = TripBoardCapacity.Evaluate(bus, plannedHeadcount: 4, plannedWheelchair: 2, overrideSeating: true);
+        Assert.That(allowed.Blocked, Is.False);
+        Assert.That(allowed.Message, Does.Contain("override recorded"));
+    }
+
+    private static TripEvent OpenTrip(string ticket, int? driverId, int? busId, string? place = "Gym")
+    {
+        var hasPlace = !string.IsNullOrWhiteSpace(place);
+        return new TripEvent
+        {
+            ExternalTicketNo = ticket,
+            TripDate = new DateTime(2026, 9, 8),
+            PickupTime = hasPlace ? TimeSpan.FromHours(9) : null,
+            ReturnClockTime = hasPlace ? TimeSpan.FromHours(15) : null,
+            DestinationName = place,
+            DriverId = driverId,
+            VehicleId = busId,
+            POCName = string.Empty
+        };
+    }
+
     private sealed class StubRoutingService : IRoutingService
     {
         public int DrivePathCalls { get; private set; }

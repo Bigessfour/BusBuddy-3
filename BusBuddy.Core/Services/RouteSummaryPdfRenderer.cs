@@ -209,6 +209,8 @@ public static class RouteSummaryPdfRenderer
         DrawPair(g, labelFont, valueFont, body, muted, "Stops", model.Stops.Count.ToString(), 0, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Students", model.RosterCount.ToString(), col / 2f, y);
         DrawPair(g, labelFont, valueFont, body, muted, "Miles", model.TotalMilesText, col, y);
+        y += 16f;
+        DrawPair(g, labelFont, valueFont, body, muted, "Drive time", model.DriveTimeText, 0, y);
         return y + 14f;
     }
 

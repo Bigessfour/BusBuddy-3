@@ -3,6 +3,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -52,24 +53,20 @@ namespace BusBuddy.Core.Services
                 .OrderBy(s => s.RouteId)
                 .ThenBy(s => s.StopOrder)
                 .ToListAsync();
+            var schools = await LoadSchoolsAsync(context).ConfigureAwait(false);
+            var students = await context.Students.AsNoTracking().ToListAsync().ConfigureAwait(false);
 
             var derived = new List<(int RouteId, string Json)>();
             foreach (var route in routes)
             {
-                if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
+                var json = DeriveWaypointJson(RoutableStops(route, stops.Where(s => s.RouteId == route.RouteId), students, schools));
+                if (json is null || !string.IsNullOrWhiteSpace(route.WaypointsJson))
                 {
                     continue;
                 }
 
-                var pts = stops
-                    .Where(s => s.RouteId == route.RouteId)
-                    .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value));
-                var json = RouteWaypointSerializer.FromPairs(pts);
-                if (json != "[]")
-                {
-                    route.WaypointsJson = json;
-                    derived.Add((route.RouteId, json));
-                }
+                route.WaypointsJson = json;
+                derived.Add((route.RouteId, json));
             }
 
             await PersistDerivedWaypointsAsync(derived).ConfigureAwait(false);
@@ -103,18 +100,19 @@ namespace BusBuddy.Core.Services
             if (string.IsNullOrWhiteSpace(route.WaypointsJson))
             {
                 var stops = await context.RouteStops.AsNoTracking()
-                    .Where(s => s.RouteId == routeId && s.Latitude != null && s.Longitude != null)
+                    .Where(s => s.RouteId == routeId)
                     .OrderBy(s => s.StopOrder)
                     .ToListAsync();
-                var json = RouteWaypointSerializer.FromPairs(
-                    stops.Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
-                if (json != "[]")
+                var schools = await LoadSchoolsAsync(context).ConfigureAwait(false);
+                var slot = RouteSession.ToAssignmentSlot(route);
+                var students = await context.Students.AsNoTracking()
+                    .WhereOnSlot(route.RouteId, route.RouteName ?? string.Empty, slot)
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+                if (await TryFillDerivedWaypointsAsync(route, RoutableStops(route, stops, students, schools)).ConfigureAwait(false))
                 {
-                    route.WaypointsJson = json;
-                    await PersistDerivedWaypointsAsync([(route.RouteId, json)]).ConfigureAwait(false);
                     Logger.Information(
-                        "Derived and persisted {StopCount} waypoints for route {RouteId} {RouteName}",
-                        stops.Count,
+                        "Derived and persisted waypoints for route {RouteId} {RouteName}",
                         routeId,
                         route.RouteName);
                 }
@@ -130,6 +128,220 @@ namespace BusBuddy.Core.Services
 
             return route;
         }
+
+        public async Task<DistrictMapSnapshot> GetDistrictMapAsync(
+            int? routeId,
+            CancellationToken cancellationToken = default)
+        {
+            if (_contextFactory is null)
+            {
+                Logger.Warning("GetDistrictMapAsync skipped — no DbContext factory");
+                return DistrictMapSnapshot.Empty;
+            }
+
+            using var context = _contextFactory.CreateDbContext();
+            var schools = await LoadSchoolsAsync(context, cancellationToken).ConfigureAwait(false);
+            var pickups = await context.PickupStops.AsNoTracking()
+                .Where(s => s.Active)
+                .OrderBy(s => s.Name)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var needs = new List<string>();
+            var schoolPins = new List<DistrictMapPlace>();
+            foreach (var school in schools.Where(s => s.IsActive))
+            {
+                if (!school.HasValidatedCoordinates)
+                {
+                    needs.Add($"School: {DisplayPlaceName(school.Name)}");
+                    continue;
+                }
+
+                schoolPins.Add(new DistrictMapPlace
+                {
+                    Id = school.DestinationId,
+                    Name = school.Name?.Trim() ?? string.Empty,
+                    Latitude = (double)school.Latitude!.Value,
+                    Longitude = (double)school.Longitude!.Value
+                });
+            }
+
+            var catalogPins = new List<DistrictMapPlace>();
+            foreach (var stop in pickups)
+            {
+                if (!stop.HasValidatedCoordinates)
+                {
+                    needs.Add($"Pickup: {DisplayPlaceName(stop.Name)}");
+                    continue;
+                }
+
+                catalogPins.Add(new DistrictMapPlace
+                {
+                    Id = stop.PickupStopId,
+                    Name = stop.Name?.Trim() ?? string.Empty,
+                    Latitude = (double)stop.Latitude,
+                    Longitude = (double)stop.Longitude
+                });
+            }
+
+            DistrictMapRoute? selected = null;
+            if (routeId is int id)
+            {
+                selected = await LoadSelectedRouteAsync(context, id, schools, pickups, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            Logger.Information(
+                "District map query Schools={Schools} CatalogStops={Stops} NeedsValidation={Needs} RouteId={RouteId} Homes={Homes}",
+                schoolPins.Count,
+                catalogPins.Count,
+                needs.Count,
+                routeId,
+                selected?.Homes.Count ?? 0);
+
+            return new DistrictMapSnapshot
+            {
+                Schools = schoolPins,
+                CatalogStops = catalogPins,
+                NeedsValidation = needs,
+                SelectedRoute = selected
+            };
+        }
+
+        private async Task<DistrictMapRoute?> LoadSelectedRouteAsync(
+            BusBuddyDbContext context,
+            int routeId,
+            IReadOnlyList<Destination> schools,
+            IReadOnlyList<PickupStop> pickups,
+            CancellationToken cancellationToken)
+        {
+            var route = await context.Routes.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RouteId == routeId, cancellationToken)
+                .ConfigureAwait(false);
+            if (route is null)
+            {
+                Logger.Warning("District map route {RouteId} not found", routeId);
+                return null;
+            }
+
+            var stops = await context.RouteStops.AsNoTracking()
+                .Where(s => s.RouteId == routeId)
+                .OrderBy(s => s.StopOrder)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var slot = RouteSession.ToAssignmentSlot(route);
+            var students = await context.Students.AsNoTracking()
+                .WhereOnSlot(route.RouteId, route.RouteName ?? string.Empty, slot)
+                .OrderBy(s => s.StudentName)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+            var routable = RoutableStops(route, stops, students, schools);
+            await TryFillDerivedWaypointsAsync(route, routable).ConfigureAwait(false);
+
+            var pickupIndex = StudentPlotLocation.Index(pickups);
+            var homes = new List<DistrictMapHome>();
+            foreach (var student in students)
+            {
+                var pins = StudentPlotLocation.PinsFromStored(student, pickupIndex)
+                    .Where(pin => LocationCoordinate.IsValidated(pin.Latitude, pin.Longitude))
+                    .ToList();
+                if (pins.Count == 0)
+                {
+                    continue;
+                }
+
+                homes.Add(new DistrictMapHome
+                {
+                    StudentId = student.StudentId,
+                    StudentName = string.IsNullOrWhiteSpace(student.StudentName)
+                        ? student.StudentNumber ?? "Student"
+                        : student.StudentName.Trim(),
+                    Pins = pins
+                });
+            }
+
+            var published = routable
+                .Where(s => s.HasValidatedCoordinates)
+                .OrderBy(s => s.StopOrder)
+                .Select(s => new DistrictMapStop
+                {
+                    StopOrder = s.StopOrder,
+                    Name = string.IsNullOrWhiteSpace(s.StopName) ? $"Stop {s.StopOrder}" : s.StopName.Trim(),
+                    Latitude = (double)s.Latitude!.Value,
+                    Longitude = (double)s.Longitude!.Value
+                })
+                .ToList();
+
+            return new DistrictMapRoute
+            {
+                RouteId = route.RouteId,
+                RouteName = route.RouteName,
+                WaypointsJson = route.WaypointsJson,
+                DistanceMiles = route.Distance,
+                DurationMinutes = route.EstimatedDuration,
+                PublishedStops = published,
+                Homes = homes
+            };
+        }
+
+        private static Task<List<Destination>> LoadSchoolsAsync(
+            BusBuddyDbContext context,
+            CancellationToken cancellationToken = default) =>
+            context.Destinations.AsNoTracking()
+                .Where(d => !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                .OrderBy(d => d.Name)
+                .ToListAsync(cancellationToken);
+
+        /// <summary>
+        /// Stop-derived path uses the same roster filter as the map pins and the printed sheet.
+        /// A student-home stop stays off the path unless that student is assigned to the route.
+        /// </summary>
+        private static List<RouteStop> RoutableStops(
+            Route route,
+            IEnumerable<RouteStop> stops,
+            IEnumerable<Student> students,
+            IReadOnlyList<Destination> schools)
+        {
+            var slot = RouteSession.ToAssignmentSlot(route);
+            var roster = students.Where(s => StudentRouteAssignment.Matches(s, route, slot)).ToList();
+            return AssignedRouteStops.ForRouting(stops, roster, schools).ToList();
+        }
+
+        private static string? DeriveWaypointJson(IEnumerable<RouteStop> stops)
+        {
+            var json = RouteWaypointSerializer.FromPairs(
+                stops
+                    .Where(s => LocationCoordinate.IsValidated(s.Latitude, s.Longitude))
+                    .OrderBy(s => s.StopOrder)
+                    .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
+            return json == "[]" ? null : json;
+        }
+
+        /// <summary>
+        /// Writes stop-derived pairs only when <see cref="Route.WaypointsJson"/> is empty.
+        /// A stored drive path is left alone.
+        /// </summary>
+        private async Task<bool> TryFillDerivedWaypointsAsync(Route route, IEnumerable<RouteStop> stops)
+        {
+            if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
+            {
+                return false;
+            }
+
+            var json = DeriveWaypointJson(stops);
+            if (json is null)
+            {
+                return false;
+            }
+
+            route.WaypointsJson = json;
+            await PersistDerivedWaypointsAsync([(route.RouteId, json)]).ConfigureAwait(false);
+            return true;
+        }
+
+        private static string DisplayPlaceName(string? name) =>
+            string.IsNullOrWhiteSpace(name) ? "(unnamed)" : name.Trim();
 
         private async Task PersistDerivedWaypointsAsync(IReadOnlyList<(int RouteId, string Json)> derived)
         {

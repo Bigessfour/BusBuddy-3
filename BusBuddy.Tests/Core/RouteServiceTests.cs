@@ -551,6 +551,98 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task AssignStudentToRouteAsync_NotRidingFreesASeat()
+        {
+            var bus = new Bus { BusNumber = "B2", Year = 2020, Make = "Test", Model = "M", SeatingCapacity = 1, VINNumber = "VIN2", LicenseNumber = "L2", Status = "Active" };
+            _dbContext.Buses.Add(bus);
+            await _dbContext.SaveChangesAsync();
+
+            var route = await _dbContext.Routes.AsNoTracking().FirstAsync(r => r.RouteName == "Route A");
+            route.AMVehicleId = bus.BusId;
+            var linked = await _routeService.UpdateRouteAsync(route);
+            Assert.That(linked.IsSuccess, Is.True, linked.Error);
+
+            var seated = new Student
+            {
+                StudentName = "Seated",
+                Grade = "1",
+                School = "Test School",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-20",
+                Active = true,
+                RidesAm = true
+            };
+            var next = new Student
+            {
+                StudentName = "Next",
+                Grade = "1",
+                School = "Test School",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-21",
+                Active = true,
+                RidesAm = true
+            };
+            _dbContext.Students.AddRange(seated, next);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            Assert.That((await _routeService.AssignStudentToRouteAsync(seated.StudentId, route.RouteId, RouteTimeSlot.AM)).IsSuccess, Is.True);
+            var blocked = await _routeService.AssignStudentToRouteAsync(next.StudentId, route.RouteId, RouteTimeSlot.AM);
+            Assert.That(blocked.IsSuccess, Is.False);
+            Assert.That(blocked.Error, Does.Contain("capacity").IgnoreCase);
+
+            var absent = await _routeService.RecordRiderExceptionAsync(route.RouteId, seated.StudentId, route.Date, "Absent");
+            Assert.That(absent.IsSuccess, Is.True, absent.Error);
+
+            var opened = await _routeService.AssignStudentToRouteAsync(next.StudentId, route.RouteId, RouteTimeSlot.AM);
+            Assert.That(opened.IsSuccess, Is.True, opened.Error);
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_WheelchairOverflow_Blocks()
+        {
+            var bus = new Bus
+            {
+                BusNumber = "B3",
+                Year = 2020,
+                Make = "Test",
+                Model = "M",
+                SeatingCapacity = 12,
+                WheelchairStations = 0,
+                VINNumber = "VIN3",
+                LicenseNumber = "L3",
+                Status = "Active"
+            };
+            _dbContext.Buses.Add(bus);
+            await _dbContext.SaveChangesAsync();
+
+            var route = await _dbContext.Routes.AsNoTracking().FirstAsync(r => r.RouteName == "Route A");
+            route.AMVehicleId = bus.BusId;
+            var linked = await _routeService.UpdateRouteAsync(route);
+            Assert.That(linked.IsSuccess, Is.True, linked.Error);
+            var rider = new Student
+            {
+                StudentName = "Chair",
+                Grade = "1",
+                School = "Test School",
+                ParentGuardian = "P",
+                EmergencyPhone = "555-30",
+                Active = true,
+                RidesAm = true,
+                RequiresWheelchair = true
+            };
+            _dbContext.Students.Add(rider);
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var result = await _routeService.AssignStudentToRouteAsync(rider.StudentId, route.RouteId, RouteTimeSlot.AM, overrideSeating: false);
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Error, Does.Contain("Wheelchair").IgnoreCase);
+            Assert.That(result.Error, Does.Contain("capacity").IgnoreCase);
+        }
+
+        [Test]
         public async Task AutoAssignStudentsAsync_SkipsIneligibleAndContinues()
         {
             // Ordered by name, so a special-needs child first used to abort the whole pass.
@@ -965,7 +1057,21 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task DeleteRouteAsync_UnassignsRidersStoredWithDifferentCasing()
+        public async Task DeleteRouteAsync_ActiveRouteWithoutHistory_Retires()
+        {
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route B");
+
+            var result = await _routeService.DeleteRouteAsync(route.RouteId);
+
+            Assert.That(result.IsSuccess, Is.True, result.Error);
+            Assert.That(result.Error, Does.Contain("retired").IgnoreCase);
+            _dbContext.ChangeTracker.Clear();
+            var kept = await _dbContext.Routes.FirstAsync(r => r.RouteId == route.RouteId);
+            Assert.That(kept.IsActive, Is.False);
+        }
+
+        [Test]
+        public async Task DeleteRouteAsync_NameOnlyRiders_RetiresAndKeepsAssignments()
         {
             var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
             _dbContext.Students.Add(new Student
@@ -984,10 +1090,13 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.DeleteRouteAsync(route.RouteId);
 
             Assert.That(result.IsSuccess, Is.True, result.Error);
+            Assert.That(result.Error, Does.Contain("retired").IgnoreCase);
             _dbContext.ChangeTracker.Clear();
+            var kept = await _dbContext.Routes.FirstAsync(r => r.RouteId == route.RouteId);
+            Assert.That(kept.IsActive, Is.False);
             var rider = await _dbContext.Students.FirstAsync(s => s.StudentName == "Casing Rider");
-            Assert.That(rider.AMRoute, Is.Null);
-            Assert.That(rider.PMRoute, Is.Null);
+            Assert.That(rider.AMRoute, Is.EqualTo("route a"));
+            Assert.That(rider.PMRoute, Is.EqualTo("ROUTE A"));
         }
 
         [Test]
@@ -1106,16 +1215,40 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task CreateNewRouteAsync_PersistsRequestedSessionAndSchool()
         {
+            _dbContext.Destinations.Add(new Destination
+            {
+                Name = "Wiley School",
+                Address = "1 Main",
+                City = "Wiley",
+                State = "CO",
+                ZipCode = "81092",
+                DestinationType = DestinationTypes.School,
+                IsActive = true
+            });
+            await _dbContext.SaveChangesAsync();
+
             var result = await _routeService.CreateNewRouteAsync(
                 "Route PM",
                 DateTime.Today.AddDays(2),
                 "afternoon",
                 RouteSession.PM,
-                "Wiley School");
+                "wiley school");
 
             Assert.That(result.IsSuccess, Is.True, result.Error);
             Assert.That(result.Value!.Session, Is.EqualTo(RouteSession.PM));
             Assert.That(result.Value.School, Is.EqualTo("Wiley School"));
+        }
+
+        [Test]
+        public async Task CreateNewRouteAsync_UnknownSchool_Fails()
+        {
+            var result = await _routeService.CreateNewRouteAsync(
+                "Route Orphan",
+                DateTime.Today.AddDays(2),
+                school: "Default School");
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Error, Does.Contain("destination catalog"));
         }
 
         [Test]

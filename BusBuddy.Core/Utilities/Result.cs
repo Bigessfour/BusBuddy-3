@@ -62,6 +62,9 @@ public class Result
     public Exception? Exception { get; }
 
     public static Result Success() => new Result(true, string.Empty);
+
+    /// <summary>Success that still carries a clerk warning. IsFailure stays false.</summary>
+    public static Result Success(string message) => new Result(true, message ?? string.Empty);
     public static Result Failure(string error) => new Result(false, error);
     public static Result Failure(string error, Exception exception) => new Result(false, error, exception);
 
