@@ -855,7 +855,10 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             string stopName;
             string stopAddress;
 
-            if (s.PickupStopId is int psId && pickupStops.TryGetValue(psId, out var catalogStop))
+            var specialNeedsHome = StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(s);
+            if (AssignedHomeStopSync.UseCatalogPickup(s)
+                && s.PickupStopId is int psId
+                && pickupStops.TryGetValue(psId, out var catalogStop))
             {
                 stopKey = $"pickup:{psId}";
                 lat = catalogStop.Latitude;
@@ -873,6 +876,11 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             }
             else
             {
+                if (specialNeedsHome)
+                {
+                    failures.Add($"Student {id} skipped — special-needs home is not validated");
+                }
+
                 continue;
             }
 

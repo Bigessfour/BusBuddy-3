@@ -16,6 +16,7 @@ using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -248,6 +249,44 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
+        private void SaveButton_Click(object sender, RoutedEventArgs e) => CommitMaskedPhones();
+
+        /// <summary>
+        /// The mask can hold a completed number that has not been pushed through the binding.
+        /// Save the digits the clerk sees, in the order they are shown.
+        /// </summary>
+        private void CommitMaskedPhones()
+        {
+            if (ViewModel?.Student is null)
+            {
+                return;
+            }
+
+            CommitPhone(HomePhoneMaskedEdit, value => ViewModel.Student.HomePhone = value);
+            CommitPhone(CellPhoneMaskedEdit, value => ViewModel.Student.CellPhone = value);
+            CommitPhone(EmergencyContactPhoneMaskedEdit, value => ViewModel.Student.EmergencyPhone = value);
+        }
+
+        private static void CommitPhone(SfMaskedEdit edit, Action<string?> assign)
+        {
+            var textDigits = Digits(edit.Text);
+            var valueText = edit.Value as string ?? edit.Value?.ToString();
+            var valueDigits = Digits(valueText);
+            if (textDigits.Length is 10 or 11 && StudentPhone.TryNormalize(textDigits, out var fromText))
+            {
+                assign(fromText);
+                return;
+            }
+
+            if (valueDigits.Length is 10 or 11 && StudentPhone.TryNormalize(valueDigits, out var fromValue))
+            {
+                assign(fromValue);
+            }
+        }
+
+        private static string Digits(string? value) =>
+            string.IsNullOrEmpty(value) ? string.Empty : new string(value.Where(char.IsDigit).ToArray());
+
         /// <summary>
         /// Handles ViewModel RequestClose event to close dialog with result.
         /// </summary>
@@ -288,6 +327,7 @@ namespace BusBuddy.WPF.Views.Student
                         _ = ViewModel?.GetType(); // null-guard
                         if (ViewModel?.SaveCommand?.CanExecute(null) == true)
                         {
+                            CommitMaskedPhones();
                             ViewModel.SaveCommand.Execute(null);
                             // ViewModel should close window on success via RequestClose(true)
                         }

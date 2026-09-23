@@ -54,6 +54,29 @@ public class StudentPlotLocationTests
     }
 
     [Test]
+    public void PinsFromStored_SpecialNeeds_PlotsHomeNotCatalogStop()
+    {
+        var pickups = StudentPlotLocation.Index(
+        [
+            new PickupStop { PickupStopId = 7, Name = "Oak", Latitude = 38.16m, Longitude = -102.71m }
+        ]);
+        var student = new Student
+        {
+            RequiresSpecialNeedsBus = true,
+            PickupStopId = 7,
+            Latitude = 38.08m,
+            Longitude = -102.62m
+        };
+
+        var pins = StudentPlotLocation.PinsFromStored(student, pickups);
+
+        Assert.That(pins, Has.Count.EqualTo(1));
+        Assert.That(pins[0].AtPickup, Is.False);
+        Assert.That(pins[0].Latitude, Is.EqualTo(38.08).Within(0.0001));
+        Assert.That(pins[0].Longitude, Is.EqualTo(-102.62).Within(0.0001));
+    }
+
+    [Test]
     public void PinsFromStored_SkipsDuplicateHomeWhenSameAsPickup()
     {
         var pickups = StudentPlotLocation.Index(

@@ -25,7 +25,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 
 - `School` ← assigned destination for students; common route end (AM) or start (PM).
 - `PickupStop` ← shared in-town gathering point; route waypoint; many students.
-- `StudentHome` ← one student (or siblings at the same address); waypoint only when pickup mode is `Home` or special needs.
+- `StudentHome` ← one student (or siblings at the same address); waypoint only when pickup mode is `Home` or special needs. That waypoint is the student's stored home coordinate.
 - `Depot` / `Maintenance` / `Fuel` ← district operations; optional route start/end or deadhead, not a student stop.
 - `TripDestination` ← activity/athletic/field site; used by trips, not by the published daily route unless it is also a school.
 - Location `1` → `0..*` route stops (ordered waypoints on a route session).

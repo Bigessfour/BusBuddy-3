@@ -323,7 +323,7 @@
                                            MappingName="HomePhone"
                                            Width="120"
                                            AllowEditing="True"
-                                           Mask="(###) ###-####"
+                                           Mask="(000) 000-0000"
                                            PromptChar="_" />
                 <syncfusion:GridTextColumn HeaderText="Parent/Guardian"
                                          MappingName="ParentGuardian"

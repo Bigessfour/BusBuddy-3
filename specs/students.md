@@ -94,7 +94,7 @@ Same-day absence, sports opt-out, or “not riding this afternoon” are **not**
 
 1. **Rural home pickup** — bus goes to the validated home. Common for out-of-town and required for special needs.
 2. **In-town catalog stop** — student walks a reasonable distance to a published safe stop shared with neighbors. The stop is the route waypoint, not each house.
-3. **Special needs** — home pickup on a designated special-needs route, equipped bus, trained driver, aide.
+3. **Special needs** — home pickup on a designated special-needs route, equipped bus, trained driver, aide. The published stop and the drive path use the student's validated home, including a clerk driveway pin, not a catalog corner.
 4. **Transfer** — additional in-day assignment between two schools or program sites.
 5. **AM/PM split** — sports, clubs, or family schedules can produce AM-only or PM-only riders without changing pickup mode.
 

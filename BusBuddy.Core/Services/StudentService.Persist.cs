@@ -147,6 +147,11 @@ public partial class StudentService
 
                 await StudentDisplayMirror.SyncAsync(context, student).ConfigureAwait(false);
                 context.Students.Update(student);
+                if (student.HasValidatedHomeCoordinates)
+                {
+                    await AssignedHomeStopSync.ApplyAsync(context, student).ConfigureAwait(false);
+                }
+
                 result = await context.SaveChangesAsync();
             }
             finally
@@ -222,6 +227,11 @@ public partial class StudentService
                 Logger.Information(
                     "Clerk home pickup pin kept StudentId={StudentId}",
                     studentId);
+                if (await AssignedHomeStopSync.ApplyAsync(context, row).ConfigureAwait(false))
+                {
+                    await context.SaveChangesAsync().ConfigureAwait(false);
+                }
+
                 return true;
             }
 
@@ -248,7 +258,7 @@ public partial class StudentService
             row.UpdatedDate = DateTime.UtcNow;
             if (LocationCoordinate.IsValidated(latitude, longitude))
             {
-                await SyncPublishedHomeStopsAsync(context, row, studentId).ConfigureAwait(false);
+                await AssignedHomeStopSync.ApplyAsync(context, row).ConfigureAwait(false);
             }
 
             await context.SaveChangesAsync().ConfigureAwait(false);
@@ -293,40 +303,6 @@ public partial class StudentService
                 previous.PmRouteId);
             student.PMRoute = null;
             student.PmRouteId = null;
-        }
-    }
-
-    private static async Task SyncPublishedHomeStopsAsync(
-        BusBuddyDbContext context,
-        Student student,
-        int studentId)
-    {
-        var routeIds = new[] { student.AmRouteId, student.PmRouteId }
-            .Where(id => id is > 0)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToList();
-        if (routeIds.Count == 0)
-        {
-            return;
-        }
-
-        var stops = await context.RouteStops
-            .AsTracking()
-            .Where(s => routeIds.Contains(s.RouteId))
-            .ToListAsync()
-            .ConfigureAwait(false);
-
-        foreach (var stop in stops)
-        {
-            if (!NotesNameStudent(stop.Notes, studentId))
-            {
-                continue;
-            }
-
-            stop.Latitude = student.Latitude;
-            stop.Longitude = student.Longitude;
-            stop.UpdatedDate = DateTime.UtcNow;
         }
     }
 
