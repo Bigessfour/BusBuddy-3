@@ -46,6 +46,18 @@ public sealed class StudentsGridAddressCoordinator
                 && maps.Latitude.HasValue
                 && maps.Longitude.HasValue)
             {
+                if (student.HomePickupClerkAdjusted && student.HasValidatedHomeCoordinates)
+                {
+                    await PersistCoordinatesAsync(student).ConfigureAwait(true);
+                    var kept = string.IsNullOrWhiteSpace(maps.FormattedAddress)
+                        ? "Address validated. Clerk pickup pin was kept."
+                        : $"Address validated: {maps.FormattedAddress}. Clerk pickup pin was kept.";
+                    Logger.Information(
+                        "Clerk home pickup pin kept for student {StudentId}",
+                        student.StudentId);
+                    return kept;
+                }
+
                 student.Latitude = (decimal)maps.Latitude.Value;
                 student.Longitude = (decimal)maps.Longitude.Value;
                 if (!string.IsNullOrWhiteSpace(maps.PlaceId))
@@ -80,15 +92,22 @@ public sealed class StudentsGridAddressCoordinator
                 "Address validation failed for student {StudentId}: {Error}",
                 student.StudentId,
                 maps.ErrorMessage);
-            student.Latitude = null;
-            student.Longitude = null;
-            student.PlaceId = null;
-            await PersistCoordinatesAsync(student).ConfigureAwait(true);
+            if (!(student.HomePickupClerkAdjusted && student.HasValidatedHomeCoordinates))
+            {
+                student.HomePickupClerkAdjusted = false;
+                student.Latitude = null;
+                student.Longitude = null;
+                student.PlaceId = null;
+                await PersistCoordinatesAsync(student).ConfigureAwait(true);
+            }
             var failed = maps.ErrorMessage ?? "Address could not be validated.";
-            return AddressValidationPinPolicy.IsClerkRejectCopy(failed)
+            var failedMessage = AddressValidationPinPolicy.IsClerkRejectCopy(failed)
                 || failed.Contains(LocationCoordinate.NeedsValidation, StringComparison.OrdinalIgnoreCase)
                 ? failed
                 : $"Address validation failed: {failed}";
+            return student.HomePickupClerkAdjusted && student.HasValidatedHomeCoordinates
+                ? $"{failedMessage} Clerk pickup pin was kept."
+                : failedMessage;
         }
 
         var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
@@ -101,6 +120,14 @@ public sealed class StudentsGridAddressCoordinator
                 student.Zip).ConfigureAwait(true);
             if (geo.HasValue)
             {
+                if (student.HomePickupClerkAdjusted && student.HasValidatedHomeCoordinates)
+                {
+                    Logger.Information(
+                        "Clerk home pickup pin kept for student {StudentId}",
+                        student.StudentId);
+                    return $"Address geocoded. Clerk pickup pin was kept ({student.Latitude:F5}, {student.Longitude:F5}).";
+                }
+
                 student.Latitude = (decimal)geo.Value.latitude;
                 student.Longitude = (decimal)geo.Value.longitude;
                 await PersistCoordinatesAsync(student).ConfigureAwait(true);
@@ -147,11 +174,23 @@ public sealed class StudentsGridAddressCoordinator
 
         try
         {
-            await studentService.UpdateHomeGeocodeAsync(
-                student.StudentId,
-                student.Latitude,
-                student.Longitude,
-                student.PlaceId).ConfigureAwait(true);
+            if (student.HomePickupClerkAdjusted)
+            {
+                await studentService.UpdateHomeGeocodeAsync(
+                    student.StudentId,
+                    student.Latitude,
+                    student.Longitude,
+                    student.PlaceId,
+                    homePickupClerkAdjusted: true).ConfigureAwait(true);
+            }
+            else
+            {
+                await studentService.UpdateHomeGeocodeAsync(
+                    student.StudentId,
+                    student.Latitude,
+                    student.Longitude,
+                    student.PlaceId).ConfigureAwait(true);
+            }
         }
         catch (Exception ex)
         {

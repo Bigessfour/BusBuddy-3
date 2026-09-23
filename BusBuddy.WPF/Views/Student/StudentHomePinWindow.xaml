@@ -17,6 +17,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/MapMarkerTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -41,8 +42,13 @@
                 Padding="4">
             <Grid>
                 <utils:DistrictSfMap x:Name="HomePickMap"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Stretch"
+                            IsHitTestVisible="True"
                             EnableZoom="True"
                             EnablePan="True"
+                            MinZoom="1"
+                            MaxZoom="19"
                             PreviewMouseLeftButtonDown="HomePickMap_MouseLeftButtonDown"
                             PreviewMouseLeftButtonUp="HomePickMap_MouseLeftButtonUp"
                             AutomationProperties.Name="Home pickup location map">

@@ -10,7 +10,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 
 - MUST classify every location with exactly one type: `School`, `PickupStop`, `StudentHome`, `Depot`, `Maintenance`, `Fuel`, `TripDestination`.
 - MUST persist a validated street address plus lat/lng before a location can be a route waypoint, map pin, or trip origin/destination.
-- MUST use Google Address Validation as the source of “this address exists,” and that result’s `geocode.location` for the pin. Clerks do not type lat/lng as truth. Places Autocomplete fills the form; it does not place the pin.
+- MUST use Google Address Validation as the source of “this address exists,” and that result’s `geocode.location` as the default pin. Clerks do not type lat/lng as truth. Places Autocomplete fills the form; it does not place the pin. A student-home boarding point may be a clerk map adjustment stored on the student (`HomePickupClerkAdjusted`). Re-validation of the same street does not replace that point. A new street address clears it.
 - MUST plot only building-level geocodes (`geocodeGranularity` PREMISE / SUB_PREMISE / PREMISE_PROXIMITY) with a confirmed street. Unconfirmed `route`/`street_number`, or a geocode whose `placeTypes` are only locality/political, is city-level and is not a pin. ROUTE and OTHER are not pins. Geocoding fallback (when Address Validation is 403) may pin ROOFTOP `street_address` / `premise` only — not RANGE_INTERPOLATED, APPROXIMATE, or locality.
 - MUST treat district-owned facilities (`School`, `Depot`, `Maintenance`, `Fuel`, published `PickupStop`) as stable for the school year by default.
 - MUST allow `StudentHome` to change mid-year (family move). Keep the student; replace or version the home location.

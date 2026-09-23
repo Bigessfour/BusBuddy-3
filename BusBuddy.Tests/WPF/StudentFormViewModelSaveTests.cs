@@ -390,4 +390,46 @@ public class StudentFormViewModelSaveTests
         Assert.That(xaml, Does.Not.Contain("SizeMode=\"Small\""));
         Assert.That(xaml, Does.Not.Contain("Import CSV"), "CSV import stays on the roster toolbar, not Edit Student");
     }
+
+    [Test]
+    public async Task ValidateAsync_ClerkAdjustedPin_KeepsDrivewayWhenStreetIsRevalidated()
+    {
+        var mapsGeo = new Mock<IMapsGeoService>();
+        mapsGeo
+            .Setup(m => m.ValidateAndGeocodeAsync(
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new MapsGeocodeResult
+            {
+                Ok = true,
+                Latitude = 38.2000,
+                Longitude = -102.8000,
+                Precision = "ROOFTOP",
+                FormattedAddress = "100 Main St, Wiley, CO 81092",
+                Street = "100 Main St",
+            });
+
+        var student = new Student
+        {
+            HomeAddress = "100 Main St",
+            City = "Wiley",
+            State = "CO",
+            Zip = "81092",
+            Latitude = 38.0872m,
+            Longitude = -102.6208m,
+            HomePickupClerkAdjusted = true,
+        };
+        var coordinator = new StudentFormAddressCoordinator(mapsGeo.Object, placesAutocomplete: null, loadedStudent: student);
+
+        await coordinator.ValidateAsync(student);
+
+        student.HomePickupClerkAdjusted.Should().BeTrue();
+        student.Latitude.Should().Be(38.0872m);
+        student.Longitude.Should().Be(-102.6208m);
+        student.HomeAddress.Should().Be("100 Main St");
+        coordinator.ValidationMessage.Should().Contain("Clerk pickup pin was kept");
+    }
 }

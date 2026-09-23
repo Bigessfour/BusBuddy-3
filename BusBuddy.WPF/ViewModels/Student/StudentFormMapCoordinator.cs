@@ -67,9 +67,15 @@ public sealed class StudentFormMapCoordinator
         _validation.SetStatus("Loading map preview...", Brushes.Blue);
         try
         {
-            (double Latitude, double Longitude)? validated = student.HasValidatedHomeCoordinates
-                ? ((double)student.Latitude!, (double)student.Longitude!)
-                : await TryGeocodeAddressAsync(student).ConfigureAwait(true);
+            // Gold is a fresh Address Validation point. A stored clerk pin is the blue pickup, not gold.
+            var google = await TryGeocodeAddressAsync(student).ConfigureAwait(true);
+            (double Latitude, double Longitude)? validated = google;
+            if (validated is null
+                && student.HasValidatedHomeCoordinates
+                && !student.HomePickupClerkAdjusted)
+            {
+                validated = ((double)student.Latitude!, (double)student.Longitude!);
+            }
             if (validated is null && !student.HasValidatedHomeCoordinates)
             {
                 _validation.SetGlobalError(
@@ -94,6 +100,7 @@ public sealed class StudentFormMapCoordinator
 
             student.Latitude = (decimal)pinVm.LatitudeValue;
             student.Longitude = (decimal)pinVm.LongitudeValue;
+            student.HomePickupClerkAdjusted = pinVm.PersistClerkAdjustment;
             _coordinatesCaptured?.Invoke(student);
 
             if (student.StudentId > 0)
@@ -111,7 +118,8 @@ public sealed class StudentFormMapCoordinator
                     student.StudentId,
                     student.Latitude,
                     student.Longitude,
-                    student.PlaceId).ConfigureAwait(true);
+                    student.PlaceId,
+                    student.HomePickupClerkAdjusted).ConfigureAwait(true);
                 if (!persisted)
                 {
                     _validation.SetGlobalError(
@@ -122,7 +130,9 @@ public sealed class StudentFormMapCoordinator
             }
 
             _validation.SetStatus(
-                "Pickup pin saved. Street address is unchanged. Refresh Drive Path if this home is already a published stop.",
+                student.HomePickupClerkAdjusted
+                    ? "Pickup pin saved. Street address is unchanged, and Address Validation will not move this driveway pin. Refresh Drive Path if this home is already a published stop."
+                    : "Pickup pin saved. Street address is unchanged. Refresh Drive Path if this home is already a published stop.",
                 Brushes.Green);
             Logger.Information(
                 "Clerk adjusted home pin StudentId={StudentId} HasCoords={HasCoords} HadValidatedPin={HadValidated}",

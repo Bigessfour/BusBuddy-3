@@ -100,13 +100,15 @@ public class MapViewTests
         Assert.That(XamlViewFile.Read("Views/Map/MapView.xaml.cs"), Does.Contain("MapCameraHost.TryApply"));
         Assert.That(xaml, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(xaml, Does.Not.Contain("MarkerTemplateSelector=\"{StaticResource DistrictMarkerTemplateSelector}\""));
-        Assert.That(xaml, Does.Contain("x:Key=\"DistrictMarkerTemplateSelector\""));
-        Assert.That(xaml, Does.Contain("x:Key=\"SchoolMarkerTemplate\""));
-        Assert.That(xaml, Does.Contain("x:Key=\"StopMarkerTemplate\""));
-        Assert.That(xaml, Does.Contain("x:Key=\"HomeMarkerTemplate\""));
-        Assert.That(xaml, Does.Contain("HomeTemplate=\"{StaticResource HomeMarkerTemplate}\""));
-        Assert.That(xaml, Does.Contain("MapMarkerTemplateSelector"));
-        Assert.That(xaml, Does.Not.Contain("StudentMarkerTemplate"));
+        Assert.That(xaml, Does.Contain("MapMarkerTemplates.xaml"));
+        var markers = XamlViewFile.Read("Resources/MapMarkerTemplates.xaml");
+        Assert.That(markers, Does.Contain("x:Key=\"DistrictMarkerTemplateSelector\""));
+        Assert.That(markers, Does.Contain("x:Key=\"SchoolMarkerTemplate\""));
+        Assert.That(markers, Does.Contain("x:Key=\"StopMarkerTemplate\""));
+        Assert.That(markers, Does.Contain("x:Key=\"HomeMarkerTemplate\""));
+        Assert.That(markers, Does.Contain("HomeTemplate=\"{StaticResource HomeMarkerTemplate}\""));
+        Assert.That(markers, Does.Contain("MapMarkerTemplateSelector"));
+        Assert.That(markers, Does.Not.Contain("StudentMarkerTemplate"));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedRoute, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));
         Assert.That(xaml, Does.Contain("ZoomLevel=\"{Binding MapZoomLevel, Mode=TwoWay}\""));
@@ -115,16 +117,16 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("MapFitRadiusKm"));
         Assert.That(xaml, Does.Contain("MaxZoom=\"19\""));
         Assert.That(xaml, Does.Contain("SizeChanged=\"GeoMap_SizeChanged\""));
-        Assert.That(xaml, Does.Contain("ShowCaption"));
-        Assert.That(xaml, Does.Contain("Text=\"{Binding Data.DisplayCaption}\""));
-        Assert.That(xaml, Does.Not.Contain("Text=\"{Binding Data.Caption}\""), "one caption per spot: DisplayCaption folds the route-stop tag in");
-        Assert.That(xaml, Does.Contain("Fill=\"{Binding Data.FillBrush}\""));
-        Assert.That(xaml, Does.Contain("Stroke=\"{Binding Data.StrokeBrush}\""));
-        Assert.That(xaml, Does.Not.Contain("Fill=\"#E85D4C\""), "pin colours come from MapMarkerLabels, not per-template literals");
-        Assert.That(xaml, Does.Not.Contain("Fill=\"#5B8DEF\""));
-        Assert.That(xaml, Does.Contain("Width=\"{Binding Data.MarkerSize}\""));
-        Assert.That(xaml, Does.Contain("FontSize=\"{Binding Data.LabelFontSize}\""));
-        Assert.That(xaml, Does.Contain("Data.ShowCaption"));
+        Assert.That(markers, Does.Contain("ShowCaption"));
+        Assert.That(markers, Does.Contain("Text=\"{Binding Data.DisplayCaption}\""));
+        Assert.That(markers, Does.Not.Contain("Text=\"{Binding Data.Caption}\""), "one caption per spot: DisplayCaption folds the route-stop tag in");
+        Assert.That(markers, Does.Contain("Fill=\"{Binding Data.FillBrush}\""));
+        Assert.That(markers, Does.Contain("Stroke=\"{Binding Data.StrokeBrush}\""));
+        Assert.That(markers, Does.Not.Contain("Fill=\"#E85D4C\""), "pin colours come from MapMarkerLabels, not per-template literals");
+        Assert.That(markers, Does.Not.Contain("Fill=\"#5B8DEF\""));
+        Assert.That(markers, Does.Contain("Width=\"{Binding Data.MarkerSize}\""));
+        Assert.That(markers, Does.Contain("FontSize=\"{Binding Data.LabelFontSize}\""));
+        Assert.That(markers, Does.Contain("Data.ShowCaption"));
         Assert.That(xaml, Does.Not.Contain("ToolTip=\"{Binding Data.DisplayCaption}\""));
         Assert.That(xaml, Does.Not.Contain("DataContext.ShowDetailLabels"));
         Assert.That(XamlViewFile.Read("Utilities/MapMarkerLabels.cs"), Does.Contain("ScaledMarkerSize"));
@@ -388,6 +390,9 @@ public class MapViewTests
         Assert.That(homeCs, Does.Contain("MapCameraHost.TryApply"));
         Assert.That(homeCs, Does.Contain("MapCameraHost.TryReadClick"));
         Assert.That(homeCs, Does.Not.Contain("SizeChanged += OnPickMapSizeChanged"));
+        Assert.That(homeCs, Does.Contain("DistrictMarkerTemplateSelector"));
+        Assert.That(home, Does.Contain("MapMarkerTemplates.xaml"));
+        Assert.That(home, Does.Not.Contain("Markers=\"{Binding MapMarkers}\""));
     }
 
     [Test]

@@ -1,0 +1,102 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:utils="clr-namespace:BusBuddy.WPF.Utilities">
+    <!--
+        Shared by District Map and the home-pickup pin window.
+        Syncfusion MarkerTemplate DataContext is CustomDataSymbol (not MapMarker).
+        Bound marker is CustomDataSymbol.Data — use Data.DisplayCaption / Data.MarkerSize / …
+        Docs: help.syncfusion.com MarkerTemplateSelector note on CustomDataSymbol.
+        Pin colour is per kind (MapMarkerLabels.FillHex → MapMarker.FillBrush): school black,
+        pickup orange, route stop gold, bus barn purple, student green, home blue. Stroke turns
+        gold when the selected route stops at that pin. Captions are opaque so a neighbour's
+        text cannot bleed through — overlapping captions came from two pins on one spot.
+        Assigned in code after the layer can TransformToVisual. Do not bind MarkerTemplateSelector in XAML.
+    -->
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    <DataTemplate x:Key="SchoolMarkerTemplate">
+        <StackPanel Orientation="Vertical"
+                    HorizontalAlignment="Center"
+                    Margin="0,-18,0,0">
+            <Ellipse Width="{Binding Data.MarkerSize}"
+                     Height="{Binding Data.MarkerSize}"
+                     HorizontalAlignment="Center"
+                     Fill="{Binding Data.FillBrush}"
+                     Stroke="{Binding Data.StrokeBrush}"
+                     StrokeThickness="2"/>
+            <Border HorizontalAlignment="Center"
+                    Margin="0,2,0,0"
+                    CornerRadius="2"
+                    Background="#F2FFFFFF"
+                    BorderBrush="#000000"
+                    BorderThickness="1"
+                    Padding="4,1"
+                    Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!-- Always-dark on white chip over tiles. theme-compliance:allow HardcodedHexForeground -->
+                <TextBlock Foreground="#000000"
+                           Text="{Binding Data.DisplayCaption}"
+                           FontSize="{Binding Data.LabelFontSize}"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="160"/>
+            </Border>
+        </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="StopMarkerTemplate">
+        <StackPanel Orientation="Vertical"
+                    HorizontalAlignment="Center"
+                    Margin="0,-14,0,0">
+            <Ellipse Width="{Binding Data.MarkerSize}"
+                     Height="{Binding Data.MarkerSize}"
+                     HorizontalAlignment="Center"
+                     Fill="{Binding Data.FillBrush}"
+                     Stroke="{Binding Data.StrokeBrush}"
+                     StrokeThickness="1.5"/>
+            <Border HorizontalAlignment="Center"
+                    Margin="0,1,0,0"
+                    CornerRadius="2"
+                    Background="#F2FFFFFF"
+                    BorderBrush="{Binding Data.FillBrush}"
+                    BorderThickness="1"
+                    Padding="3,0"
+                    Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!-- Always-dark on white chip over tiles. theme-compliance:allow HardcodedHexForeground -->
+                <TextBlock Foreground="#1F1F1F"
+                           Text="{Binding Data.DisplayCaption}"
+                           FontSize="{Binding Data.LabelFontSize}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="140"/>
+            </Border>
+        </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="HomeMarkerTemplate">
+        <StackPanel Orientation="Vertical"
+                    HorizontalAlignment="Center"
+                    Margin="0,-10,0,0">
+            <Ellipse Width="{Binding Data.MarkerSize}"
+                     Height="{Binding Data.MarkerSize}"
+                     HorizontalAlignment="Center"
+                     Fill="{Binding Data.FillBrush}"
+                     Stroke="{Binding Data.StrokeBrush}"
+                     StrokeThickness="1.5"/>
+            <Border HorizontalAlignment="Center"
+                    Margin="0,1,0,0"
+                    CornerRadius="2"
+                    Background="#F2FFFFFF"
+                    BorderBrush="{Binding Data.FillBrush}"
+                    BorderThickness="1"
+                    Padding="2,0"
+                    Visibility="{Binding Data.ShowCaption, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!-- Always-dark on white chip over tiles. theme-compliance:allow HardcodedHexForeground -->
+                <TextBlock Foreground="#1F1F1F"
+                           Text="{Binding Data.DisplayCaption}"
+                           FontSize="{Binding Data.LabelFontSize}"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="120"/>
+            </Border>
+        </StackPanel>
+    </DataTemplate>
+    <utils:MapMarkerTemplateSelector x:Key="DistrictMarkerTemplateSelector"
+                                     SchoolTemplate="{StaticResource SchoolMarkerTemplate}"
+                                     HomeTemplate="{StaticResource HomeMarkerTemplate}"
+                                     StopTemplate="{StaticResource StopMarkerTemplate}"/>
+</ResourceDictionary>

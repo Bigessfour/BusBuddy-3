@@ -4,6 +4,7 @@ using System.Windows.Media;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -89,11 +90,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
     /// <summary>
     /// Normalized street|city|state|zip. Used to tie the stored pin to the address text that produced it.
     /// </summary>
-    public static string AddressKey(StudentModel student) =>
-        string.Join(
-            "|",
-            new[] { student.HomeAddress, student.City, student.State, student.Zip }
-                .Select(part => (part ?? string.Empty).Trim().ToUpperInvariant()));
+    public static string AddressKey(StudentModel student) => HomePickupPin.AddressKey(student);
 
     /// <summary>
     /// Records the address text the current coordinates belong to (loaded record, or a fresh
@@ -156,6 +153,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             student.PlaceId = applied.PlaceId;
         }
 
+        student.HomePickupClerkAdjusted = false;
         student.Latitude = null;
         student.Longitude = null;
         TrackPinnedAddress(student);
@@ -200,9 +198,12 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
                     var precisionNote = string.IsNullOrWhiteSpace(maps.Precision)
                         ? string.Empty
                         : $" ({maps.Precision} precision)";
+                    var keptPin = student.HomePickupClerkAdjusted
+                        ? " Clerk pickup pin was kept."
+                        : string.Empty;
                     ValidationMessage = string.IsNullOrWhiteSpace(maps.FormattedAddress)
-                        ? $"Address validated via Google Maps{precisionNote}."
-                        : $"Address validated{precisionNote}: {maps.FormattedAddress}";
+                        ? $"Address validated via Google Maps{precisionNote}.{keptPin}"
+                        : $"Address validated{precisionNote}: {maps.FormattedAddress}{keptPin}";
                     ValidationColor = Brushes.Green;
                     Logger.Information("Address validation successful via Maps Platform");
                     await PersistIfExistingAsync(student).ConfigureAwait(true);
@@ -304,9 +305,17 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             Logger.Information(
                 "Address text changed since coordinates were captured StudentId={StudentId} — re-geocoding before save",
                 student.StudentId);
+            student.HomePickupClerkAdjusted = false;
             student.Latitude = null;
             student.Longitude = null;
             student.PlaceId = null;
+        }
+        else if (student.HomePickupClerkAdjusted && student.HasValidatedHomeCoordinates)
+        {
+            Logger.Information(
+                "Clerk home pickup pin kept on save StudentId={StudentId}",
+                student.StudentId);
+            return Task.FromResult(true);
         }
 
         return TryGeocodeAsync(student);
@@ -353,19 +362,28 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
     private void ApplySuccessfulGeocode(StudentModel student, MapsGeocodeResult maps)
     {
-        if (maps.Latitude.HasValue)
+        var keepClerkPin = student.HomePickupClerkAdjusted && student.HasValidatedHomeCoordinates;
+        if (!keepClerkPin)
         {
-            student.Latitude = (decimal)maps.Latitude.Value;
+            if (maps.Latitude.HasValue)
+            {
+                student.Latitude = (decimal)maps.Latitude.Value;
+            }
+
+            if (maps.Longitude.HasValue)
+            {
+                student.Longitude = (decimal)maps.Longitude.Value;
+            }
         }
 
-        if (maps.Longitude.HasValue)
-        {
-            student.Longitude = (decimal)maps.Longitude.Value;
-        }
-
-        if (!string.IsNullOrWhiteSpace(maps.PlaceId))
+        if (!string.IsNullOrWhiteSpace(maps.PlaceId) && !keepClerkPin)
         {
             student.PlaceId = maps.PlaceId;
+        }
+
+        if (keepClerkPin)
+        {
+            return;
         }
 
         if (!string.IsNullOrWhiteSpace(maps.Street))
@@ -393,6 +411,22 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
     private async Task RejectFailedValidationAsync(StudentModel student, string liveError)
     {
+        if (student.HomePickupClerkAdjusted
+            && student.HasValidatedHomeCoordinates
+            && CoordinatesMatchAddress(student))
+        {
+            ValidationFailed = true;
+            ValidationMessage =
+                $"Address validation failed: {liveError} The clerk pickup pin was kept.";
+            ValidationColor = Brushes.Orange;
+            Logger.Warning(
+                "Address validation failed; clerk pickup pin kept StudentId={StudentId}: {Error}",
+                student.StudentId,
+                liveError);
+            return;
+        }
+
+        student.HomePickupClerkAdjusted = false;
         student.Latitude = null;
         student.Longitude = null;
         student.PlaceId = null;
@@ -446,11 +480,23 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
         try
         {
-            await service.UpdateHomeGeocodeAsync(
-                student.StudentId,
-                student.Latitude,
-                student.Longitude,
-                student.PlaceId).ConfigureAwait(true);
+            if (student.HomePickupClerkAdjusted)
+            {
+                await service.UpdateHomeGeocodeAsync(
+                    student.StudentId,
+                    student.Latitude,
+                    student.Longitude,
+                    student.PlaceId,
+                    homePickupClerkAdjusted: true).ConfigureAwait(true);
+            }
+            else
+            {
+                await service.UpdateHomeGeocodeAsync(
+                    student.StudentId,
+                    student.Latitude,
+                    student.Longitude,
+                    student.PlaceId).ConfigureAwait(true);
+            }
         }
         catch (Exception ex)
         {
