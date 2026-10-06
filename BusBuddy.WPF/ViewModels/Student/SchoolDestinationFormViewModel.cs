@@ -39,8 +39,8 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     private string _city = string.Empty;
     private string _state = string.Empty;
     private string _zipCode = string.Empty;
-    private string _startTimeText = "08:00";
-    private string _dismissalTimeText = "15:30";
+    private string _startTimeText = string.Empty;
+    private string _dismissalTimeText = string.Empty;
     private double _latitudeValue;
     private double _longitudeValue;
     private bool _hasMapPick;
@@ -265,7 +265,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            return DateTime.Today.Add(defaultTime);
+            return null;
         }
 
         return TryParseTime(text, out var parsed)
@@ -359,7 +359,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
         try
         {
-            if (!TryParseTime(StartTimeText, out var start) || !TryParseTime(DismissalTimeText, out var dismissal))
+            if (!TryParseOptionalTime(StartTimeText, out var start) || !TryParseOptionalTime(DismissalTimeText, out var dismissal))
             {
                 ValidationMessage = "Use HH:mm for start and dismissal (example 08:00).";
                 return;
@@ -406,7 +406,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
             if (_mode == SchoolFormMode.EditAll)
             {
-                await TryRegenerateSchedulesAsync(school.DestinationId, start).ConfigureAwait(true);
+                await TryRegenerateSchedulesAsync(school.DestinationId).ConfigureAwait(true);
             }
 
             RequestClose?.Invoke(this, true);
@@ -459,15 +459,15 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         StatusMessage = "School times saved";
         Logger.Information("School times saved DestinationId={DestinationId}", school.DestinationId);
 
-        await TryRegenerateSchedulesAsync(school.DestinationId, start).ConfigureAwait(true);
+        await TryRegenerateSchedulesAsync(school.DestinationId).ConfigureAwait(true);
 
         RequestClose?.Invoke(this, true);
     }
 
-    private async Task TryRegenerateSchedulesAsync(int destinationId, TimeSpan? start)
+    private async Task TryRegenerateSchedulesAsync(int destinationId)
     {
         var planner = App.ServiceProvider?.GetService<IRouteDeterminationService>();
-        if (planner is null || !start.HasValue)
+        if (planner is null)
         {
             return;
         }
@@ -475,9 +475,15 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         var regen = await planner
             .RegenerateSchedulesForSchoolAsync(destinationId)
             .ConfigureAwait(true);
-        StatusMessage = regen.Success
-            ? $"{StatusMessage}; regenerated schedules on {regen.RoutesUpdated} route(s)"
-            : $"{StatusMessage}; schedule regen: {regen.Error}";
+        if (regen.RoutesUpdated > 0)
+        {
+            StatusMessage = $"{StatusMessage}; regenerated schedules on {regen.RoutesUpdated} route(s)";
+        }
+
+        if (!string.IsNullOrWhiteSpace(regen.Error))
+        {
+            StatusMessage = $"{StatusMessage}; {regen.Error}";
+        }
     }
 
     /// <summary>An empty box means "no time recorded"; anything else must parse as HH:mm.</summary>
@@ -538,14 +544,19 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             return "ZIP is required.";
         }
 
-        if (!TryParseTime(StartTimeText, out _))
+        if (!TryParseOptionalTime(StartTimeText, out var start))
         {
             return "Start time must be HH:mm (example: 08:00).";
         }
 
-        if (!TryParseTime(DismissalTimeText, out _))
+        if (!TryParseOptionalTime(DismissalTimeText, out var dismissal))
         {
             return "Dismissal time must be HH:mm (example: 15:30).";
+        }
+
+        if (start is TimeSpan startTime && dismissal is TimeSpan dismissalTime && dismissalTime <= startTime)
+        {
+            return "Dismissal time must be after start time.";
         }
 
         return null;

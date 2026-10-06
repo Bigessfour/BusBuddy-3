@@ -1174,7 +1174,8 @@ namespace BusBuddy.WPF.ViewModels.Map
                     return;
                 }
 
-                StatusMessage = $"{route.RouteName}: stop order optimized. Start and end stay pinned. Drawing the road path.";
+                var clockNote = await ApplyOptimizedOrderClocksAsync(provider, route.RouteId).ConfigureAwait(true);
+                StatusMessage = $"{route.RouteName}: stop order optimized. Start and end stay pinned.{clockNote}";
                 UserToast.Success(StatusMessage, "Optimize Order");
                 await ReloadWaypointsAndDrawAsync(route).ConfigureAwait(true);
             }
@@ -1184,6 +1185,31 @@ namespace BusBuddy.WPF.ViewModels.Map
                 StatusMessage = DatabaseUserMessage.IsConnectivityFailure(ex)
                     ? DatabaseUserMessage.UnavailableShort
                     : "Could not optimize stop order";
+            }
+        }
+
+        private async Task<string> ApplyOptimizedOrderClocksAsync(IServiceProvider? provider, int routeId)
+        {
+            var clocks = provider?.GetService<IRouteDeterminationService>();
+            if (clocks is null)
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                var timed = await clocks.ApplyPublishedClocksAsync(routeId).ConfigureAwait(true);
+                if (timed.RoutesUpdated > 0)
+                {
+                    return timed.Estimated ? " Clocks updated (straight-line estimate)." : " Clocks updated.";
+                }
+
+                return $" {timed.Error ?? "Clocks were left unchanged."}";
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Published clocks skipped after optimize RouteId={RouteId}", routeId);
+                return " Clocks were left unchanged.";
             }
         }
 

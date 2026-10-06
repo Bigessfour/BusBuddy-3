@@ -102,8 +102,8 @@ public sealed class DestinationService : IDestinationService
         string city,
         string state,
         string zipCode,
-        TimeSpan startTime,
-        TimeSpan dismissalTime,
+        TimeSpan? startTime,
+        TimeSpan? dismissalTime,
         decimal? latitude = null,
         decimal? longitude = null,
         CancellationToken cancellationToken = default)
@@ -147,8 +147,8 @@ public sealed class DestinationService : IDestinationService
         string city,
         string state,
         string zipCode,
-        TimeSpan startTime,
-        TimeSpan dismissalTime,
+        TimeSpan? startTime,
+        TimeSpan? dismissalTime,
         decimal? latitude = null,
         decimal? longitude = null,
         CancellationToken cancellationToken = default)
@@ -235,8 +235,8 @@ public sealed class DestinationService : IDestinationService
         string city,
         string state,
         string zipCode,
-        TimeSpan startTime,
-        TimeSpan dismissalTime)
+        TimeSpan? startTime,
+        TimeSpan? dismissalTime)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(address);
@@ -248,7 +248,7 @@ public sealed class DestinationService : IDestinationService
             throw new ArgumentException("State must be a 2-letter abbreviation.", nameof(state));
         }
 
-        if (dismissalTime <= startTime)
+        if (startTime is TimeSpan start && dismissalTime is TimeSpan dismissal && dismissal <= start)
         {
             throw new ArgumentException("Dismissal time must be after start time.", nameof(dismissalTime));
         }

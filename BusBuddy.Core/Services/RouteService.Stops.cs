@@ -1,3 +1,4 @@
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
@@ -571,7 +572,7 @@ namespace BusBuddy.Core.Services
                 ? DefaultStopArrival
                 : routeStop.ScheduledArrival;
             var departure = routeStop.ScheduledDeparture == default
-                ? arrival + PickupScheduleCalculator.DefaultDwell
+                ? arrival + TimeSpan.FromMinutes(RoutingDistrictSettings.DefaultStopDwellMinutes)
                 : routeStop.ScheduledDeparture;
 
             if (routeStop.EstimatedArrivalTime == default)

@@ -166,6 +166,11 @@ public partial class StudentService
             if (success)
             {
                 Logger.Information("Successfully updated student: {StudentName}", student.StudentName);
+                if (student.HasValidatedHomeCoordinates)
+                {
+                    await RetimeAssignedRoutesAsync(student.StudentId, student.AmRouteId, student.PmRouteId)
+                        .ConfigureAwait(false);
+                }
             }
             else
             {
@@ -209,6 +214,9 @@ public partial class StudentService
         }
 
         var (context, dispose) = GetWriteContext();
+        int? amRouteId = null;
+        int? pmRouteId = null;
+        var saved = false;
         try
         {
             var row = await context.Students
@@ -232,48 +240,96 @@ public partial class StudentService
                     await context.SaveChangesAsync().ConfigureAwait(false);
                 }
 
-                return true;
+                amRouteId = row.AmRouteId;
+                pmRouteId = row.PmRouteId;
+                saved = true;
             }
+            else
+            {
+                row.Latitude = latitude;
+                row.Longitude = longitude;
+                if (homePickupClerkAdjusted is bool adjusted)
+                {
+                    row.HomePickupClerkAdjusted = adjusted;
+                }
+                else if (!LocationCoordinate.IsValidated(latitude, longitude))
+                {
+                    row.HomePickupClerkAdjusted = false;
+                }
 
-            row.Latitude = latitude;
-            row.Longitude = longitude;
-            if (homePickupClerkAdjusted is bool adjusted)
-            {
-                row.HomePickupClerkAdjusted = adjusted;
-            }
-            else if (!LocationCoordinate.IsValidated(latitude, longitude))
-            {
-                row.HomePickupClerkAdjusted = false;
-            }
+                if (!string.IsNullOrWhiteSpace(placeId))
+                {
+                    row.PlaceId = placeId;
+                }
+                else if (!LocationCoordinate.IsValidated(latitude, longitude))
+                {
+                    row.PlaceId = null;
+                }
 
-            if (!string.IsNullOrWhiteSpace(placeId))
-            {
-                row.PlaceId = placeId;
-            }
-            else if (!LocationCoordinate.IsValidated(latitude, longitude))
-            {
-                row.PlaceId = null;
-            }
+                row.UpdatedDate = DateTime.UtcNow;
+                if (LocationCoordinate.IsValidated(latitude, longitude))
+                {
+                    await AssignedHomeStopSync.ApplyAsync(context, row).ConfigureAwait(false);
+                }
 
-            row.UpdatedDate = DateTime.UtcNow;
-            if (LocationCoordinate.IsValidated(latitude, longitude))
-            {
-                await AssignedHomeStopSync.ApplyAsync(context, row).ConfigureAwait(false);
+                await context.SaveChangesAsync().ConfigureAwait(false);
+                Logger.Information(
+                    "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
+                    studentId,
+                    latitude.HasValue && longitude.HasValue);
+                amRouteId = row.AmRouteId;
+                pmRouteId = row.PmRouteId;
+                saved = true;
             }
-
-            await context.SaveChangesAsync().ConfigureAwait(false);
-            Logger.Information(
-                "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
-                studentId,
-                latitude.HasValue && longitude.HasValue);
-            // Zero rows changed still means the student exists (confirm-without-nudge).
-            return true;
         }
         finally
         {
             if (dispose)
             {
                 await context.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
+        if (saved)
+        {
+            await RetimeAssignedRoutesAsync(studentId, amRouteId, pmRouteId).ConfigureAwait(false);
+        }
+
+        return saved;
+    }
+
+    private async Task RetimeAssignedRoutesAsync(int studentId, int? amRouteId, int? pmRouteId)
+    {
+        if (_clocks is null)
+        {
+            return;
+        }
+
+        var routeIds = new[] { amRouteId, pmRouteId }
+            .Where(id => id is > 0)
+            .Select(id => id!.Value)
+            .Distinct();
+        foreach (var routeId in routeIds)
+        {
+            try
+            {
+                var timed = await _clocks.ApplyPublishedClocksAsync(routeId).ConfigureAwait(false);
+                if (!timed.Success)
+                {
+                    Logger.Warning(
+                        "Published clocks left unchanged StudentId={StudentId} RouteId={RouteId} Reason={Reason}",
+                        studentId,
+                        routeId,
+                        timed.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(
+                    ex,
+                    "Published clocks skipped StudentId={StudentId} RouteId={RouteId}",
+                    studentId,
+                    routeId);
             }
         }
     }

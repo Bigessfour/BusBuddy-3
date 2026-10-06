@@ -28,15 +28,10 @@ public partial class RouteAssignmentViewModel
 
             if (!RouteStops.Any())
             {
-                return "Add at least one route stop, then set Start (HH:mm).";
+                return "Add at least one route stop.";
             }
 
-            if (!IsStartTimeValid)
-            {
-                return "Enter a valid start time as HH:mm (example 07:30) in the Start box.";
-            }
-
-            return "Publish stop clocks from Start time and drive-path travel. Run Drive Path after changing stop order.";
+            return "Publish stop clocks from each school's bell. The start box shows the barn departure.";
         }
     }
 

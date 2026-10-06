@@ -79,6 +79,13 @@ namespace BusBuddy.WPF.ViewModels.Route
             Initialize();
         }
 
+        public RouteAssignmentViewModel(IRouteService routeService, IRouteDeterminationService routeDetermination)
+        {
+            _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
+            _routeDetermination = routeDetermination ?? throw new ArgumentNullException(nameof(routeDetermination));
+            Initialize();
+        }
+
         public RouteAssignmentViewModel(IRouteService routeService, BusBuddy.Core.Models.Route preselectedRoute)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
@@ -445,7 +452,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             RefreshDrivePathCommand = new RelayCommand(
                 async () => await RefreshAssignmentDrivePathAsync(),
                 () => SelectedRoute != null && RouteStops.Count >= 2 && !IsLoading);
-            TimeRouteCommand = new RelayCommand(async () => await TimeRouteStopsAsync(), () => SelectedRoute != null && RouteStops.Any() && IsStartTimeValid);
+            TimeRouteCommand = new RelayCommand(async () => await TimeRouteStopsAsync(), () => SelectedRoute != null && RouteStops.Any());
             PrintMapCommand = PrintRouteSheetCommand;
             GenerateRoutesCommand = new RelayCommand(async () => await GenerateRoutesAsync(), () => !_isGeneratingRoutes);
             GenerateTransferRoutesCommand = new RelayCommand(async () => await GenerateTransferRoutesAsync(), () => !_isGeneratingRoutes);

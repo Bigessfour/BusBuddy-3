@@ -29,6 +29,11 @@ public sealed class RoutingDistrictSettings
     /// <summary>Fallback speed for Haversine ETA when Maps routing is unavailable.</summary>
     public double AverageSpeedMph { get; set; } = 25.0;
 
+    /// <summary>Minutes the bus waits at a pickup or a home drop-off. Depot and school bells do not add this.</summary>
+    public const int DefaultStopDwellMinutes = 5;
+
+    public int StopDwellMinutes { get; set; } = DefaultStopDwellMinutes;
+
     /// <summary>Soft comfort cap (minutes) — warn-and-allow when exceeded.</summary>
     public int? MaxRideMinutes { get; set; } = 45;
 
@@ -111,6 +116,11 @@ public sealed class RoutingDistrictSettings
         if (double.IsNaN(AverageSpeedMph) || double.IsInfinity(AverageSpeedMph) || AverageSpeedMph <= 0)
         {
             AverageSpeedMph = defaults.AverageSpeedMph;
+        }
+
+        if (StopDwellMinutes < 1)
+        {
+            StopDwellMinutes = defaults.StopDwellMinutes;
         }
 
         if (MaxRideMinutes is <= 0)

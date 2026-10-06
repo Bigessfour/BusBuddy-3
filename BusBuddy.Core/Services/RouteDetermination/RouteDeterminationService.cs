@@ -11,7 +11,7 @@ using Serilog;
 namespace BusBuddy.Core.Services.RouteDetermination;
 
 /// <summary>Spec 008 year-start generate/assign and clerk override.</summary>
-public sealed class RouteDeterminationService : IRouteDeterminationService
+public sealed partial class RouteDeterminationService : IRouteDeterminationService
 {
     private static readonly ILogger Logger = Log.ForContext<RouteDeterminationService>();
 
@@ -22,6 +22,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
     private readonly AssignFitnessEvaluator _fitnessEvaluator;
     private readonly IRouteWaypointRebuildService? _waypointRebuild;
     private readonly IRouteOptimizationService? _routeOptimization;
+    private readonly IRoutingService? _routing;
 
     public RouteDeterminationService(
         IBusBuddyDbContextFactory contextFactory,
@@ -30,7 +31,8 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         AssignFitnessEvaluator? fitnessEvaluator = null,
         IRouteWaypointRebuildService? waypointRebuild = null,
         IDistrictSettingsAccessor? districtAccessor = null,
-        IRouteOptimizationService? routeOptimization = null)
+        IRouteOptimizationService? routeOptimization = null,
+        IRoutingService? routing = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
@@ -40,6 +42,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             ?? new AssignFitnessEvaluator(contextFactory, settings, districtAccessor);
         _waypointRebuild = waypointRebuild;
         _routeOptimization = routeOptimization;
+        _routing = routing;
     }
 
     private RoutingDistrictSettings District =>
@@ -331,97 +334,29 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             return Fail(opId, schoolDestinationId, FleetKind.HomeToSchool, "School not found");
         }
 
-        if (!LocationCoordinate.IsValidated(school.Latitude, school.Longitude))
-        {
-            return Fail(opId, schoolDestinationId, FleetKind.HomeToSchool, "School GPS required for schedule regen");
-        }
-
-        var schLat = school.Latitude!.Value;
-        var schLon = school.Longitude!.Value;
-
         var routes = await context.Routes.AsNoTracking()
-            .Where(r => r.IsActive && r.School == school.Name)
+            .Where(r => r.IsActive)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
         var updated = 0;
-        var failures = new List<string>();
+        var warnings = new List<string>();
         foreach (var route in routes)
         {
-            var stopsResult = await _routeService.GetRouteStopsAsync(route.RouteId).ConfigureAwait(false);
-            if (!stopsResult.IsSuccess || stopsResult.Value is null || !stopsResult.Value.Any())
+            if (!await RouteServesSchoolAsync(context, route, school, cancellationToken).ConfigureAwait(false))
             {
                 continue;
             }
 
-            var ordered = stopsResult.Value.OrderBy(s => s.StopOrder).ToList();
-            var coords = ordered
-                .Where(s => s.HasValidatedCoordinates)
-                .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
-                .ToList();
-            if (coords.Count == 0)
-            {
-                continue;
-            }
-
-            IReadOnlyList<TimeSpan> arrivals;
-            var warningsForRoute = new List<string>();
-            if (route.RouteName.EndsWith("-PM", StringComparison.OrdinalIgnoreCase) &&
-                school.DismissalTime is TimeSpan dismissal)
-            {
-                arrivals = PickupScheduleCalculator.ComputePmDropoffArrivals(
-                    coords, (double)schLat, (double)schLon, dismissal, District);
-            }
-            else if (school.StartTime is TimeSpan start)
-            {
-                arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
-                    coords, (double)schLat, (double)schLon, start, District, out var underflow);
-                if (underflow)
-                {
-                    warningsForRoute.Add(
-                        $"Route {route.RouteName}: AM schedule underflow (travel exceeds StartTime); times clamped");
-                }
-            }
-            else
-            {
-                failures.Add($"Route {route.RouteName}: missing StartTime/DismissalTime");
-                continue;
-            }
-
-            var timed = new List<RouteStop>();
-            var ai = 0;
-            foreach (var stop in ordered)
-            {
-                if (!stop.Latitude.HasValue)
-                {
-                    timed.Add(stop);
-                    continue;
-                }
-
-                if (ai < arrivals.Count)
-                {
-                    var arrival = arrivals[ai];
-                    var departure = arrival + PickupScheduleCalculator.DefaultDwell;
-                    stop.ScheduledArrival = arrival;
-                    stop.ScheduledDeparture = departure;
-                    stop.EstimatedArrivalTime = DistrictWallClock(arrival);
-                    stop.EstimatedDepartureTime = DistrictWallClock(departure);
-                    ai++;
-                }
-
-                timed.Add(stop);
-            }
-
-            var persist = await _routeService.UpdateRouteStopsTimingAsync(route.RouteId, timed)
-                .ConfigureAwait(false);
-            if (persist.IsSuccess)
+            var applied = await ApplyPublishedClocksAsync(route.RouteId, cancellationToken).ConfigureAwait(false);
+            if (applied.RoutesUpdated > 0)
             {
                 updated++;
-                failures.AddRange(warningsForRoute);
+                warnings.AddRange(applied.Warnings.Select(w => $"{route.RouteName}: {w}"));
             }
-            else
+            else if (!string.IsNullOrWhiteSpace(applied.Error))
             {
-                failures.Add(persist.Error ?? $"Timing persist failed for {route.RouteName}");
+                warnings.Add($"{route.RouteName}: {applied.Error}");
             }
         }
 
@@ -429,20 +364,17 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             "Schedule regen School={SchoolId} RoutesUpdated={N} OpId={OpId}",
             schoolDestinationId, updated, opId);
 
-        // Underflow warnings are soft — regen still succeeded if persist worked.
-        var hardFailures = failures.Where(f => !f.Contains("underflow", StringComparison.OrdinalIgnoreCase)).ToList();
-        var softWarnings = failures.Where(f => f.Contains("underflow", StringComparison.OrdinalIgnoreCase)).ToList();
-
+        var missed = warnings.Where(w => !w.Contains("straight-line", StringComparison.OrdinalIgnoreCase)).ToList();
         return new RouteGenerationResult
         {
             OperationId = opId,
             SchoolDestinationId = schoolDestinationId,
             FleetKind = FleetKind.HomeToSchool,
-            Success = hardFailures.Count == 0,
+            Success = missed.Count == 0 || updated > 0,
             AssignedStudentCount = 0,
             RoutesUpdated = updated,
-            Warnings = softWarnings.Concat(hardFailures).ToList(),
-            Error = hardFailures.Count == 0 ? null : string.Join("; ", hardFailures.Take(3))
+            Warnings = warnings,
+            Error = missed.Count == 0 ? null : string.Join("; ", missed.Take(3))
         };
     }
 
@@ -906,58 +838,144 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             return;
         }
 
-        (coords, meta) = await TryOptimizePickupOrderAsync(
+        (_, meta) = await TryOptimizePickupOrderAsync(
                 coords, meta, school, pack.SeatingCapacity, slot, cancellationToken)
             .ConfigureAwait(false);
 
-        IReadOnlyList<TimeSpan> arrivals;
-        if (slot == RouteTimeSlotKind.PM && school.DismissalTime is TimeSpan dismissal)
-        {
-            arrivals = PickupScheduleCalculator.ComputePmDropoffArrivals(
-                coords, (double)schLat, (double)schLon, dismissal, District);
-        }
-        else if (school.StartTime is TimeSpan start)
-        {
-            arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
-                coords, (double)schLat, (double)schLon, start, District, out var underflow);
-            if (underflow)
-            {
-                Logger.Warning(
-                    "AM schedule underflow RouteId={RouteId} — travel exceeds StartTime; times clamped to 00:00",
-                    routeId);
-            }
-        }
-        else
-        {
-            arrivals = Enumerable.Range(0, coords.Count).Select(_ => TimeSpan.FromHours(7)).ToList();
-        }
+        var afternoon = slot == RouteTimeSlotKind.PM;
+        var built = new List<RouteStop>();
+        var clocks = new List<ClockStop>();
+        var dwell = TimeSpan.FromMinutes(DwellMinutes());
 
-        for (var i = 0; i < meta.Count; i++)
+        void Append(ClockStop clock, string name, string address, decimal lat, decimal lon, string? notes)
         {
-            var m = meta[i];
-            var arrival = i < arrivals.Count ? arrivals[i] : TimeSpan.FromHours(7);
-            var departure = arrival + PickupScheduleCalculator.DefaultDwell;
-            var stop = new RouteStop
+            clocks.Add(clock);
+            built.Add(new RouteStop
             {
                 RouteId = routeId,
-                StopName = m.Name,
-                StopAddress = m.Address,
-                Latitude = m.Lat,
-                Longitude = m.Lon,
-                StopOrder = i + 1,
-                ScheduledArrival = arrival,
-                ScheduledDeparture = departure,
-                Notes = m.StudentIds.Count == 1
-                    ? $"StudentId={m.StudentIds[0]}"
-                    : $"StudentIds={string.Join(",", m.StudentIds)}",
-                CreatedDate = DateTime.UtcNow,
-                EstimatedArrivalTime = DistrictWallClock(arrival),
-                EstimatedDepartureTime = DistrictWallClock(departure)
-            };
+                StopName = name,
+                StopAddress = address,
+                Latitude = lat,
+                Longitude = lon,
+                Notes = notes,
+                CreatedDate = DateTime.UtcNow
+            });
+        }
+
+        void AppendDepot()
+        {
+            if (!DistrictDepot.TryGetCoordinates(District, out var depotLat, out var depotLon))
+            {
+                return;
+            }
+
+            Append(
+                new ClockStop(ClockStopKind.Depot, null, null, Array.Empty<int>()),
+                DistrictDepot.GetDisplayName(District),
+                DistrictDepot.GetDisplayAddress(District),
+                (decimal)depotLat,
+                (decimal)depotLon,
+                null);
+        }
+
+        void AppendSchool()
+        {
+            Append(
+                new ClockStop(
+                    ClockStopKind.School,
+                    school.DestinationId,
+                    afternoon ? school.DismissalTime : school.StartTime,
+                    Array.Empty<int>()),
+                school.Name,
+                school.Address ?? string.Empty,
+                schLat,
+                schLon,
+                null);
+        }
+
+        AppendDepot();
+        if (afternoon)
+        {
+            AppendSchool();
+        }
+
+        foreach (var m in meta)
+        {
+            var riderSchools = new HashSet<int>();
+            foreach (var studentId in m.StudentIds)
+            {
+                if (byId.TryGetValue(studentId, out var rider) && rider.DestinationId is int destinationId)
+                {
+                    riderSchools.Add(destinationId);
+                }
+            }
+
+            if (riderSchools.Count == 0)
+            {
+                riderSchools.Add(school.DestinationId);
+            }
+
+            var notes = m.StudentIds.Count == 1
+                ? $"StudentId={m.StudentIds[0]}"
+                : $"StudentIds={string.Join(",", m.StudentIds)}";
+            Append(
+                new ClockStop(ClockStopKind.Pickup, null, null, riderSchools.ToList()),
+                m.Name,
+                m.Address,
+                m.Lat,
+                m.Lon,
+                notes);
+        }
+
+        if (!afternoon)
+        {
+            AppendSchool();
+        }
+
+        AppendDepot();
+
+        var (legs, estimated) = await LegSecondsAsync(built, routeId, cancellationToken).ConfigureAwait(false);
+        var plan = PublishedClockPlanner.Plan(clocks, legs, dwell, afternoon, estimated);
+        if (!plan.Success || plan.BeginTime is not TimeSpan begin)
+        {
+            failures.Add($"Route {routeId}: {FirstWarning(plan.Warnings)}");
+            return;
+        }
+
+        await using (var write = _contextFactory.CreateWriteDbContext())
+        {
+            var route = await write.Routes
+                .FirstOrDefaultAsync(r => r.RouteId == routeId, cancellationToken)
+                .ConfigureAwait(false);
+            if (route is not null)
+            {
+                if (afternoon)
+                {
+                    route.PMBeginTime = begin;
+                }
+                else
+                {
+                    route.AMBeginTime = begin;
+                }
+
+                await write.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        for (var i = 0; i < built.Count; i++)
+        {
+            var stop = built[i];
+            var arrival = plan.Arrivals[i];
+            var departure = plan.Departures[i];
+            stop.StopOrder = i + 1;
+            stop.ScheduledArrival = arrival;
+            stop.ScheduledDeparture = departure;
+            stop.EstimatedArrivalTime = DistrictWallClock(arrival);
+            stop.EstimatedDepartureTime = DistrictWallClock(departure);
             var add = await _routeService.AddStopToRouteAsync(routeId, stop).ConfigureAwait(false);
             if (!add.IsSuccess)
             {
-                failures.Add($"Stop '{m.Name}': {add.Error}");
+                failures.Add($"Stop '{stop.StopName}': {add.Error}");
             }
         }
     }

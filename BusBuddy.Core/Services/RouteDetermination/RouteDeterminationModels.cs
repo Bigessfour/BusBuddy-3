@@ -57,6 +57,12 @@ public sealed class RouteGenerationResult
     public int RoutesUpdated { get; set; }
     public bool Success { get; set; }
     public string? Error { get; set; }
+
+    /// <summary>Depot departure written to the route begin time when clocks were published.</summary>
+    public TimeSpan? BeginTime { get; set; }
+
+    /// <summary>True when drive legs came from straight-line speed instead of Routes.</summary>
+    public bool Estimated { get; set; }
 }
 
 public sealed class AssignFitnessResult

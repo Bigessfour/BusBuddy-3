@@ -25,8 +25,16 @@ public interface IRouteDeterminationService
         string? reason = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Recompute RouteStop times for draft/operational routes at a school when StartTime/DismissalTime change.</summary>
+    /// <summary>Recompute RouteStop times for every active route that serves this school.</summary>
     Task<RouteGenerationResult> RegenerateSchedulesForSchoolAsync(
         int schoolDestinationId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publish stop clocks for one route from confirmed school bells.
+    /// A missed morning bell returns a warning and does not overwrite stored clocks.
+    /// </summary>
+    Task<RouteGenerationResult> ApplyPublishedClocksAsync(
+        int routeId,
         CancellationToken cancellationToken = default);
 }

@@ -19,7 +19,7 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
     private static readonly Uri ComputeRoutesUri = new("https://routes.googleapis.com/directions/v2:computeRoutes");
     private static readonly Uri ComputeRouteMatrixUri = new("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix");
     private const string FieldMask =
-        "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction";
+        "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.duration,routes.legs.steps.distanceMeters,routes.legs.steps.navigationInstruction";
     private const string MatrixFieldMask =
         "originIndex,destinationIndex,duration,distanceMeters,condition,status";
 
@@ -161,7 +161,8 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
                 Points = points,
                 DistanceMeters = distance,
                 Duration = duration,
-                Steps = ReadSteps(route)
+                Steps = ReadSteps(route),
+                LegDurationSeconds = ReadLegDurations(route)
             };
         }
         catch (Exception ex)
@@ -169,6 +170,53 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
             Logger.Warning(ex, "Routes computeRoutes failed");
             return new DrivePathResult { Error = "Routing request failed." };
         }
+    }
+
+    private static IReadOnlyList<int> ReadLegDurations(JsonElement route)
+    {
+        if (!route.TryGetProperty("legs", out var legs) || legs.ValueKind != JsonValueKind.Array)
+        {
+            return Array.Empty<int>();
+        }
+
+        var seconds = new List<int>();
+        foreach (var leg in legs.EnumerateArray())
+        {
+            if (!leg.TryGetProperty("duration", out var duration) || duration.ValueKind != JsonValueKind.String)
+            {
+                return Array.Empty<int>();
+            }
+
+            if (TryParseDurationSeconds(duration.GetString()) is not int value)
+            {
+                return Array.Empty<int>();
+            }
+
+            seconds.Add(value);
+        }
+
+        return seconds;
+    }
+
+    private static int? TryParseDurationSeconds(string? duration)
+    {
+        if (string.IsNullOrWhiteSpace(duration))
+        {
+            return null;
+        }
+
+        var text = duration.Trim();
+        if (text.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+        {
+            text = text[..^1];
+        }
+
+        if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) || seconds < 0)
+        {
+            return null;
+        }
+
+        return (int)Math.Round(seconds, MidpointRounding.AwayFromZero);
     }
 
     private static IReadOnlyList<string> ReadSteps(JsonElement route)

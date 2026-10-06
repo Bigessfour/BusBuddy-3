@@ -517,7 +517,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(RouteStopCount));
                 StatusMessage = $"Successfully added stop '{stopName}' to {SelectedRoute.RouteName}";
                 Logger.Information("Added stop {StopName} to route {RouteName}", stopName, SelectedRoute.RouteName);
-                MarkPublishedClocksStale("add stop");
+                await ApplyPublishedClocksAfterStopChangeAsync("add stop");
             }
             catch (Exception ex)
             {
@@ -584,7 +584,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(RouteStops));
                 StatusMessage = $"Updated stop '{saved.StopName}'";
                 Logger.Information("Updated stop {StopId} on route {RouteId}", saved.RouteStopId, SelectedRoute.RouteId);
-                MarkPublishedClocksStale("edit stop");
+                await ApplyPublishedClocksAfterStopChangeAsync("edit stop");
             }
             catch (Exception ex)
             {
@@ -625,7 +625,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Information("Removed stop {StopName} from route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
 
                 SelectedRouteStop = null;
-                MarkPublishedClocksStale("remove stop");
+                await ApplyPublishedClocksAfterStopChangeAsync("remove stop");
             }
             catch (Exception ex)
             {
@@ -674,7 +674,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteStops.Move(currentIndex, currentIndex - 1);
                 StatusMessage = $"Successfully moved stop '{SelectedRouteStop.StopName}' up";
                 Logger.Information("Moved stop {StopName} up in route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
-                MarkPublishedClocksStale("reorder stop");
+                await ApplyPublishedClocksAfterStopChangeAsync("reorder stop");
             }
             catch (Exception ex)
             {
@@ -723,7 +723,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteStops.Move(currentIndex, currentIndex + 1);
                 StatusMessage = $"Successfully moved stop '{SelectedRouteStop.StopName}' down";
                 Logger.Information("Moved stop {StopName} down in route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
-                MarkPublishedClocksStale("reorder stop");
+                await ApplyPublishedClocksAfterStopChangeAsync("reorder stop");
             }
             catch (Exception ex)
             {

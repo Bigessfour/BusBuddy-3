@@ -75,6 +75,7 @@ public sealed class DistrictSettingsAccessor : IDistrictSettingsAccessor
             TargetRidersPerCell = source.TargetRidersPerCell,
             MaxPickupGapMinutes = source.MaxPickupGapMinutes,
             AverageSpeedMph = source.AverageSpeedMph,
+            StopDwellMinutes = source.StopDwellMinutes,
             MaxRideMinutes = source.MaxRideMinutes,
             AllowSeatingOverride = source.AllowSeatingOverride,
             StopSuggestMaxMeters = source.StopSuggestMaxMeters,

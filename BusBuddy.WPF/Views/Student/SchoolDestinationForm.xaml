@@ -120,12 +120,12 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Start *" Margin="0,0,0,4" FontSize="14"/>
+                            <TextBlock Text="Start" Margin="0,0,0,4" FontSize="14"/>
                             <syncfusion:SfTimePicker x:Name="SchoolStartPicker"
                                                      AutomationProperties.Name="School start time"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Dismissal *" Margin="0,0,0,4" FontSize="14"/>
+                            <TextBlock Text="Dismissal" Margin="0,0,0,4" FontSize="14"/>
                             <syncfusion:SfTimePicker x:Name="SchoolDismissalPicker"
                                                      AutomationProperties.Name="School dismissal time"/>
                         </StackPanel>

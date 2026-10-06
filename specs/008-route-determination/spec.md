@@ -67,8 +67,10 @@ As a clerk placing a school on the map, I enter school start (and dismissal) tim
 
 **Acceptance Scenarios**:
 
-1. **Given** a school with start time and an ordered AM route, **When** times are computed, **Then** each stop has a pickup time such that estimated arrival at school meets start time under the configured average speed / drive-path estimate.
-2. **Given** PM dismissal time, **When** mirrored PM is scheduled, **Then** dropoff/home times work forward from dismissal consistently with AM mirror stops.
+1. **Given** a school with a confirmed start time and an ordered morning route, **When** times are computed, **Then** each pickup is early enough that the bus arrives at that school by its start, using Google leg drive times when routing is configured and the average-speed fallback when it is not.
+2. **Given** a special-needs route that serves more than one school, **When** times are computed, **Then** each school stop is due at that school’s own start, and a pickup ordered after that rider’s school fails the plan without changing published clocks.
+3. **Given** a confirmed dismissal time, **When** the afternoon route is scheduled, **Then** the bus is at each school at that dismissal and home drop-offs work forward from there. A long afternoon still publishes.
+4. **Given** a school whose start and dismissal are still null, **When** a route that serves it is timed, **Then** that school is not used as a deadline and the clerk is warned. The form’s `08:00` / `15:30` example is not saved as the bell.
 
 ---
 
@@ -91,7 +93,8 @@ As a director, school-to-school transfer riders are planned with the same capaci
 
 - Student with no coordinates: exclude from auto-geo clustering; flag for manual assign.
 - Student AM-only or PM-only: stop retained on mirror; daily roster reflects ride mode.
-- Multiple schools / campuses: plan per school (or per destination), not one district-wide mega-route.
+- Multiple schools on ordinary year-start packing: plan per school, not one district-wide mega-route. A published special-needs route may already serve several schools. Time that route against each rider’s bell. Do not merge those riders into the per-school packer to fix the clocks.
+- School bell missing: generation for that school fails closed on the morning plan. An unconfirmed bell does not default to 08:00.
 - Soft vs hard capacity: soft warnings for “crowding” preferences; hard stop at assigned bus seating capacity unless explicit override policy says otherwise.
 - Recalc on assign: must be incremental enough for >100 riders (not full district rebuild every click if avoidable); full rebuild allowed at year-start.
 - Rural long deadhead: prefer splitting route over forcing one bus across the whole district.
@@ -103,8 +106,9 @@ As a director, school-to-school transfer riders are planned with the same capaci
 
 - **FR-001**: System MUST treat assigned bus seating capacity as the hard maximum riders on a route slot unless an explicit override is recorded.
 - **FR-002**: System MUST support soft capacity guidance (warnings) below that hard limit when configured.
-- **FR-003**: System MUST store school start time (AM) and dismissal time (PM) on the school destination (or equivalent) when the school is placed/edited on the map.
-- **FR-004**: System MUST compute student pickup times by working backward from school start along the ordered AM route (and forward from dismissal on PM).
+- **FR-003**: System MUST store school start time (morning) and dismissal time (afternoon) on the school destination. Both stay null until the clerk enters them. The editor MUST NOT persist a placeholder `08:00` / `15:30` because the form opened. A null bell is unconfirmed and MUST NOT be used as a deadline.
+- **FR-004**: System MUST compute published clocks with the single plan in `specs/routes.md` (Published clocks). Morning walks backward from each confirmed school start along the published stop order, with a 5-minute pickup dwell and depot dwell of zero, and writes the depot departure as the morning begin time. Afternoon starts at each confirmed dismissal and walks forward with the same dwell on home drop-offs. Drive time is `routes.legs.duration` on the existing Routes client, or straight-line distance at `AverageSpeedMph` marked as an estimate. A morning plan that would miss a bell or that picks up a rider after that rider’s school MUST warn, MUST leave published clocks unchanged, and MUST NOT clamp times to midnight. An afternoon plan that runs long MUST still publish. Session `AM` / `PM` / morning-or-afternoon `SpecialNeeds` selects the plan. A `-PM` name suffix MUST NOT.
+- **FR-004a**: `PickupScheduleCalculator` and `PublishedStopClockPlanner` MUST NOT remain competing publishers of `ScheduledArrival` / `ScheduledDeparture`. Time Route, school-bell save, home-pin save, stop add/remove/reorder, and drive-path refresh all run the one plan. A rider exception MUST NOT. Regen MUST include every active route with a rider or a stop for that school, not only routes whose `Route.School` text equals that school.
 - **FR-005**: System MUST cluster students using a simple quadrant scheme scaled to district geographic size, with rural/outlier rules that split riders when pickup gaps would be unreasonably large.
 - **FR-006**: System MUST minimize the number of buses/routes as the primary objective while respecting ride time, distance, and seating comfort constraints.
 - **FR-007**: System MUST mirror AM and PM route stop structures while allowing per-student ride mode: AM-only, PM-only, or both; occasional-rider stops MUST remain on the mirror.
@@ -134,12 +138,13 @@ As a director, school-to-school transfer riders are planned with the same capaci
 - **SC-002**: For students split across distant quadrants such that one route would create large pickup gaps, generation proposes **more than one** route rather than a single district-wide path.
 - **SC-003**: A clerk can complete year-start auto-assign for a 100-rider school set and override at least one outlier on the map in one session without re-entering all students.
 - **SC-004**: On assign that exceeds hard seating capacity, the clerk always receives an explicit toast/message and the assign is **blocked** unless an explicit override is recorded; time/geo risks warn-and-allow.
-- **SC-005**: Changing school start time updates computed pickup times for affected routes without requiring manual re-entry of each stop time.
+- **SC-005**: Changing a confirmed school start time updates computed pickup times for every active route that serves that school, without requiring manual re-entry of each stop time. A plan that would miss the bell leaves the previous clocks in place and warns.
+- **SC-005a**: A pure clock-plan test with several schools, one shared home, and two stops for the same school passes without a live Routes call. The impossible order fails without writing midnight clocks.
 - **SC-006**: Transfer planning produces a route count independent of home→school route count for the same student population when transfers exist.
 
 ## Assumptions
 
-- Drive-time estimates may use existing Maps routing when configured, or a documented average-speed fallback when not (fail-open like 007).
+- Published clocks use Maps leg durations when a drive path is refreshed, and average-speed Haversine only as a labeled fallback. Assign-time fitness may use the fallback so a click does not wait on the network. Details: `specs/routes.md` Published clocks.
 - “Quadrant” and “outlier gap” thresholds will be configurable district settings with sensible defaults for a small district and a city.
 - Occasional-rider stops mean the stop stays in the path/order even if the student is not on the daily AM or PM roster for that day.
 - PR #36 school destinations, student geo, and transfer records are available before implementation.
