@@ -516,7 +516,8 @@
                             <syncfusion:SfMaskedEdit Name="HomePhoneMaskedEdit"
                                        Style="{StaticResource ValidatedMaskedEditStyle}"
                                        Value="{Binding Student.HomePhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                       Mask="(###) ###-####"
+                                       Mask="(000) 000-0000"
+                                       ValueMaskFormat="ExcludePromptAndLiterals"
                                        PromptChar="_"
                                        Watermark="(555) 123-4567 — Optional"
                                        AutomationProperties.Name="Home Phone"/>
@@ -527,7 +528,8 @@
                             <syncfusion:SfMaskedEdit Name="CellPhoneMaskedEdit"
                                        Style="{StaticResource ValidatedMaskedEditStyle}"
                                        Value="{Binding Student.CellPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                       Mask="(###) ###-####"
+                                       Mask="(000) 000-0000"
+                                       ValueMaskFormat="ExcludePromptAndLiterals"
                                        PromptChar="_"
                                        Watermark="(555) 123-4567 — Optional"
                                        AutomationProperties.Name="Parent Cell Phone"/>
@@ -740,7 +742,8 @@
                                 <syncfusion:SfMaskedEdit Name="EmergencyContactPhoneMaskedEdit"
                                            Style="{StaticResource ValidatedMaskedEditStyle}"
                                            Value="{Binding Student.EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                           Mask="(###) ###-####"
+                                           Mask="(000) 000-0000"
+                                           ValueMaskFormat="ExcludePromptAndLiterals"
                                            PromptChar="_"
                                            Watermark="(555) 123-4567 — Recommended"
                                            AutomationProperties.Name="Emergency Contact Phone"/>
@@ -805,6 +808,7 @@
                 ToolTip="Validate all student data and address"
                 AutomationProperties.Name="Validate Data"/>
             <syncfusion:ButtonAdv Name="SaveButton" Label="Save Student"
+                Click="SaveButton_Click"
                 Command="{Binding SaveCommand}"
                 IsEnabled="{Binding CanSave}"
                                 Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"

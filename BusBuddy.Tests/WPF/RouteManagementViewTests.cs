@@ -1,3 +1,5 @@
+using BusBuddy.Core.Models;
+using BusBuddy.WPF.ViewModels.Route;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.WPF;
@@ -57,7 +59,8 @@ public class RouteManagementViewTests
         Assert.That(print, Does.Contain("preview.Show()"));
         Assert.That(print, Does.Contain("Grid=PdfGrid"));
         Assert.That(print, Does.Contain("Verb=none"));
-        Assert.That(print, Does.Not.Contain("WriteSchedulePdfAsync"));
+        Assert.That(print, Does.Contain("WriteSchedulePdfAsync"));
+        Assert.That(print, Does.Contain("openAfter: false"));
         Assert.That(print, Does.Not.Contain("RevealOrOpen"));
         var helper = XamlViewFile.Read("ViewModels/Route/RouteManagementExportHelper.cs");
         Assert.That(helper, Does.Contain("catch (Exception ex)"));
@@ -72,6 +75,25 @@ public class RouteManagementViewTests
         Assert.That(source, Does.Contain("UiProofLog.Write(Logger, \"Refresh Routes\""));
         Assert.That(source, Does.Contain("Refreshed"));
         Assert.That(source, Does.Contain("_pendingRoutesReload"));
+    }
+
+    [Test]
+    public void PreferredSchool_SkipsSpecialNeedsRow()
+    {
+        Assert.That(
+            RouteGenerationCoordinator.PreferredSchool(new Route
+            {
+                RouteName = "AM Special Needs Bus 5",
+                School = "North High",
+            }),
+            Is.Null);
+        Assert.That(
+            RouteGenerationCoordinator.PreferredSchool(new Route
+            {
+                RouteName = "North AM",
+                School = "  North High  ",
+            }),
+            Is.EqualTo("North High"));
     }
 
     [Test]

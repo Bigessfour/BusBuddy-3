@@ -1,4 +1,5 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 
 namespace BusBuddy.Core.Mapping;
 
@@ -43,7 +44,7 @@ public static class StudentPlotLocation
 
         var pins = new List<StudentPlotPoint>(2);
         var stop = AssignedStop(student, pickups);
-        if (stop is { HasValidatedCoordinates: true })
+        if (stop is { HasValidatedCoordinates: true } && AssignedHomeStopSync.UseCatalogPickup(student))
         {
             pins.Add(new StudentPlotPoint(
                 (double)stop.Latitude,

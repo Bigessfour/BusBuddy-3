@@ -326,7 +326,7 @@
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="DriverName" Width="150"/>
                             <syncfusion:GridTextColumn HeaderText="License Type" MappingName="DriversLicenceType" Width="120"/>
-                            <syncfusion:GridMaskColumn HeaderText="Phone" MappingName="DriverPhone" Width="120" Mask="(###) ###-####"/>
+                            <syncfusion:GridMaskColumn HeaderText="Phone" MappingName="DriverPhone" Width="120" Mask="(000) 000-0000"/>
                             <syncfusion:GridTextColumn HeaderText="Email" MappingName="DriverEmail" Width="200"/>
                         </syncfusion:SfDataGrid.Columns>
                     </syncfusion:SfDataGrid>

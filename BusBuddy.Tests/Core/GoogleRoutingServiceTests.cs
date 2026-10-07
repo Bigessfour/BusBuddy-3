@@ -75,6 +75,36 @@ public class GoogleRoutingServiceTests
         Assert.That(result.Steps, Has.Count.EqualTo(2));
         Assert.That(result.Steps[0], Does.Contain("Head north on Main St").And.Not.Contain("<b>"));
         Assert.That(result.Steps[1], Does.StartWith("Turn left onto Oak St"));
+        Assert.That(fieldMask, Does.Contain("routes.legs.duration"));
+        Assert.That(result.LegDurationSeconds, Is.Empty);
+    }
+
+    [Test]
+    public async Task ComputeDrivePath_ReadsLegDurations()
+    {
+        var json = """
+            {
+              "routes": [{
+                "distanceMeters": 800,
+                "duration": "90s",
+                "polyline": { "encodedPolyline": "_p~iF~ps|U_ulLnnqC_mqNvxq`@" },
+                "legs": [
+                  { "duration": "40s" },
+                  { "duration": "50.4s" }
+                ]
+              }]
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var svc = new GoogleRoutingService(http, Options.Create(new GoogleMapsOptions { ApiKey = "test-key" }));
+
+        var result = await svc.ComputeDrivePathAsync(
+            (38.15, -102.72),
+            (38.16, -102.71),
+            new[] { (38.155, -102.715) });
+
+        Assert.That(result.Succeeded, Is.True);
+        Assert.That(result.LegDurationSeconds, Is.EqualTo(new[] { 40, 50 }));
     }
 
     [Test]

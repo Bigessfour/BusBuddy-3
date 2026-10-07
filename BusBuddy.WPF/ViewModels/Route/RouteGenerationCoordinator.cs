@@ -79,11 +79,25 @@ internal static class RouteGenerationCoordinator
             return new Outcome(true, false, result.Error ?? "Route generation failed", result);
         }
 
+        var warning = result.Warnings.Count > 0 ? $" — {result.Warnings[0]}" : string.Empty;
         var status = fleet == FleetKind.Transfer
-            ? $"Transfer fleet: {result.Proposals.Count} proposal(s), {result.AssignedStudentCount} assigned"
-            : $"Generated {result.Proposals.Count} proposal(s), assigned {result.AssignedStudentCount} student(s)" +
-              (result.Warnings.Count > 0 ? $" — {result.Warnings[0]}" : string.Empty);
+            ? $"Transfer fleet for {school.Name}: {result.Proposals.Count} proposal(s), {result.AssignedStudentCount} assigned{warning}"
+            : $"Generated routes for {school.Name}: {result.Proposals.Count} proposal(s), assigned {result.AssignedStudentCount} student(s){warning}";
 
         return new Outcome(true, true, status, result);
+    }
+
+    /// <summary>
+    /// School label used to pick a year-start or transfer pack.
+    /// A special-needs row's school is one label, not the pack target.
+    /// </summary>
+    public static string? PreferredSchool(BusBuddy.Core.Models.Route? route)
+    {
+        if (route is null || StudentSpecialNeedsHelper.IsSpecialNeedsRoute(route))
+        {
+            return null;
+        }
+
+        return string.IsNullOrWhiteSpace(route.School) ? null : route.School.Trim();
     }
 }

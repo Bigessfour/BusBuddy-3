@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.WPF.Commands;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Views.Route;
@@ -40,6 +41,7 @@ public partial class RouteAssignmentViewModel
             {
                 StatusMessage =
                     $"Drive path updated ({refresh.Path?.DistanceMeters} m, {refresh.Path?.Duration})";
+                await ApplyPublishedClocksAfterStopChangeAsync("drive path");
                 await PlotRouteOnMapAsync();
                 return;
             }
@@ -67,8 +69,7 @@ public partial class RouteAssignmentViewModel
     }
 
     /// <summary>
-    /// Clerk Time Route: published clocks from StartTimeString plus drive-path travel
-    /// (route EstimatedDuration), not a dwell-only staircase.
+    /// Clerk Time Route: one published-clock plan from school bells. The start box shows the barn departure.
     /// </summary>
     private async Task TimeRouteStopsAsync()
     {
@@ -77,9 +78,9 @@ public partial class RouteAssignmentViewModel
             return;
         }
 
-        if (!IsStartTimeValid)
+        if (_routeDetermination is null)
         {
-            StatusMessage = "Cannot time stops — invalid Start Time (HH:mm)";
+            StatusMessage = "Clock plan is not available.";
             return;
         }
 
@@ -87,49 +88,19 @@ public partial class RouteAssignmentViewModel
         {
             IsLoading = true;
             StatusMessage = "Calculating stop times...";
-
-            if (!TimeSpan.TryParseExact(
-                    _startTimeString.Trim(),
-                    new[] { @"hh\:mm", @"h\:mm" },
-                    CultureInfo.InvariantCulture,
-                    out var startOfRun))
+            var result = await _routeDetermination.ApplyPublishedClocksAsync(SelectedRoute.RouteId);
+            if (result.RoutesUpdated > 0)
             {
-                startOfRun = new TimeSpan(7, 30, 0);
-                _startTimeString = "07:30";
-                OnPropertyChanged(nameof(StartTimeString));
-            }
-
-            var stamp = DateTime.UtcNow;
-            var plan = PublishedStopClockPlanner.Apply(
-                RouteStops,
-                startOfRun,
-                SelectedRoute.EstimatedDuration,
-                stamp);
-
-            Logger.Information(
-                "Published clocks RouteId={RouteId} Stops={Stops} TravelMinutes={Travel} DwellMinutes={Dwell} Source={Source} First={First} Last={Last}",
-                SelectedRoute.RouteId,
-                plan.StopCount,
-                plan.TravelMinutes,
-                plan.DwellMinutes,
-                plan.TravelSource,
-                plan.FirstArrival,
-                plan.LastArrival);
-
-            var persistResult = await _routeService.UpdateRouteStopsTimingAsync(SelectedRoute.RouteId, RouteStops);
-            if (!persistResult.IsSuccess)
-            {
-                StatusMessage = $"Timing calculated but failed to persist: {persistResult.Error}";
-                MessageBox.Show(persistResult.Error ?? "Failed to persist timing", "Timing Persistence", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ApplyBeginTime(result);
+                await LoadRouteStopsAsync();
+                var begin = result.BeginTime?.ToString(@"hh\:mm", CultureInfo.InvariantCulture) ?? string.Empty;
+                var estimate = result.Estimated ? " Straight-line estimate." : string.Empty;
+                StatusMessage = $"Timing updated. Barn departure {begin}.{estimate}";
             }
             else
             {
-                var lastClock = plan.LastArrival.ToString(@"hh\:mm", CultureInfo.InvariantCulture);
-                StatusMessage =
-                    $"Timing updated for {plan.StopCount} stops (Start {StartTimeString}, {plan.TravelMinutes} min travel via {plan.TravelSource}, last {lastClock})";
+                StatusMessage = result.Error ?? "Clock plan left published times unchanged.";
             }
-
-            OnPropertyChanged(nameof(RouteStops));
         }
         catch (Exception ex)
         {
@@ -142,6 +113,60 @@ public partial class RouteAssignmentViewModel
             IsLoading = false;
             (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
+    }
+
+    private async Task ApplyPublishedClocksAfterStopChangeAsync(string reason)
+    {
+        if (SelectedRoute is null || _routeDetermination is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = await _routeDetermination.ApplyPublishedClocksAsync(SelectedRoute.RouteId);
+            await LoadRouteStopsAsync();
+            if (result.RoutesUpdated > 0)
+            {
+                ApplyBeginTime(result);
+                var estimate = result.Estimated ? " Straight-line estimate." : string.Empty;
+                StatusMessage = $"{StatusMessage} Clocks updated.{estimate}";
+            }
+            else
+            {
+                var warning = result.Error ?? "published clocks were left unchanged";
+                Logger.Information(
+                    "Published clocks unchanged after {Reason} RouteId={RouteId} Warning={Warning}",
+                    reason,
+                    SelectedRoute.RouteId,
+                    warning);
+                StatusMessage = $"{StatusMessage} {warning}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Published clocks skipped after {Reason} RouteId={RouteId}", reason, SelectedRoute.RouteId);
+        }
+    }
+
+    private void ApplyBeginTime(RouteGenerationResult result)
+    {
+        if (SelectedRoute is null || result.BeginTime is not TimeSpan begin)
+        {
+            return;
+        }
+
+        if (RouteSession.Canonical(SelectedRoute.Session) == RouteSession.PM)
+        {
+            SelectedRoute.PMBeginTime = begin;
+        }
+        else
+        {
+            SelectedRoute.AMBeginTime = begin;
+        }
+
+        _startTimeString = begin.ToString(@"hh\:mm", CultureInfo.InvariantCulture);
+        OnPropertyChanged(nameof(StartTimeString));
     }
 
     /// <summary>
@@ -204,18 +229,6 @@ public partial class RouteAssignmentViewModel
             "Re-time route",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question) == MessageBoxResult.Yes;
-
-    /// <summary>
-    /// Structural stop edits keep existing clocks. Clerk Time Route / schedule Re-time publishes new ones.
-    /// </summary>
-    private void MarkPublishedClocksStale(string reason)
-    {
-        Logger.Information(
-            "Published clocks left unchanged after {Reason} RouteId={RouteId}; Time Route to republish",
-            reason,
-            SelectedRoute?.RouteId);
-        StatusMessage = $"{StatusMessage} Times unchanged — Time Route to republish.";
-    }
 
     private async Task<RouteSummarySheet?> ReTimeSelectedRouteSheetAsync()
     {

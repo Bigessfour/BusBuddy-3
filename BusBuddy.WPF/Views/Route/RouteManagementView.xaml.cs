@@ -10,7 +10,7 @@ using BusBuddy.WPF.ViewModels.Route;
 namespace BusBuddy.WPF.Views.Route;
 
 /// <summary>
-/// Route Management chrome — DataContext, Loaded init, double-click open assignment.
+/// Route Management chrome — DataContext and Loaded init. Manage Route opens assignment.
 /// </summary>
 public partial class RouteManagementView : UserControl
 {

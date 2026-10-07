@@ -22,6 +22,16 @@
 - Minimize route count subject to seating capacity and gap/time thresholds.
 - Students without coordinates are listed in `UnclusteredStudentIds` (manual).
 
+## RegenerateSchedulesForSchoolAsync
+
+**Input**: `schoolDestinationId`
+
+**Rules**:
+
+- Runs the one published-clock plan from `specs/routes.md` for every active route with an assigned rider of that school or a stop matched to that school.
+- Persists morning clocks only when every confirmed start is met. A missed morning bell warns and leaves the previous clocks. An afternoon plan that runs long still publishes.
+- Does not treat a null bell as 08:00, and does not select routes by `Route.School` text alone.
+
 ## RecalculateOnAssignAsync
 
 **Input**: `studentId`, `routeId`, `slot`, `overrideSeating` (bool)

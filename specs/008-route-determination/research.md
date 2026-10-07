@@ -37,6 +37,14 @@
 
 **Rationale**: Spec FR-007. Derive mode from AMRoute/PMRoute presence today; optionally add explicit `RideMode` enum later if ambiguity appears. Occasional-rider stops remain in path order even when mode is one-sided.
 
+## Decision: Published clocks — one bell plan, leg durations, 5-minute dwell
+
+**Rationale**: `specs/routes.md` Published clocks, and FR-003 / FR-004 / FR-004a. Morning is a backward walk from each confirmed school start. Afternoon walks forward from dismissal. Special-needs routes that serve several schools use each rider’s bell and stay out of the per-school packer. A missed morning bell warns and does not publish. `08:00` / `15:30` is not a default bell.
+
+**Supersedes**: treating average-speed Haversine and a 45-second dwell as the published-clock method, regenerating only routes whose `Route.School` equals one name, and inferring afternoon from a `-PM` suffix.
+
+**Unchanged**: assign-time fitness may still use the average-speed fallback so it does not require the network. Year-start packing of ordinary routes stays per school.
+
 ## Decision: Drive ETA — Maps Routes when configured, else average-speed Haversine
 
 **Rationale**: Matches 007 fail-open pattern; assign-time checks must not require network. Year-start can optionally refresh with Routes for better schedules.

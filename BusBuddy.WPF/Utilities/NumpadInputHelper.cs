@@ -83,6 +83,13 @@ public static class NumpadInputHelper
             return;
         }
 
+        if (host is SfMaskedEdit masked)
+        {
+            InsertIntoMaskedEdit(masked, textBox, insert);
+            e.Handled = true;
+            return;
+        }
+
         InjectText(textBox, insert);
         e.Handled = true;
     }
@@ -126,6 +133,69 @@ public static class NumpadInputHelper
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// A simple mask keeps the caret at 0 while the prompt is replaced in place.
+    /// Splicing at that caret prepends each digit (<c>719</c> becomes <c>917</c>).
+    /// Fill the next prompt instead, which is left to right.
+    /// </summary>
+    internal static (string Text, int Caret) InsertIntoMaskText(
+        string? text,
+        int selectionStart,
+        int selectionLength,
+        string insert,
+        char prompt = '_')
+    {
+        var current = text ?? string.Empty;
+        if (selectionLength > 0
+            && selectionStart >= 0
+            && selectionStart + selectionLength <= current.Length)
+        {
+            current = current.Remove(selectionStart, selectionLength);
+            selectionLength = 0;
+        }
+
+        var index = selectionStart;
+        if (selectionLength == 0 && index <= 0)
+        {
+            var promptAt = current.IndexOf(prompt);
+            index = promptAt >= 0 ? promptAt : 0;
+        }
+
+        if (index < 0 || index > current.Length)
+        {
+            index = current.Length;
+        }
+
+        string next;
+        if (insert.Length == 1 && index < current.Length && current[index] == prompt)
+        {
+            next = string.Concat(current.AsSpan(0, index), insert, current.AsSpan(index + 1));
+        }
+        else
+        {
+            next = current.Insert(index, insert);
+        }
+
+        var caret = Math.Min(next.Length, index + insert.Length);
+        return (next, caret);
+    }
+
+    private static void InsertIntoMaskedEdit(SfMaskedEdit masked, TextBox textBox, string insert)
+    {
+        var prompt = masked.PromptChar == '\0' ? '_' : masked.PromptChar;
+        var source = string.IsNullOrEmpty(textBox.Text) ? masked.Value as string : textBox.Text;
+        var (next, caret) = InsertIntoMaskText(
+            source,
+            textBox.SelectionStart,
+            textBox.SelectionLength,
+            insert,
+            prompt);
+        masked.Value = next;
+        textBox.Text = next;
+        textBox.SelectionStart = Math.Min(caret, textBox.Text?.Length ?? 0);
+        textBox.SelectionLength = 0;
     }
 
     private static void InjectText(TextBox textBox, string insert)

@@ -236,6 +236,18 @@ namespace BusBuddy.Core.Services
                 .OrderBy(s => s.StudentName)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
+            if (await AlignAssignedHomesAsync(routeId, students, cancellationToken).ConfigureAwait(false))
+            {
+                route = await context.Routes.AsNoTracking()
+                    .FirstAsync(r => r.RouteId == routeId, cancellationToken)
+                    .ConfigureAwait(false);
+                stops = await context.RouteStops.AsNoTracking()
+                    .Where(s => s.RouteId == routeId)
+                    .OrderBy(s => s.StopOrder)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
             var routable = RoutableStops(route, stops, students, schools);
             await TryFillDerivedWaypointsAsync(route, routable).ConfigureAwait(false);
 
@@ -292,6 +304,40 @@ namespace BusBuddy.Core.Services
                 .Where(d => !d.IsDeleted && d.DestinationType == DestinationTypes.School)
                 .OrderBy(d => d.Name)
                 .ToListAsync(cancellationToken);
+
+        /// <summary>
+        /// Copies stored home coordinates onto that student's published stops and drops a drive
+        /// path that still visits the old place. Catalog riders are left on their shared stop.
+        /// </summary>
+        private async Task<bool> AlignAssignedHomesAsync(
+            int routeId,
+            IReadOnlyList<Student> students,
+            CancellationToken cancellationToken)
+        {
+            if (_contextFactory is null || students.Count == 0)
+            {
+                return false;
+            }
+
+            await using var write = _contextFactory.CreateWriteDbContext();
+            var changed = false;
+            foreach (var student in students)
+            {
+                if (await AssignedHomeStopSync.ApplyAsync(write, student, routeId, cancellationToken)
+                        .ConfigureAwait(false))
+                {
+                    changed = true;
+                }
+            }
+
+            if (!changed)
+            {
+                return false;
+            }
+
+            await write.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            return true;
+        }
 
         /// <summary>
         /// Stop-derived path uses the same roster filter as the map pins and the printed sheet.

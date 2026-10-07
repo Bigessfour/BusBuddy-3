@@ -147,6 +147,11 @@ public partial class StudentService
 
                 await StudentDisplayMirror.SyncAsync(context, student).ConfigureAwait(false);
                 context.Students.Update(student);
+                if (student.HasValidatedHomeCoordinates)
+                {
+                    await AssignedHomeStopSync.ApplyAsync(context, student).ConfigureAwait(false);
+                }
+
                 result = await context.SaveChangesAsync();
             }
             finally
@@ -161,6 +166,11 @@ public partial class StudentService
             if (success)
             {
                 Logger.Information("Successfully updated student: {StudentName}", student.StudentName);
+                if (student.HasValidatedHomeCoordinates)
+                {
+                    await RetimeAssignedRoutesAsync(student.StudentId, student.AmRouteId, student.PmRouteId)
+                        .ConfigureAwait(false);
+                }
             }
             else
             {
@@ -204,6 +214,9 @@ public partial class StudentService
         }
 
         var (context, dispose) = GetWriteContext();
+        int? amRouteId = null;
+        int? pmRouteId = null;
+        var saved = false;
         try
         {
             var row = await context.Students
@@ -222,48 +235,101 @@ public partial class StudentService
                 Logger.Information(
                     "Clerk home pickup pin kept StudentId={StudentId}",
                     studentId);
-                return true;
-            }
+                if (await AssignedHomeStopSync.ApplyAsync(context, row).ConfigureAwait(false))
+                {
+                    await context.SaveChangesAsync().ConfigureAwait(false);
+                }
 
-            row.Latitude = latitude;
-            row.Longitude = longitude;
-            if (homePickupClerkAdjusted is bool adjusted)
-            {
-                row.HomePickupClerkAdjusted = adjusted;
+                amRouteId = row.AmRouteId;
+                pmRouteId = row.PmRouteId;
+                saved = true;
             }
-            else if (!LocationCoordinate.IsValidated(latitude, longitude))
+            else
             {
-                row.HomePickupClerkAdjusted = false;
-            }
+                row.Latitude = latitude;
+                row.Longitude = longitude;
+                if (homePickupClerkAdjusted is bool adjusted)
+                {
+                    row.HomePickupClerkAdjusted = adjusted;
+                }
+                else if (!LocationCoordinate.IsValidated(latitude, longitude))
+                {
+                    row.HomePickupClerkAdjusted = false;
+                }
 
-            if (!string.IsNullOrWhiteSpace(placeId))
-            {
-                row.PlaceId = placeId;
-            }
-            else if (!LocationCoordinate.IsValidated(latitude, longitude))
-            {
-                row.PlaceId = null;
-            }
+                if (!string.IsNullOrWhiteSpace(placeId))
+                {
+                    row.PlaceId = placeId;
+                }
+                else if (!LocationCoordinate.IsValidated(latitude, longitude))
+                {
+                    row.PlaceId = null;
+                }
 
-            row.UpdatedDate = DateTime.UtcNow;
-            if (LocationCoordinate.IsValidated(latitude, longitude))
-            {
-                await SyncPublishedHomeStopsAsync(context, row, studentId).ConfigureAwait(false);
-            }
+                row.UpdatedDate = DateTime.UtcNow;
+                if (LocationCoordinate.IsValidated(latitude, longitude))
+                {
+                    await AssignedHomeStopSync.ApplyAsync(context, row).ConfigureAwait(false);
+                }
 
-            await context.SaveChangesAsync().ConfigureAwait(false);
-            Logger.Information(
-                "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
-                studentId,
-                latitude.HasValue && longitude.HasValue);
-            // Zero rows changed still means the student exists (confirm-without-nudge).
-            return true;
+                await context.SaveChangesAsync().ConfigureAwait(false);
+                Logger.Information(
+                    "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
+                    studentId,
+                    latitude.HasValue && longitude.HasValue);
+                amRouteId = row.AmRouteId;
+                pmRouteId = row.PmRouteId;
+                saved = true;
+            }
         }
         finally
         {
             if (dispose)
             {
                 await context.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
+        if (saved)
+        {
+            await RetimeAssignedRoutesAsync(studentId, amRouteId, pmRouteId).ConfigureAwait(false);
+        }
+
+        return saved;
+    }
+
+    private async Task RetimeAssignedRoutesAsync(int studentId, int? amRouteId, int? pmRouteId)
+    {
+        if (_clocks is null)
+        {
+            return;
+        }
+
+        var routeIds = new[] { amRouteId, pmRouteId }
+            .Where(id => id is > 0)
+            .Select(id => id!.Value)
+            .Distinct();
+        foreach (var routeId in routeIds)
+        {
+            try
+            {
+                var timed = await _clocks.ApplyPublishedClocksAsync(routeId).ConfigureAwait(false);
+                if (!timed.Success)
+                {
+                    Logger.Warning(
+                        "Published clocks left unchanged StudentId={StudentId} RouteId={RouteId} Reason={Reason}",
+                        studentId,
+                        routeId,
+                        timed.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(
+                    ex,
+                    "Published clocks skipped StudentId={StudentId} RouteId={RouteId}",
+                    studentId,
+                    routeId);
             }
         }
     }
@@ -293,40 +359,6 @@ public partial class StudentService
                 previous.PmRouteId);
             student.PMRoute = null;
             student.PmRouteId = null;
-        }
-    }
-
-    private static async Task SyncPublishedHomeStopsAsync(
-        BusBuddyDbContext context,
-        Student student,
-        int studentId)
-    {
-        var routeIds = new[] { student.AmRouteId, student.PmRouteId }
-            .Where(id => id is > 0)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToList();
-        if (routeIds.Count == 0)
-        {
-            return;
-        }
-
-        var stops = await context.RouteStops
-            .AsTracking()
-            .Where(s => routeIds.Contains(s.RouteId))
-            .ToListAsync()
-            .ConfigureAwait(false);
-
-        foreach (var stop in stops)
-        {
-            if (!NotesNameStudent(stop.Notes, studentId))
-            {
-                continue;
-            }
-
-            stop.Latitude = student.Latitude;
-            stop.Longitude = student.Longitude;
-            stop.UpdatedDate = DateTime.UtcNow;
         }
     }
 

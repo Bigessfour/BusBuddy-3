@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Route;
 using FluentAssertions;
 using Moq;
@@ -183,5 +185,99 @@ public class RouteManagementExportHelperTests
         captured.DriverId.Should().Be(12);
         captured.DepartureTime.Should().Be(captured.ScheduleDate.AddHours(7));
         captured.ArrivalTime.Should().Be(captured.DepartureTime.AddMinutes(45));
+    }
+
+    [Test]
+    public async Task WriteSchedulePdfAsync_PrintsPublishedStopsAndRiders()
+    {
+        var route = new Route
+        {
+            RouteId = 4,
+            RouteName = "AM Special Needs",
+            Session = RouteSession.SpecialNeeds,
+            IsSpecialNeedsRoute = true,
+            School = "North High",
+            IsActive = true,
+            AMVehicleId = 2,
+            AMDriverId = 3,
+            AMBeginTime = new TimeSpan(6, 38, 0)
+        };
+        var stops = new List<RouteStop>
+        {
+            new()
+            {
+                StopOrder = 1,
+                StopName = "Bus Barn",
+                ScheduledArrival = new TimeSpan(7, 30, 0),
+                ScheduledDeparture = new TimeSpan(7, 30, 0),
+                Status = "Active"
+            },
+            new()
+            {
+                StopOrder = 2,
+                StopName = "Home pickup",
+                StopAddress = "100 Oak Street",
+                Notes = "StudentId=11",
+                ScheduledArrival = new TimeSpan(7, 40, 0),
+                ScheduledDeparture = new TimeSpan(7, 45, 0),
+                Status = "Active"
+            },
+            new()
+            {
+                StopOrder = 3,
+                StopName = "North Elementary",
+                ScheduledArrival = new TimeSpan(7, 55, 0),
+                ScheduledDeparture = new TimeSpan(7, 55, 0),
+                Status = "Active"
+            }
+        };
+        var students = new List<Student>
+        {
+            new()
+            {
+                StudentId = 11,
+                StudentName = "Sample Rider",
+                AmRouteId = 4,
+                School = "North Elementary",
+                Grade = "3"
+            }
+        };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetRouteStopsAsync(4))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routeService.Setup(s => s.GetStudentsForRouteAsync(4, RouteTimeSlot.AM))
+            .ReturnsAsync(Result.SuccessResult(students));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus> { new() { BusId = 2, BusNumber = "5" } }));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver> { new() { DriverId = 3, DriverName = "Pat Driver" } }));
+
+        var previousOpen = RouteManagementExportHelper.OpenAfterWrite;
+        RouteManagementExportHelper.OpenAfterWrite = false;
+        SchedulePdfResult pdf;
+        try
+        {
+            pdf = await RouteManagementExportHelper.WriteSchedulePdfAsync(
+                route,
+                routeService.Object,
+                _tempDir,
+                openAfter: false);
+        }
+        finally
+        {
+            RouteManagementExportHelper.OpenAfterWrite = previousOpen;
+        }
+
+        pdf.StopCount.Should().Be(3);
+        pdf.StudentCount.Should().Be(1);
+        routeService.Verify(s => s.GetStudentsForRouteAsync(4, RouteTimeSlot.AM), Times.Once);
+        var bytes = File.ReadAllBytes(pdf.Path);
+        Encoding.ASCII.GetString(bytes, 0, 4).Should().Be("%PDF");
+        bytes.Length.Should().BeGreaterThan(5_000);
+        var ascii = Encoding.ASCII.GetString(bytes);
+        ascii.Should().NotContain("Daily Schedule");
+        ascii.Should().NotContain("Mock insight");
+        ascii.Should().NotContain("AM begin");
     }
 }

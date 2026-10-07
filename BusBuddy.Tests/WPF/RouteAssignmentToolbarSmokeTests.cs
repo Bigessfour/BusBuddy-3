@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels.Route;
 using Moq;
@@ -97,7 +98,7 @@ public class RouteAssignmentToolbarSmokeTests
     }
 
     [Test]
-    public async Task TimeRoute_SpreadsPathDurationAcrossStops()
+    public async Task TimeRoute_CallsPublishedClockPlan()
     {
         var route = new Route
         {
@@ -147,27 +148,39 @@ public class RouteAssignmentToolbarSmokeTests
             .ReturnsAsync(Result.SuccessResult(new List<Student>()));
         mock.Setup(r => r.GetRiderExceptionStudentIdsAsync(4, It.IsAny<DateTime>()))
             .ReturnsAsync(Result.SuccessResult<IReadOnlyList<int>>(Array.Empty<int>()));
-        mock.Setup(r => r.UpdateRouteStopsTimingAsync(4, It.IsAny<IEnumerable<RouteStop>>()))
-            .ReturnsAsync(Result.SuccessResult(true));
 
-        var vm = new RouteAssignmentViewModel(routes);
+        var planner = new Mock<IRouteDeterminationService>();
+        planner.Setup(p => p.ApplyPublishedClocksAsync(4, It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                stops[0].ScheduledArrival = new TimeSpan(7, 15, 0);
+                stops[1].ScheduledArrival = new TimeSpan(8, 15, 0);
+            })
+            .ReturnsAsync(new RouteGenerationResult
+            {
+                Success = true,
+                RoutesUpdated = 1,
+                BeginTime = new TimeSpan(7, 15, 0)
+            });
+
+        var vm = new RouteAssignmentViewModel(routes, planner.Object);
         await WaitUntilAsync(() => !vm.IsLoading && vm.SelectedRoute != null && vm.RouteStops.Count == 2);
 
         vm.TimeRouteCommand.Execute(null);
-        await WaitUntilAsync(() => !vm.IsLoading && vm.RouteStops[1].ScheduledArrival != default);
+        await WaitUntilAsync(() => !vm.IsLoading && vm.StatusMessage.Contains("Timing updated", StringComparison.Ordinal));
 
-        Assert.That(vm.RouteStops[0].ScheduledArrival, Is.EqualTo(new TimeSpan(7, 30, 0)));
-        Assert.That(vm.RouteStops[1].ScheduledArrival, Is.EqualTo(new TimeSpan(8, 31, 0)));
-        Assert.That(vm.StatusMessage, Does.Contain("60 min travel"));
-        mock.Verify(r => r.UpdateRouteStopsTimingAsync(4, It.IsAny<IEnumerable<RouteStop>>()), Times.Once);
+        Assert.That(vm.StatusMessage, Does.Contain("07:15"));
+        Assert.That(vm.RouteStops[0].ScheduledArrival, Is.EqualTo(new TimeSpan(7, 15, 0)));
+        planner.Verify(p => p.ApplyPublishedClocksAsync(4, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
-    public void AssignmentVm_DoesNotAutoRetimeAfterStopEdits()
+    public void AssignmentVm_RetimesFromThePublishedClockPlan()
     {
         var assignment = XamlViewFile.ReadFolder("ViewModels/Route");
-        Assert.That(assignment, Does.Contain("PublishedStopClockPlanner.Apply"));
-        Assert.That(assignment, Does.Contain("MarkPublishedClocksStale"));
+        Assert.That(assignment, Does.Contain("ApplyPublishedClocksAsync"));
+        Assert.That(assignment, Does.Not.Contain("PublishedStopClockPlanner"));
+        Assert.That(assignment, Does.Not.Contain("MarkPublishedClocksStale"));
         Assert.That(assignment, Does.Contain("Refresh Route Data started"));
         Assert.That(assignment, Does.Contain("Data refreshed successfully"));
         Assert.That(assignment, Does.Not.Contain("Auto-retiming route stops"));

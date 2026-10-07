@@ -245,8 +245,8 @@ public partial class SchoolDestinationForm : ChromelessWindow
 
         _vm.Name = SchoolNameBox.Text?.Trim() ?? string.Empty;
         PushAddressFieldsToViewModel();
-        _vm.StartTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolStartPicker.Value, "08:00");
-        _vm.DismissalTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolDismissalPicker.Value, "15:30");
+        _vm.StartTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolStartPicker.Value, string.Empty);
+        _vm.DismissalTimeText = SchoolDestinationFormViewModel.FormatTimeText(SchoolDismissalPicker.Value, string.Empty);
         _vm.LatitudeValue = SchoolLatBox.Value ?? 0d;
         _vm.LongitudeValue = SchoolLonBox.Value ?? 0d;
         if (Math.Abs(_vm.LatitudeValue) > 0.0001 || Math.Abs(_vm.LongitudeValue) > 0.0001)

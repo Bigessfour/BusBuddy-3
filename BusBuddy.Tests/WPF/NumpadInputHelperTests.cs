@@ -31,6 +31,19 @@ public class NumpadInputHelperTests
     }
 
     [Test]
+    public void InsertIntoMaskText_NumpadFillsPromptsLeftToRight()
+    {
+        var (first, _) = NumpadInputHelper.InsertIntoMaskText("(___) ___-____", 0, 0, "7");
+        Assert.That(first, Is.EqualTo("(7__) ___-____"));
+
+        var (second, _) = NumpadInputHelper.InsertIntoMaskText(first, 0, 0, "1");
+        Assert.That(second, Is.EqualTo("(71_) ___-____"));
+
+        var (third, _) = NumpadInputHelper.InsertIntoMaskText(second, 0, 0, "9");
+        Assert.That(third, Is.EqualTo("(719) ___-____"));
+    }
+
+    [Test]
     public void ResolveEffectiveKey_UnwrapsImeProcessedNumPad()
     {
         var key = NumpadInputHelper.ResolveEffectiveKey(

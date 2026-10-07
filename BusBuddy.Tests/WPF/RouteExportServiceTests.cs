@@ -59,6 +59,19 @@ public class RouteExportServiceTests
                 },
             }));
 
+        routes.Setup(r => r.GetRouteStopsAsync(It.IsAny<int>()))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(new List<RouteStop>
+            {
+                new()
+                {
+                    RouteId = 3,
+                    StopOrder = 1,
+                    StopName = "North Elementary",
+                    ScheduledArrival = new TimeSpan(7, 45, 0),
+                    ScheduledDeparture = new TimeSpan(7, 50, 0),
+                },
+            }));
+
         var students = new Mock<IStudentService>();
         students.Setup(s => s.GetAllStudentsAsync())
             .ReturnsAsync(new List<Student>
@@ -97,8 +110,33 @@ public class RouteExportServiceTests
         var written = await CreateService().GenerateRouteReportAsync(path);
 
         written.Should().Be(path);
-        File.ReadAllText(path).Should().Contain("Bus 5 AM");
+        var report = File.ReadAllText(path);
+        report.Should().Contain("Bus 5 AM");
+        report.Should().Contain("North Elementary");
+        report.Should().Contain("07:45-07:50");
         DesktopFiles("BusBuddy_Report_*.txt").Should().BeEquivalentTo(desktopBefore);
+    }
+
+    [Test]
+    public async Task ExportRoutesToCsvAsync_LimitsToRequestedRouteIds()
+    {
+        var routes = new Mock<IRouteService>();
+        routes.Setup(r => r.GetAllRoutesAsync())
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<Route>>(new List<Route>
+            {
+                new() { RouteId = 3, RouteName = "Shown", Date = new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc) },
+                new() { RouteId = 8, RouteName = "Hidden", Date = new DateTime(2026, 9, 15, 0, 0, 0, DateTimeKind.Utc) },
+            }));
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(new List<Student>());
+        var service = new RouteExportService(routes.Object, students.Object);
+        var path = Path.Combine(_tempDir, "filtered.csv");
+
+        await service.ExportRoutesToCsvAsync(path, new[] { 3 });
+
+        var csv = File.ReadAllText(path);
+        csv.Should().Contain("Shown");
+        csv.Should().NotContain("Hidden");
     }
 
     [Test]

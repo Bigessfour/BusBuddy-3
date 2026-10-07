@@ -148,7 +148,8 @@
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfMaskedEdit Value="{Binding Driver.DriverPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource FieldInputStyle}"
-                                                 Mask="(999) 999-9999"
+                                                 Mask="(000) 000-0000"
+                                                 ValueMaskFormat="ExcludePromptAndLiterals"
                                                  AutomationProperties.Name="Phone Number Input"
                                                  AutomationProperties.HelpText="Enter driver phone number" />
                     </StackPanel>
@@ -468,7 +469,8 @@
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfMaskedEdit Value="{Binding Driver.EmergencyContactPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource FieldInputStyle}"
-                                                 Mask="(999) 999-9999"
+                                                 Mask="(000) 000-0000"
+                                                 ValueMaskFormat="ExcludePromptAndLiterals"
                                                  AutomationProperties.Name="Emergency Contact Phone"
                                                  AutomationProperties.HelpText="Enter emergency contact phone number" />
                     </StackPanel>

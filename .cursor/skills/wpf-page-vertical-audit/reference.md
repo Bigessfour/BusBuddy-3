@@ -186,32 +186,32 @@ Persistence: `%AppData%/BusBuddy/user-settings.json` via `IUserSettingsService` 
 
 ## Route views folder (`Views/Route/`)
 
-| Surface               | Role                                        | Status                        |
-| --------------------- | ------------------------------------------- | ----------------------------- |
-| `RouteManagementView` | Fleet route list + planning toolbar         | **Keep** — audited 2026-09-03 |
-| `RouteAssignmentView` | Docked assignment (students/stops/generate) | **Keep** — canonical Hop 3    |
-| `RouteStopsEditor`    | Stop list child of assignment view          | **Keep**                      |
-| `RouteStopEditDialog` | Single-stop edit dialog                     | **Keep**                      |
+| Surface               | Role                                        | Status                           |
+| --------------------- | ------------------------------------------- | -------------------------------- |
+| `RouteManagementView` | Fleet route list + planning toolbar         | **Keep** — re-audited 2026-10-06 |
+| `RouteAssignmentView` | Docked assignment (students/stops/generate) | **Keep** — canonical Hop 3       |
+| `RouteStopsEditor`    | Stop list child of assignment view          | **Keep**                         |
+| `RouteStopEditDialog` | Single-stop edit dialog                     | **Keep**                         |
 
 **Entry points:** MainWindow **Routes** pane (`RouteAssignmentView`); **Route Management** dialog (`RouteManagementView`); **Manage Route** opens assignment via `RouteAssignmentLauncher`.
 
 ### Route code-complete checklist (2026-09-03)
 
-| Item                                                                     | Status              |
-| ------------------------------------------------------------------------ | ------------------- |
-| `RouteManagementView` bus + time-slot pickers for `AssignVehicleCommand` | Done                |
-| `RouteManagementViewModel` load/add/edit/delete via `IRouteService`      | Done                |
-| `RouteManagementView` resolves VM from DI                                | Done                |
-| `RouteAssignmentLauncher` for modal assignment entry                     | Done                |
-| `InitializeAsync` + split `IsBusy`/`IsRefreshing` load gates             | Done                |
-| `RouteManagementViewModel` buses via `GetAvailableBusesAsync`            | Done                |
-| `RefreshDrivePathCommand` + Routes API via `RouteDrivePathRefresher`     | Done                |
-| `RouteAssignmentView` Assign Bus / Assign Driver / Refresh buttons       | Done                |
-| Footer shows `SelectedRouteBusDisplay` / `SelectedRouteDriverDisplay`    | Done                |
-| `IsLoading` indicator on both route surfaces                             | Done                |
-| Structured Serilog (`LogContext` + `ViaService=true` on CRUD)            | Done                |
-| VM smoke Hop 3 — Generate Routes → Serilog `Route generation completed`  | **Windows VM only** |
-| VM smoke Hop 4 — Assign bus → `Routes.AMVehicleId` / `PMVehicleId`       | **Windows VM only** |
+| Item                                                                     | Status                                          |
+| ------------------------------------------------------------------------ | ----------------------------------------------- |
+| `RouteManagementView` bus + time-slot pickers for `AssignVehicleCommand` | Done                                            |
+| `RouteManagementViewModel` load/add/edit/delete via `IRouteService`      | Done                                            |
+| `RouteManagementView` resolves VM from DI                                | Done                                            |
+| `RouteAssignmentLauncher` for modal assignment entry                     | Done                                            |
+| `InitializeAsync` + `IsLoading` gate (`IsBusy` or `IsRefreshing`)        | Done — 2026-10-06                               |
+| `RouteManagementViewModel` buses via `GetAvailableBusesAsync`            | Done                                            |
+| `RefreshDrivePathCommand` + Routes API via `RouteDrivePathRefresher`     | Done — clocks republish after path and optimize |
+| `RouteAssignmentView` Assign Bus / Assign Driver / Refresh buttons       | Done                                            |
+| Footer shows `SelectedRouteBusDisplay` / `SelectedRouteDriverDisplay`    | Done                                            |
+| `IsLoading` indicator on both route surfaces                             | Done                                            |
+| Structured Serilog (`LogContext` + `ViaService=true` on CRUD)            | Done                                            |
+| VM smoke Hop 3 — Generate Routes → Serilog `Route generation completed`  | **Windows VM only**                             |
+| VM smoke Hop 4 — Assign bus → `Routes.AMVehicleId` / `PMVehicleId`       | **Windows VM only**                             |
 
 ### Known failure modes (P0 — fixed 2026-09-03)
 

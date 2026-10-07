@@ -31,6 +31,9 @@ public sealed class DrivePathResult
     /// <summary>Road instructions from the same computeRoutes response, in drive order.</summary>
     public IReadOnlyList<string> Steps { get; init; } = Array.Empty<string>();
 
+    /// <summary>Per-leg drive seconds from <c>routes.legs.duration</c>, in stop order. Empty when the response omitted them.</summary>
+    public IReadOnlyList<int> LegDurationSeconds { get; init; } = Array.Empty<int>();
+
     public string? Error { get; init; }
     public bool Succeeded => string.IsNullOrEmpty(Error) && !string.IsNullOrWhiteSpace(EncodedPolyline);
 }

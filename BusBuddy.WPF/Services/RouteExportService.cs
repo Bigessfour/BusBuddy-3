@@ -29,7 +29,12 @@ namespace BusBuddy.WPF.Services
         /// Destination file. Callers that already asked the clerk where to save must pass it: the rows
         /// carry student names, so defaulting to the Desktop would leave an unrequested roster there.
         /// </param>
-        public async Task<string> ExportRoutesToCsvAsync(string outputPath)
+        public Task<string> ExportRoutesToCsvAsync(string outputPath) =>
+            ExportRoutesToCsvAsync(outputPath, onlyRouteIds: null);
+
+        /// <param name="outputPath">Destination file. Callers that already asked the clerk where to save must pass it.</param>
+        /// <param name="onlyRouteIds">Null exports every route. An empty list exports the header only.</param>
+        public async Task<string> ExportRoutesToCsvAsync(string outputPath, IReadOnlyCollection<int>? onlyRouteIds)
         {
             try
             {
@@ -43,7 +48,7 @@ namespace BusBuddy.WPF.Services
                     throw new InvalidOperationException($"Failed to load routes: {routesResult.Error}");
                 }
 
-                var routes = routesResult.Value ?? Enumerable.Empty<Route>();
+                var routes = LimitRoutes(routesResult.Value, onlyRouteIds);
 
                 var filePath = ResolveOutputPath(outputPath);
 
@@ -79,8 +84,13 @@ namespace BusBuddy.WPF.Services
         /// <summary>
         /// Generate detailed text report of routes and student assignments.
         /// </summary>
-        /// <param name="outputPath">Destination file; see <see cref="ExportRoutesToCsvAsync"/>.</param>
-        public async Task<string> GenerateRouteReportAsync(string outputPath)
+        /// <param name="outputPath">Destination file. Callers that already asked the clerk where to save must pass it.</param>
+        public Task<string> GenerateRouteReportAsync(string outputPath) =>
+            GenerateRouteReportAsync(outputPath, onlyRouteIds: null);
+
+        /// <param name="outputPath">Destination file. Callers that already asked the clerk where to save must pass it.</param>
+        /// <param name="onlyRouteIds">Null includes every route. An empty list writes the summary with no route sections.</param>
+        public async Task<string> GenerateRouteReportAsync(string outputPath, IReadOnlyCollection<int>? onlyRouteIds)
         {
             try
             {
@@ -94,7 +104,7 @@ namespace BusBuddy.WPF.Services
                     throw new InvalidOperationException($"Failed to load routes: {routesResult.Error}");
                 }
 
-                var routes = routesResult.Value ?? Enumerable.Empty<Route>();
+                var routes = LimitRoutes(routesResult.Value, onlyRouteIds);
 
                 var filePath = ResolveOutputPath(outputPath);
 
@@ -140,6 +150,22 @@ namespace BusBuddy.WPF.Services
                     {
                         report.AppendLine($"    - {student.StudentName} (Grade: {student.Grade})");
                     }
+
+                    report.AppendLine("  Stops:");
+                    var stopsResult = await _routeService.GetRouteStopsAsync(route.RouteId);
+                    if (!stopsResult.IsSuccess || stopsResult.Value is null)
+                    {
+                        report.AppendLine("    (unavailable)");
+                    }
+                    else
+                    {
+                        foreach (var stop in stopsResult.Value.OrderBy(s => s.StopOrder))
+                        {
+                            report.AppendLine(
+                                $"    {stop.StopOrder}. {stop.StopName}  {Clock(stop.ScheduledArrival)}-{Clock(stop.ScheduledDeparture)}");
+                        }
+                    }
+
                     report.AppendLine();
                 }
 
@@ -180,6 +206,23 @@ namespace BusBuddy.WPF.Services
                 throw;
             }
         }
+
+        private static IEnumerable<Route> LimitRoutes(IEnumerable<Route>? routes, IReadOnlyCollection<int>? onlyRouteIds)
+        {
+            var list = routes ?? Enumerable.Empty<Route>();
+            if (onlyRouteIds is null)
+            {
+                return list;
+            }
+
+            var ids = onlyRouteIds as ISet<int> ?? onlyRouteIds.ToHashSet();
+            return list.Where(route => ids.Contains(route.RouteId));
+        }
+
+        private static string Clock(TimeSpan value) =>
+            value == default
+                ? "none"
+                : $"{(int)value.TotalHours:00}:{value.Minutes:00}";
 
         private static string ResolveOutputPath(string? outputPath)
         {

@@ -1,4 +1,5 @@
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using Serilog;
 
@@ -13,13 +14,16 @@ public partial class StudentService : IStudentService
     private static readonly ILogger Logger = Log.ForContext<StudentService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IGeocodingService? _geocodingService;
+    private readonly IRouteDeterminationService? _clocks;
 
     public StudentService(
         IBusBuddyDbContextFactory contextFactory,
-        IGeocodingService? geocodingService = null)
+        IGeocodingService? geocodingService = null,
+        IRouteDeterminationService? clocks = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _geocodingService = geocodingService;
+        _clocks = clocks;
     }
 
     // Context helpers: only dispose when using the concrete runtime factory
