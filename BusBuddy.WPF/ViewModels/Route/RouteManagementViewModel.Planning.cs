@@ -38,10 +38,14 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (refresh.Success)
                 {
                     var pathCaption = SelectedRoute?.Path;
-                    var meters = refresh.Path?.DistanceMeters;
-                    var duration = refresh.Path?.Duration;
-                    StatusMessage =
-                        $"Drive path updated ({meters} m, {duration})";
+                    if (string.IsNullOrWhiteSpace(pathCaption))
+                    {
+                        pathCaption = "road path saved";
+                    }
+                    var clockNote = await PublishClocksAsync("drive path").ConfigureAwait(true);
+                    StatusMessage = clockNote is null
+                        ? $"Drive path updated ({pathCaption})."
+                        : $"Drive path updated ({pathCaption}). {clockNote}";
                     UiProofLog.Write(
                         Logger,
                         "Drive Path",
@@ -49,8 +53,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         "refreshed",
                         routeName);
                     ShowClerkNotice(
-                        $"{routeName}\n\nRoad path saved ({pathCaption ?? $"{meters} m, {duration}"}).\n\n"
-                        + "Open Manage Route to plot the line on the map. Use Time Route there to publish stop clocks.",
+                        $"{routeName}\n\nRoad path saved ({pathCaption}).\n\n{clockNote ?? "Published clocks were left unchanged."}\n\nOpen Manage Route to plot the line on the map.",
                         "Drive Path",
                         MessageBoxImage.Information);
                     return;
@@ -134,8 +137,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
 
                 await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
-                StatusMessage =
-                    "Stop order optimized (start/end pinned). Drive path refreshed. Regenerate the schedule if published times should follow the new sequence.";
+                var clockNote = await PublishClocksAsync("optimize order").ConfigureAwait(true);
+                StatusMessage = clockNote is null
+                    ? "Stop order optimized (start and end pinned). Drive path refreshed."
+                    : $"Stop order optimized (start and end pinned). Drive path refreshed. {clockNote}";
                 UiProofLog.Write(
                     Logger,
                     "Optimize Order",
@@ -155,6 +160,46 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        /// <summary>
+        /// Runs the one published-clock plan. A missed bell leaves the stored times and returns the warning.
+        /// </summary>
+        private async Task<string?> PublishClocksAsync(string reason)
+        {
+            if (SelectedRoute is null || _routeDetermination is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var timed = await _routeDetermination.ApplyPublishedClocksAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                await LoadSingleRouteAsync(SelectedRoute.RouteId).ConfigureAwait(true);
+                if (timed.RoutesUpdated > 0)
+                {
+                    var estimate = timed.Estimated ? " Straight-line estimate." : string.Empty;
+                    var begin = timed.BeginTime is TimeSpan departure
+                        ? $" Barn departure {departure:hh\\:mm}."
+                        : string.Empty;
+                    return $"Clocks updated.{begin}{estimate}";
+                }
+
+                var warning = string.IsNullOrWhiteSpace(timed.Error)
+                    ? "Published clocks were left unchanged."
+                    : timed.Error;
+                Logger.Information(
+                    "Published clocks unchanged after {Reason} RouteId={RouteId} Warning={Warning}",
+                    reason,
+                    SelectedRoute.RouteId,
+                    warning);
+                return warning;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Published clocks skipped after {Reason} RouteId={RouteId}", reason, SelectedRoute.RouteId);
+                return "Published clocks could not be refreshed.";
             }
         }
 
@@ -195,8 +240,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
+                var copied = result.Value;
                 await LoadRoutesAsync();
-                StatusMessage = $"Copied route '{sourceName}'";
+                if (copied is not null && !copied.IsActive)
+                {
+                    ShowRetiredRoutes = true;
+                }
+
+                SelectedRoute = copied is null
+                    ? SelectedRoute
+                    : Routes.FirstOrDefault(r => r.RouteId == copied.RouteId) ?? SelectedRoute;
+                StatusMessage = copied is null || copied.IsActive
+                    ? $"Copied route '{sourceName}'"
+                    : $"Copied '{sourceName}' as an inactive draft for {copied.Date:yyyy-MM-dd}. Retired routes are shown so you can select it.";
             }
             catch (Exception ex)
             {

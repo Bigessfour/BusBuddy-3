@@ -80,7 +80,7 @@
                 Background="{DynamicResource AccentBackgroundBrush}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Save grid changes"
-                AutomationProperties.HelpText="Persist inline grid edits (name, session, school, special-needs, AM bus, active) for the selected route"/>
+                AutomationProperties.HelpText="Persist inline grid edits for the selected route. A session change republishes stop clocks."/>
             <syncfusion:ButtonAdv Name="CopyRouteButton" Label="Copy Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding CopyRouteCommand}"
@@ -89,7 +89,7 @@
                 Background="{DynamicResource AccentBackgroundBrush}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Copy Route"
-                AutomationProperties.HelpText="Clone the selected route"/>
+                AutomationProperties.HelpText="Clone the selected route as an inactive draft and show it with retired routes"/>
             <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="Retire Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding DeleteRouteCommand}"
@@ -116,7 +116,7 @@
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Schedule"
-                AutomationProperties.HelpText="Create a calendar schedule and printable PDF for the selected route"/>
+                AutomationProperties.HelpText="Open the published stop schedule. Saves today's calendar row when a bus and driver are assigned."/>
             <syncfusion:ButtonAdv Name="GenerateRoutesButton" Label="Generate Routes"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding GenerateRoutesCommand}"
@@ -125,7 +125,7 @@
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Routes"
-                AutomationProperties.HelpText="Year-start auto route build for school destinations"/>
+                AutomationProperties.HelpText="Year-start routes for one school. A special-needs row does not choose that school. The status names the school."/>
             <syncfusion:ButtonAdv Name="GenerateTransferRoutesButton" Label="Transfer Routes"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding GenerateTransferRoutesCommand}"
@@ -135,7 +135,7 @@
                 Background="{DynamicResource BusBuddy.Brush.SafetyOrange}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Transfer Routes"
-                AutomationProperties.HelpText="Generate separate transfer fleet drafts"/>
+                AutomationProperties.HelpText="Transfer drafts for one school. A special-needs row does not choose that school. The status names the school."/>
             <syncfusion:ButtonAdv Name="RefreshDrivePathButton" Label="Drive Path"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding RefreshDrivePathCommand}"
@@ -144,7 +144,7 @@
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Refresh Drive Path"
-                AutomationProperties.HelpText="Compute road polyline via Google Routes API for the selected route"/>
+                AutomationProperties.HelpText="Save the Google road path, then republish stop clocks. A missed morning bell keeps the stored times."/>
             <syncfusion:ButtonAdv Name="OptimizeStopOrderButton" Label="Optimize Order"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding OptimizeStopOrderCommand}"
@@ -153,7 +153,7 @@
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Optimize stop order"
-                AutomationProperties.HelpText="Reorder pickups with Google Route Optimization. Start and end stays pinned. Clerk-initiated; does not run overnight."/>
+                AutomationProperties.HelpText="Reorder pickups with Google Route Optimization, then republish stop clocks. Start and end stay pinned."/>
             <syncfusion:ButtonAdv Name="ExportCsvButton" Label="Export CSV"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding ExportCsvCommand}"
@@ -162,7 +162,7 @@
                             Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
                             Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Export to CSV"
-                            AutomationProperties.HelpText="Export route data to CSV file"/>
+                            AutomationProperties.HelpText="Export the routes currently shown in the grid"/>
             <syncfusion:ButtonAdv Name="ExportReportButton" Label="Export Report"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding ExportReportCommand}"
@@ -171,7 +171,7 @@
                             Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                             Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Export Report"
-                            AutomationProperties.HelpText="Export detailed route report"/>
+                            AutomationProperties.HelpText="Export the visible routes with riders, stops, and published clocks"/>
             <syncfusion:ButtonAdv Name="PrintScheduleButton" Label="Print Schedule"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding PrintScheduleCommand}"
@@ -180,7 +180,7 @@
                             Background="{DynamicResource BusBuddy.Brush.Primary}"
                             Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Print Schedule"
-                            AutomationProperties.HelpText="Print route schedules"/>
+                            AutomationProperties.HelpText="Preview the published stop schedule for the selected route"/>
                     <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding RefreshCommand}"
@@ -192,13 +192,13 @@
                                               Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
                                               Watermark="Search routes..."
                                               AutomationProperties.Name="Quick Search Routes"
-                                              AutomationProperties.HelpText="Type to search routes by name or description"/>
+                                              AutomationProperties.HelpText="Type to search the grid by name, school, session, or description"/>
                     <CheckBox Content="Show retired routes"
                               Margin="0,0,8,6"
                               VerticalAlignment="Center"
                               IsChecked="{Binding ShowRetiredRoutes, Mode=TwoWay}"
                               AutomationProperties.Name="Show retired routes"
-                              AutomationProperties.HelpText="Include inactive routes retired by Delete"/>
+                              AutomationProperties.HelpText="Include inactive routes, including copied drafts"/>
             </WrapPanel>
         </Border>
 
@@ -238,7 +238,13 @@
                                              AllowEditing="True"/>
         <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
                 <syncfusion:GridCheckBoxColumn MappingName="IsSpecialNeedsRoute" HeaderText="Special Needs" Width="110"/>
-                <syncfusion:GridTextColumn MappingName="School" HeaderText="School" Width="160" AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn MappingName="School"
+                                             HeaderText="School"
+                                             Width="160"
+                                             DisplayMemberPath="Name"
+                                             SelectedValuePath="Name"
+                                             ItemsSource="{Binding DataContext.AvailableSchools, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200" AllowEditing="False"/>
                 <syncfusion:GridComboBoxColumn MappingName="AMVehicleId"
                                              HeaderText="AM Bus"
@@ -246,6 +252,27 @@
                                              DisplayMemberPath="BusNumber"
                                              SelectedValuePath="BusId"
                                              ItemsSource="{Binding DataContext.AvailableBuses, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn MappingName="PMVehicleId"
+                                             HeaderText="PM Bus"
+                                             Width="120"
+                                             DisplayMemberPath="BusNumber"
+                                             SelectedValuePath="BusId"
+                                             ItemsSource="{Binding DataContext.AvailableBuses, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn MappingName="AMDriverId"
+                                             HeaderText="AM Driver"
+                                             Width="140"
+                                             DisplayMemberPath="DriverName"
+                                             SelectedValuePath="DriverId"
+                                             ItemsSource="{Binding DataContext.AvailableDrivers, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn MappingName="PMDriverId"
+                                             HeaderText="PM Driver"
+                                             Width="140"
+                                             DisplayMemberPath="DriverName"
+                                             SelectedValuePath="DriverId"
+                                             ItemsSource="{Binding DataContext.AvailableDrivers, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                              AllowEditing="True"/>
         <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" AllowEditing="False" Pattern="ShortDate"/>
         <syncfusion:GridTextColumn MappingName="StudentCount" HeaderText="Students" Width="90" AllowEditing="False"/>
@@ -298,8 +325,9 @@
                                             Name="AssignTimeSlotCombo"
                                             SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
                                             ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
+                                            IsEditable="False"
                                             AutomationProperties.Name="Assign Time Slot"
-                                            AutomationProperties.HelpText="AM or PM default for this session row"/>
+                                            AutomationProperties.HelpText="AM, PM, or both. Both writes the morning and afternoon columns."/>
                     <syncfusion:ButtonAdv Grid.Column="6"
                                           Name="ApplyVehicleAssignmentButton"
                                           Label="Assign Bus"
@@ -323,7 +351,7 @@
                     <TextBlock Grid.Column="8" VerticalAlignment="Center" Margin="12,0,0,0"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                TextWrapping="Wrap"
-                               Text="Edit the grid, then Save Route. Use Assign Bus/Driver for AM/PM defaults (hop 4)."/>
+                               Text="Save Grid Changes writes the selected route. Assign Bus and Assign Driver use the slot you picked."/>
                 </Grid>
             </Border>
         </Grid>
@@ -349,6 +377,8 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Total Routes: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     <TextBlock Text="{Binding TotalRoutes}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Primary}" Margin="0,0,15,0"/>
+                    <TextBlock Text="Shown: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding VisibleRouteCount}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Primary}" Margin="0,0,15,0"/>
                     <TextBlock Text="Active: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     <TextBlock Text="{Binding ActiveRoutes}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}" Margin="0,0,15,0"/>
                     <TextBlock Text="Students Assigned: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>

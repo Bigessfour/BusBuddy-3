@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -240,29 +239,48 @@ public class RouteManagementViewModelTests
         schedule.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
             .Returns(Task.CompletedTask);
 
-        var report = new Mock<IOperationalReportService>();
-        report.Setup(s => s.GenerateAsync(It.IsAny<OperationalReportRequest>()))
-            .ReturnsAsync(new OperationalReportResult
+        routeService.Setup(s => s.GetRouteStopsAsync(1))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(new List<RouteStop>
             {
-                FilePath = Path.Combine(Path.GetTempPath(), "busbuddy-hop5-missing.pdf")
-            });
+                new()
+                {
+                    StopOrder = 1,
+                    StopName = "North Elementary",
+                    ScheduledArrival = new TimeSpan(7, 45, 0),
+                    ScheduledDeparture = new TimeSpan(7, 45, 0),
+                    Status = "Active"
+                }
+            }));
+        routeService.Setup(s => s.GetStudentsForRouteAsync(1, RouteTimeSlot.AM))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>
+            {
+                new() { StudentId = 11, StudentName = "Sample Rider", AmRouteId = 1, School = "North Elementary" }
+            }));
 
         var vm = new RouteManagementViewModel(
             new Mock<IBusBuddyDbContextFactory>().Object,
             routeService.Object,
             null,
-            scheduleService: schedule.Object,
-            reportService: report.Object);
+            scheduleService: schedule.Object);
         await vm.InitializeAsync();
         vm.SelectedRoute = vm.Routes[0];
 
-        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)vm.GenerateScheduleCommand).ExecuteAsync(null);
+        var previousOpen = RouteManagementExportHelper.OpenAfterWrite;
+        RouteManagementExportHelper.OpenAfterWrite = false;
+        try
+        {
+            await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)vm.GenerateScheduleCommand).ExecuteAsync(null);
+        }
+        finally
+        {
+            RouteManagementExportHelper.OpenAfterWrite = previousOpen;
+        }
 
         schedule.Verify(s => s.AddScheduleAsync(It.Is<Schedule>(row =>
             row.RouteId == 1 && row.BusId == 7 && row.DriverId == 9)), Times.Once);
-        report.Verify(s => s.GenerateAsync(It.Is<OperationalReportRequest>(r =>
-            r.Kind == OperationalReportKind.DailySchedule && r.RouteId == 1)), Times.Once);
         vm.StatusMessage.Should().Contain("Schedule saved");
+        vm.StatusMessage.Should().Contain("1 stops");
+        vm.StatusMessage.Should().Contain("1 students");
     }
 
     [Test]

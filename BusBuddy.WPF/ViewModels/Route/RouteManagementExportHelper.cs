@@ -1,11 +1,8 @@
 using System.Diagnostics;
 using System.IO;
-using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
-using BusBuddy.WPF.Services;
-using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.ViewModels.Route;
 
@@ -80,52 +77,106 @@ internal static class RouteManagementExportHelper
         }
     }
 
-    public static async Task<string> WriteSchedulePdfAsync(
+    /// <summary>Unit tests set this false so a generated PDF is not handed to the shell.</summary>
+    internal static bool OpenAfterWrite { get; set; } = true;
+
+    /// <summary>
+    /// Prints the published stop sheet (stops, clocks, riders) for one route.
+    /// The district Daily Schedule table is a different report and is not this PDF.
+    /// </summary>
+    public static async Task<SchedulePdfResult> WriteSchedulePdfAsync(
         BusBuddy.Core.Models.Route route,
-        bool printAfter,
-        IOperationalReportService? reportService,
-        IBusBuddyDbContextFactory contextFactory)
+        IRouteService routeService,
+        string? outputDirectory = null,
+        bool openAfter = true)
     {
-        var exportDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "BusBuddy",
-            "Printouts");
+        ArgumentNullException.ThrowIfNull(route);
+        ArgumentNullException.ThrowIfNull(routeService);
+
+        var exportDir = string.IsNullOrWhiteSpace(outputDirectory)
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "BusBuddy",
+                "Printouts")
+            : outputDirectory;
         Directory.CreateDirectory(exportDir);
 
-        string path;
-        try
+        var slot = RouteSession.ToAssignmentSlot(route);
+        var stopsResult = await routeService.GetRouteStopsAsync(route.RouteId).ConfigureAwait(true);
+        if (stopsResult is not { IsSuccess: true, Value: not null })
         {
-            if (reportService is not null)
-            {
-                var generated = await reportService.GenerateAsync(new OperationalReportRequest
-                {
-                    Kind = printAfter ? OperationalReportKind.PrintSchedules : OperationalReportKind.DailySchedule,
-                    RouteId = route.RouteId,
-                    OutputDirectory = exportDir
-                }).ConfigureAwait(true);
-                path = generated.FilePath;
-            }
-            else
-            {
-                path = RoutePdfPrinter.GenerateRoutePdf(
-                    contextFactory,
-                    route.RouteId,
-                    exportDir,
-                    RouteSession.ToAssignmentSlot(route));
-            }
-        }
-        catch (Exception ex)
-        {
-            Serilog.Log.Warning(ex, "Schedule report failed; writing RoutePdfPrinter fallback RouteId={RouteId}", route.RouteId);
-            path = RoutePdfPrinter.GenerateRoutePdf(
-                contextFactory,
-                route.RouteId,
-                exportDir,
-                RouteSession.ToAssignmentSlot(route));
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stopsResult?.Error)
+                ? "Could not load published stops for this route."
+                : stopsResult.Error);
         }
 
-        RevealOrOpen(path, print: printAfter);
-        return path;
+        var stops = stopsResult.Value.ToList();
+        var studentsResult = await routeService.GetStudentsForRouteAsync(route.RouteId, slot).ConfigureAwait(true);
+        var students = studentsResult is { IsSuccess: true, Value: not null }
+            ? studentsResult.Value
+            : new List<BusBuddy.Core.Models.Student>();
+
+        var busId = slot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+        var driverId = slot == RouteTimeSlot.PM ? route.PMDriverId : route.AMDriverId;
+        var bus = await FindBusAsync(routeService, busId).ConfigureAwait(true);
+        var driver = await FindDriverAsync(routeService, driverId).ConfigureAwait(true);
+
+        var sheet = RouteSummarySheetBuilder.Build(route, stops, students, bus, driver, slot);
+        if (sheet.Stops.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"'{route.RouteName}' has no published stops to print.");
+        }
+
+        var bytes = RouteSummaryPdfRenderer.Render(route, stops, students, bus, driver, slot);
+        if (bytes.Length == 0)
+        {
+            throw new InvalidOperationException("The schedule PDF was empty.");
+        }
+
+        var safeName = string.Join("_", (route.RouteName ?? "Route").Split(Path.GetInvalidFileNameChars()));
+        var fileName = $"Route_{safeName}_{slot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        var path = Path.Combine(exportDir, fileName);
+        await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(true);
+
+        if (openAfter && OpenAfterWrite)
+        {
+            RevealOrOpen(path);
+        }
+
+        return new SchedulePdfResult(path, sheet.Stops.Count, sheet.Students.Count, bytes);
+    }
+
+    private static async Task<BusBuddy.Core.Models.Bus?> FindBusAsync(IRouteService routeService, int? busId)
+    {
+        if (busId is not int id)
+        {
+            return null;
+        }
+
+        var buses = await routeService.GetAvailableBusesAsync().ConfigureAwait(true);
+        if (buses is not { IsSuccess: true, Value: not null })
+        {
+            return null;
+        }
+
+        return buses.Value.FirstOrDefault(bus => bus.BusId == id);
+    }
+
+    private static async Task<BusBuddy.Core.Models.Driver?> FindDriverAsync(IRouteService routeService, int? driverId)
+    {
+        if (driverId is not int id)
+        {
+            return null;
+        }
+
+        var drivers = await routeService.GetAvailableDriversAsync().ConfigureAwait(true);
+        if (drivers is not { IsSuccess: true, Value: not null })
+        {
+            return null;
+        }
+
+        return drivers.Value.FirstOrDefault(driver => driver.DriverId == id);
     }
 
     public static async Task<bool> TryPersistScheduleAsync(
@@ -168,3 +219,6 @@ internal static class RouteManagementExportHelper
         return true;
     }
 }
+
+/// <summary>Printed stop sheet for one route.</summary>
+internal readonly record struct SchedulePdfResult(string Path, int StopCount, int StudentCount, byte[] Pdf);

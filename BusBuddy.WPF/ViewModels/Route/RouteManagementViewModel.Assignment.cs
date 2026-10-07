@@ -200,6 +200,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
+        private List<BusBuddy.Core.Models.Route> VisibleRoutes() =>
+            RoutesView.Cast<BusBuddy.Core.Models.Route>().ToList();
+
         private async Task LoadSingleRouteAsync(int routeId)
         {
             try
@@ -228,6 +231,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 existing.Distance = updated.Distance;
                 existing.EstimatedDuration = updated.EstimatedDuration;
                 existing.Path = updated.Path;
+                existing.AMBeginTime = updated.AMBeginTime;
+                existing.PMBeginTime = updated.PMBeginTime;
+                existing.Session = updated.Session;
                 OnPropertyChanged(nameof(SelectedRoute));
                 SyncAssignmentFromSelectedRoute();
             }
@@ -250,17 +256,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                         return;
                     }
 
+                    var visible = VisibleRoutes();
                     if (_exportService is not null)
                     {
-                        await _exportService.ExportRoutesToCsvAsync(path).ConfigureAwait(true);
+                        await _exportService.ExportRoutesToCsvAsync(path, visible.Select(r => r.RouteId).ToList())
+                            .ConfigureAwait(true);
                         RouteManagementExportHelper.RevealOrOpen(path);
-                        StatusMessage = $"Exported CSV: {Path.GetFileName(path)}";
+                        StatusMessage = $"Exported CSV: {visible.Count} visible route(s) ({Path.GetFileName(path)})";
                         return;
                     }
 
-                    RouteManagementExportHelper.WriteFallbackCsv(Routes, path);
+                    RouteManagementExportHelper.WriteFallbackCsv(visible, path);
                     RouteManagementExportHelper.RevealOrOpen(path);
-                    StatusMessage = $"Exported {Routes.Count} routes";
+                    StatusMessage = $"Exported {visible.Count} visible route(s)";
                 }
             }
             catch (Exception ex)
@@ -284,15 +292,17 @@ namespace BusBuddy.WPF.ViewModels.Route
                         return;
                     }
 
+                    var visible = VisibleRoutes();
                     if (_exportService is not null)
                     {
-                        await _exportService.GenerateRouteReportAsync(path).ConfigureAwait(true);
+                        await _exportService.GenerateRouteReportAsync(path, visible.Select(r => r.RouteId).ToList())
+                            .ConfigureAwait(true);
                         RouteManagementExportHelper.RevealOrOpen(path);
-                        StatusMessage = $"Exported report: {Path.GetFileName(path)}";
+                        StatusMessage = $"Exported report: {visible.Count} visible route(s) ({Path.GetFileName(path)})";
                         return;
                     }
 
-                    RouteManagementExportHelper.WriteFallbackReport(Routes, path);
+                    RouteManagementExportHelper.WriteFallbackReport(visible, path);
                     RouteManagementExportHelper.RevealOrOpen(path);
                     StatusMessage = "Exported route summary";
                 }
@@ -316,67 +326,21 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsBusy = true;
                 StatusMessage = $"Printing schedule for '{SelectedRoute.RouteName}'...";
-                var slot = SelectedTimeSlot == RouteTimeSlot.PM ? RouteTimeSlot.PM : RouteTimeSlot.AM;
-                var stopsResult = await _routeService.GetRouteStopsAsync(SelectedRoute.RouteId).ConfigureAwait(true);
-                var studentsResult = await _routeService.GetStudentsForRouteAsync(SelectedRoute.RouteId, slot)
+                var pdf = await RouteManagementExportHelper
+                    .WriteSchedulePdfAsync(SelectedRoute, _routeService, openAfter: false)
                     .ConfigureAwait(true);
-                var stops = stopsResult.IsSuccess && stopsResult.Value is not null
-                    ? stopsResult.Value.ToList()
-                    : new List<RouteStop>();
-                var students = studentsResult.IsSuccess && studentsResult.Value is not null
-                    ? studentsResult.Value
-                    : new List<BusBuddy.Core.Models.Student>();
-                BusBuddy.Core.Models.Bus? bus = null;
-                BusBuddy.Core.Models.Driver? driver = null;
-                if (slot == RouteTimeSlot.PM)
-                {
-                    if (SelectedRoute.PMVehicleId is int pmBus)
-                    {
-                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == pmBus);
-                    }
-
-                    if (SelectedRoute.PMDriverId is int pmDriver)
-                    {
-                        driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == pmDriver);
-                    }
-                }
-                else
-                {
-                    if (SelectedRoute.AMVehicleId is int amBus)
-                    {
-                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == amBus);
-                    }
-
-                    if (SelectedRoute.AMDriverId is int amDriver)
-                    {
-                        driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == amDriver);
-                    }
-                }
-
-                var pdfBytes = RouteSummaryPdfRenderer.Render(
-                    SelectedRoute, stops, students, bus, driver, slot);
-                var exportDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "BusBuddy",
-                    "Printouts");
-                Directory.CreateDirectory(exportDir);
-                var safeName = string.Join("_", (SelectedRoute.RouteName ?? "Route").Split(Path.GetInvalidFileNameChars()));
-                var fileName = $"Route_{safeName}_{slot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-                var fullPath = Path.Combine(exportDir, fileName);
-                File.WriteAllBytes(fullPath, pdfBytes);
-
                 var preview = new PdfPreviewWindow(
-                    pdfBytes,
+                    pdf.Pdf,
                     RouteSummarySheetBuilder.DisplayNameFor(SelectedRoute) + " schedule");
                 DialogOwner.Assign(preview);
                 preview.Show();
                 Logger.Information(
                     "Route schedule preview DisplayName={DisplayName} Stops={Stops} Size={SizeBytes} bytes Grid=PdfGrid Preview=true Verb=none File={File}",
                     RouteSummarySheetBuilder.DisplayNameFor(SelectedRoute),
-                    stops.Count,
-                    pdfBytes.Length,
-                    fullPath);
-                StatusMessage = $"Schedule preview: {stops.Count} stops, {students.Count} students ({fileName})";
+                    pdf.StopCount,
+                    pdf.Pdf.Length,
+                    pdf.Path);
+                StatusMessage = $"Schedule preview: {pdf.StopCount} stops, {pdf.StudentCount} students ({Path.GetFileName(pdf.Path)})";
             }
             catch (Exception ex)
             {

@@ -81,7 +81,7 @@ Rider exceptions do not delete the student from the year assignment.
 
 - Clerk builds or edits the ordered stop list from existing locations (Places + Address Validation in the stop dialog). Save refreshes the drive path (`RouteDrivePathRefresher` / Google Routes).
 - Map draws the polyline from `RouteLinePoints` / waypoint path and pins each stop. Unvalidated locations cannot be stops.
-- Published times on the stop list are what parents and substitute drivers see. Assignment **Schedule** opens those times for the selected route row — not the district-wide driver calendar.
+- Published times on the stop list are what parents and substitute drivers see. Assignment **Schedule** opens those times for the selected route row — not the district-wide driver calendar. Route Management **Generate Schedule** prints that same published stop sheet (stops, clocks, and riders) for the selected route and may also save a calendar row. It does not print a district header of begin times.
 - Marking “not riding today” only affects that date’s roster and any load count. Stop times stay published.
 - Adding a mid-year catalog stop: new location first, then insert it on the current published list. Clone the route to another date if the clerk needs a dated variant.
 - Transfer session routes move students school-to-school during the day. They are routes, not trips, because they repeat on the bell schedule.
@@ -130,6 +130,7 @@ Run it, and save it only when it succeeds, after the clerk:
 - changes an assigned student’s stored home, including a clerk driveway pin
 - adds, removes, or reorders a stop
 - refreshes the drive path
+- saves a route session or special-needs flag
 - chooses Time Route
 
 Include every active route that has an assigned rider of that school or a stop matched to that school. `Route.School` is one label. It is not the list of schools the route serves.
