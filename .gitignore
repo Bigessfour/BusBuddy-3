@@ -1142,6 +1142,9 @@ testsettings.runsettings
 
 # Ignore data exports and temp data
 *.csv
+# Fictional joint distribution for Scripts/synthetic_roster. No names or addresses.
+!Scripts/synthetic_roster/seed_distribution.csv
+.venv-roster/
 *.xls*
 *.bak
 *.backup*

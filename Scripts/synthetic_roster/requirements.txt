@@ -1,0 +1,7 @@
+# Local exercise only. Do not add this to the .NET solution or Build & Test.
+# ydata-synthetic 2.x removed RegularSynthesizer. 1.4.0 is the API this module calls.
+# Install into a Python 3.11 virtualenv. TensorFlow wheels are not published for 3.14.
+ydata-synthetic==1.4.0
+pandas
+faker
+pytest

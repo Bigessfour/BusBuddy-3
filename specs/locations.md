@@ -19,7 +19,7 @@ BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted o
 - MUST NOT treat a student’s home as a shared catalog stop unless a clerk publishes that home as a `PickupStop`.
 - MUST NOT fold trips into this entity. A trip is a one-time movement that _references_ two or more locations.
 - MUST NOT invent a parallel place model. Extend `IDestinationService`, `IPickupStopService`, `IGeoDataService` / `IMapsGeoService`, and `DistrictDepot`.
-- Unconfigured map center is the `MapDefaults` US overview. A district center exists only after the clerk sets a depot, bounding box, or school.
+- Unconfigured map center is the `MapDefaults` US overview. A district center exists only after the clerk sets a depot, bounding box, or school. The bounding box is the clerk's district extent (typed edges or a GeoJSON import). It is not a town.
 - Exception: facility address correction, new catalog stop, school-year rollover, or a trip to a one-off destination (field, another district, event site).
 
 ## Relationships

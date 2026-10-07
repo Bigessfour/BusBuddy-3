@@ -1,4 +1,5 @@
 using BusBuddy.Core.Data;
+using BusBuddy.DbPrep;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
@@ -650,6 +651,18 @@ try
 
         Console.WriteLine("PASS — Fuel and Maintenance records point at the assigned bus.");
         return 0;
+    }
+
+    // Places suggestion, then Address Validation, for imported homes that still have no pin.
+    // Does not migrate. Prints counts only.
+    if (command is "validate-roster-homes")
+    {
+        return await RosterHomeValidation.RunAsync(factory);
+    }
+
+    if (command is "optimize-roster-routes")
+    {
+        return await RosterRouteOptimization.RunAsync(factory);
     }
 
     // Roster intake is deliberately standalone: it never runs migrations, so importing a local

@@ -78,6 +78,7 @@ The map does not need its own table of pins. Persist facts on Location and Route
 ## Behaviors / UI
 
 - First open: center on the clerk's depot or bounding box, then a school pin, otherwise the `MapDefaults` US overview. Google Map Tiles when the key/session works; otherwise empty basemap with a clear status (not OSM). Do **not** auto-select a route or draw a polyline until the clerk picks one.
+- Settings → District boundary: the clerk types the four edges or imports a GeoJSON polygon. The app stores that polygon's extent as the bounding box. It does not store a town name, and it does not draw the polygon on the District Map.
 - Load markers for schools and catalog stops that have coordinates. Skip incomplete addresses and list them as “needs validation.” Homes wait for a selected route (or an explicit student search).
 - Selecting a route: fit (or center) on that path, draw polyline, show that run’s stops and eligible student homes.
 - Refresh path after stop order changes. Stale polylines are a bug.

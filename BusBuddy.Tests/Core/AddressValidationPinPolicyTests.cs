@@ -121,6 +121,24 @@ public class AddressValidationPinPolicyTests
     }
 
     [Test]
+    public void Accept_PremiseProximityWhenOnlyHouseNumberIsUnconfirmed()
+    {
+        var ok = AddressValidationPinPolicy.TryAcceptAddressValidationPin(
+            "ACCEPT",
+            "PREMISE_PROXIMITY",
+            "PREMISE_PROXIMITY",
+            addressComplete: true,
+            dpvConfirmation: null,
+            missingComponentTypes: null,
+            isPoBox: false,
+            unconfirmedComponentTypes: new[] { "street_number" },
+            geocodePlaceTypes: new[] { "premise" },
+            out var error);
+
+        Assert.That(ok, Is.True, error);
+    }
+
+    [Test]
     public void Reject_UnconfirmedStreetEvenIfPremise()
     {
         var ok = AddressValidationPinPolicy.TryAcceptAddressValidationPin(

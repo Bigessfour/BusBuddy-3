@@ -76,7 +76,9 @@ public static class AddressValidationPinPolicy
             return false;
         }
 
-        if (HasUnconfirmedStreet(unconfirmedComponentTypes))
+        if (HasUnconfirmedRoute(unconfirmedComponentTypes)
+            || (HasUnconfirmedStreetNumber(unconfirmedComponentTypes)
+                && !EqualsAny(possibleNextAction, "ACCEPT", "CONFIRM")))
         {
             error = ClerkReject(
                 "Google does not recognize this street or house number. It is not a real deliverable address.",
@@ -178,9 +180,17 @@ public static class AddressValidationPinPolicy
     private static string ClerkReject(string reason, string nextStep) =>
         $"Rejected. {reason} No map pin. {nextStep}";
 
-    private static bool HasUnconfirmedStreet(IReadOnlyList<string>? unconfirmed) =>
+    private static bool HasUnconfirmedRoute(IReadOnlyList<string>? unconfirmed) =>
         unconfirmed is { Count: > 0 }
-        && unconfirmed.Any(t => EqualsAny(t, "street_number", "route"));
+        && unconfirmed.Any(t => EqualsAny(t, "route"));
+
+    /// <summary>
+    /// House number Google did not confirm. ACCEPT or CONFIRM plus a building-level geocode
+    /// (including PREMISE_PROXIMITY) may still pin; FIX may not.
+    /// </summary>
+    private static bool HasUnconfirmedStreetNumber(IReadOnlyList<string>? unconfirmed) =>
+        unconfirmed is { Count: > 0 }
+        && unconfirmed.Any(t => EqualsAny(t, "street_number"));
 
     /// <summary>
     /// Address Validation <c>geocode.placeTypes</c> of only locality/political is the city centroid
