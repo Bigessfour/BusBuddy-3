@@ -62,7 +62,9 @@ public static class AssignedHomeStopSync
             return false;
         }
 
+        // Caller contexts are often NoTracking. Track these rows so the move is saved.
         var stops = await context.RouteStops
+            .AsTracking()
             .Where(s => routeIds.Contains(s.RouteId))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -101,6 +103,7 @@ public static class AssignedHomeStopSync
         }
 
         var routes = await context.Routes
+            .AsTracking()
             .Where(r => routeIds.Contains(r.RouteId))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
