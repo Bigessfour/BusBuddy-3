@@ -17,23 +17,25 @@
 
 **Project-done:** [done-checklist.md](./done-checklist.md) — `python3 .github/scripts/check-project-done.py`. Ship-ready is a subset. The project is done only when the checker exits 0.
 
-### Status snapshot (2026-09-21)
+### Status snapshot (2026-10-26)
 
-Branch **`feature/route-mgmt-assignment-ux`** — [PR #97](https://github.com/Bigessfour/BusBuddy-3/pull/97) (Route Management + Route Assignment UX; merge when **Build & Test** is green). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now: Item 5** (refresh route data) + **Maps slice 1** after hop 1–6 close. Latest guest SSOT: `artifacts/utm-runtime-logs-20260921T214854Z/Debug-logs/logs/log-20260921.txt`.
+Branch **`master`** at `42ae5f8` — [PR #126](https://github.com/Bigessfour/BusBuddy-3/pull/126) merged on top of [PR #102](https://github.com/Bigessfour/BusBuddy-3/pull/102) (`d6e5739`). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now:** Item 5 (refresh route data), then **Maps slice 1**. PRs #97–#102 and #126 are merged; do not reopen them. Guest-proof boxes below stay open until a log is recorded in this file.
 
 | Criterion                       | Status                                                                                                                                                                                                                           |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Clerk hops 1–6                  | **Met** — DbPrep on Docker Postgres + PR #64                                                                                                                                                                                     |
 | Windows VM proof                | **Met (hybrid)** — UTM testhost + live District Map 2026-09-10 / 09-17; hops 1–3 ribbon clicks still optional                                                                                                                    |
-| District Map / Settings         | **Camera met** (2026-09-18 relaunch `DistrictSource=user-settings HasDepotKey=true`). Leftover: Export toast + Move pin live clicks                                                                                              |
+| District Map / Settings         | **Camera met** (2026-09-18 relaunch `DistrictSource=user-settings HasDepotKey=true`). Open: Export toast + Move pin live clicks                                                                                                  |
 | Schedule window / PDF           | **Met** — 2026-09-18: `RouteScheduleWindow` + PdfGrid preview (`Verb=none`). Queue #1 closed.                                                                                                                                    |
 | Path-consistent clocks (Item 3) | **Met (guest 2026-09-21)** — Bus 5 `RouteId=4`: Drive path `42069m` / `3580s`; `Published clocks … Source=PathDuration` **07:30→08:43**; schedule `FirstLast=07:30 → 08:43`. Supersedes 09-18 **lying** `07:30→07:43` staircase. |
 | Follow-up PR #65                | **Merged** 2026-09-10 (`District Map interaction proof and Google Maps attribution logo`)                                                                                                                                        |
-| PR #97                          | **Open** — CI run `35655294520` **CANCELLED** at ~25m (job timeout during Test). **Re-run Build & Test** before merge.                                                                                                           |
+| PRs #97–#102                    | **Merged** on `master`. See Done log 2026-10-26.                                                                                                                                                                                 |
 | a11y Phase 2 / wishlist         | Out of scope                                                                                                                                                                                                                     |
-| Project-done checker            | **Not 0** — B14 still wants hops 1–3 live UI boxes; B10 until leftover clicks / parked prefixes; B05 DI leftovers; B12 stale inventory. Ship-ready ≠ checker 0                                                                   |
+| Project-done checker            | **Not 0** — open guest boxes are Item 5, Maps slice 1, and District Map Export/Move. B14 still wants hops 1–3 live UI boxes. B12 cleared by #126. Ship-ready ≠ checker 0                                                         |
 
-**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–4 and 6** guest-proofed on 2026-09-21 logs; close **Item 5** refresh string, then **Maps slice 1** (walk Item 7).
+**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–4 and 6** are guest-proofed on 2026-09-21 logs. Next guest work is **Item 5**, then **Maps slice 1** (walk Item 7).
+
+**Open boxes on this file:** Item 5; Maps slice 1; District Map Export/Move; optional hops 1–3 UI; Route FK name-string drop; `IStudentScheduleService`; fleet chrome filenames. Parked rows stay parked.
 
 ---
 
@@ -43,17 +45,16 @@ Branch **`feature/route-mgmt-assignment-ux`** — [PR #97](https://github.com/Bi
 
 Do in this order. Do not start parked campaigns from this table.
 
-| Order | Item                                                                                                                                                                                                                          | Why this slot                                                                                       |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| 1     | Prod walk **Item 5** — assignment **Refresh Route Data** → stable `Data refreshed successfully` log (partial 13:59:19; re-click after #97 sync).                                                                              | Item 6 schedule + PdfGrid preview **closed** 13:57 guest log.                                       |
-| 2     | **Merge [PR #97](https://github.com/Bigessfour/BusBuddy-3/pull/97)** — re-run **Build & Test** if cancelled.                                                                                                                  | Assignment layout + UX on branch.                                                                   |
-| 3     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Unconfigured overview until a depot is set. No OSM. | After Items 1–6. Competing tile strategies blanked the map. Contract: `specs/maps.md`.              |
-| —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                                                    | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                              |
-| —     | Student form map live confirm                                                                                                                                                                                                 | **Met** 2026-09-20 — `Opening home pin map` + `Clerk adjusted home pin` StudentId=65.               |
-| —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                                                        | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.** |
-| —     | `IRouteRepository`                                                                                                                                                                                                            | **Keep.** Address Validation `GetAllAsync`. Not a stub                                              |
-| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                                                                                                                                                                   | Parked. Do not “finish” `RouteAssignments`                                                          |
-| —     | Generate also assign roster keys                                                                                                                                                                                              | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only |
+| Order | Item                                                                                                                                                                                                                          | Why this slot                                                                                                      |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1     | Prod walk **Item 5** — assignment **Refresh Route Data** → stable `Data refreshed successfully` log (partial 13:59:19 on the 2026-09-21 log).                                                                                 | Item 6 schedule + PdfGrid preview **closed** 13:57 guest log. Leave this box open until a later log is cited here. |
+| 2     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Unconfigured overview until a depot is set. No OSM. | After Item 5. Competing tile strategies blanked the map. Contract: `specs/maps.md`.                                |
+| —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                                                    | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                                             |
+| —     | Student form map live confirm                                                                                                                                                                                                 | **Met** 2026-09-20 — `Opening home pin map` + `Clerk adjusted home pin` StudentId=65.                              |
+| —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                                                        | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.**                |
+| —     | `IRouteRepository`                                                                                                                                                                                                            | **Keep.** Address Validation `GetAllAsync`. Not a stub                                                             |
+| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                                                                                                                                                                   | Parked. Do not “finish” `RouteAssignments`                                                                         |
+| —     | Generate also assign roster keys                                                                                                                                                                                              | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only                |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
@@ -145,6 +146,19 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-26 — Queue catch-up (issue #107)
+
+- **`master`** is `42ae5f8`. Product head remains [PR #102](https://github.com/Bigessfour/BusBuddy-3/pull/102) (`d6e5739`). [PR #126](https://github.com/Bigessfour/BusBuddy-3/pull/126) regenerated `docs/function-inventory.generated.md` and cleared B12.
+- **Merged, not current work:**
+    - [#97](https://github.com/Bigessfour/BusBuddy-3/pull/97) `89ff18c` (2026-09-22) — Route Management retire UX and Route Assignment clerk polish. The 2026-09-21 note to re-run its cancelled CI is closed.
+    - [#98](https://github.com/Bigessfour/BusBuddy-3/pull/98) `b6d14b6` (2026-09-22) — Remove unused Core stubs, seed JSON, and the checked-in XML dump.
+    - [#99](https://github.com/Bigessfour/BusBuddy-3/pull/99) `8910915` (2026-09-22) — Remove unused schedule stubs, Alert, and FuelRecord.
+    - [#100](https://github.com/Bigessfour/BusBuddy-3/pull/100) `9477e1a` (2026-09-23) — Split route, student, and trip services and enforce bus capacity.
+    - [#101](https://github.com/Bigessfour/BusBuddy-3/pull/101) `48e7d55` (2026-09-23) — Keep a clerk-adjusted home pickup pin on the map.
+    - [#102](https://github.com/Bigessfour/BusBuddy-3/pull/102) `d6e5739` (2026-10-07) — Align home pickups and Route Management with one published stop clock plan.
+- **Spec 009 on this `master`:** Fuel dialog uses `FuelDialogViewModel` (`DataContext = _viewModel`). T020–T022 checked. T023 superseded: `FuelManagementViewModel` constructs `FuelDialog`, and the dialog constructs the view model. Bus edit dialog was already checked (T006–T008) and still binds `BusEditDialogViewModel`. VehicleForm still hosts the fleet grid, so T024–T027 stay open.
+- **Not this pass:** Item 5, Maps slice 1, and District Map Export/Move stay unchecked. No guest log is attached here.
+
 ### 2026-09-21 — Prod walk guest proof (Items 2–4, 6)
 
 - **Artifacts:** `artifacts/utm-runtime-logs-20260921T213326Z/…` (Items 2–3, early Item 4 not-riding); `artifacts/utm-runtime-logs-20260921T214234Z/…` (Item 4 assign/remove); `artifacts/utm-runtime-logs-20260921T214854Z/Debug-logs/logs/log-20260921.txt` (Item 6 schedule + PdfGrid print).
@@ -153,7 +167,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Item 4:** Remove + assign StudentId=11 on RouteId=4; rider exception with **published stops unchanged**; assignment modal opens without post-14:01 `OpenRouteAssignmentAsync` NRE in actionable log.
 - **Item 6:** `RouteScheduleWindow` + `Opened route schedule … FirstLast=07:30 → 08:43`; PdfGrid sheet **~64 KB** with `Preview=true Verb=none` to Printouts (not 1606-byte stub).
 - **Item 5 (open):** `Data refreshed successfully` logged once at 13:59:19 — repeat on post-#97 assignment toolbar refresh.
-- **Ship code:** PR [#97](https://github.com/Bigessfour/BusBuddy-3/pull/97) — route retire UX, assignment scroll/tooltips/layout, edit stop, `CanRefreshDrivePathFor` `GetValueOrDefault(2)` restore, route-mgmt refresh UX, assignment Report/Print opens `PdfPreviewWindow`. **CI:** re-run after cancel at 25m.
+- **Ship code:** PR [#97](https://github.com/Bigessfour/BusBuddy-3/pull/97) — route retire UX, assignment scroll/tooltips/layout, edit stop, `CanRefreshDrivePathFor` `GetValueOrDefault(2)` restore, route-mgmt refresh UX, assignment Report/Print opens `PdfPreviewWindow`. **Merged** 2026-09-22 as `89ff18c`. See the 2026-10-26 queue catch-up.
 
 ### 2026-09-21 — District Map audit full pass (code)
 

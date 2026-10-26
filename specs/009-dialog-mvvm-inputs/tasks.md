@@ -94,10 +94,10 @@
 
 ### File tasks
 
-- [ ] T020 [US3] Create `BusBuddy.WPF/ViewModels/Fuel/FuelDialogViewModel.cs` (properties/commands currently on the Window)
-- [ ] T021 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs` — stop `DataContext = this`; construct/assign FuelDialogViewModel
-- [ ] T022 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml` — bindings target the new VM (no Window-as-VM)
-- [ ] T023 [US3] `BusBuddy.WPF/ViewModels/Fuel/FuelManagementViewModel.cs` — construct FuelDialog with FuelDialogViewModel (pass IBusService / Fuel into the VM, not the Window-as-VM)
+- [x] T020 [US3] Create `BusBuddy.WPF/ViewModels/Fuel/FuelDialogViewModel.cs` (properties/commands currently on the Window). **On `master` `d6e5739`.**
+- [x] T021 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs` — stop `DataContext = this`; construct/assign FuelDialogViewModel. **On `master`:** `DataContext = _viewModel`. Supersedes Wave 2 T012's "may remain".
+- [x] T022 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml` — bindings target the new VM (no Window-as-VM). **On `master`:** `DialogTitle`, `FuelLocations`, `SelectedBus`, and the numeric fields bind to `FuelDialogViewModel`.
+- [x] T023 [US3] `BusBuddy.WPF/ViewModels/Fuel/FuelManagementViewModel.cs` — **superseded on `master`:** the management view model constructs `FuelDialog(fuel, busService, locationCatalog, fuelService)`, and `FuelDialog` constructs `FuelDialogViewModel`. Services are not passed through a Window-as-VM. Do not rewrite this into a different constructor.
 - [ ] T024 [US2] `BusBuddy.WPF/Views/Vehicle/VehicleForm.xaml` — host BusForm add/edit; remove `VehicleManagementView` as content
 - [ ] T025 [US2] `BusBuddy.WPF/Views/Vehicle/VehicleForm.xaml.cs` — wire host (show BusForm or embedded user-control; no nested second ChromelessWindow)
 - [ ] T026 [US2] `BusBuddy.WPF/Views/Bus/BusForm.xaml` — extract shared user-control surface **only if** required to host inside VehicleForm
