@@ -11,6 +11,9 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace BusBuddy.Tests.WPF;
 
@@ -219,6 +222,46 @@ public class StudentsListCoordinatorTests
             null);
 
         deleted.Should().BeFalse("delete must go through IStudentService so the deletion log is written");
+    }
+
+    [Test]
+    public void LogConnectionDiagnostics_InformationLine_MasksPassword()
+    {
+        const string secret = "synthetic-test-secret";
+        var sink = new CollectingSink();
+        var testLogger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Sink(sink)
+            .CreateLogger();
+        var previous = Log.Logger;
+        Log.Logger = testLogger;
+        try
+        {
+            StudentsListCoordinator.LogConnectionDiagnostics(
+                "Npgsql.EntityFrameworkCore.PostgreSQL",
+                $"Host=127.0.0.1;Database=busbuddy_test;Username=busbuddy;Password={secret}");
+        }
+        finally
+        {
+            Log.Logger = previous;
+            (testLogger as IDisposable)?.Dispose();
+        }
+
+        var information = sink.Events.Where(e => e.Level == LogEventLevel.Information).ToList();
+        information.Should().NotBeEmpty();
+        foreach (var evt in information)
+        {
+            var text = evt.RenderMessage();
+            text.Should().Contain("Password=***");
+            text.Should().NotContain(secret);
+        }
+    }
+
+    private sealed class CollectingSink : ILogEventSink
+    {
+        public List<LogEvent> Events { get; } = new();
+
+        public void Emit(LogEvent logEvent) => Events.Add(logEvent);
     }
 
 }
