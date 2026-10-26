@@ -317,28 +317,36 @@ public sealed class StudentsListCoordinator
     {
         try
         {
-            var provider = context.Database.ProviderName;
-            var rawConn = context.Database.GetConnectionString();
-            var masked = rawConn ?? "(null)";
-            if (!string.IsNullOrEmpty(masked))
-            {
-                masked = System.Text.RegularExpressions.Regex.Replace(
-                    masked,
-                    "(?i)(Password|Pwd)=([^;]+)",
-                    "$1=***");
-            }
-
-            Logger.Debug("EF Provider: {Provider}; Connection: {Connection}", provider, masked);
-            if (!string.IsNullOrEmpty(rawConn) && rawConn.Contains("${", StringComparison.Ordinal))
-            {
-                Logger.Warning("Connection string contains unresolved placeholders. Check appsettings and environment variables.");
-            }
-
-            Logger.Information("Students list using connection: {ConnectionString}", rawConn ?? "(null)");
+            LogConnectionDiagnostics(context.Database.ProviderName, context.Database.GetConnectionString());
         }
         catch
         {
             // Non-fatal diagnostics.
         }
+    }
+
+    /// <summary>
+    /// Logs the Students-list connection. Information and Debug both receive the masked string.
+    /// Uses the current <see cref="Log.Logger"/> so a test can attach a sink before the call.
+    /// </summary>
+    internal static void LogConnectionDiagnostics(string? provider, string? rawConn)
+    {
+        var masked = rawConn ?? "(null)";
+        if (!string.IsNullOrEmpty(masked))
+        {
+            masked = System.Text.RegularExpressions.Regex.Replace(
+                masked,
+                "(?i)(Password|Pwd)=([^;]+)",
+                "$1=***");
+        }
+
+        var logger = Log.ForContext<StudentsListCoordinator>();
+        logger.Debug("EF Provider: {Provider}; Connection: {Connection}", provider, masked);
+        if (!string.IsNullOrEmpty(rawConn) && rawConn.Contains("${", StringComparison.Ordinal))
+        {
+            logger.Warning("Connection string contains unresolved placeholders. Check appsettings and environment variables.");
+        }
+
+        logger.Information("Students list using connection: {ConnectionString}", masked);
     }
 }
