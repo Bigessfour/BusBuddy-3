@@ -951,9 +951,8 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         private async Task RefreshDataAsync()
         {
-            Logger.Information("Refresh Route Data started");
             UiDiagnosticsLog.Write(
-                Logger,
+                Log.ForContext<RouteAssignmentViewModel>(),
                 Serilog.Events.LogEventLevel.Information,
                 "Refresh Route Data started");
 
@@ -962,11 +961,12 @@ namespace BusBuddy.WPF.ViewModels.Route
                 IsLoading = true;
                 StatusMessage = "Refreshing data...";
                 await LoadDataFromServiceAsync();
+                await _routeStopsLoad;
 
                 if (StatusMessage.StartsWith("Could not load", StringComparison.Ordinal))
                 {
                     UiDiagnosticsLog.Write(
-                        Logger,
+                        Log.ForContext<RouteAssignmentViewModel>(),
                         Serilog.Events.LogEventLevel.Warning,
                         "Data refresh completed with errors Status={Status}",
                         StatusMessage);
@@ -975,7 +975,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 StatusMessage = $"Data refreshed successfully — {AvailableRoutes.Count} routes";
                 UiDiagnosticsLog.Write(
-                    Logger,
+                    Log.ForContext<RouteAssignmentViewModel>(),
                     Serilog.Events.LogEventLevel.Information,
                     "Data refreshed successfully Routes={RouteCount} Stops={StopCount}",
                     AvailableRoutes.Count,
