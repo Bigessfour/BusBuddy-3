@@ -157,9 +157,7 @@ public class GoogleRoutingServiceTests
             (testLogger as IDisposable)?.Dispose();
         }
 
-        var logged = sink.Events
-            .Where(e => e.Level == LogEventLevel.Warning)
-            .Select(e => e.RenderMessage())
+        var logged = sink.Rendered()
             .Where(message => message.Contains("Routes API HTTP", StringComparison.Ordinal))
             .ToList();
         Assert.That(logged, Has.Count.EqualTo(1));
@@ -266,9 +264,28 @@ public class GoogleRoutingServiceTests
 
     private sealed class CollectingSink : ILogEventSink
     {
-        public List<LogEvent> Events { get; } = new();
+        private readonly List<string> _messages = new();
 
-        public void Emit(LogEvent logEvent) => Events.Add(logEvent);
+        public void Emit(LogEvent logEvent)
+        {
+            if (logEvent.Level != LogEventLevel.Warning)
+            {
+                return;
+            }
+
+            lock (_messages)
+            {
+                _messages.Add(logEvent.RenderMessage());
+            }
+        }
+
+        public string[] Rendered()
+        {
+            lock (_messages)
+            {
+                return _messages.ToArray();
+            }
+        }
     }
 
     private sealed class StubHandler : HttpMessageHandler
