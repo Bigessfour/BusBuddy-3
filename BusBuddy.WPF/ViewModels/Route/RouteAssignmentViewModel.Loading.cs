@@ -27,7 +27,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     {
         #region Data Loading
 
-        private async Task LoadDataFromServiceAsync()
+        private async Task<bool> LoadDataFromServiceAsync()
         {
             try
             {
@@ -121,6 +121,14 @@ namespace BusBuddy.WPF.ViewModels.Route
                 UpdateStatusMessage();
 
                 ReportLoadFailures("Route assignment data partially unavailable", loadFailures);
+                if (loadFailures.Count > 0)
+                {
+                    _loadFailureStatus = StatusMessage;
+                    return false;
+                }
+
+                _loadFailureStatus = null;
+                return true;
             }
             catch (Exception ex)
             {
@@ -139,10 +147,15 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = DatabaseUserMessage.IsConnectivityFailure(ex)
                     ? DatabaseUserMessage.UnavailableShort
                     : $"Could not load route data: {ex.Message}";
+                _loadFailureStatus = StatusMessage;
+                return false;
             }
             finally
             {
-                IsLoading = false;
+                if (!_refreshHoldsLoading)
+                {
+                    IsLoading = false;
+                }
             }
         }
 
@@ -170,11 +183,11 @@ namespace BusBuddy.WPF.ViewModels.Route
             StatusMessage = "Could not load " + detail;
         }
 
-        private async Task ReloadStudentListsForRouteAsync()
+        private async Task<bool> ReloadStudentListsForRouteAsync()
         {
             if (SelectedRoute == null)
             {
-                return;
+                return true;
             }
 
             var slot = NormalizeTimeSlot(SelectedTimeSlot);
@@ -215,11 +228,11 @@ namespace BusBuddy.WPF.ViewModels.Route
             if (loadFailures.Count > 0)
             {
                 ReportLoadFailures($"Route {SelectedRoute.RouteId} ({slot}) roster load failed", loadFailures);
+                return false;
             }
-            else
-            {
-                UpdateStatusMessage();
-            }
+
+            UpdateStatusMessage();
+            return true;
         }
 
         private void FilterStudents()

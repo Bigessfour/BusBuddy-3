@@ -951,6 +951,11 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         private async Task RefreshDataAsync()
         {
+            if (IsLoading)
+            {
+                return;
+            }
+
             UiDiagnosticsLog.Write(
                 Log.ForContext<RouteAssignmentViewModel>(),
                 Serilog.Events.LogEventLevel.Information,
@@ -959,12 +964,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 IsLoading = true;
+                _refreshHoldsLoading = true;
                 StatusMessage = "Refreshing data...";
-                await LoadDataFromServiceAsync();
-                await _routeStopsLoad;
+                var dataOk = await LoadDataFromServiceAsync();
+                var stopsOk = await _routeStopsLoad;
 
-                if (StatusMessage.StartsWith("Could not load", StringComparison.Ordinal))
+                if (!dataOk || !stopsOk)
                 {
+                    if (!dataOk
+                        && !StatusMessage.StartsWith("Could not load", StringComparison.Ordinal)
+                        && !string.IsNullOrEmpty(_loadFailureStatus))
+                    {
+                        StatusMessage = _loadFailureStatus;
+                    }
+
                     UiDiagnosticsLog.Write(
                         Log.ForContext<RouteAssignmentViewModel>(),
                         Serilog.Events.LogEventLevel.Warning,
@@ -987,14 +1000,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = $"Failed to refresh data: {ex.Message}";
                 MessageBox.Show($"Failed to refresh data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                _refreshHoldsLoading = false;
+                IsLoading = false;
+            }
         }
 
         // Helper method to load route stops
-        private async Task LoadRouteStopsAsync()
+        private async Task<bool> LoadRouteStopsAsync()
         {
             if (SelectedRoute == null)
             {
-                return;
+                return true;
             }
 
             try
@@ -1003,6 +1021,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 AssignedStudentsForSelectedRoute.Clear();
 
                 var result = await _routeService.GetRouteStopsAsync(SelectedRoute.RouteId);
+                string? stopError = null;
                 if (result.IsSuccess)
                 {
                     foreach (var stop in result.Value!)
@@ -1012,24 +1031,38 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    StatusMessage = $"Could not load stops for {GetRouteDisplayName(SelectedRoute)}: {result.Error}";
+                    stopError = $"Could not load stops for {GetRouteDisplayName(SelectedRoute)}: {result.Error}";
                     Logger.Error("Failed to load route stops for route {RouteName}: {Error}", SelectedRoute.RouteName, result.Error);
                 }
 
-                await ReloadStudentListsForRouteAsync();
+                var rosterOk = await ReloadStudentListsForRouteAsync();
 
                 OnPropertyChanged(nameof(RouteStopCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
                 Logger.Information("Loaded {StopCount} stops for route {RouteName}", RouteStops.Count, SelectedRoute.RouteName);
-                if (result.IsSuccess && RouteStops.Count == 0)
+                if (stopError != null)
+                {
+                    StatusMessage = stopError;
+                    return false;
+                }
+
+                if (!rosterOk)
+                {
+                    return false;
+                }
+
+                if (RouteStops.Count == 0)
                 {
                     StatusMessage = $"No stops found for {GetRouteDisplayName(SelectedRoute)} — add stops to begin routing.";
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to load route stops for route {RouteName}", SelectedRoute.RouteName);
                 StatusMessage = $"Could not load stops for {GetRouteDisplayName(SelectedRoute)}: {ex.Message}";
+                return false;
             }
         }
 
