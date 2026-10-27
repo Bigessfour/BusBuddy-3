@@ -40,7 +40,10 @@ namespace BusBuddy.WPF.ViewModels.Route
         private BusBuddy.Core.Models.Student? _selectedStudent;
         private BusBuddy.Core.Models.Student? _selectedAssignedStudent;
         private BusBuddy.Core.Models.Route? _selectedRoute;
-        private Task _routeStopsLoad = Task.CompletedTask;
+        private Task<bool> _routeStopsLoad = Task.FromResult(true);
+        private bool _refreshHoldsLoading;
+        private string? _loadFailureStatus;
+        private string? _stopLoadFailureStatus;
         private BusBuddy.Core.Models.Bus? _selectedBus;
         private BusBuddy.Core.Models.Driver? _selectedDriver;
         private RouteStop? _selectedRouteStop;
@@ -236,8 +239,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                     OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
                     OnPropertyChanged(nameof(CanActivateRoute));
                     OnPropertyChanged(nameof(CanDeactivateRoute));
-                    _routeStopsLoad = LoadRouteStopsAsync();
                     UpdateStatusMessage();
+                    _routeStopsLoad = LoadRouteStopsAsync();
                     RefreshCommandStates();
                 }
             }
@@ -304,7 +307,13 @@ namespace BusBuddy.WPF.ViewModels.Route
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    RefreshCommandStates();
+                }
+            }
         }
 
         // Search and UI State

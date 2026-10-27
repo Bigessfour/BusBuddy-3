@@ -183,6 +183,126 @@ public class RouteAssignmentToolbarSmokeTests
     }
 
     [Test]
+    public async Task Refresh_StopLoadFailure_DoesNotLogSuccess()
+    {
+        var stops = TwoStops();
+        var stopCalls = 0;
+        var routes = RouteService();
+        routes.Setup(r => r.GetRouteStopsAsync(4))
+            .ReturnsAsync(() =>
+            {
+                var call = Interlocked.Increment(ref stopCalls);
+                return call == 1
+                    ? Result.SuccessResult<IEnumerable<RouteStop>>(stops)
+                    : Result.FailureResult<IEnumerable<RouteStop>>("stops unavailable");
+            });
+
+        var vm = new RouteAssignmentViewModel(routes.Object);
+        await WaitUntilAsync(() => !vm.IsLoading && vm.RouteStops.Count == stops.Count);
+
+        var lines = await CaptureRefreshAsync(vm, () =>
+            vm.StatusMessage.Contains("Could not load stops", StringComparison.Ordinal));
+
+        Assert.That(vm.RouteStops, Is.Empty);
+        Assert.That(vm.StatusMessage, Does.Contain("stops unavailable"));
+        Assert.That(vm.IsLoading, Is.False);
+        Assert.That(lines.Count(line => line.Contains("Refresh Route Data started", StringComparison.Ordinal)), Is.EqualTo(1));
+        Assert.That(lines.Any(line => line.Contains("Data refreshed successfully", StringComparison.Ordinal)), Is.False);
+        Assert.That(lines.Any(line => line.Contains("Data refresh completed with errors", StringComparison.Ordinal)), Is.True);
+    }
+
+    [Test]
+    public async Task Refresh_PartialFleetLoad_KeepsTheFailure()
+    {
+        var stops = TwoStops();
+        var busCalls = 0;
+        var routes = RouteService();
+        routes.Setup(r => r.GetRouteStopsAsync(4))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routes.Setup(r => r.GetAvailableBusesAsync())
+            .ReturnsAsync(() =>
+            {
+                var call = Interlocked.Increment(ref busCalls);
+                return call == 2
+                    ? Result.FailureResult<List<Bus>>("buses unavailable")
+                    : Result.SuccessResult(new List<Bus>());
+            });
+
+        var vm = new RouteAssignmentViewModel(routes.Object);
+        await WaitUntilAsync(() => !vm.IsLoading && vm.RouteStops.Count == stops.Count);
+
+        var lines = await CaptureRefreshAsync(vm, () =>
+            vm.StatusMessage.Contains("Could not load buses (buses unavailable)", StringComparison.Ordinal));
+
+        Assert.That(vm.RouteStops, Has.Count.EqualTo(stops.Count));
+        Assert.That(vm.StatusMessage, Does.Contain("Could not load buses (buses unavailable)"));
+        Assert.That(lines.Any(line => line.Contains("Data refreshed successfully", StringComparison.Ordinal)), Is.False);
+        Assert.That(lines.Any(line => line.Contains("buses unavailable", StringComparison.Ordinal)), Is.True);
+    }
+
+    [Test]
+    public async Task Refresh_StaysBusyUntilStopsReturn()
+    {
+        var stops = TwoStops();
+        var stopCalls = 0;
+        var routeLoads = 0;
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sawBusy = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        RouteAssignmentViewModel vm = null!;
+        var routes = RouteService();
+        routes.Setup(r => r.GetAllRoutesAsync())
+            .ReturnsAsync(() =>
+            {
+                Interlocked.Increment(ref routeLoads);
+                return Result.SuccessResult<IEnumerable<Route>>(new[] { NewRoute() });
+            });
+        routes.Setup(r => r.GetRouteStopsAsync(4))
+            .Returns(async () =>
+            {
+                var call = Interlocked.Increment(ref stopCalls);
+                if (call > 1)
+                {
+                    sawBusy.TrySetResult(vm.IsLoading && !vm.RefreshDataCommand.CanExecute(null));
+                    await release.Task;
+                }
+
+                return Result.SuccessResult<IEnumerable<RouteStop>>(stops);
+            });
+
+        vm = new RouteAssignmentViewModel(routes.Object);
+        await WaitUntilAsync(() => !vm.IsLoading && vm.RouteStops.Count == stops.Count);
+
+        var sink = new CollectingSink();
+        var testLogger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink).CreateLogger();
+        var previous = Log.Logger;
+        Log.Logger = testLogger;
+        try
+        {
+            vm.RefreshDataCommand.Execute(null);
+            Assert.That(await sawBusy.Task.WaitAsync(TimeSpan.FromSeconds(8)), Is.True);
+            vm.RefreshDataCommand.Execute(null);
+            Assert.That(routeLoads, Is.EqualTo(2));
+            release.TrySetResult(true);
+            await WaitUntilAsync(() =>
+                vm.StatusMessage.Contains("Data refreshed successfully", StringComparison.Ordinal));
+        }
+        finally
+        {
+            release.TrySetResult(true);
+            Log.Logger = previous;
+            (testLogger as IDisposable)?.Dispose();
+        }
+
+        Assert.That(vm.IsLoading, Is.False);
+        Assert.That(vm.RefreshDataCommand.CanExecute(null), Is.True);
+        Assert.That(vm.RouteStops, Has.Count.EqualTo(stops.Count));
+        Assert.That(routeLoads, Is.EqualTo(2));
+        var lines = sink.Rendered();
+        Assert.That(lines.Count(line => line.Contains("Refresh Route Data started", StringComparison.Ordinal)), Is.EqualTo(1));
+        Assert.That(lines.Count(line => line.Contains($"Stops={stops.Count}", StringComparison.Ordinal)), Is.EqualTo(1));
+    }
+
+    [Test]
     public async Task TimeRoute_CallsPublishedClockPlan()
     {
         var route = new Route
@@ -293,6 +413,74 @@ public class RouteAssignmentToolbarSmokeTests
         Assert.That(vm.ViewScheduleCommand.CanExecute(null), Is.False);
         Assert.That(vm.RefreshDrivePathCommand.CanExecute(null), Is.False);
         Assert.That(vm.TimeRouteCommand.CanExecute(null), Is.False);
+    }
+
+    private static List<RouteStop> TwoStops() =>
+    [
+        new()
+        {
+            RouteStopId = 1,
+            RouteId = 4,
+            StopName = "Stop 1",
+            StopOrder = 1,
+            Latitude = 38.15m,
+            Longitude = -102.72m
+        },
+        new()
+        {
+            RouteStopId = 2,
+            RouteId = 4,
+            StopName = "Stop 2",
+            StopOrder = 2,
+            Latitude = 38.16m,
+            Longitude = -102.71m
+        }
+    ];
+
+    private static Route NewRoute() => new()
+    {
+        RouteId = 4,
+        RouteName = "AM Special Needs Bus 5",
+        Session = RouteSession.AM,
+        IsActive = true
+    };
+
+    private static Mock<IRouteService> RouteService()
+    {
+        var routes = new Mock<IRouteService>();
+        routes.Setup(r => r.GetUnassignedStudentsAsync(It.IsAny<RouteTimeSlot>()))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>()));
+        routes.Setup(r => r.GetAllRoutesAsync())
+            .ReturnsAsync(() => Result.SuccessResult<IEnumerable<Route>>(new[] { NewRoute() }));
+        routes.Setup(r => r.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+        routes.Setup(r => r.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
+        routes.Setup(r => r.GetStudentsForRouteAsync(4, It.IsAny<RouteTimeSlot>()))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>()));
+        routes.Setup(r => r.GetRiderExceptionStudentIdsAsync(4, It.IsAny<DateTime>()))
+            .ReturnsAsync(Result.SuccessResult<IReadOnlyList<int>>(Array.Empty<int>()));
+        return routes;
+    }
+
+    private static async Task<string[]> CaptureRefreshAsync(RouteAssignmentViewModel vm, Func<bool> done)
+    {
+        var sink = new CollectingSink();
+        var testLogger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink).CreateLogger();
+        var previous = Log.Logger;
+        Log.Logger = testLogger;
+        try
+        {
+            vm.RefreshDataCommand.Execute(null);
+            await WaitUntilAsync(done);
+        }
+        finally
+        {
+            Log.Logger = previous;
+            (testLogger as IDisposable)?.Dispose();
+        }
+
+        return sink.Rendered();
     }
 
     private sealed class CollectingSink : ILogEventSink

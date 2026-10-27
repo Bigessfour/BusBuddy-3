@@ -92,10 +92,13 @@ public partial class RouteAssignmentViewModel
             if (result.RoutesUpdated > 0)
             {
                 ApplyBeginTime(result);
-                await LoadRouteStopsAsync();
-                var begin = result.BeginTime?.ToString(@"hh\:mm", CultureInfo.InvariantCulture) ?? string.Empty;
-                var estimate = result.Estimated ? " Straight-line estimate." : string.Empty;
-                StatusMessage = $"Timing updated. Barn departure {begin}.{estimate}";
+                _routeStopsLoad = LoadRouteStopsAsync();
+                if (await _routeStopsLoad)
+                {
+                    var begin = result.BeginTime?.ToString(@"hh\:mm", CultureInfo.InvariantCulture) ?? string.Empty;
+                    var estimate = result.Estimated ? " Straight-line estimate." : string.Empty;
+                    StatusMessage = $"Timing updated. Barn departure {begin}.{estimate}";
+                }
             }
             else
             {
@@ -125,7 +128,12 @@ public partial class RouteAssignmentViewModel
         try
         {
             var result = await _routeDetermination.ApplyPublishedClocksAsync(SelectedRoute.RouteId);
-            await LoadRouteStopsAsync();
+            _routeStopsLoad = LoadRouteStopsAsync();
+            if (!await _routeStopsLoad)
+            {
+                return;
+            }
+
             if (result.RoutesUpdated > 0)
             {
                 ApplyBeginTime(result);
