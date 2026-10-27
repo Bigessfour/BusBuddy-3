@@ -214,7 +214,10 @@ namespace BusBuddy.Core.Services
                 return Result.FailureResult<bool>($"Error updating stop timing: {ex.Message}");
             }
         }
-        public async Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
+        public async Task<Result<RouteStop>> AddStopToRouteAsync(
+            int routeId,
+            RouteStop routeStop,
+            bool refreshDrivePath = true)
         {
             try
             {
@@ -273,7 +276,10 @@ namespace BusBuddy.Core.Services
 
                         Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId} OpId={OpId}",
                             routeStop.StopName, routeStop.RouteStopId, routeId, opId);
-                        await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        if (refreshDrivePath)
+                        {
+                            await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
+                        }
                         EndOpOk("AddStop", opId, sw, routeId);
 
                         return Result.SuccessResult(routeStop);

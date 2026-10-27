@@ -1,10 +1,14 @@
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Options;
+using Moq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core.RouteDetermination;
@@ -330,6 +334,105 @@ public class RouteDeterminationServiceTests
             Assert.That(open.AmRouteId, Is.Not.EqualTo(assignedAmId));
             Assert.That(ctx.Routes.Any(r => r.RouteName.StartsWith("Draft-")), Is.True);
         }
+    }
+
+    [Test]
+    public async Task GenerateAndAssign_TwentySevenStops_RequestsTheDrivePathOnce()
+    {
+        var outcome = await GenerateAmRouteAsync(riderCount: 24);
+
+        Assert.That(outcome.Result.Success, Is.True, outcome.Result.Error);
+        Assert.That(outcome.StopCount, Is.EqualTo(27));
+        Assert.That(outcome.Result.Warnings.Any(w => w.Contains("omitted", StringComparison.OrdinalIgnoreCase)), Is.False);
+        outcome.Routing.Verify(
+            r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.Is<IReadOnlyList<(double Latitude, double Longitude)>>(
+                    stops => stops.Count == RouteDrivePathRefresher.MaxIntermediateWaypoints),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task GenerateAndAssign_PastIntermediateCap_TellsTheClerkHowManyStopsWereLeftOff()
+    {
+        var outcome = await GenerateAmRouteAsync(riderCount: 26);
+        var dropped = 29 - 2 - RouteDrivePathRefresher.MaxIntermediateWaypoints;
+
+        Assert.That(outcome.Result.Success, Is.True, outcome.Result.Error);
+        Assert.That(outcome.StopCount, Is.EqualTo(29));
+        Assert.That(outcome.Result.Warnings[0], Does.Contain($"{dropped} intermediate"));
+        Assert.That(outcome.Result.Warnings[0], Does.Contain("omitted"));
+        outcome.Routing.Verify(
+            r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    private static async Task<(RouteGenerationResult Result, int StopCount, Mock<IRoutingService> Routing)> GenerateAmRouteAsync(
+        int riderCount)
+    {
+        var factory = CreateFactory();
+        var settings = new RoutingDistrictSettings
+        {
+            TargetRidersPerCell = 100,
+            MaxPickupGapMinutes = 180,
+            DepotName = "Test Barn",
+            DepotAddress = "100 East Oak Street",
+            DepotLatitude = 38.1100,
+            DepotLongitude = -102.6000
+        };
+        int schoolId;
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var school = School("Path School");
+            ctx.Destinations.Add(school);
+            await ctx.SaveChangesAsync();
+            schoolId = school.DestinationId;
+            for (var i = 0; i < riderCount; i++)
+            {
+                ctx.Students.Add(Rider(
+                    $"TEST_RIDER_{i:00}",
+                    schoolId,
+                    38.1000m + (i * 0.00001m),
+                    -102.6100m,
+                    am: null,
+                    pm: null));
+            }
+
+            await ctx.SaveChangesAsync();
+        }
+
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DrivePathResult
+            {
+                EncodedPolyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+                Points = new List<(double, double)> { (38.08, -102.62), (38.11, -102.60) },
+                DistanceMeters = 1000,
+                Duration = "120s"
+            });
+
+        var routes = new RouteService(factory, waypointRebuild: null, fitnessEvaluator: null, routingService: routing.Object);
+        var sut = new RouteDeterminationService(factory, routes, Options.Create(settings));
+        var result = await sut.GenerateAndAssignAsync(
+            schoolId,
+            RouteTimeSlotKind.AM,
+            FleetKind.HomeToSchool,
+            new RouteGenerationOptions { DefaultSeatingCapacity = 80 });
+
+        await using var verify = factory.CreateDbContext();
+        var draft = verify.Routes.Single(r => r.RouteName.StartsWith("Draft-"));
+        var stopCount = verify.RouteStops.Count(s => s.RouteId == draft.RouteId);
+        return (result, stopCount, routing);
     }
 
     private static Destination School(string name) => new()
