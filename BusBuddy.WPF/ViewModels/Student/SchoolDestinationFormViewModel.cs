@@ -436,6 +436,12 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             return;
         }
 
+        if (start is TimeSpan startTime && dismissal is TimeSpan dismissalTime && dismissalTime <= startTime)
+        {
+            ValidationMessage = "Dismissal time must be after start time.";
+            return;
+        }
+
         try
         {
             if (!await _destinations.UpdateSchoolTimesAsync(school.DestinationId, start, dismissal).ConfigureAwait(true))

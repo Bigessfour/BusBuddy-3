@@ -37,6 +37,12 @@ public partial class SchoolDestinationForm : ChromelessWindow
         SchoolCityBox.Text = _vm.City;
         SchoolStateBox.Text = _vm.State;
         SchoolZipBox.Text = _vm.ZipCode;
+        // The picker defaults to DateTime.Now. AllowNull has to be on before a blank
+        // bell is assigned, or both untouched pickers save as the same clock time.
+        SchoolStartPicker.AllowNull = true;
+        SchoolStartPicker.SetValueOnLostFocus = false;
+        SchoolDismissalPicker.AllowNull = true;
+        SchoolDismissalPicker.SetValueOnLostFocus = false;
         SchoolStartPicker.Value = SchoolDestinationFormViewModel.ParseTimePickerValue(
             _vm.StartTimeText,
             new TimeSpan(8, 0, 0));
