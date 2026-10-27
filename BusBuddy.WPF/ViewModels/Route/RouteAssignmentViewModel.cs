@@ -238,8 +238,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                     OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
                     OnPropertyChanged(nameof(CanActivateRoute));
                     OnPropertyChanged(nameof(CanDeactivateRoute));
-                    _routeStopsLoad = LoadRouteStopsAsync();
                     UpdateStatusMessage();
+                    _routeStopsLoad = LoadRouteStopsAsync();
                     RefreshCommandStates();
                 }
             }
