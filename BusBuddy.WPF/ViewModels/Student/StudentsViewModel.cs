@@ -43,6 +43,13 @@ namespace BusBuddy.WPF.ViewModels.Student
         private readonly StudentsMapCoordinator _map;
         private Core.Models.Student? _selectedStudent;
         private bool _isLoading;
+
+        /// <summary>
+        /// True while <see cref="LoadStudentsAsync"/> replaces the grid. A two-way grid binding
+        /// clears <see cref="SelectedStudent"/> on <c>Clear()</c>; ignoring that null keeps
+        /// Edit / Archive / Delete from flickering off while the same row is about to be restored.
+        /// </summary>
+        private bool _keepingSelectionDuringReload;
         private string _statusMessage = string.Empty;
         private string _quickSearchText = string.Empty;
 
@@ -200,9 +207,16 @@ namespace BusBuddy.WPF.ViewModels.Student
             get => _selectedStudent;
             set
             {
+                if (_keepingSelectionDuringReload && value is null)
+                {
+                    return;
+                }
+
                 if (SetProperty(ref _selectedStudent, value))
                 {
-                    Logger.Debug("SelectedStudent changed to {@Student}", _selectedStudent == null ? null : new { _selectedStudent.StudentId, _selectedStudent.StudentName });
+                    Log.ForContext<StudentsViewModel>().Debug(
+                        "SelectedStudent changed to StudentId={StudentId}",
+                        _selectedStudent?.StudentId);
                     OnPropertyChanged(nameof(HasSelectedStudent));
                     OnPropertyChanged(nameof(HasSelectedStudents));
                     OnPropertyChanged(nameof(ArchiveStudentButtonLabel));
@@ -342,7 +356,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 if (SetProperty(ref _isLoading, value))
                 {
-                    // Disable actions while busy
+                    // Re-evaluate commands that wait on a load. Edit, Archive, and Delete
+                    // stay available while a row is selected.
                     NotifySelectionDependentCommands();
                 }
             }
@@ -775,26 +790,20 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private bool CanExecuteEditStudent()
         {
-            var can = HasSelectedStudent && !IsLoading;
-            Logger.Debug("CanExecuteEditStudent evaluated — HasSelectedStudent={Can}", can);
-            return can;
+            Logger.Debug("CanExecuteEditStudent evaluated — HasSelectedStudent={Has}", HasSelectedStudent);
+            return HasSelectedStudent;
         }
 
         private bool CanExecuteArchiveStudent()
         {
-            var can = HasSelectedStudent && !IsLoading;
-            Logger.Debug("CanExecuteArchiveStudent evaluated — HasSelectedStudent={Can}", can);
-            return can;
+            Logger.Debug("CanExecuteArchiveStudent evaluated — HasSelectedStudent={Has}", HasSelectedStudent);
+            return HasSelectedStudent;
         }
 
         private bool CanExecuteDeleteStudent()
         {
-            var can = HasSelectedStudent && !IsLoading;
-            Logger.Debug(
-                "CanExecuteDeleteStudent evaluated — HasSelectedStudent={Has} Result={Can}",
-                HasSelectedStudent,
-                can);
-            return can;
+            Logger.Debug("CanExecuteDeleteStudent evaluated — HasSelectedStudent={Has}", HasSelectedStudent);
+            return HasSelectedStudent;
         }
 
         private bool CanExecuteValidateAddress()
@@ -894,35 +903,43 @@ namespace BusBuddy.WPF.ViewModels.Student
                     var students = await _list.LoadStudentsAsync().ConfigureAwait(true);
 
                     var previousSelectionId = SelectedStudent?.StudentId;
-                    if (StudentsView != null)
+                    _keepingSelectionDuringReload = true;
+                    try
                     {
-                        var view = StudentsView; // local
-                        var currentFilter = view.Filter;
-                        view.Filter = null; // temporarily detach filter to reduce per-item evaluations
-                        try
+                        if (StudentsView != null)
                         {
-                            // Strategy: copy into temp list then replace contents of existing ObservableCollection
-                            Students.Clear();
-                            for (int idx = 0; idx < students.Count; idx++)
+                            var view = StudentsView; // local
+                            var currentFilter = view.Filter;
+                            view.Filter = null; // temporarily detach filter to reduce per-item evaluations
+                            try
                             {
-                                Students.Add(students[idx]);
+                                // Strategy: copy into temp list then replace contents of existing ObservableCollection
+                                Students.Clear();
+                                for (int idx = 0; idx < students.Count; idx++)
+                                {
+                                    Students.Add(students[idx]);
+                                }
+                            }
+                            finally
+                            {
+                                view.Filter = currentFilter ?? StudentFilter;
                             }
                         }
-                        finally
+                        else
                         {
-                            view.Filter = currentFilter ?? StudentFilter;
+                            Students.Clear();
+                            foreach (var s in students) Students.Add(s);
                         }
                     }
-                    else
+                    finally
                     {
-                        Students.Clear();
-                        foreach (var s in students) Students.Add(s);
+                        _keepingSelectionDuringReload = false;
                     }
 
-                    if (previousSelectionId.HasValue)
+                    if (previousSelectionId is int previousId)
                     {
-                        var restored = Students.FirstOrDefault(s => s.StudentId == previousSelectionId.Value);
-                        if (restored != null) SelectedStudent = restored;
+                        SelectedStudent = Students.FirstOrDefault(s => s.StudentId == previousId)
+                            ?? Students.FirstOrDefault();
                     }
 
                     Logger.Information("Loaded {StudentCount} students", Students.Count);
