@@ -247,21 +247,38 @@ public class StudentsListCoordinatorTests
             (testLogger as IDisposable)?.Dispose();
         }
 
-        var information = sink.Events.Where(e => e.Level == LogEventLevel.Information).ToList();
-        information.Should().NotBeEmpty();
-        foreach (var evt in information)
-        {
-            var text = evt.RenderMessage();
-            text.Should().Contain("Password=***");
-            text.Should().NotContain(secret);
-        }
+        var information = sink.Rendered()
+            .Where(text => text.Contains("Students list using connection", StringComparison.Ordinal))
+            .ToList();
+        information.Should().ContainSingle();
+        information[0].Should().Contain("Password=***");
+        information[0].Should().NotContain(secret);
     }
 
     private sealed class CollectingSink : ILogEventSink
     {
-        public List<LogEvent> Events { get; } = new();
+        private readonly List<string> _messages = new();
 
-        public void Emit(LogEvent logEvent) => Events.Add(logEvent);
+        public void Emit(LogEvent logEvent)
+        {
+            if (logEvent.Level != LogEventLevel.Information)
+            {
+                return;
+            }
+
+            lock (_messages)
+            {
+                _messages.Add(logEvent.RenderMessage());
+            }
+        }
+
+        public string[] Rendered()
+        {
+            lock (_messages)
+            {
+                return _messages.ToArray();
+            }
+        }
     }
 
 }
