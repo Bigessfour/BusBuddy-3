@@ -107,11 +107,16 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
 
             if (status == HttpStatusCode.Forbidden || !IsSuccess(status))
             {
-                Logger.Warning(
-                    "Routes API HTTP {Status} ElapsedMs={ElapsedMs}",
+                var detail = SummarizeRoutesError(json, key);
+                Log.ForContext<GoogleRoutingService>().Warning(
+                    "Routes API HTTP {Status} ElapsedMs={ElapsedMs} Body={Body}",
                     (int)status,
-                    sw.ElapsedMilliseconds);
-                return new DrivePathResult { Error = $"Routes API failed (HTTP {(int)status})." };
+                    sw.ElapsedMilliseconds,
+                    detail);
+                var error = string.IsNullOrWhiteSpace(detail)
+                    ? $"Routes API failed (HTTP {(int)status})."
+                    : $"Routes API failed (HTTP {(int)status}): {detail}";
+                return new DrivePathResult { Error = error };
             }
 
             using var doc = JsonDocument.Parse(json);
@@ -431,6 +436,114 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
     }
 
     private static bool IsSuccess(HttpStatusCode status) => (int)status is >= 200 and <= 299;
+
+    /// <summary>
+    /// Short Routes API error text for logs and <see cref="DrivePathResult.Error"/>.
+    /// Drops the API key and collapses the body to one line.
+    /// </summary>
+    private static string SummarizeRoutesError(string? body, string? apiKey)
+    {
+        var detail = ExtractRoutesErrorDetail(body);
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            detail = detail.Replace(apiKey, "***", StringComparison.Ordinal);
+        }
+
+        detail = ApiKeyPattern.Replace(detail, "***");
+        detail = Regex.Replace(detail, @"\s+", " ").Trim();
+        const int max = 240;
+        return detail.Length <= max ? detail : detail[..max];
+    }
+
+    private static readonly Regex ApiKeyPattern = new(
+        @"AIza[0-9A-Za-z\-_]{10,}|X-Goog-Api-Key\s*[:=]\s*\S+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static string ExtractRoutesErrorDetail(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (!doc.RootElement.TryGetProperty("error", out var error))
+            {
+                return body;
+            }
+
+            var message = error.TryGetProperty("message", out var messageEl) && messageEl.ValueKind == JsonValueKind.String
+                ? messageEl.GetString()
+                : null;
+            var field = FirstFieldViolation(error);
+            if (!string.IsNullOrWhiteSpace(message) && !string.IsNullOrWhiteSpace(field)
+                && message.Contains(field, StringComparison.Ordinal))
+            {
+                return message;
+            }
+
+            if (!string.IsNullOrWhiteSpace(message) && !string.IsNullOrWhiteSpace(field))
+            {
+                return $"{message} ({field})";
+            }
+
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                return message;
+            }
+
+            if (!string.IsNullOrWhiteSpace(field))
+            {
+                return field;
+            }
+
+            if (error.TryGetProperty("status", out var statusEl) && statusEl.ValueKind == JsonValueKind.String)
+            {
+                return statusEl.GetString() ?? string.Empty;
+            }
+        }
+        catch (JsonException)
+        {
+            return body;
+        }
+
+        return body;
+    }
+
+    private static string? FirstFieldViolation(JsonElement error)
+    {
+        if (!error.TryGetProperty("details", out var details) || details.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (var detail in details.EnumerateArray())
+        {
+            if (!detail.TryGetProperty("fieldViolations", out var violations) || violations.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var violation in violations.EnumerateArray())
+            {
+                var field = violation.TryGetProperty("field", out var fieldEl) && fieldEl.ValueKind == JsonValueKind.String
+                    ? fieldEl.GetString()
+                    : null;
+                var description = violation.TryGetProperty("description", out var descriptionEl)
+                    && descriptionEl.ValueKind == JsonValueKind.String
+                    ? descriptionEl.GetString()
+                    : null;
+                if (!string.IsNullOrWhiteSpace(description))
+                {
+                    return string.IsNullOrWhiteSpace(field) ? description : $"{field}: {description}";
+                }
+            }
+        }
+
+        return null;
+    }
 
     public void Dispose()
     {
