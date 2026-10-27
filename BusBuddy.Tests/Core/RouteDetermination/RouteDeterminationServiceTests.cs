@@ -237,4 +237,148 @@ public class RouteDeterminationServiceTests
             Assert.That(StudentRouteAssignment.MatchesAm(student, fromId, "North"), Is.False);
         }
     }
+
+    [Test]
+    public async Task GenerateAndAssign_AlreadyAssignedRoster_SucceedsWithoutNewDrafts()
+    {
+        var factory = CreateFactory();
+        int schoolId;
+        int routeCount;
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var school = School("Assigned School");
+            var am = NamedRoute("Assigned AM", RouteSession.AM, school.Name);
+            var pm = NamedRoute("Assigned PM", RouteSession.PM, school.Name);
+            ctx.Destinations.Add(school);
+            ctx.Routes.AddRange(am, pm);
+            await ctx.SaveChangesAsync();
+            schoolId = school.DestinationId;
+
+            ctx.Students.Add(Rider("TEST_STUDENT_ASSIGNED", schoolId, 38.150m, -102.700m, am, pm));
+            await ctx.SaveChangesAsync();
+            routeCount = ctx.Routes.Count();
+        }
+
+        var result = await CreateSut(factory).GenerateAndAssignAsync(
+            schoolId,
+            RouteTimeSlotKind.Both,
+            FleetKind.HomeToSchool);
+
+        Assert.That(result.Success, Is.True, result.Error);
+        Assert.That(result.Error, Is.Null);
+        Assert.That(result.Proposals, Is.Empty);
+        Assert.That(result.AssignedStudentCount, Is.EqualTo(0));
+        Assert.That(
+            result.Warnings.Any(w => w.Contains("already assigned", StringComparison.Ordinal)
+                && w.Contains("no new draft routes", StringComparison.Ordinal)),
+            Is.True);
+
+        await using (var ctx = factory.CreateDbContext())
+        {
+            Assert.That(ctx.Routes.Count(), Is.EqualTo(routeCount));
+            Assert.That(ctx.Routes.Any(r => r.RouteName.StartsWith("Draft-")), Is.False);
+        }
+    }
+
+    [Test]
+    public async Task GenerateAndAssign_UnassignedRider_StillAssignsWhenOthersAreAssigned()
+    {
+        var factory = CreateFactory();
+        int schoolId;
+        int openStudentId;
+        int assignedStudentId;
+        int assignedAmId;
+        int assignedPmId;
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var school = School("Mixed School");
+            var am = NamedRoute("Keep AM", RouteSession.AM, school.Name);
+            var pm = NamedRoute("Keep PM", RouteSession.PM, school.Name);
+            ctx.Destinations.Add(school);
+            ctx.Routes.AddRange(am, pm);
+            await ctx.SaveChangesAsync();
+            schoolId = school.DestinationId;
+
+            var assigned = Rider("TEST_STUDENT_ASSIGNED", schoolId, 38.150m, -102.700m, am, pm);
+            var open = Rider("TEST_STUDENT_OPEN", schoolId, 38.1502m, -102.7002m, am: null, pm: null);
+            ctx.Students.AddRange(assigned, open);
+            await ctx.SaveChangesAsync();
+            assignedStudentId = assigned.StudentId;
+            openStudentId = open.StudentId;
+            assignedAmId = am.RouteId;
+            assignedPmId = pm.RouteId;
+        }
+
+        var result = await CreateSut(factory).GenerateAndAssignAsync(
+            schoolId,
+            RouteTimeSlotKind.Both,
+            FleetKind.HomeToSchool);
+
+        Assert.That(result.Success, Is.True, result.Error);
+        Assert.That(result.AssignedStudentCount, Is.EqualTo(1));
+        Assert.That(result.Proposals, Is.Not.Empty);
+
+        await using (var ctx = factory.CreateDbContext())
+        {
+            var assigned = ctx.Students.Single(s => s.StudentId == assignedStudentId);
+            Assert.That(assigned.AmRouteId, Is.EqualTo(assignedAmId));
+            Assert.That(assigned.PmRouteId, Is.EqualTo(assignedPmId));
+
+            var open = ctx.Students.Single(s => s.StudentId == openStudentId);
+            Assert.That(open.AmRouteId, Is.Not.Null);
+            Assert.That(open.PmRouteId, Is.Not.Null);
+            Assert.That(open.AmRouteId, Is.Not.EqualTo(assignedAmId));
+            Assert.That(ctx.Routes.Any(r => r.RouteName.StartsWith("Draft-")), Is.True);
+        }
+    }
+
+    private static Destination School(string name) => new()
+    {
+        Name = name,
+        Address = "500 South 5th Street",
+        City = "Lamar",
+        State = "CO",
+        ZipCode = "81052",
+        DestinationType = DestinationTypes.School,
+        Latitude = 38.0844m,
+        Longitude = -102.6207m,
+        StartTime = TimeSpan.FromHours(8),
+        DismissalTime = TimeSpan.FromHours(15.5),
+        IsActive = true
+    };
+
+    private static Route NamedRoute(string name, string session, string school) => new()
+    {
+        RouteName = name,
+        Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+        IsActive = true,
+        Session = session,
+        School = school
+    };
+
+    private static Student Rider(
+        string name,
+        int schoolId,
+        decimal lat,
+        decimal lon,
+        Route? am,
+        Route? pm) => new()
+    {
+        StudentName = name,
+        StudentNumber = name,
+        Grade = "5",
+        HomeAddress = "210 West Pine Street",
+        City = "Lamar",
+        State = "CO",
+        Zip = "81052",
+        DestinationId = schoolId,
+        Latitude = lat,
+        Longitude = lon,
+        RidesAm = true,
+        RidesPm = true,
+        AmRouteId = am?.RouteId,
+        PmRouteId = pm?.RouteId,
+        AMRoute = am?.RouteName,
+        PMRoute = pm?.RouteName
+    };
 }

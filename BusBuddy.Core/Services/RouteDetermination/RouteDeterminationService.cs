@@ -119,10 +119,74 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
             s => s.StudentId,
             s => StudentRideModeHelper.FromStudent(s));
 
+        var wantsAm = slot is RouteTimeSlotKind.AM or RouteTimeSlotKind.Both;
+        var wantsPm = slot is RouteTimeSlotKind.PM or RouteTimeSlotKind.Both;
+        var needsAmIds = new HashSet<int>();
+        var needsPmIds = new HashSet<int>();
+        var pmStopOnlyIds = new HashSet<int>();
+        foreach (var s in students)
+        {
+            var mode = priorModeByStudent[s.StudentId];
+            var needsAm = wantsAm && StudentRouteAssignment.IsUnassignedAm(s);
+            var needsPm = wantsPm
+                && StudentRouteAssignment.IsUnassignedPm(s)
+                && StudentRideModeHelper.ShouldAssignPmMirror(mode);
+            if (needsAm)
+            {
+                needsAmIds.Add(s.StudentId);
+            }
+
+            if (needsPm)
+            {
+                needsPmIds.Add(s.StudentId);
+            }
+            else if (wantsPm && needsAm && StudentRouteAssignment.IsUnassignedPm(s))
+            {
+                // AM-only riders still keep a stop on the PM mirror without a PM assignment.
+                pmStopOnlyIds.Add(s.StudentId);
+            }
+        }
+
+        var placeableIds = new HashSet<int>(needsAmIds);
+        placeableIds.UnionWith(needsPmIds);
+        if (placeableIds.Count == 0 && students.Count > 0)
+        {
+            warnings.Add($"{students.Count} student(s) already assigned; no new draft routes");
+            Logger.Information(
+                "Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S} Success={Success} OpId={OpId} Outcome={Outcome}",
+                schoolDestinationId,
+                fleetKind,
+                0,
+                0,
+                true,
+                opId,
+                "already-assigned");
+            return new RouteGenerationResult
+            {
+                OperationId = opId,
+                SchoolDestinationId = schoolDestinationId,
+                FleetKind = fleetKind,
+                Warnings = warnings,
+                AssignedStudentCount = 0,
+                Success = true
+            };
+        }
+
+        if (students.Count > placeableIds.Count)
+        {
+            warnings.Add(
+                $"{students.Count - placeableIds.Count} student(s) already assigned and left on their current routes");
+        }
+
         var riders = new List<RiderPoint>();
         var unclustered = new List<int>();
         foreach (var s in students)
         {
+            if (!placeableIds.Contains(s.StudentId))
+            {
+                continue;
+            }
+
             if (s.Latitude is decimal lat && s.Longitude is decimal lon)
             {
                 riders.Add(new RiderPoint(s.StudentId, (double)lat, (double)lon));
@@ -171,42 +235,51 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
         {
             packIndex++;
             var amName = $"Draft-{schoolSlug}-{cell.CellId}-{packIndex}";
-            var amProposal = await MaterializeProposalAsync(
-                    amName,
-                    school,
-                    pack,
-                    RouteTimeSlotKind.AM,
-                    fleetKind,
-                    options.DryRun,
-                    assignAm: slot is RouteTimeSlotKind.AM or RouteTimeSlotKind.Both,
-                    priorModeByStudent,
-                    cancellationToken)
-                .ConfigureAwait(false);
-            proposals.Add(amProposal.Dto);
-            hardFailures.AddRange(amProposal.Failures);
-            if (amProposal.Dto.PersistedRouteId is not null &&
-                slot is RouteTimeSlotKind.AM or RouteTimeSlotKind.Both)
+            var amPack = wantsAm ? FilterPack(pack, needsAmIds) : null;
+            if (amPack is not null)
             {
-                assigned += amProposal.AssignedCount;
-            }
-
-            if (slot is RouteTimeSlotKind.PM or RouteTimeSlotKind.Both)
-            {
-                var pmName = $"{amName}-PM";
-                var pmProposal = await MaterializeProposalAsync(
-                        pmName,
+                var amProposal = await MaterializeProposalAsync(
+                        amName,
                         school,
-                        pack,
-                        RouteTimeSlotKind.PM,
+                        amPack,
+                        RouteTimeSlotKind.AM,
                         fleetKind,
                         options.DryRun,
-                        assignAm: false,
+                        assignAm: true,
                         priorModeByStudent,
-                        cancellationToken,
-                        assignPmMirror: !options.DryRun && slot == RouteTimeSlotKind.Both)
+                        cancellationToken)
                     .ConfigureAwait(false);
-                proposals.Add(pmProposal.Dto);
-                hardFailures.AddRange(pmProposal.Failures);
+                proposals.Add(amProposal.Dto);
+                hardFailures.AddRange(amProposal.Failures);
+                if (amProposal.Dto.PersistedRouteId is not null)
+                {
+                    assigned += amProposal.AssignedCount;
+                }
+            }
+
+            if (wantsPm)
+            {
+                var pmKeep = new HashSet<int>(needsPmIds);
+                pmKeep.UnionWith(pmStopOnlyIds);
+                var pmPack = FilterPack(pack, pmKeep);
+                if (pmPack is not null)
+                {
+                    var pmName = $"{amName}-PM";
+                    var pmProposal = await MaterializeProposalAsync(
+                            pmName,
+                            school,
+                            pmPack,
+                            RouteTimeSlotKind.PM,
+                            fleetKind,
+                            options.DryRun,
+                            assignAm: false,
+                            priorModeByStudent,
+                            cancellationToken,
+                            assignPmMirror: !options.DryRun && slot == RouteTimeSlotKind.Both)
+                        .ConfigureAwait(false);
+                    proposals.Add(pmProposal.Dto);
+                    hardFailures.AddRange(pmProposal.Failures);
+                }
             }
         }
 
@@ -668,6 +741,16 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
                     .ConfigureAwait(false);
                 if (!result.IsSuccess)
                 {
+                    if (IsAlreadyAssigned(result.Error))
+                    {
+                        Logger.Information(
+                            "Assign AM skipped Student={StudentId} Route={RouteName}: {Reason}",
+                            studentId,
+                            routeName,
+                            result.Error);
+                        continue;
+                    }
+
                     var msg = $"Assign AM Student={studentId} Route={routeName}: {result.Error}";
                     failures.Add(msg);
                     Logger.Warning("{Message}", msg);
@@ -696,6 +779,16 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
                     .ConfigureAwait(false);
                 if (!result.IsSuccess)
                 {
+                    if (IsAlreadyAssigned(result.Error))
+                    {
+                        Logger.Information(
+                            "Assign PM skipped Student={StudentId} Route={RouteName}: {Reason}",
+                            studentId,
+                            routeName,
+                            result.Error);
+                        continue;
+                    }
+
                     var msg = $"Assign PM Student={studentId} Route={routeName}: {result.Error}";
                     failures.Add(msg);
                     Logger.Warning("{Message}", msg);
@@ -1114,6 +1207,30 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         return bus?.SeatingCapacity > 0 ? bus.SeatingCapacity : fallback;
+    }
+
+    private static bool IsAlreadyAssigned(string? error) =>
+        error is not null
+        && error.Contains("already has a", StringComparison.OrdinalIgnoreCase)
+        && error.Contains("route assigned", StringComparison.OrdinalIgnoreCase);
+
+    private static PackedRoute? FilterPack(PackedRoute pack, HashSet<int> keep)
+    {
+        var ids = pack.OrderedStudentIds.Where(keep.Contains).ToList();
+        if (ids.Count == 0)
+        {
+            return null;
+        }
+
+        var filtered = new PackedRoute
+        {
+            CellId = pack.CellId,
+            SeatingCapacity = pack.SeatingCapacity,
+            EstimatedMiles = pack.EstimatedMiles,
+            EstimatedMinutes = pack.EstimatedMinutes
+        };
+        filtered.OrderedStudentIds.AddRange(ids);
+        return filtered;
     }
 
     private static RouteGenerationResult Fail(
