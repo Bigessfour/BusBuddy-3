@@ -229,6 +229,7 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
         var proposals = new List<RouteProposalDto>();
         var assigned = 0;
         var hardFailures = new List<string>();
+        var pathNotices = new List<string>();
         var packIndex = 0;
 
         foreach (var (cell, pack) in packed)
@@ -255,6 +256,8 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
                 {
                     assigned += amProposal.AssignedCount;
                 }
+
+                pathNotices.AddRange(amProposal.PathNotices);
             }
 
             if (wantsPm)
@@ -279,9 +282,12 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
                         .ConfigureAwait(false);
                     proposals.Add(pmProposal.Dto);
                     hardFailures.AddRange(pmProposal.Failures);
+                    pathNotices.AddRange(pmProposal.PathNotices);
                 }
             }
         }
+
+        SurfacePathNotices(warnings, pathNotices);
 
         var rejected = proposals.Count(p => p.Status == "Rejected");
         var success = hardFailures.Count == 0 && rejected == 0;
@@ -517,6 +523,7 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
             .ToDictionary(g => g.Key, g => g.First());
         var proposals = new List<RouteProposalDto>();
         var hardFailures = new List<string>();
+        var pathNotices = new List<string>();
         var assigned = 0;
         var idx = 0;
         foreach (var pack in packed)
@@ -541,6 +548,7 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
                     .ConfigureAwait(false);
                 proposals.Add(amResult.Dto);
                 hardFailures.AddRange(amResult.Failures);
+                pathNotices.AddRange(amResult.PathNotices);
                 assigned += amResult.AssignedCount;
                 await TryRebuildWaypointsAsync(amResult.Dto.PersistedRouteId, options.DryRun, cancellationToken)
                     .ConfigureAwait(false);
@@ -564,11 +572,13 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
                     .ConfigureAwait(false);
                 proposals.Add(pmResult.Dto);
                 hardFailures.AddRange(pmResult.Failures);
+                pathNotices.AddRange(pmResult.PathNotices);
                 await TryRebuildWaypointsAsync(pmResult.Dto.PersistedRouteId, options.DryRun, cancellationToken)
                     .ConfigureAwait(false);
             }
         }
 
+        SurfacePathNotices(warnings, pathNotices);
         var success = hardFailures.Count == 0 && proposals.All(p => p.Status != "Rejected");
         Logger.Information(
             "Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S} Success={Success} OpId={OpId}",
@@ -679,6 +689,7 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
         IReadOnlyDictionary<int, StudentSchoolTransfer>? transferStopsByStudent = null)
     {
         var failures = new List<string>();
+        var pathNotices = new List<string>();
         var assignedCount = 0;
         var schoolDisplayName = school.Name;
         var dto = new RouteProposalDto
@@ -697,7 +708,7 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
 
         if (dryRun)
         {
-            return new MaterializeResult(dto, failures, 0);
+            return new MaterializeResult(dto, failures, 0, pathNotices);
         }
 
         var create = await _routeService.CreateRouteAsync(new Route
@@ -723,14 +734,14 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
             var msg = $"Create '{routeName}' failed: {create.Error}";
             failures.Add(msg);
             Logger.Warning("{Message}", msg);
-            return new MaterializeResult(dto, failures, 0);
+            return new MaterializeResult(dto, failures, 0, pathNotices);
         }
 
         dto.PersistedRouteId = create.Value.RouteId;
         var routeId = create.Value.RouteId;
 
         await PersistScheduledStopsAsync(
-                routeId, school, pack, slot, fleetKind, failures, cancellationToken, transferStopsByStudent)
+                routeId, routeName, school, pack, slot, fleetKind, failures, pathNotices, cancellationToken, transferStopsByStudent)
             .ConfigureAwait(false);
 
         if (assignAm && slot == RouteTimeSlotKind.AM)
@@ -796,16 +807,18 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
             }
         }
 
-        return new MaterializeResult(dto, failures, assignedCount);
+        return new MaterializeResult(dto, failures, assignedCount, pathNotices);
     }
 
     private async Task PersistScheduledStopsAsync(
         int routeId,
+        string routeName,
         Destination school,
         PackedRoute pack,
         RouteTimeSlotKind slot,
         FleetKind fleetKind,
         List<string> failures,
+        List<string> pathNotices,
         CancellationToken cancellationToken,
         IReadOnlyDictionary<int, StudentSchoolTransfer>? transferStopsByStudent = null)
     {
@@ -1065,12 +1078,49 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
             stop.ScheduledDeparture = departure;
             stop.EstimatedArrivalTime = DistrictWallClock(arrival);
             stop.EstimatedDepartureTime = DistrictWallClock(departure);
-            var add = await _routeService.AddStopToRouteAsync(routeId, stop).ConfigureAwait(false);
+            var add = await _routeService.AddStopToRouteAsync(routeId, stop, refreshDrivePath: false)
+                .ConfigureAwait(false);
             if (!add.IsSuccess)
             {
                 failures.Add($"Stop '{stop.StopName}': {add.Error}");
             }
         }
+
+        await RecordFinishedDrivePathAsync(routeId, routeName, pathNotices).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// One Routes API call for the stops just written. A list past the intermediate cap
+    /// is logged and handed to the clerk as a generation warning.
+    /// </summary>
+    private async Task RecordFinishedDrivePathAsync(int routeId, string routeName, List<string> pathNotices)
+    {
+        var refresh = await _routeService.RefreshDrivePathAsync(routeId).ConfigureAwait(false);
+        if (!refresh.IsSuccess || refresh.Value is not { Success: true, DroppedIntermediateCount: > 0 } dropped)
+        {
+            return;
+        }
+
+        var detail = string.IsNullOrWhiteSpace(dropped.Message)
+            ? $"{dropped.DroppedIntermediateCount} intermediate stop(s) omitted (Google Routes allows {RouteDrivePathRefresher.MaxIntermediateWaypoints} intermediates)."
+            : dropped.Message;
+        var notice = $"{routeName}: {detail}";
+        pathNotices.Add(notice);
+        Logger.Warning(
+            "Drive path left stops off the line RouteId={RouteId} DroppedIntermediates={Dropped} Detail={Detail}",
+            routeId,
+            dropped.DroppedIntermediateCount,
+            notice);
+    }
+
+    private static void SurfacePathNotices(List<string> warnings, IReadOnlyList<string> pathNotices)
+    {
+        if (pathNotices.Count == 0)
+        {
+            return;
+        }
+
+        warnings.Insert(0, string.Join(" ", pathNotices));
     }
 
     private async Task<(
@@ -1247,5 +1297,6 @@ public sealed partial class RouteDeterminationService : IRouteDeterminationServi
     private readonly record struct MaterializeResult(
         RouteProposalDto Dto,
         List<string> Failures,
-        int AssignedCount);
+        int AssignedCount,
+        List<string> PathNotices);
 }

@@ -65,7 +65,11 @@ namespace BusBuddy.Core.Services
             string? school = null);
         Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
         Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
-        Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
+        /// <summary>
+        /// Adds one stop. <paramref name="refreshDrivePath"/> is false while a route build is still
+        /// appending stops, so the Routes API is called once for the finished list.
+        /// </summary>
+        Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop, bool refreshDrivePath = true);
         /// <summary>Updates stop name, address, and validated coordinates. Stop order and published clocks are unchanged.</summary>
         Task<Result<RouteStop>> UpdateRouteStopAsync(int routeId, RouteStop routeStop);
         Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId);
