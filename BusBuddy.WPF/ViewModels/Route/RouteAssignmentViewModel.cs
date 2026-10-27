@@ -43,6 +43,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private Task<bool> _routeStopsLoad = Task.FromResult(true);
         private bool _refreshHoldsLoading;
         private string? _loadFailureStatus;
+        private string? _stopLoadFailureStatus;
         private BusBuddy.Core.Models.Bus? _selectedBus;
         private BusBuddy.Core.Models.Driver? _selectedDriver;
         private RouteStop? _selectedRouteStop;

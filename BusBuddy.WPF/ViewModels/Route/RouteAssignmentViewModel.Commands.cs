@@ -971,7 +971,11 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (!dataOk || !stopsOk)
                 {
-                    if (!dataOk
+                    if (!stopsOk && !string.IsNullOrEmpty(_stopLoadFailureStatus))
+                    {
+                        StatusMessage = _stopLoadFailureStatus;
+                    }
+                    else if (!dataOk
                         && !StatusMessage.StartsWith("Could not load", StringComparison.Ordinal)
                         && !string.IsNullOrEmpty(_loadFailureStatus))
                     {
@@ -1012,6 +1016,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             if (SelectedRoute == null)
             {
+                _stopLoadFailureStatus = null;
                 return true;
             }
 
@@ -1042,15 +1047,18 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Information("Loaded {StopCount} stops for route {RouteName}", RouteStops.Count, SelectedRoute.RouteName);
                 if (stopError != null)
                 {
+                    _stopLoadFailureStatus = stopError;
                     StatusMessage = stopError;
                     return false;
                 }
 
                 if (!rosterOk)
                 {
+                    _stopLoadFailureStatus = StatusMessage;
                     return false;
                 }
 
+                _stopLoadFailureStatus = null;
                 if (RouteStops.Count == 0)
                 {
                     StatusMessage = $"No stops found for {GetRouteDisplayName(SelectedRoute)} — add stops to begin routing.";
@@ -1062,6 +1070,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 Logger.Error(ex, "Failed to load route stops for route {RouteName}", SelectedRoute.RouteName);
                 StatusMessage = $"Could not load stops for {GetRouteDisplayName(SelectedRoute)}: {ex.Message}";
+                _stopLoadFailureStatus = StatusMessage;
                 return false;
             }
         }
