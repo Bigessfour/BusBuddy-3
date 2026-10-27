@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -6,6 +8,9 @@ using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services.GoogleMaps;
 using Microsoft.Extensions.Options;
 using NUnit.Framework;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 
 namespace BusBuddy.Tests.Core;
 
@@ -108,6 +113,61 @@ public class GoogleRoutingServiceTests
     }
 
     [Test]
+    public async Task ComputeDrivePath_Http400_LogsStatusAndErrorBodyWithoutApiKey()
+    {
+        const string key = "test-key";
+        var json = """
+            {
+              "error": {
+                "code": 400,
+                "message": "Request contains an invalid argument.",
+                "status": "INVALID_ARGUMENT",
+                "details": [{
+                  "fieldViolations": [{
+                    "field": "intermediates",
+                    "description": "Repeated consecutive waypoints are not allowed. X-Goog-Api-Key: test-key AIzaSyEXAMPLEKEY1234567890"
+                  }]
+                }]
+              }
+            }
+            """;
+        var sink = new CollectingSink();
+        var testLogger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Sink(sink).CreateLogger();
+        var previous = Log.Logger;
+        Log.Logger = testLogger;
+        try
+        {
+            using var http = new HttpClient(new StubHandler(HttpStatusCode.BadRequest, json));
+            var svc = new GoogleRoutingService(http, Options.Create(new GoogleMapsOptions { ApiKey = key }));
+            var result = await svc.ComputeDrivePathAsync(
+                (38.15, -102.72),
+                (38.16, -102.71),
+                Array.Empty<(double, double)>());
+
+            Assert.That(result.Succeeded, Is.False);
+            Assert.That(result.Error, Does.Contain("HTTP 400"));
+            Assert.That(result.Error, Does.Contain("invalid argument"));
+            Assert.That(result.Error, Does.Contain("intermediates"));
+            Assert.That(result.Error, Does.Not.Contain(key));
+            Assert.That(result.Error, Does.Not.Contain("AIzaSyEXAMPLEKEY1234567890"));
+        }
+        finally
+        {
+            Log.Logger = previous;
+            (testLogger as IDisposable)?.Dispose();
+        }
+
+        var logged = sink.Rendered()
+            .Where(message => message.Contains("Routes API HTTP", StringComparison.Ordinal))
+            .ToList();
+        Assert.That(logged, Has.Count.EqualTo(1));
+        Assert.That(logged[0], Does.Contain("400"));
+        Assert.That(logged[0], Does.Contain("intermediates"));
+        Assert.That(logged[0], Does.Not.Contain(key));
+        Assert.That(logged[0], Does.Not.Contain("AIzaSyEXAMPLEKEY1234567890"));
+    }
+
+    [Test]
     public async Task ComputeDrivePath_MissingKey_ReturnsError()
     {
         var previous = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY");
@@ -199,6 +259,32 @@ public class GoogleRoutingServiceTests
         finally
         {
             Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", previous);
+        }
+    }
+
+    private sealed class CollectingSink : ILogEventSink
+    {
+        private readonly List<string> _messages = new();
+
+        public void Emit(LogEvent logEvent)
+        {
+            if (logEvent.Level != LogEventLevel.Warning)
+            {
+                return;
+            }
+
+            lock (_messages)
+            {
+                _messages.Add(logEvent.RenderMessage());
+            }
+        }
+
+        public string[] Rendered()
+        {
+            lock (_messages)
+            {
+                return _messages.ToArray();
+            }
         }
     }
 
