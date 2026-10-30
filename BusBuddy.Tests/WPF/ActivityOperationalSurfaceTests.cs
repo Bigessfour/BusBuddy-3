@@ -53,6 +53,9 @@ public class ActivityOperationalSurfaceTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding CalculateDistanceCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding PrintTicketCommand}\""));
         Assert.That(xaml, Does.Contain("SfScheduler"));
+        Assert.That(xaml, Does.Contain("AppointmentBackground=\"AppointmentBackground\""));
+        Assert.That(xaml, Does.Contain("Foreground=\"Foreground\""));
+        Assert.That(xaml, Does.Contain("Green is scheduled"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Trips}\""));
         Assert.That(xaml, Does.Contain("MappingName=\"ExternalTicketNo\""));
         Assert.That(xaml, Does.Contain("MappingName=\"DisplayTripType\""));
@@ -71,16 +74,22 @@ public class ActivityOperationalSurfaceTests
         Assert.That(dialog, Does.Contain("Text=\"{Binding StatusDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding PathMilesDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding DriverHoursDisplay, Mode=OneWay}\""));
+        Assert.That(dialog, Does.Contain("IsChecked=\"{Binding IsOvernightPending, Mode=TwoWay}\""));
         Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding StatusDisplay"));
         Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding PathMilesDisplay"));
         Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding DriverHoursDisplay"));
         var dialogVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
         Assert.That(dialogVm, Does.Contain("ITripReasonCatalog"));
+        Assert.That(dialogVm, Does.Contain("RefreshDisplayedMilesAsync"));
         Assert.That(dialogVm, Does.Contain("never sets RouteId"));
         Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasOrigins"));
-        Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasAssignableDrivers"));
-        Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasAssignableVehicles"));
+        Assert.That(dialog, Does.Contain("ItemsSource=\"{Binding AvailableDrivers}\""));
+        Assert.That(dialog, Does.Contain("DisplayMemberPath=\"DriverName\""));
+        Assert.That(dialog, Does.Contain("Visibility=\"{Binding ShowNoDriverHint"));
+        Assert.That(dialog, Does.Contain("ItemsSource=\"{Binding AvailableVehicles}\""));
+        Assert.That(dialog, Does.Contain("MinWidth=\"980\""));
         var boardVm = XamlViewFile.Read("ViewModels/Activity/ActivityManagementViewModel.cs");
+        Assert.That(boardVm, Does.Contain("TripCalendarDisplay"));
         Assert.That(
             boardVm.IndexOf("await editor.LoadAvailableDataAsync()", StringComparison.Ordinal),
             Is.LessThan(boardVm.IndexOf("new TripEventEditDialog(editor)", StringComparison.Ordinal)));

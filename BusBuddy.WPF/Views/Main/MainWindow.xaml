@@ -4,7 +4,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:chat="clr-namespace:Syncfusion.UI.Xaml.Chat;assembly=Syncfusion.SfChat.Wpf"
         xmlns:route="clr-namespace:BusBuddy.WPF.Views.Route"
+        xmlns:map="clr-namespace:BusBuddy.WPF.Views.Map"
         mc:Ignorable="d"
         Title="BusBuddy - School Transportation"
         Height="900"
@@ -129,14 +131,17 @@
                    UseDocumentContainer="True"
                    PersistState="True"
                    UseNativeFloatWindow="True"
+                   SidePanelSize="40"
                    Grid.Row="1">
 
-            <!-- Students Panel -->
+            <!-- Students Panel — AutoHidden so the document/map area stays map-first -->
+            <!-- https://help.syncfusion.com/wpf/docking/auto-hide-window -->
             <ContentControl x:Name="StudentsPane"
                             syncfusion:DockingManager.Header="📚 Students"
-                            syncfusion:DockingManager.State="Dock"
+                            syncfusion:DockingManager.State="AutoHidden"
                             syncfusion:DockingManager.SideInDockedMode="Left"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="350"
+                            syncfusion:DockingManager.CanAutoHide="True"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>
@@ -180,12 +185,13 @@
                 </Grid>
             </ContentControl>
 
-            <!-- Routes Panel -->
+            <!-- Routes Panel — AutoHidden (Right); pin to restore always-visible grid -->
             <ContentControl x:Name="RoutesPane"
                             syncfusion:DockingManager.Header="🚌 Routes"
-                            syncfusion:DockingManager.State="Dock"
+                            syncfusion:DockingManager.State="AutoHidden"
                             syncfusion:DockingManager.SideInDockedMode="Right"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="380"
+                            syncfusion:DockingManager.CanAutoHide="True"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>
@@ -351,26 +357,13 @@
                 </Grid>
             </ContentControl>
 
-            <!-- Map Panel (District Map) — opened via toolbar; avoid embedding a second SfMap host here -->
+            <!-- Map Panel — primary document; single MapView host (singleton MapViewModel) -->
             <ContentControl x:Name="MapPane"
                             syncfusion:DockingManager.Header="Map"
                             syncfusion:DockingManager.State="Document"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
-                <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}" Margin="24">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="District Map"
-                                   FontSize="20"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="Use the Map button in the header to open the live district map."
-                                   FontSize="14"
-                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
-                                   TextWrapping="Wrap"
-                                   TextAlignment="Center"
-                                   Margin="0,12,0,0"
-                                   MaxWidth="360"/>
-                    </StackPanel>
+                <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
+                    <map:MapView x:Name="DistrictMapPaneView"/>
                 </Grid>
             </ContentControl>
 
@@ -382,6 +375,48 @@
                 <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <route:RouteAssignmentView x:Name="RouteAssignmentPaneView"/>
                 </Grid>
+            </ContentControl>
+
+            <!-- AI Assistant — AutoHidden bottom pane; PersistState keeps pin preference -->
+            <!-- https://help.syncfusion.com/wpf/docking/auto-hide-window -->
+            <!-- https://help.syncfusion.com/wpf/ai-assistview/getting-started -->
+            <ContentControl x:Name="AIAssistPane"
+                            syncfusion:DockingManager.Header="AI Assistant"
+                            syncfusion:DockingManager.State="AutoHidden"
+                            syncfusion:DockingManager.SideInDockedMode="Bottom"
+                            syncfusion:DockingManager.DesiredHeightInDockedMode="280"
+                            syncfusion:DockingManager.CanClose="False"
+                            syncfusion:DockingManager.CanAutoHide="True"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <!-- DataContext set in code-behind from DI (IAiChatService / Ollama) -->
+                <chat:SfAIAssistView x:Name="AIAssistViewControl"
+                                     CurrentUser="{Binding CurrentUser}"
+                                     Messages="{Binding Messages}"
+                                     Suggestions="{Binding Suggestions}"
+                                     ShowTypingIndicator="{Binding ShowTypingIndicator}"
+                                     Conversations="{Binding Conversations}"
+                                     ShowNavigationView="True"
+                                     InputPlaceholderText="Ask about routes, students, map, or docs…"
+                                     ConversationItemClicked="AIAssistViewControl_ConversationItemClicked"
+                                     AutomationProperties.Name="BusBuddy AI Assistant">
+                    <chat:SfAIAssistView.BannerTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Vertical"
+                                        VerticalAlignment="Bottom"
+                                        Margin="0,10,0,0">
+                                <TextBlock Text="BusBuddy AI"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="Ask about BusBuddy routes, students, map, or docs"
+                                           FontSize="14"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="12,4,12,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </chat:SfAIAssistView.BannerTemplate>
+                </chat:SfAIAssistView>
             </ContentControl>
 
         </syncfusion:DockingManager>

@@ -8,6 +8,7 @@ using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
+using BusBuddy.WPF.ViewModels.AIAssist;
 using BusBuddy.WPF.Views.Dashboard;
 using BusBuddy.WPF.ViewModels.Route; // Needed for RouteManagementViewModel reference
 using BusBuddy.WPF.ViewModels.Student;
@@ -31,6 +32,7 @@ using Syncfusion.SfSkinManager;
 using Serilog;
 using Syncfusion.Windows.Tools.Controls; // DockingManager API per Syncfusion docs
 using Syncfusion.Windows.Shared; // ChromelessWindow API per Syncfusion docs
+using Syncfusion.UI.Xaml.Chat;
 
 namespace BusBuddy.WPF.Views.Main
 {
@@ -154,6 +156,19 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 EnsureMainWindowViewModel();
+                EnsureAIAssistViewModel();
+                // Map-first: activate Map document after docking layout applies (PersistState may restore sides).
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try
+                    {
+                        ActivateMapDocumentOnStartup();
+                    }
+                    catch (Exception activateEx)
+                    {
+                        Logger.Warning(activateEx, "Startup Map document activation failed");
+                    }
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
                 TryShowDashboardOnStartup();
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -163,6 +178,101 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Warning(ex, "MainWindow_Loaded diagnostics failed");
+            }
+        }
+
+        /// <summary>True when the Map document hosts the live <see cref="Views.Map.MapView"/>.</summary>
+        public bool HasDockedMapHost => MapPane != null && DistrictMapPaneView != null;
+
+        /// <summary>
+        /// Focus the Map document tab (map-first layout). Used at startup and by <see cref="MapViewLauncher"/>.
+        /// </summary>
+        public bool TryActivateMapDocument()
+        {
+            if (MainDockingManager is null || MapPane is null)
+            {
+                return false;
+            }
+
+            DockingManager.SetState(MapPane, DockState.Document);
+            ActivateDockPane(MapPane, MapHeader);
+            return true;
+        }
+
+        /// <summary>
+        /// Focus the Map document tab so the center is map-first with sides AutoHidden by default.
+        /// </summary>
+        private void ActivateMapDocumentOnStartup()
+        {
+            if (!TryActivateMapDocument())
+            {
+                return;
+            }
+
+            _ = App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>()
+                ?.OnDistrictMapSurfaceActivatedAsync();
+            Logger.Information("Startup layout: Map document activated (Students/Routes AutoHidden defaults)");
+        }
+
+        /// <summary>
+        /// Attach DI-backed AIAssistViewModel (Ollama) to the AutoHidden AI Assistant pane.
+        /// </summary>
+        private void EnsureAIAssistViewModel()
+        {
+            try
+            {
+                if (AIAssistPane?.DataContext is AIAssistViewModel)
+                {
+                    return;
+                }
+
+                var fromDi = App.ServiceProvider?.GetService<AIAssistViewModel>();
+                AIAssistPane.DataContext = fromDi ?? new AIAssistViewModel();
+                Logger.Information(
+                    "AIAssistPane DataContext set ({Source})",
+                    fromDi != null ? "DI/Ollama" : "parameterless-fallback");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to attach AIAssistViewModel; using offline fallback VM");
+                try
+                {
+                    AIAssistPane.DataContext = new AIAssistViewModel();
+                }
+                catch (Exception fallbackEx)
+                {
+                    Logger.Error(fallbackEx, "AIAssistViewModel fallback construction failed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Vol 3 conversation history: load AssistItems when the user picks an archived chat.
+        /// </summary>
+        private void AIAssistViewControl_ConversationItemClicked(object sender, ConversationItemClickedEventArgs e)
+        {
+            try
+            {
+                if (AIAssistPane.DataContext is not AIAssistViewModel vm)
+                {
+                    return;
+                }
+
+                if (e.ConversationItem is AssistConversationItem item)
+                {
+                    vm.SelectConversation(item);
+                    return;
+                }
+
+                // Built-in "New chat" may pass a null/empty item depending on Syncfusion build.
+                if (e.ConversationItem == null)
+                {
+                    vm.StartNewConversation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "AI Assist conversation history selection failed");
             }
         }
 
@@ -731,7 +841,7 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         /// <summary>
-        /// Open the district map in a dedicated window (consistent with Students / Reports nav).
+        /// Focus the docked district map document (single MapView host).
         /// </summary>
         private void MapButton_Click(object sender, RoutedEventArgs e)
         {
@@ -740,7 +850,6 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 MapViewLauncher.Show(this);
-                ActivateDockPane(MapPane, MapHeader);
             }
             catch (Exception ex)
             {

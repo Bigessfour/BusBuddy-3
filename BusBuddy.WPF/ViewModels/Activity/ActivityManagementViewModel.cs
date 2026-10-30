@@ -3,8 +3,10 @@ using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Trips;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Logging;
 using BusBuddy.WPF.Utilities;
@@ -156,19 +158,47 @@ namespace BusBuddy.WPF.ViewModels.Activity
         private void RebuildAppointments()
         {
             Appointments.Clear();
+            var today = DateTime.Today;
             foreach (var trip in Trips)
             {
+                var location = trip.DestinationName ?? trip.Destination ?? string.Empty;
+                var tone = TripCalendarDisplay.Resolve(trip.TripDate, trip.DriverId.HasValue, today);
                 Appointments.Add(new TripBoardAppointment
                 {
                     TripEventId = trip.TripEventId,
                     StartTime = trip.StartTime,
                     EndTime = trip.EndTime,
-                    Subject = trip.Subject,
-                    Location = trip.DestinationName ?? trip.Destination ?? string.Empty,
-                    Notes = trip.TripEventId.ToString()
+                    Subject = TripCalendarDisplay.Subject(trip.TripDate, location, trip.Driver?.DriverName),
+                    Location = location,
+                    Notes = trip.TripEventId.ToString(),
+                    AppointmentBackground = BrushFor(tone),
+                    Foreground = ForegroundFor(tone)
                 });
             }
         }
+
+        private static Brush BrushFor(TripCalendarDisplay.Tone tone) => tone switch
+        {
+            TripCalendarDisplay.Tone.DriverDueWithinOneWeek => OneWeekBrush,
+            TripCalendarDisplay.Tone.DriverDueWithinTwoWeeks => TwoWeekBrush,
+            _ => ScheduledBrush
+        };
+
+        private static Brush ForegroundFor(TripCalendarDisplay.Tone tone) =>
+            tone == TripCalendarDisplay.Tone.DriverDueWithinTwoWeeks ? YellowTextBrush : LightTextBrush;
+
+        private static SolidColorBrush Freeze(byte r, byte g, byte b)
+        {
+            var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+            brush.Freeze();
+            return brush;
+        }
+
+        private static readonly SolidColorBrush ScheduledBrush = Freeze(0x2E, 0x7D, 0x32);
+        private static readonly SolidColorBrush TwoWeekBrush = Freeze(0xF9, 0xA8, 0x25);
+        private static readonly SolidColorBrush OneWeekBrush = Freeze(0xC6, 0x28, 0x28);
+        private static readonly SolidColorBrush LightTextBrush = Freeze(0xFF, 0xFF, 0xFF);
+        private static readonly SolidColorBrush YellowTextBrush = Freeze(0x1A, 0x1A, 0x1A);
 
         private async Task ImportCsvAsync()
         {
@@ -264,8 +294,14 @@ namespace BusBuddy.WPF.ViewModels.Activity
                 return;
             }
 
-            var editor = new TripEventEditDialogViewModel(existing, _trips, _routes, _destinations, _reasons);
+            var routing = App.ServiceProvider?.GetService<IRoutingService>();
+            var editor = new TripEventEditDialogViewModel(existing, _trips, _routes, _destinations, _reasons, routing);
             await editor.LoadAvailableDataAsync().ConfigureAwait(true);
+            if (existing is null)
+            {
+                editor.ExternalTicketNo = await _trips.NextExternalTicketNoAsync().ConfigureAwait(true);
+            }
+
             var dialog = new TripEventEditDialog(editor);
             DialogOwner.Assign(dialog);
             if (dialog.ShowDialog() != true || editor.Result is null)
@@ -273,23 +309,31 @@ namespace BusBuddy.WPF.ViewModels.Activity
                 return;
             }
 
-            var trip = editor.Result;
-            trip.RouteId = null;
-            if (trip.TripEventId == 0)
+            try
             {
-                await _trips.AddTripAsync(trip).ConfigureAwait(true);
+                var trip = editor.Result;
+                trip.RouteId = null;
+                if (trip.TripEventId == 0)
+                {
+                    await _trips.AddTripAsync(trip).ConfigureAwait(true);
+                }
+                else
+                {
+                    await _trips.UpdateTripAsync(trip).ConfigureAwait(true);
+                }
+
+                await _trips.RefreshPathMilesAsync(trip.TripEventId).ConfigureAwait(true);
+
+                await LoadTripsAsync().ConfigureAwait(true);
+                SelectedTrip = Trips.FirstOrDefault(t => t.TripEventId == trip.TripEventId)
+                                  ?? Trips.FirstOrDefault(t => t.ExternalTicketNo == trip.ExternalTicketNo);
+                StatusMessage = "Trip saved.";
             }
-            else
+            catch (Exception ex)
             {
-                await _trips.UpdateTripAsync(trip).ConfigureAwait(true);
+                Logger.Error(ex, "Trip save failed");
+                StatusMessage = "Could not save the trip.";
             }
-
-            await _trips.RefreshPathMilesAsync(trip.TripEventId).ConfigureAwait(true);
-
-            await LoadTripsAsync().ConfigureAwait(true);
-            SelectedTrip = Trips.FirstOrDefault(t => t.TripEventId == trip.TripEventId)
-                              ?? Trips.FirstOrDefault(t => t.ExternalTicketNo == trip.ExternalTicketNo);
-            StatusMessage = "Trip saved.";
         }
 
         private async Task ConfirmTripAsync()
@@ -404,5 +448,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
         public string Subject { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
+        public Brush AppointmentBackground { get; set; } = Brushes.Transparent;
+        public Brush Foreground { get; set; } = Brushes.White;
     }
 }

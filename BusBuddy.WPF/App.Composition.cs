@@ -74,6 +74,9 @@ namespace BusBuddy.WPF
 
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.AIAssist.AIAssistViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.AIAssist.AIAssistViewModel(
+                        sp.GetRequiredService<BusBuddy.WPF.Services.IAiChatService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Activity.ActivityTimelineViewModel>(sp =>
                     new BusBuddy.WPF.ViewModels.Activity.ActivityTimelineViewModel(

@@ -31,24 +31,26 @@ lint:
     - codespell
   enabled:
     # Security and infrastructure scanning
-    - actionlint@1.7.8
+    - svgo@4.1.0
+    - taplo@0.10.0
+    - actionlint@1.7.12
     - bandit@1.9.4
-    - black@26.5.1
-    - grype@0.119.0
-    - hadolint@2.14.0
-    - isort@9.0.1
-    - oxipng@9.1.5
-    - pinact@4.0.0
-    - ruff@0.16.8
+    - black@26.10.0
+    - grype@0.120.1
+    - hadolint@2.15.1
+    - isort@9.0.2
+    - oxipng@10.2.1
+    - pinact@5.0.0
+    - ruff@0.16.10
     - shellcheck@0.11.0
-    - shfmt@3.13.1
-    - checkov@3.3.19 # Infrastructure as code security
+    - shfmt@3.14.1
+    - checkov@3.3.25 # Infrastructure as code security
     - git-diff-check # Git hygiene
     - osv-scanner@2.6.0 # Vulnerability scanning
-    - trufflehog@3.97.5 # Secret detection
+    - trufflehog@3.99.0 # Secret detection
 
     # Code formatting and quality
-    - prettier@3.9.8 # JSON, YAML formatting
+    - prettier@3.9.9 # JSON, YAML formatting
     - yamllint@1.38.0 # YAML linting
 
   # File path ignores for build artifacts and logs
@@ -90,4 +92,4 @@ tools:
     # Azure CDN SSL failure on converttosarif.1.0.0.nupkg; not required to lint
     - converttosarif
   enabled:
-    - pwsh@7.4.1
+    - pwsh@7.6.6

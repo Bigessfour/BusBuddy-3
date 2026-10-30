@@ -2,7 +2,7 @@
 
 [![Build & Test](https://github.com/Bigessfour/BusBuddy-3/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Bigessfour/BusBuddy-3/actions/workflows/ci.yml)
 [![.NET](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-34.2.3-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-35.1.42-orange)](https://www.syncfusion.com/wpf-controls)
 
 > **WPF desktop app for a school district transportation clerk: students, routes, buses, drivers, schedules. .NET 9 + Syncfusion, Postgres via EF Core.**
 >

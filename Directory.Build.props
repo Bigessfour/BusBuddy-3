@@ -10,7 +10,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <!-- UseWPF only in BusBuddy.WPF / test projects — not globally (breaks Core + WebDAV builds) -->
         <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
-        <SyncfusionVersion>34.2.3</SyncfusionVersion> <!-- 34.x latest on nuget.org as of 2026-08-16 -->
+        <SyncfusionVersion>35.1.42</SyncfusionVersion> <!-- 35.x latest on nuget.org as of 2026-10-27 (2026 Vol 3) -->
         <EntityFrameworkVersion>9.0.20</EntityFrameworkVersion>
     <NpgsqlVersion>9.0.4</NpgsqlVersion> <!-- for Postgres in docker-compose test/dev profiles; stay on 9.x with EF Core 9 -->
         <SerilogVersion>4.4.0</SerilogVersion>

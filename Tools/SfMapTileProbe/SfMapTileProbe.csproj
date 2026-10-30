@@ -5,7 +5,6 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <SyncfusionVersion>34.2.3</SyncfusionVersion>
     <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
     <StartupObject>SfMapTileProbe.App</StartupObject>
   </PropertyGroup>
