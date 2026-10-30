@@ -19,7 +19,7 @@
 
 ### Status snapshot (2026-10-26)
 
-Branch **`master`** at `42ae5f8` — [PR #126](https://github.com/Bigessfour/BusBuddy-3/pull/126) merged on top of [PR #102](https://github.com/Bigessfour/BusBuddy-3/pull/102) (`d6e5739`). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now:** Item 5 (refresh route data), then **Maps slice 1**. PRs #97–#102 and #126 are merged; do not reopen them. Guest-proof boxes below stay open until a log is recorded in this file.
+Branch **`master`** at `42ae5f8` — [PR #126](https://github.com/Bigessfour/BusBuddy-3/pull/126) merged on top of [PR #102](https://github.com/Bigessfour/BusBuddy-3/pull/102) (`d6e5739`). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now:** Item 5 + Maps slice 1 guest-proofed 2026-10-26 (see Done log). Next: remaining parked dual-write / FK work. PRs #97–#102 and #126 are merged; do not reopen them. Guest-proof boxes below stay open until a log is recorded in this file.
 
 | Criterion                       | Status                                                                                                                                                                                                                           |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -31,11 +31,11 @@ Branch **`master`** at `42ae5f8` — [PR #126](https://github.com/Bigessfour/Bus
 | Follow-up PR #65                | **Merged** 2026-09-10 (`District Map interaction proof and Google Maps attribution logo`)                                                                                                                                        |
 | PRs #97–#102                    | **Merged** on `master`. See Done log 2026-10-26.                                                                                                                                                                                 |
 | a11y Phase 2 / wishlist         | Out of scope                                                                                                                                                                                                                     |
-| Project-done checker            | **Not 0** — open guest boxes are Item 5, Maps slice 1, and District Map Export/Move. B14 still wants hops 1–3 live UI boxes. B12 cleared by #126. Ship-ready ≠ checker 0                                                         |
+| Project-done checker            | **Not 0** — guest Item 5 / Maps slice 1 / Export-Move / hops 1–3 UI cited 2026-10-26; re-run checker after this commit. B12 cleared by #126. Ship-ready ≠ checker 0                                                              |
 
-**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–4 and 6** are guest-proofed on 2026-09-21 logs. Next guest work is **Item 5**, then **Maps slice 1** (walk Item 7).
+**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–6** and **Maps slice 1** are guest-proofed (2026-09-21 + 2026-10-26 logs). Remaining open work is parked dual-write / FK follow-ups.
 
-**Open boxes on this file:** Item 5; Maps slice 1; District Map Export/Move; optional hops 1–3 UI; Route FK name-string drop; `IStudentScheduleService`; fleet chrome filenames. Parked rows stay parked.
+**Open boxes on this file:** Route FK name-string drop; `IStudentScheduleService`; fleet chrome filenames. Item 5, Maps slice 1, District Map Export/Move, and optional hops 1–3 UI closed with 2026-10-26 guest evidence. Parked rows stay parked.
 
 ---
 
@@ -66,13 +66,13 @@ Do in this order. Do not start parked campaigns from this table.
 
 - [x] **Prod walk Item 4 (live, guest):** `artifacts/utm-runtime-logs-20260921T214234Z/Debug-logs/logs/log-20260921.txt` — **Remove** `Removed student 11` / `Student Maximiliano Gonzalez removed` (14:41:54); **re-assign** `Assigned student 11` + `Rebuilt WaypointsJson … Points=14` (14:41:58); **not riding** `Recorded rider exception RouteId=4 StudentId=11` + `published stops unchanged` (14:42:01–07). Earlier same day: not-riding students 9 and 12 (13:55–13:56). **Open assignment:** `Opening route assignment dialog RouteId=4` at 14:41:49 with no new `OpenRouteAssignmentAsync` NRE after 14:01 (`errors-actionable-20260921.log` stops at 14:00:54; five pre-layout/NRE attempts 13:40–14:00). Clerk confirmed Remove / Assign / Not riding today UI on post-layout build.
 
-- [ ] **Prod walk Item 5 (live, guest):** `log-20260921.txt` — `Refresh Route Data started` + `Data refreshed successfully Routes=4` (13:59:19); re-prove on current assignment build after layout/PDF preview fixes (scorer: `Scripts/score-route-assignment-logs.ps1`).
+- [x] **Prod walk Item 5 (live, guest):** `artifacts/utm-runtime-logs-20261026T222020Z/Debug-logs/logs/log-20261026.txt` — `Refresh Route Data started` (14:14:04.791) and `Data refreshed successfully Routes=14 Stops=0` (14:14:04.850). Scorer `Scripts/score-route-assignment-logs.ps1 -Since "2026-10-26 14:09:00"`: `Data refreshed successfully` 4, `runtime-errors lines: 0`, exit 0 (`artifacts/utm-runtime-logs-20261026T222020Z/route-assignment-score-20261026.txt`).
 
 - [x] **Prod walk Item 6 (live, guest):** `artifacts/utm-runtime-logs-20260921T214854Z/Debug-logs/logs/log-20260921.txt` — **View Schedule:** `RouteScheduleWindow` loaded `BindingErrors=0` (13:57:43); `Opened route schedule DisplayName=AM Special Needs Bus 5 Stops=14 FirstLast=07:30 → 08:43` with **14 published clocks** (matches Item 3 PathDuration). **Print sheet:** `Rendered PdfGrid route sheet … Stops=14 Bytes=64252` (13:50:30) → `Route schedule preview … Grid=PdfGrid Preview=true Verb=none` saved under `Documents\BusBuddy\Printouts` (13:50:33). `MapEmbedded=false` acceptable per walk spec. Clerk confirmed printable schedule on guest.
 
-- [ ] **Maps slice 1 (live, guest):** parked until prod walk Item 7. `MapsConnectionProbe` session 200, `SfMapTileProbe google-urltemplate` paints, District Map logs `MapTileBootstrap Host=DistrictMap Outcome=ok`. Fail-closed empty basemap if no key — never OSM.
+- [x] **Maps slice 1 (live, guest):** `artifacts/utm-runtime-logs-20261026T222020Z/maps-connection-probe-20261026.txt` `Maps probe passed.`; `artifacts/utm-runtime-logs-20261026T222020Z/Debug-logs/logs/sfmap-probe-google-urltemplate-20261026-141112.txt` `session_ok template_host=tile.googleapis.com` and `withSource=39`; same-day log `MapTileBootstrap Host=DistrictMap Outcome=ok` (14:14:16). Product log has no OSM and no `Outcome=no-key`.
 
-- [ ] Parked (not slice-blocking) **District Map leftover clicks:** Export Route toast when no route is selected, and **Move to selected route**. Testhost `MapToolbarSmokeTests` covers both. Do not start until slices 1–3 pass.
+- [x] Parked (not slice-blocking) **District Map leftover clicks:** `artifacts/utm-runtime-logs-20261026T222020Z/Debug-logs/logs/log-20261026.txt` — `Export Route requested with no selection` (14:14:21) and `Clerk override Student=251 From=30 To=29 Slot="AM" Reason=District Map RetainMirror=true` (15:19:27).
 
 - [x] **Student form map (live):** `Opening home pin map StudentId=65 HasPin=true` + `Clerk adjusted home pin StudentId=65 HasCoords=true` (same artifact as Item 1). Testhost `StudentFormViewOnMap_UsesPickupThenHomePlotRule` already asserts the wiring.
 
@@ -116,9 +116,9 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 **After hops (not during proof):**
 
 - [x] Windows test pass for WPF Students suites (`./Scripts/utm-wpf-test.sh`) — 2026-09-09 guest: **27/27 passed** (StudentsList/ViewModel/FormSave/View + PostgresConnectionResolver + DestinationService)
-- [ ] Parked (not ship-blocking) Optional Hop 1 UI click on VM: Students → Add School (same `DestinationService.AddSchoolAsync` as DbPrep) — only if you want ribbon confirmation beyond Core+Postgres. Pull `logs/ui-diagnostics-*.log` after the session.
-- [ ] Parked (not ship-blocking) Optional Hop 2 UI click on VM: Students → Add Student with school + Maps validate (same `IStudentService.AddStudentAsync` as DbPrep)
-- [ ] Parked (not ship-blocking) Optional Hop 3 UI click on VM: Generate Routes (same `RouteDeterminationService.GenerateAndAssignAsync` as DbPrep)
+- [x] Parked (not ship-blocking) Optional Hop 1 UI click on VM: `artifacts/utm-runtime-logs-20261026T222020Z/Debug-logs/logs/log-20261026.txt` — `School cataloged DestinationId=9 Name=Card105 Proof School Mode="Add" HasGps=true` (14:19:37).
+- [x] Parked (not ship-blocking) Optional Hop 2 UI click on VM: same log — `Successfully saved student StudentId=251 DestinationId=null HasCoordinates=true Persistence="Service"` (14:30:52).
+- [x] Parked (not ship-blocking) Optional Hop 3 UI click on VM: same log — `UI proof Click=Generate Routes Surface=RouteManagementView Outcome=generated Detail=Generated routes for Card105 Proof School: 2 proposal(s), assigned 1 student(s)` (14:33:25).
 - [x] Optional Hop 4 UI: Assign Vehicle/Driver — testhost `AssignVehicleCommand_UsesSelectedBusId` / `AssignDriverCommand_UsesSelectedDriverId` (same `RouteService.Assign*ToRouteAsync`). Live ribbon click still optional.
 - [x] Optional Hop 5 UI: Route Management Generate Schedule — testhost `GenerateScheduleCommand_PersistsScheduleRow` (same `IScheduleService.AddScheduleAsync`). Live ribbon click still optional.
 - [ ] Parked (not ship-blocking) Route FK follow-up — **phase 1 done, leftover writers wrap RouteService, drop phase remains.** Done: `Student.AmRouteId` / `PmRouteId` added and backfilled; `IStudentService.GetStudentsByRouteAsync(int)` is the keyed roster read (name overload unique-resolves or returns empty); name-assign and `IDriverService.AssignDriverToRouteAsync` call `RouteService.Assign*`. **Remaining:** drop the `AMRoute` / `PMRoute` name strings once their ~300 references across ~56 files are migrated to the key — do not attempt in one pass.
@@ -145,6 +145,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-10-26 — Issue #105 guest re-proof (clean `d6e5739`)
+
+- **Artifact:** `artifacts/utm-runtime-logs-20261026T222020Z/Debug-logs/logs/log-20261026.txt`. Launch 14:10 guest, scored with `-Since "2026-10-26 14:09:00"`.
+- **Item 5:** `Refresh Route Data started` and `Data refreshed successfully Routes=14 Stops=0` at 14:14:04. Scorer success pattern count 4, runtime-errors lines 0, exit 0.
+- **Maps slice 1:** `Maps probe passed.`; tile probe `session_ok template_host=tile.googleapis.com` `withSource=39`; `MapTileBootstrap Host=DistrictMap Outcome=ok`. No product OSM.
+- **District Map:** `Export Route requested with no selection` (14:14:21). `Clerk override Student=251 From=30 To=29 Slot="AM" Reason=District Map RetainMirror=true` (15:19:27).
+- **Hop UI:** school `DestinationId=9` `HasGps=true` (14:19:37); student `StudentId=251` `HasCoordinates=true` (14:30:52); `Click=Generate Routes` `Outcome=generated` for Card105 Proof School (14:33:25).
 
 ### 2026-10-26 — Queue catch-up (issue #107)
 

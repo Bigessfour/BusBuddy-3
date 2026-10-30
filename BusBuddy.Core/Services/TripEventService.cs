@@ -111,12 +111,36 @@ public sealed partial class TripEventService : ITripEventService
         ArgumentNullException.ThrowIfNull(tripEvent);
         tripEvent.RouteId = null;
         tripEvent.POCName ??= string.Empty;
+        // The editor may still hold a destination, school, driver, or bus that was
+        // loaded or saved in another context. Add() would insert that graph again.
+        tripEvent.OriginLocation = null;
+        tripEvent.DestinationLocation = null;
+        tripEvent.Vehicle = null;
+        tripEvent.Driver = null;
+        tripEvent.Route = null;
+        tripEvent.LinkedTrip = null;
+        if (string.IsNullOrWhiteSpace(tripEvent.ExternalTicketNo))
+        {
+            tripEvent.ExternalTicketNo = await NextExternalTicketNoAsync().ConfigureAwait(false);
+        }
+
         ApplyLeaveReturn(tripEvent);
         ApplyBoardStatus(tripEvent, previousStatus: null, previousBoard: null, isNew: true);
 
         using var context = _contextFactory.CreateWriteDbContext();
         context.TripEvents.Add(tripEvent);
         await context.SaveChangesAsync();
+    }
+
+    public async Task<string> NextExternalTicketNoAsync(CancellationToken cancellationToken = default)
+    {
+        using var context = _contextFactory.CreateDbContext();
+        var tickets = await context.TripEvents
+            .AsNoTracking()
+            .Select(t => t.ExternalTicketNo)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        return TripTicketNumbers.Next(tickets);
     }
 
     public async Task UpdateTripAsync(TripEvent tripEvent)

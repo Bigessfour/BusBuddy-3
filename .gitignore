@@ -1174,3 +1174,6 @@ rag/chroma_db/
 BusBuddy.Core/Data/student-import-data.json
 **/student-import-data.json
 **/*roster*.json
+
+# Local synthetic roster venv
+.venv-roster/

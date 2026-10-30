@@ -244,6 +244,36 @@ public class SettingsViewModelTests
         vm.StatusMessage.Should().Be("Settings reset to defaults");
     }
 
+    [Test]
+    public async Task ApplyBoundaryJson_FillsExtentFromAnyPolygon()
+    {
+        var vm = new SettingsViewModel(CreateSettingsMock().Object, new Mock<ISkinManagerService>().Object);
+        await Task.Delay(50);
+
+        const string json = """
+            {"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-105.1,39.1],[-104.9,39.1],[-104.9,39.3],[-105.1,39.3],[-105.1,39.1]]]},"properties":{"NAME":"Example District"}}]}
+            """;
+
+        Assert.That(vm.ApplyBoundaryJson(json), Is.True);
+        Assert.That(vm.BoundingBoxMinLatText, Is.EqualTo("39.1000"));
+        Assert.That(vm.BoundingBoxMaxLatText, Is.EqualTo("39.3000"));
+        Assert.That(vm.BoundingBoxMinLonText, Is.EqualTo("-105.1000"));
+        Assert.That(vm.BoundingBoxMaxLonText, Is.EqualTo("-104.9000"));
+        Assert.That(vm.StatusMessage, Does.Not.Contain("Lamar"));
+        Assert.That(vm.StatusMessage, Does.Not.Contain("Example"));
+    }
+
+    [Test]
+    public async Task ApplyBoundaryJson_RejectsAFileWithNoPolygon()
+    {
+        var vm = new SettingsViewModel(CreateSettingsMock().Object, new Mock<ISkinManagerService>().Object);
+        await Task.Delay(50);
+
+        Assert.That(vm.ApplyBoundaryJson("""{"type":"Point","coordinates":[-104.9,39.1]}"""), Is.False);
+        Assert.That(vm.BoundingBoxMinLatText, Is.Empty);
+        Assert.That(vm.StatusMessage, Is.EqualTo("The boundary file has no polygon."));
+    }
+
     private static Mock<IUserSettingsService> CreateSettingsMock()
     {
         var settings = new Mock<IUserSettingsService>();

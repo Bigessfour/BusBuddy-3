@@ -39,6 +39,11 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
     private readonly IRouteService? _routes;
     private readonly IDestinationService? _destinations;
     private readonly ITripReasonCatalog? _reasons;
+    private readonly IRoutingService? _routing;
+    private decimal? _pathMiles;
+    private int _milesRequest;
+    private bool _calculatingMiles;
+    private bool _isOvernightPending;
 
     private DateTime _tripDate = DateTime.Today.AddDays(1);
     private string _purpose = "Sports";
@@ -93,7 +98,8 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         ITripEventService? trips,
         IRouteService? routes,
         IDestinationService? destinations,
-        ITripReasonCatalog? reasons)
+        ITripReasonCatalog? reasons,
+        IRoutingService? routing = null)
     {
         _isEditMode = tripToEdit is { TripEventId: > 0 };
         _original = tripToEdit ?? new TripEvent { Type = TripType.Athletic_Football, Status = TripStatus.Draft };
@@ -101,6 +107,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         _routes = routes;
         _destinations = destinations;
         _reasons = reasons;
+        _routing = routing;
         SeedFallbackLists();
         LoadTrip(_original);
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => ListsReady);
@@ -136,9 +143,33 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
 
     public string StatusDisplay => $"Status: {_original.Status}";
 
-    public string PathMilesDisplay => _original.PathMiles is { } miles
-        ? $"Distance: {miles:0.00} mi"
-        : "Distance: not calculated yet";
+    public string PathMilesDisplay
+    {
+        get
+        {
+            if (_calculatingMiles)
+            {
+                return "Distance: calculating…";
+            }
+
+            if (_pathMiles is { } miles)
+            {
+                return $"Distance: {miles:0.00} mi";
+            }
+
+            return "Distance: calculated after origin and destination are validated";
+        }
+    }
+
+    public bool IsOvernightPending
+    {
+        get => _isOvernightPending;
+        set
+        {
+            _isOvernightPending = value;
+            OnPropertyChanged();
+        }
+    }
 
     public string DriverHoursDisplay
     {
@@ -342,6 +373,8 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
             {
                 PickupPoint = value.Name;
             }
+
+            _ = RefreshDisplayedMilesAsync();
         }
     }
 
@@ -411,6 +444,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         _destinationLatitude = applied.Latitude.HasValue ? (decimal)applied.Latitude.Value : null;
         _destinationLongitude = applied.Longitude.HasValue ? (decimal)applied.Longitude.Value : null;
         _ = ResolveDestinationPlaceAsync();
+        _ = RefreshDisplayedMilesAsync();
     }
 
     public async Task LoadAvailableDataAsync()
@@ -465,11 +499,17 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
 
     public bool HasAssignableVehicles => AvailableVehicles.Count > 0;
 
+    public bool ShowNoDriverHint => !HasAssignableDrivers;
+
+    public bool ShowNoVehicleHint => !HasAssignableVehicles;
+
     private void NotifyAssignableLists()
     {
         OnPropertyChanged(nameof(HasOrigins));
         OnPropertyChanged(nameof(HasAssignableDrivers));
         OnPropertyChanged(nameof(HasAssignableVehicles));
+        OnPropertyChanged(nameof(ShowNoDriverHint));
+        OnPropertyChanged(nameof(ShowNoVehicleHint));
     }
 
     public bool ValidateTrip()
@@ -541,6 +581,11 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         trip.ActualHeadcount = ActualHeadcount;
         trip.ExternalTicketNo = string.IsNullOrWhiteSpace(ExternalTicketNo) ? trip.ExternalTicketNo : ExternalTicketNo.Trim();
         trip.TripNotes = Notes;
+        trip.IsOvernightPending = IsOvernightPending;
+        if (_pathMiles is { } miles)
+        {
+            trip.PathMiles = miles;
+        }
         trip.POCName = string.IsNullOrWhiteSpace(PocName) ? string.Empty : PocName.Trim();
         trip.DriverId = SelectedDriver?.DriverId;
         if (_original.IsMultiAsset && SelectedVehicle is null)
@@ -572,7 +617,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
                 _destinationLatitude!.Value,
                 _destinationLongitude!.Value).ConfigureAwait(true);
             trip.DestinationLocationId = place.DestinationId;
-            trip.DestinationLocation = place;
+            trip.DestinationLocation = null;
             _destinationLocationId = place.DestinationId;
         }
         else
@@ -661,6 +706,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         RequestingSchools.Add("MS");
         RequestingSchools.Add("AV");
         RequestingSchools.Add("WA");
+        RequestingSchools.Add("All");
     }
 
     private async Task LoadCatalogAsync()
@@ -733,7 +779,14 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         ActualHeadcount = trip.ActualHeadcount;
         ExternalTicketNo = trip.ExternalTicketNo ?? string.Empty;
         Notes = trip.TripNotes ?? string.Empty;
+        IsOvernightPending = trip.IsOvernightPending;
         PocName = trip.POCName ?? string.Empty;
+        _pathMiles = trip.PathMiles;
+        if (trip.DestinationLocation is { HasValidatedCoordinates: true })
+        {
+            _destinationLatitude = trip.DestinationLocation.Latitude;
+            _destinationLongitude = trip.DestinationLocation.Longitude;
+        }
         EnsureInList(PurposeOptions, Purpose);
         EnsureInList(SportKinds, SportKind);
         OnPropertyChanged(nameof(StatusDisplay));
@@ -819,25 +872,15 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
             }
         }
 
-        TryGetWindow(out var start, out var end);
+        // specs/trips.md: an overlap warns the clerk. It does not drop the driver from this list.
         foreach (var driver in drivers)
         {
-            if (_original.DriverId == driver.DriverId
-                || _trips is null
-                || !await _trips.HasConflictsAsync(null, driver.DriverId, start, end, _original.TripEventId).ConfigureAwait(true))
-            {
-                AvailableDrivers.Add(driver);
-            }
+            AvailableDrivers.Add(driver);
         }
 
         foreach (var bus in buses.Where(b => b.IsAvailable))
         {
-            if (_original.VehicleId == bus.BusId
-                || _trips is null
-                || !await _trips.HasConflictsAsync(bus.BusId, null, start, end, _original.TripEventId).ConfigureAwait(true))
-            {
-                AvailableVehicles.Add(bus);
-            }
+            AvailableVehicles.Add(bus);
         }
 
         SelectedDriver = AvailableDrivers.FirstOrDefault(d => d.DriverId == _original.DriverId);
@@ -891,6 +934,55 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Google Routes distance after both ends have validated coordinates. Spec: do not geocode inside this path.
+    /// </summary>
+    public async Task RefreshDisplayedMilesAsync()
+    {
+        var request = Interlocked.Increment(ref _milesRequest);
+        if (_routing is null
+            || SelectedOrigin is not { HasValidatedCoordinates: true, Latitude: { } originLat, Longitude: { } originLng }
+            || !LocationCoordinate.IsValidated(_destinationLatitude, _destinationLongitude))
+        {
+            return;
+        }
+
+        _calculatingMiles = true;
+        OnPropertyChanged(nameof(PathMilesDisplay));
+        try
+        {
+            var path = await _routing.ComputeDrivePathAsync(
+                ((double)originLat, (double)originLng),
+                ((double)_destinationLatitude!.Value, (double)_destinationLongitude!.Value),
+                Array.Empty<(double, double)>()).ConfigureAwait(true);
+
+            if (request != _milesRequest)
+            {
+                return;
+            }
+
+            if (path.DistanceMeters.GetValueOrDefault() > 0)
+            {
+                _pathMiles = Math.Round(path.DistanceMeters!.Value / 1609.344m, 2);
+            }
+        }
+        catch (Exception)
+        {
+            if (request != _milesRequest)
+            {
+                return;
+            }
+        }
+        finally
+        {
+            if (request == _milesRequest)
+            {
+                _calculatingMiles = false;
+                OnPropertyChanged(nameof(PathMilesDisplay));
+            }
+        }
     }
 
     private async Task ResolveDestinationPlaceAsync()

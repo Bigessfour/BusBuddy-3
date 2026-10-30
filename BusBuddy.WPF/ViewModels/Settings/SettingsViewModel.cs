@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Threading.Tasks;
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
@@ -113,6 +115,8 @@ namespace BusBuddy.WPF.ViewModels.Settings
         [ObservableProperty]
         [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
         [NotifyCanExecuteChangedFor(nameof(ResetCommand))]
+        [NotifyCanExecuteChangedFor(nameof(ImportBoundaryCommand))]
+        [NotifyCanExecuteChangedFor(nameof(ClearBoundaryCommand))]
         private bool isBusy;
 
         public IAsyncRelayCommand SaveCommand { get; }
@@ -341,6 +345,73 @@ namespace BusBuddy.WPF.ViewModels.Settings
             {
                 _clerkEditedDistrict = true;
             }
+        }
+
+        private bool CanEditDistrict() => !IsBusy;
+
+        [RelayCommand(CanExecute = nameof(CanEditDistrict))]
+        private void ImportBoundary()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "District boundary",
+                Filter = "GeoJSON boundary (*.geojson;*.json)|*.geojson;*.json",
+                CheckFileExists = true
+            };
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var info = new FileInfo(dialog.FileName);
+            if (info.Length > DistrictBoundaryFile.MaxFileCharacters)
+            {
+                StatusMessage = "The boundary file is too large.";
+                return;
+            }
+
+            string json;
+            try
+            {
+                json = File.ReadAllText(dialog.FileName);
+            }
+            catch (IOException ex)
+            {
+                Logger.Warning(ex, "District boundary file could not be read");
+                StatusMessage = "Could not read the boundary file.";
+                return;
+            }
+
+            ApplyBoundaryJson(json);
+        }
+
+        /// <summary>
+        /// Fills the four district edges from a GeoJSON polygon. Does not save and does not name a town.
+        /// </summary>
+        public bool ApplyBoundaryJson(string json)
+        {
+            if (!DistrictBoundaryFile.TryReadExtent(json, out var extent, out var error))
+            {
+                StatusMessage = error;
+                return false;
+            }
+
+            BoundingBoxMinLatText = DistrictSettingsAccessor.FormatCoord(extent.South);
+            BoundingBoxMinLonText = DistrictSettingsAccessor.FormatCoord(extent.West);
+            BoundingBoxMaxLatText = DistrictSettingsAccessor.FormatCoord(extent.North);
+            BoundingBoxMaxLonText = DistrictSettingsAccessor.FormatCoord(extent.East);
+            StatusMessage = "Boundary extent loaded. Save to keep it.";
+            return true;
+        }
+
+        [RelayCommand(CanExecute = nameof(CanEditDistrict))]
+        private void ClearBoundary()
+        {
+            BoundingBoxMinLatText = string.Empty;
+            BoundingBoxMinLonText = string.Empty;
+            BoundingBoxMaxLatText = string.Empty;
+            BoundingBoxMaxLonText = string.Empty;
+            StatusMessage = "District boundary cleared. Save to keep it.";
         }
 
         private RoutingDistrictSettings DistrictFromForm()

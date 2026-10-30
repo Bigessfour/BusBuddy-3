@@ -192,8 +192,20 @@
                                              AutomationProperties.Name="Bus barn longitude"
                                              AutomationProperties.LabeledBy="{Binding ElementName=DepotLonLabel}"/>
                 </Grid>
-                <TextBlock Text="Optional bounding box used by route density. Must include every school GPS pin."
+                <TextBlock Text="District boundary"
+                           Style="{StaticResource SettingsSectionHeader}" Margin="0,8,0,8"/>
+                <TextBlock Text="South, west, north, and east edges of this district. The map and route density use this rectangle. Leave it blank to ship the app to another district. Import a GeoJSON polygon to fill the edges from that file. The map does not draw the polygon."
                            Style="{StaticResource SettingsHelpText}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <syncfusion:ButtonAdv Label="Import boundary file"
+                                          Command="{Binding ImportBoundaryCommand}"
+                                          Style="{StaticResource SettingsToolbarButton}"
+                                          AutomationProperties.Name="Import district boundary file"/>
+                    <syncfusion:ButtonAdv Label="Clear boundary"
+                                          Command="{Binding ClearBoundaryCommand}"
+                                          Style="{StaticResource SettingsToolbarButton}"
+                                          AutomationProperties.Name="Clear district boundary"/>
+                </StackPanel>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

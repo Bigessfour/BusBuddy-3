@@ -20,6 +20,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -85,7 +86,12 @@
                        Foreground="{DynamicResource PrimaryTextBrush}"/>
         </WrapPanel>
 
-        <syncfusion:SfScheduler Grid.Row="2"
+        <TextBlock Grid.Row="2"
+                   Margin="20,0,20,4"
+                   Foreground="{DynamicResource PrimaryTextBrush}"
+                   Text="Calendar shows date, location, and driver. Green is scheduled. Yellow is no driver within two weeks. Red is no driver within one week."/>
+
+        <syncfusion:SfScheduler Grid.Row="3"
                                 x:Name="TripScheduler"
                                 ViewType="Week"
                                 ItemsSource="{Binding Appointments}"
@@ -100,11 +106,13 @@
                     StartTime="StartTime"
                     EndTime="EndTime"
                     Location="Location"
-                    Notes="Notes"/>
+                    Notes="Notes"
+                    AppointmentBackground="AppointmentBackground"
+                    Foreground="Foreground"/>
             </syncfusion:SfScheduler.AppointmentMapping>
         </syncfusion:SfScheduler>
 
-        <syncfusion:SfDataGrid Grid.Row="3"
+        <syncfusion:SfDataGrid Grid.Row="4"
                                ItemsSource="{Binding Trips}"
                                SelectedItem="{Binding SelectedTrip, Mode=TwoWay}"
                                AutoGenerateColumns="False"

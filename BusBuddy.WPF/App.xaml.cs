@@ -636,7 +636,8 @@ Examples:
 
         /// <summary>
         /// Sole Syncfusion license registration point (App() constructor, before any control init).
-        /// https://help.syncfusion.com/wpf/licensing/how-to-register-in-an-application
+        /// Docs: https://help.syncfusion.com/wpf/licensing/how-to-register-in-an-application
+        /// Validation (v34.1.29+): https://help.syncfusion.com/wpf/licensing/licensing-faq/ci-license-validation
         /// </summary>
         private static void RegisterSyncfusionLicenseOnce()
         {
@@ -653,8 +654,22 @@ Examples:
                 return;
             }
 
+            // Syncfusion WPF: RegisterLicense before any Syncfusion control is created (App() ctor).
             SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-            Console.WriteLine($"BusBuddy: Syncfusion license registered in App() (length {licenseKey.Length}).");
+
+            // Offline validate for WPF assemblies (NuGet pin must match key generation version).
+            var isValid = SyncfusionLicenseProvider.ValidateLicense(new[] { Platform.WPF }, out string? validationMessage);
+            if (isValid)
+            {
+                Console.WriteLine(
+                    $"BusBuddy: Syncfusion license registered+validated for WPF (key length {licenseKey.Length}, Licensing {typeof(SyncfusionLicenseProvider).Assembly.GetName().Version}).");
+            }
+            else
+            {
+                Console.WriteLine(
+                    $"BusBuddy: Syncfusion RegisterLicense ran but ValidateLicense(WPF) failed (key length {licenseKey.Length}). " +
+                    $"Ensure keys/.env key matches SyncfusionVersion 35.1.42. Detail: {validationMessage}");
+            }
         }
 
         /// <summary>Legacy keys/*.txt fallback for Google Maps only (Syncfusion uses keys/.env).</summary>

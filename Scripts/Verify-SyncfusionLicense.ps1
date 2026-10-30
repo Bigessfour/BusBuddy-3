@@ -8,7 +8,7 @@ New-Item -ItemType Directory -Force -Path (Split-Path $outPath) | Out-Null
 
 $lines = @(
     "TimestampUtc: $((Get-Date).ToUniversalTime().ToString('o'))",
-    "SyncfusionNuGetPin: 34.2.3 (Directory.Build.props)"
+    "SyncfusionNuGetPin: 35.1.42 (Directory.Build.props)"
 )
 
 $key = $null
@@ -108,7 +108,7 @@ if (Test-Path $diagPath) {
 
 $lines += "---"
 $lines += "If ValidateLicense(UIComponent) is false or popup persists:"
-$lines += "  Generate a v34.x WPF key at https://www.syncfusion.com/account/downloads"
+$lines += "  Generate a v35.x WPF key at https://www.syncfusion.com/account/downloads"
 $lines += "  Rebuild after syncing Mac repo (RegisterSyncfusionLicenseOnce in App.xaml.cs)"
 
 $lines | Set-Content -LiteralPath $outPath -Encoding UTF8

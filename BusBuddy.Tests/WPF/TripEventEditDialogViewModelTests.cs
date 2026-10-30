@@ -2,6 +2,7 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Activity;
 using CommunityToolkit.Mvvm.Input;
 using Moq;
@@ -174,6 +175,88 @@ public class TripEventEditDialogViewModelTests
         Assert.That(vm.HasOrigins, Is.True);
         Assert.That(vm.Origins, Has.Count.EqualTo(1));
         Assert.That(vm.HasAssignableDrivers, Is.True);
+        Assert.That(vm.AvailableDrivers, Has.Count.EqualTo(1));
         Assert.That(vm.HasAssignableVehicles, Is.True);
+        Assert.That(vm.ShowNoDriverHint, Is.False);
+    }
+
+    [Test]
+    public async Task LoadAvailableDataAsync_KeepsAConflictingDriverInTheDropdown()
+    {
+        var routes = new Mock<IRouteService>();
+        routes.Setup(r => r.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver> { new() { DriverId = 9, DriverName = "Alex" } }));
+        routes.Setup(r => r.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>()));
+
+        var trips = new Mock<ITripEventService>();
+        trips.Setup(t => t.HasConflictsAsync(
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<int?>()))
+            .ReturnsAsync(true);
+        trips.Setup(t => t.GetAssignmentWarningsAsync(
+                It.IsAny<int?>(),
+                It.IsAny<int?>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<int?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<string>());
+
+        var vm = new TripEventEditDialogViewModel(null, trips.Object, routes.Object, null, null);
+        vm.LeaveTimeText = "08:00";
+        vm.ReturnTimeText = "12:00";
+        await vm.LoadAvailableDataAsync();
+
+        Assert.That(vm.AvailableDrivers.Select(d => d.DriverId), Is.EqualTo(new[] { 9 }));
+        Assert.That(vm.ShowNoDriverHint, Is.False);
+    }
+
+    [Test]
+    public async Task BuildTrip_PersistsOvernightAndGoogleMilesAfterBothEndsAreValidated()
+    {
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double Latitude, double Longitude)>(),
+                It.IsAny<(double Latitude, double Longitude)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DrivePathResult
+            {
+                DistanceMeters = 16093,
+                EncodedPolyline = "preview"
+            });
+
+        var vm = new TripEventEditDialogViewModel(null, null, null, null, null, routing.Object);
+        vm.SelectedOrigin = new Destination
+        {
+            DestinationId = 3,
+            Name = "Lamar High School",
+            Latitude = 38.087m,
+            Longitude = -102.621m
+        };
+        vm.ApplyDestinationAddress(new PlaceAddressApplier.AppliedAddress(
+            "1900 S 11th St",
+            "Lamar",
+            "CO",
+            "81052",
+            38.09,
+            -102.62,
+            "1900 S 11th St, Lamar, CO",
+            "place"));
+        vm.IsOvernightPending = true;
+        vm.LeaveTimeText = "14:30";
+        vm.ReturnTimeText = "18:00";
+
+        await vm.RefreshDisplayedMilesAsync();
+        var trip = await vm.BuildTripAsync();
+
+        Assert.That(vm.PathMilesDisplay, Does.Contain("10.00"));
+        Assert.That(trip.PathMiles, Is.EqualTo(10.00m));
+        Assert.That(trip.IsOvernightPending, Is.True);
+        Assert.That(trip.OriginLocationId, Is.EqualTo(3));
     }
 }

@@ -23,7 +23,6 @@ public partial class TripEventEditDialog : Window
         Loaded += OnLoaded;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
-        ResizeMode = ResizeMode.NoResize;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)

@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using BusBuddy.WPF.ViewModels.Map;
+using BusBuddy.WPF.Views.Main;
 using BusBuddy.WPF.Views.Map;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -8,18 +9,26 @@ using Serilog;
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Single entry point for the district map — reuses one window so the singleton
-/// <see cref="MapViewModel"/> is not shared across multiple <see cref="MapView"/> hosts.
+/// Single entry point for the district map. Prefers the MainWindow Map document pane
+/// (one <see cref="MapView"/> + singleton <see cref="MapViewModel"/>). Falls back to a
+/// floating window only when MainWindow / MapPane is unavailable.
 /// </summary>
 public static class MapViewLauncher
 {
     private static readonly ILogger Logger = Log.ForContext(typeof(MapViewLauncher));
     private static Window? _mapWindow;
 
-    public static bool IsOpen => _mapWindow is { IsLoaded: true };
+    public static bool IsOpen =>
+        TryGetMainWindowMapHost() || _mapWindow is { IsLoaded: true };
 
     public static void Show(Window? owner, Action<MapViewModel>? configure = null)
     {
+        if (TryActivateDockedMap(configure))
+        {
+            CloseFloatingMapWindowIfAny();
+            return;
+        }
+
         var effectiveOwner = DialogOwner.Resolve(owner, _mapWindow);
 
         if (_mapWindow is { IsLoaded: true })
@@ -55,6 +64,64 @@ public static class MapViewLauncher
         };
         _mapWindow.Show();
         BringToFront(_mapWindow);
+    }
+
+    /// <summary>Activate the MainWindow Map document tab when the docked MapView host exists.</summary>
+    public static bool TryActivateDockedMap(Action<MapViewModel>? configure = null)
+    {
+        try
+        {
+            if (Application.Current?.MainWindow is not MainWindow main)
+            {
+                return false;
+            }
+
+            if (!main.TryActivateMapDocument())
+            {
+                return false;
+            }
+
+            ApplyConfigure(configure);
+            _ = ResolveMapViewModel()?.OnDistrictMapSurfaceActivatedAsync();
+            Logger.Information("District map activated in MainWindow Map document pane");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Failed to activate docked Map pane; will fall back to floating window if requested");
+            return false;
+        }
+    }
+
+    private static bool TryGetMainWindowMapHost()
+    {
+        try
+        {
+            return Application.Current?.MainWindow is MainWindow main && main.HasDockedMapHost;
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "MainWindow Map host not available");
+            return false;
+        }
+    }
+
+    private static void CloseFloatingMapWindowIfAny()
+    {
+        if (_mapWindow is not { IsLoaded: true })
+        {
+            return;
+        }
+
+        try
+        {
+            Logger.Debug("Closing legacy floating map window after docked Map activation");
+            _mapWindow.Close();
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Could not close floating map window");
+        }
     }
 
     internal static Window? ResolveOwner(Window? requested) => DialogOwner.Resolve(requested, _mapWindow);

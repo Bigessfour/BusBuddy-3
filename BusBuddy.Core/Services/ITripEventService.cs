@@ -20,6 +20,9 @@ namespace BusBuddy.Core.Services
         Task<IEnumerable<TripEvent>> GetIncompleteTripsAsync();
 
         Task AddTripAsync(TripEvent tripEvent);
+
+        /// <summary>Next Ticket # for a new trip. One past the highest number already on the board.</summary>
+        Task<string> NextExternalTicketNoAsync(CancellationToken cancellationToken = default);
         Task UpdateTripAsync(TripEvent tripEvent);
 
         /// <summary>
