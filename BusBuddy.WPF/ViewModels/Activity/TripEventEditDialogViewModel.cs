@@ -145,7 +145,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
 
     /// <summary>Confirmed plan before the edit that moved status to Changed (#117).</summary>
     public string PriorPlanDisplay =>
-        _original.HasPriorPlan && !string.IsNullOrWhiteSpace(_original.PriorPlanSummary)
+        _original.ShowsPriorPlan && !string.IsNullOrWhiteSpace(_original.PriorPlanSummary)
             ? $"Was (confirmed): {_original.PriorPlanSummary}"
             : string.Empty;
 

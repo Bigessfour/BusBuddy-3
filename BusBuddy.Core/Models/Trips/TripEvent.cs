@@ -231,13 +231,21 @@ namespace BusBuddy.Core.Models.Trips
         [NotMapped]
         public bool HasPriorPlan => PriorPlanCapturedUtc.HasValue;
 
+        /// <summary>
+        /// Board/dialog prior line — only while status is Changed. Cleared on re-confirm;
+        /// gated here so a stale snapshot never shows on Confirmed rows.
+        /// </summary>
+        [NotMapped]
+        public bool ShowsPriorPlan =>
+            HasPriorPlan && string.Equals(Status, TripStatus.Changed, StringComparison.Ordinal);
+
         /// <summary>One-line prior place / times / bus / driver for the trip board grid.</summary>
         [NotMapped]
         public string? PriorPlanSummary
         {
             get
             {
-                if (!HasPriorPlan)
+                if (!ShowsPriorPlan)
                 {
                     return null;
                 }

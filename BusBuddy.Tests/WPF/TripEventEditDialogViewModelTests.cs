@@ -110,6 +110,24 @@ public class TripEventEditDialogViewModelTests
     }
 
     [Test]
+    public void PriorPlanDisplay_EmptyWhenConfirmedEvenIfStaleSnapshotPresent()
+    {
+        var original = new TripEvent
+        {
+            Status = TripStatus.Confirmed,
+            PriorPlanCapturedUtc = DateTime.UtcNow,
+            PriorDestinationName = "Strasburg HS",
+            PriorPickupTime = TimeSpan.FromHours(6),
+            PriorAssignedBusNumber = "25",
+            PriorDriverName = "Elby Sneller"
+        };
+        var vm = new TripEventEditDialogViewModel(original, null, null, null, null);
+        Assert.That(original.ShowsPriorPlan, Is.False);
+        Assert.That(original.PriorPlanSummary, Is.Null);
+        Assert.That(vm.PriorPlanDisplay, Is.Empty);
+    }
+
+    [Test]
     public void ValidateTrip_AllowsEmptyLeaveAndOvernightReturn()
     {
         var vm = new TripEventEditDialogViewModel(null, null, null, null, null);

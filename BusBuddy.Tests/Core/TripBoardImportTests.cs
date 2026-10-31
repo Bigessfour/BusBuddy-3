@@ -612,6 +612,48 @@ public class TripBoardImportTests
     }
 
     [Test]
+    public async Task ConfirmTrip_AfterChanged_ClearsPriorPlanSnapshot()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        using (var db = factory.CreateWriteDbContext())
+        {
+            db.Destinations.Add(ValidatedDestination("Strasburg HS"));
+            await db.SaveChangesAsync();
+        }
+
+        var csv = $"""
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319098881,25,,338,Elby Sneller,25,,Sep 2026
+            """;
+
+        await service.ImportBoardCsvAsync(csv);
+        var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098881");
+        var confirmed = await service.ConfirmTripAsync(trip.TripEventId);
+        Assert.That(confirmed.IsSuccess, Is.True, confirmed.Error);
+
+        var stored = await service.GetTripByIdAsync(trip.TripEventId);
+        stored!.PickupTime = TimeSpan.FromHours(7);
+        await service.UpdateTripAsync(stored);
+        stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored!.Status, Is.EqualTo(TripStatus.Changed));
+        Assert.That(stored.HasPriorPlan, Is.True);
+        Assert.That(stored.ShowsPriorPlan, Is.True);
+
+        var reconfirmed = await service.ConfirmTripAsync(trip.TripEventId);
+        Assert.That(reconfirmed.IsSuccess, Is.True, reconfirmed.Error);
+        stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored!.Status, Is.EqualTo(TripStatus.Confirmed));
+        Assert.That(stored.HasPriorPlan, Is.False);
+        Assert.That(stored.ShowsPriorPlan, Is.False);
+        Assert.That(stored.PriorPlanSummary, Is.Null);
+        Assert.That(stored.PriorDestinationName, Is.Null);
+        Assert.That(stored.PriorPickupTime, Is.Null);
+    }
+
+    [Test]
     public async Task CancelTrip_DoesNotWritePriorPlanSnapshot()
     {
         var factory = new TestDbContextFactory(CreateOptions());

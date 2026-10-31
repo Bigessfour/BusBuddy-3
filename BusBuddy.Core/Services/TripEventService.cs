@@ -888,6 +888,27 @@ public sealed partial class TripEventService : ITripEventService
         return true;
     }
 
+    private static void ClearPriorPlan(
+        TripEvent trip,
+        Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TripEvent>? entry = null)
+    {
+        trip.PriorPlanCapturedUtc = null;
+        trip.PriorDestinationName = null;
+        trip.PriorOriginName = null;
+        trip.PriorPickupTime = null;
+        trip.PriorReturnClockTime = null;
+        trip.PriorReturnIsNextDay = false;
+        trip.PriorVehicleId = null;
+        trip.PriorAssignedBusNumber = null;
+        trip.PriorDriverId = null;
+        trip.PriorDriverName = null;
+
+        if (entry is not null)
+        {
+            MarkPriorPlanModified(entry);
+        }
+    }
+
     private static void MarkPriorPlanModified(
         Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TripEvent> entry)
     {
