@@ -169,22 +169,22 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                             await _fuelLocationCatalog.RememberAsync(newFuel.FuelLocation);
                         }
 
-                        var created = await _fuelService.CreateFuelRecordAsync(newFuel);
-                        FuelRecords.Add(created);
-                        SelectedFuelRecord = created;
+                        // FuelDialogViewModel already persisted via IFuelService.
+                        FuelRecords.Add(newFuel);
+                        SelectedFuelRecord = newFuel;
                         CalculateTrends();
-                        StatusMessage = $"Saved fuel record #{created.FuelId}";
+                        StatusMessage = $"Saved fuel record #{newFuel.FuelId}";
                         UserToast.Success(
-                            $"Fuel record saved — {created.Gallons:N3} gal on {created.FuelDate:d}.",
+                            $"Fuel record saved — {newFuel.Gallons:N3} gal on {newFuel.FuelDate:d}.",
                             "Save successful");
                         if (dialog.RememberedNewLocation)
                         {
                             UserToast.Info(
-                                $"“{created.FuelLocation}” saved to the fuel location list for future fill-ups.",
+                                $"“{newFuel.FuelLocation}” saved to the fuel location list for future fill-ups.",
                                 "New fuel location");
                         }
 
-                        Logger.Information("Added new fuel record with ID {FuelId}", created.FuelId);
+                        Logger.Information("Added new fuel record with ID {FuelId}", newFuel.FuelId);
                     }
                     else
                     {
@@ -242,28 +242,27 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                             await _fuelLocationCatalog.RememberAsync(recordToEdit.FuelLocation);
                         }
 
-                        var updated = await _fuelService.UpdateFuelRecordAsync(recordToEdit);
-
+                        // FuelDialogViewModel already persisted via IFuelService.
                         var index = FuelRecords.IndexOf(SelectedFuelRecord);
                         if (index >= 0)
                         {
-                            FuelRecords[index] = updated;
-                            SelectedFuelRecord = updated;
+                            FuelRecords[index] = recordToEdit;
+                            SelectedFuelRecord = recordToEdit;
                         }
 
                         CalculateTrends();
-                        StatusMessage = $"Updated fuel record #{updated.FuelId}";
+                        StatusMessage = $"Updated fuel record #{recordToEdit.FuelId}";
                         UserToast.Success(
-                            $"Fuel record #{updated.FuelId} saved successfully.",
+                            $"Fuel record #{recordToEdit.FuelId} saved successfully.",
                             "Save successful");
                         if (dialog.RememberedNewLocation)
                         {
                             UserToast.Info(
-                                $"“{updated.FuelLocation}” saved to the fuel location list for future fill-ups.",
+                                $"“{recordToEdit.FuelLocation}” saved to the fuel location list for future fill-ups.",
                                 "New fuel location");
                         }
 
-                        Logger.Information("Updated fuel record with ID {FuelId}", updated.FuelId);
+                        Logger.Information("Updated fuel record with ID {FuelId}", recordToEdit.FuelId);
                     }
                     else
                     {

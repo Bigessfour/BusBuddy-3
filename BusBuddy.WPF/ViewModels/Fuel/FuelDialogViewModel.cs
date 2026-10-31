@@ -50,7 +50,7 @@ public partial class FuelDialogViewModel : BaseViewModel
 
     public string DialogTitle { get; }
 
-    public IRelayCommand SaveCommand { get; }
+    public IAsyncRelayCommand SaveCommand { get; }
     public IRelayCommand CancelCommand { get; }
 
     public event EventHandler<bool>? CloseRequested;
@@ -69,8 +69,8 @@ public partial class FuelDialogViewModel : BaseViewModel
 
         DialogTitle = fuel.FuelId == 0 ? "Add Fuel Record" : "Edit Fuel Record";
 
-        // Always executable — Save() validates and UserToast explains blockers (Click must not no-op).
-        SaveCommand = new RelayCommand(Save);
+        // Always executable — SaveAsync validates and UserToast explains blockers (Click must not no-op).
+        SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, false));
 
         if (fuel.FuelId == 0)
@@ -701,10 +701,15 @@ public partial class FuelDialogViewModel : BaseViewModel
         }
     }
 
-    private void Save()
+    private async Task SaveAsync()
     {
         CommitNumericFormatting();
         Fuel.FuelLocation = FuelLocationText;
+        if (SelectedBus != null)
+        {
+            Fuel.VehicleFueledId = SelectedBus.BusId;
+        }
+
         ValidateForm();
         if (!IsValid)
         {
@@ -732,11 +737,52 @@ public partial class FuelDialogViewModel : BaseViewModel
             FuelLocations.Add(Fuel.FuelLocation);
         }
 
-        using (LogContext.PushProperty("ViewModelType", nameof(FuelDialogViewModel)))
+        if (_fuelService is null)
         {
-            Logger.Information("Fuel dialog save accepted FuelId={FuelId}", Fuel.FuelId);
+            using (LogContext.PushProperty("ViewModelType", nameof(FuelDialogViewModel)))
+            {
+                Logger.Information(
+                    "Fuel dialog save accepted without IFuelService FuelId={FuelId} (caller persists)",
+                    Fuel.FuelId);
+            }
+
+            CloseRequested?.Invoke(this, true);
+            return;
         }
 
-        CloseRequested?.Invoke(this, true);
+        try
+        {
+            if (Fuel.FuelId == 0)
+            {
+                var created = await _fuelService.CreateFuelRecordAsync(Fuel);
+                Fuel = created;
+                using (LogContext.PushProperty("ViewModelType", nameof(FuelDialogViewModel)))
+                {
+                    Logger.Information("Fuel dialog created FuelId={FuelId}", Fuel.FuelId);
+                }
+            }
+            else
+            {
+                var updated = await _fuelService.UpdateFuelRecordAsync(Fuel);
+                Fuel = updated;
+                using (LogContext.PushProperty("ViewModelType", nameof(FuelDialogViewModel)))
+                {
+                    Logger.Information("Fuel dialog updated FuelId={FuelId}", Fuel.FuelId);
+                }
+            }
+
+            CloseRequested?.Invoke(this, true);
+        }
+        catch (ArgumentException ex)
+        {
+            UserToast.Warning(ex.Message, "Save blocked");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Fuel dialog persist failed FuelId={FuelId}", Fuel.FuelId);
+            UserToast.Error(
+                ex is InvalidOperationException ? ex.Message : $"Could not save fuel record: {ex.Message}",
+                "Save failed");
+        }
     }
 }

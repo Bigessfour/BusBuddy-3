@@ -2,13 +2,13 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-10-31T22:51:45.181044+00:00
+Generated: 2026-10-31T23:09:36.353359+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
 **Configured surfaces:** 65 (from `.function-inventory.json` `surfaces` allowlist)
 
-**Summary:** 65 correctness surfaces | 59 with proof | 6 without proof
+**Summary:** 65 correctness surfaces | 61 with proof | 4 without proof
 This list is the **correctness queue** — resident/clerk-critical pages, services, and handlers only. Tiny helpers, Angular route paths, and demoted UI shells are omitted.
 
 Ship gate remains project acceptance / smoke checklists — inventory count alone is not “done.”
@@ -16,10 +16,8 @@ Ship gate remains project acceptance / smoke checklists — inventory count alon
 ## Surfaces without proof (review these)
 - **P2** Other Public: RouteScheduleWindow.xaml.RouteScheduleWindow.xaml @ BusBuddy.WPF/Views/Route/RouteScheduleWindow.xaml.cs:1
 - **P2** Other Public: RouteStopsEditor.xaml.RouteStopsEditor.xaml @ BusBuddy.WPF/Views/Route/RouteStopsEditor.xaml.cs:1
-- **P2** Other Public: MaintenanceViewModel.MaintenanceViewModel @ BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1
 - **P2** Other Public: MapMarkerHost.MapMarkerHost @ BusBuddy.WPF/Utilities/MapMarkerHost.cs:1
 - **P2** Other Public: MapViewLauncher.MapViewLauncher @ BusBuddy.WPF/Utilities/MapViewLauncher.cs:1
-- **P2** Other Public: FuelDialogViewModel.FuelDialogViewModel @ BusBuddy.WPF/ViewModels/Fuel/FuelDialogViewModel.cs:1
 
 Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 write paths.
 
@@ -87,7 +85,7 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P2 | Core Service | MaintenanceService.MaintenanceService | BusBuddy.Core/Services/MaintenanceService.cs:1 | BusBuddy.Tests/Core/MaintenanceServiceTests.cs | has logic |
 | P2 | Other Public | MaintenanceRecordValidator.MaintenanceRecordValidator | BusBuddy.Core/Services/MaintenanceRecordValidator.cs:1 | BusBuddy.Tests/Core/MaintenanceRecordValidatorTests.cs | has logic |
 | P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | BusBuddy.Tests/WPF/MaintenanceViewTests.cs | has logic |
-| P2 | Other Public | MaintenanceViewModel.MaintenanceViewModel | BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | MaintenanceViewModel.MaintenanceViewModel | BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1 | BusBuddy.Tests/WPF/MaintenanceViewModelTests.cs | has logic |
 | P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
 | P2 | Other Public | DriverScheduleViewModel.DriverScheduleViewModel | BusBuddy.WPF/ViewModels/Driver/DriverScheduleViewModel.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
 | P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |
@@ -111,7 +109,7 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P2 | Core Service | FuelService.FuelService | BusBuddy.Core/Services/FuelService.cs:1 | BusBuddy.Tests/Core/FuelTrendAndLocationCatalogTests.cs, Bus... | has logic |
 | P2 | Other Public | FuelManagementView.xaml.FuelManagementView.xaml | BusBuddy.WPF/Views/Fuel/FuelManagementView.xaml.cs:1 | BusBuddy.Tests/WPF/FuelDialogXamlContractTests.cs | has logic |
 | P2 | Other Public | FuelDialog.xaml.FuelDialog.xaml | BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs:1 | BusBuddy.Tests/WPF/FuelDialogXamlContractTests.cs | has logic |
-| P2 | Other Public | FuelDialogViewModel.FuelDialogViewModel | BusBuddy.WPF/ViewModels/Fuel/FuelDialogViewModel.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | FuelDialogViewModel.FuelDialogViewModel | BusBuddy.WPF/ViewModels/Fuel/FuelDialogViewModel.cs:1 | BusBuddy.Tests/WPF/FuelDialogViewModelTests.cs | has logic |
 | P2 | Other Public | FuelReconciliationDialog.xaml.FuelReconciliationDialog.xaml | BusBuddy.WPF/Views/Fuel/FuelReconciliationDialog.xaml.cs:1 | BusBuddy.Tests/WPF/FuelDialogXamlContractTests.cs | has logic |
 | P2 | Other Public | FuelReconciliationViewModel.FuelReconciliationViewModel | BusBuddy.WPF/ViewModels/Fuel/FuelReconciliationViewModel.cs:1 | BusBuddy.Tests/WPF/FuelReconciliationViewModelTests.cs | has logic |
 
