@@ -336,8 +336,8 @@ public partial class StudentService
 
     /// <summary>
     /// A student who no longer rides a session cannot keep that session's route.
-    /// Trip rows (<c>StudentSchedules</c>) stay: a trip is not the year route pairing.
     /// Same clear as <c>RouteService.RemoveStudentFromRouteAsync</c> (slot name and key only).
+    /// One-off trips stay on <c>TripEvent</c>; attendance rows are not part of the product (#109).
     /// </summary>
     private static void ClearSlotWhenEligibilityEnds(Student student, Student previous)
     {
@@ -439,9 +439,6 @@ public partial class StudentService
                     return false;
                 }
 
-                var schedules = await context.StudentSchedules
-                    .Where(x => x.StudentId == studentId)
-                    .ToListAsync();
                 var transfers = await context.StudentSchoolTransfers
                     .Where(x => x.StudentId == studentId)
                     .ToListAsync();
@@ -457,13 +454,13 @@ public partial class StudentService
                     Reason = reason.ToString(),
                     Notes = TruncateDeletionNotes(notes),
                     WasActive = student.Active,
-                    ScheduleCount = schedules.Count,
+                    // Legacy column: attendance StudentSchedules table removed (#109). Keep 0 for new rows.
+                    ScheduleCount = 0,
                     TransferCount = transfers.Count,
                     RiderExceptionCount = exceptions.Count,
                     DeletedUtc = DateTime.UtcNow,
                 };
 
-                context.StudentSchedules.RemoveRange(schedules);
                 context.StudentSchoolTransfers.RemoveRange(transfers);
                 context.RouteRiderExceptions.RemoveRange(exceptions);
                 var removedStops = await RemoveStudentHomeStopsAsync(context, student).ConfigureAwait(false);

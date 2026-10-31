@@ -2009,77 +2009,6 @@ namespace BusBuddy.Core.Migrations
                     b.ToTable("StudentDeletionLogs", (string)null);
                 });
 
-            modelBuilder.Entity("BusBuddy.Core.Models.StudentSchedule", b =>
-                {
-                    b.Property<int>("StudentScheduleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StudentScheduleId"));
-
-                    b.Property<string>("AssignmentType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("");
-
-                    b.Property<bool>("Attended")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Confirmed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DropoffLocation")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("PickupLocation")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int?>("ScheduleId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("StudentScheduleId");
-
-                    b.HasIndex("AssignmentType")
-                        .HasDatabaseName("IX_StudentSchedules_AssignmentType");
-
-                    b.HasIndex("ScheduleId")
-                        .HasDatabaseName("IX_StudentSchedules_ScheduleId");
-
-                    b.HasIndex("StudentId")
-                        .HasDatabaseName("IX_StudentSchedules_StudentId");
-
-                    b.HasIndex("StudentId", "ScheduleId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_StudentSchedules_StudentSchedule");
-
-                    b.ToTable("StudentSchedules", (string)null);
-                });
-
             modelBuilder.Entity("BusBuddy.Core.Models.StudentSchoolTransfer", b =>
                 {
                     b.Property<int>("TransferId")
@@ -2610,26 +2539,6 @@ namespace BusBuddy.Core.Migrations
                     b.Navigation("RouteAssignment");
                 });
 
-            modelBuilder.Entity("BusBuddy.Core.Models.StudentSchedule", b =>
-                {
-                    b.HasOne("BusBuddy.Core.Models.Schedule", "Schedule")
-                        .WithMany("StudentSchedules")
-                        .HasForeignKey("ScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_StudentSchedules_Schedule");
-
-                    b.HasOne("BusBuddy.Core.Models.Student", "Student")
-                        .WithMany("StudentSchedules")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("FK_StudentSchedules_Student");
-
-                    b.Navigation("Schedule");
-
-                    b.Navigation("Student");
-                });
-
             modelBuilder.Entity("BusBuddy.Core.Models.StudentSchoolTransfer", b =>
                 {
                     b.HasOne("BusBuddy.Core.Models.Destination", "FromDestination")
@@ -2744,15 +2653,6 @@ namespace BusBuddy.Core.Migrations
                     b.Navigation("Schedules");
                 });
 
-            modelBuilder.Entity("BusBuddy.Core.Models.Schedule", b =>
-                {
-                    b.Navigation("StudentSchedules");
-                });
-
-            modelBuilder.Entity("BusBuddy.Core.Models.Student", b =>
-                {
-                    b.Navigation("StudentSchedules");
-                });
 #pragma warning restore 612, 618
         }
     }

@@ -347,7 +347,6 @@ public class Student : INotifyPropertyChanged
     public string? UpdatedBy { get; set; }
 
     // Navigation properties
-    public virtual ICollection<StudentSchedule> StudentSchedules { get; set; } = new List<StudentSchedule>();
 
     // Assignment to route
     public int? RouteAssignmentId { get; set; }

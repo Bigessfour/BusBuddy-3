@@ -50,7 +50,6 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<Family> Families { get; set; } = null!;
     public virtual DbSet<Guardian> Guardians { get; set; } = null!;
     public virtual DbSet<Schedule> Schedules { get; set; } = null!;
-    public virtual DbSet<StudentSchedule> StudentSchedules { get; set; } = null!;
     public virtual DbSet<TripEvent> TripEvents { get; set; } = null!;
     public virtual DbSet<RouteStop> RouteStops { get; set; } = null!;
     public virtual DbSet<RouteRiderException> RouteRiderExceptions { get; set; } = null!;

@@ -159,33 +159,3 @@ internal sealed class ScheduleConfiguration : IEntityTypeConfiguration<Schedule>
     }
 }
 
-internal sealed class StudentScheduleConfiguration : IEntityTypeConfiguration<StudentSchedule>
-{
-    public void Configure(EntityTypeBuilder<StudentSchedule> entity)
-    {
-        entity.ToTable("StudentSchedules");
-        entity.HasKey(e => e.StudentScheduleId);
-        entity.Property(e => e.AssignmentType).IsRequired().HasMaxLength(20);
-        entity.Property(e => e.PickupLocation).HasMaxLength(100);
-        entity.Property(e => e.DropoffLocation).HasMaxLength(100);
-        entity.Property(e => e.Notes).HasMaxLength(500);
-        entity.Property(e => e.CreatedBy).HasMaxLength(100);
-        entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-
-        entity.HasOne(ss => ss.Student)
-            .WithMany(s => s.StudentSchedules)
-            .HasForeignKey(ss => ss.StudentId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .HasConstraintName("FK_StudentSchedules_Student");
-        entity.HasOne(ss => ss.Schedule)
-            .WithMany(s => s.StudentSchedules)
-            .HasForeignKey(ss => ss.ScheduleId)
-            .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_StudentSchedules_Schedule");
-
-        entity.HasIndex(e => e.StudentId).HasDatabaseName("IX_StudentSchedules_StudentId");
-        entity.HasIndex(e => e.ScheduleId).HasDatabaseName("IX_StudentSchedules_ScheduleId");
-        entity.HasIndex(e => e.AssignmentType).HasDatabaseName("IX_StudentSchedules_AssignmentType");
-        entity.HasIndex(e => new { e.StudentId, e.ScheduleId }).IsUnique().HasDatabaseName("IX_StudentSchedules_StudentSchedule");
-    }
-}
