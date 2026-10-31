@@ -481,6 +481,6 @@ On the UTM guest:
 4. Paste into the next chat: item number, pass/fail, log excerpt, files changed.
 5. Only then paste the next item prompt.
 
-Deferred on purpose (do not put in these nine prompts): live fleet GPS, Families/Guardians, School Calendar, AI Insights, Route Optimization authorization, Hop 4 RouteAssignments schema, fuel/shop module, dashboard mock-AI RouteSummary if it is not the schedule renderer.
+Deferred on purpose (do not put in these nine prompts): live fleet GPS, in-app login / multi-user auth (issue #138 — Windows account is the audit actor), Families/Guardians, School Calendar, AI Insights, Route Optimization authorization, Hop 4 RouteAssignments schema, fuel/shop module, dashboard mock-AI RouteSummary if it is not the schedule renderer.
 
 If Cursor adds files that are not the single writer for tiles, markers, trail, Places, or the named Core service, require they be deleted before the item is marked done.

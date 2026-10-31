@@ -146,6 +146,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — Issue #138 single-clerk threat model (operator identity)
+
+- **Decision:** BusBuddy stays a single locked-down clerk PC. No in-app login. Windows session account is the audit actor.
+- **Code:** `IUserContextService` / `UserContextService` — removed fake-auth wording; `IsAuthenticated` → `HasOperatorIdentity`; default bind from `Environment.UserName`; clear → audit `SYSTEM`.
+- **Docs:** `README.md` threat-model section; `specs/README.md` hard rule; `AGENTS.md` note; `Documentation/Reference/CORE-SERVICES-API-REFERENCE.md` aligned to the real API (dropped invented roles/permissions methods).
+- **Proof:** `BusBuddy.Tests/Core/UserContextServiceTests.cs` (bind / clear / rebind / no `IsAuthenticated` on interface) + updated `GapsCoverageTests.UserContextService_ProvidesDefaultUser`. Guest: `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~UserContextService'` → **Passed: 6, Failed: 0** (2026-10-31).
+- **Do not reopen as unfinished auth.** Multi-user login is a separate product card if the district ever needs it.
+
 ### 2026-10-26 — Issue #105 guest re-proof (clean `d6e5739`)
 
 - **Artifact:** `artifacts/utm-runtime-logs-20261026T222020Z/Debug-logs/logs/log-20261026.txt`. Launch 14:10 guest, scored with `-Since "2026-10-26 14:09:00"`.

@@ -74,7 +74,8 @@ namespace BusBuddy.Tests.Core
             var service = new UserContextService();
 
             Assert.That(service.CurrentUserName, Is.Not.Null.And.Not.Empty);
-            Assert.That(service.IsAuthenticated, Is.True);
+            Assert.That(service.HasOperatorIdentity, Is.True);
+            Assert.That(service.GetCurrentUserForAudit(), Is.EqualTo(service.CurrentUserId));
         }
 
         [Test]

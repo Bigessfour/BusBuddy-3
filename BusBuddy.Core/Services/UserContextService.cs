@@ -3,8 +3,8 @@ using Serilog;
 namespace BusBuddy.Core.Services
 {
     /// <summary>
-    /// Implementation of user context service for Bus Buddy application
-    /// Provides current user information for audit trails and authentication
+    /// Workstation operator identity for audit trails.
+    /// Threat model: one locked-down clerk PC. OS account = audit actor. No app login.
     /// </summary>
     public class UserContextService : IUserContextService
     {
@@ -15,47 +15,32 @@ namespace BusBuddy.Core.Services
 
         public UserContextService()
         {
-            SetDefaultUser();
+            BindWindowsSessionOperator();
         }
 
-        /// <summary>
-        /// Gets the current authenticated user's identifier
-        /// </summary>
+        /// <inheritdoc />
         public string CurrentUserId => _currentUserId;
 
-        /// <summary>
-        /// Gets the current authenticated user's display name
-        /// </summary>
+        /// <inheritdoc />
         public string CurrentUserName => _currentUserName;
 
-        /// <summary>
-        /// Gets the current authenticated user's email
-        /// </summary>
+        /// <inheritdoc />
         public string CurrentUserEmail => _currentUserEmail;
 
-        /// <summary>
-        /// Checks if a user is currently authenticated
-        /// </summary>
-        public bool IsAuthenticated => !string.IsNullOrEmpty(_currentUserId);
+        /// <inheritdoc />
+        public bool HasOperatorIdentity => !string.IsNullOrEmpty(_currentUserId);
 
-        /// <summary>
-        /// Sets the current user context
-        /// </summary>
-        /// <param name="userId">User identifier</param>
-        /// <param name="userName">User display name</param>
-        /// <param name="userEmail">User email</param>
+        /// <inheritdoc />
         public void SetCurrentUser(string userId, string userName, string userEmail)
         {
             _currentUserId = userId ?? throw new ArgumentNullException(nameof(userId));
             _currentUserName = userName ?? throw new ArgumentNullException(nameof(userName));
             _currentUserEmail = userEmail ?? string.Empty;
 
-            Logger.Information("User context set for user: {UserId} ({UserName})", userId, userName);
+            Logger.Information("Operator identity bound: {UserId} ({UserName})", userId, userName);
         }
 
-        /// <summary>
-        /// Clears the current user context (logout)
-        /// </summary>
+        /// <inheritdoc />
         public void ClearCurrentUser()
         {
             var previousUser = _currentUserId;
@@ -63,37 +48,38 @@ namespace BusBuddy.Core.Services
             _currentUserName = string.Empty;
             _currentUserEmail = string.Empty;
 
-            Logger.Information("User context cleared for user: {UserId}", previousUser);
+            Logger.Information("Operator identity cleared (was {UserId}); audit actor is SYSTEM until rebound", previousUser);
         }
 
-        /// <summary>
-        /// Gets the current user for audit trail purposes
-        /// </summary>
-        /// <returns>User identifier for database audit fields</returns>
+        /// <inheritdoc />
         public string GetCurrentUserForAudit()
         {
-            if (IsAuthenticated)
+            if (HasOperatorIdentity)
             {
                 return _currentUserId;
             }
 
-            // Fallback to system user if no user is authenticated
             return "SYSTEM";
         }
 
         /// <summary>
-        /// Sets up a default system user for initial operation
+        /// Binds the interactive Windows session account as the clerk operator.
         /// </summary>
-        private void SetDefaultUser()
+        private void BindWindowsSessionOperator()
         {
             var user = Environment.UserName;
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                user = "SYSTEM";
+            }
+
             SetCurrentUser(
                 userId: user,
                 userName: user,
                 userEmail: $"{user}@busbuddy.local"
             );
 
-            Logger.Debug("Default user context established for development");
+            Logger.Debug("Default operator identity bound from Windows session account");
         }
     }
 }
