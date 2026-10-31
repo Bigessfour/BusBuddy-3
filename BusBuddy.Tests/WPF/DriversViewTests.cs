@@ -24,6 +24,7 @@ public class DriversViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding TrainingRecordsCommand}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding FilteredDrivers}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedDriver, Mode=TwoWay"));
+        Assert.That(xaml, Does.Contain("AllowEditing=\"False\""));
         Assert.That(xaml, Does.Contain("MappingName=\"SchoolBusEndorsement\""));
         Assert.That(xaml, Does.Contain("HeaderText=\"School Bus S\""));
         Assert.That(xaml, Does.Contain("MappingName=\"HomeRouteEligibilityWarning\""));
