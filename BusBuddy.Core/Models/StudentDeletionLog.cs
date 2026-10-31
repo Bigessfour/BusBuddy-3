@@ -31,6 +31,7 @@ public class StudentDeletionLog
 
     public bool WasActive { get; set; }
 
+    /// <summary>Legacy: count of attendance rows. Always 0 after StudentSchedules drop (#109).</summary>
     public int ScheduleCount { get; set; }
 
     public int TransferCount { get; set; }

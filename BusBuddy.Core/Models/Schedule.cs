@@ -83,9 +83,6 @@ public class Schedule
     public virtual Route Route { get; set; } = null!;
     public virtual Driver Driver { get; set; } = null!;
 
-    // Student assignments for this schedule
-    public virtual ICollection<StudentSchedule> StudentSchedules { get; set; } = new List<StudentSchedule>();
-
     // Computed properties for sports trip functionality
     [NotMapped]
     public bool IsSportsTrip => !string.IsNullOrEmpty(SportsCategory) && SportsCategory != "Activity";

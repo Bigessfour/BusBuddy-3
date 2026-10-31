@@ -94,7 +94,6 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<ITripReasonCatalog, TripReasonCatalog>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
             services.AddScoped<IScheduleService, ScheduleService>();
-            services.AddScoped<IStudentScheduleService, StudentScheduleService>();
             services.AddScoped<IFleetMonitoringService, FleetMonitoringService>();
 
             // Geospatial: Google Maps Platform (Address Validation, Places, Routes, Map Tiles) + SfMap.

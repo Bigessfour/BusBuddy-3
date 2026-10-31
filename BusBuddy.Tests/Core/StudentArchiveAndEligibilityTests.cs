@@ -199,11 +199,6 @@ namespace BusBuddy.Tests.Core
         public async Task DeleteStudentAsync_RemovesRelatedAssignmentRowsAndCountsThem()
         {
             var student = await SeedStudentAsync();
-            _dbContext.StudentSchedules.Add(new StudentSchedule
-            {
-                StudentId = student.StudentId,
-                AssignmentType = "Regular",
-            });
             _dbContext.StudentSchoolTransfers.Add(new StudentSchoolTransfer
             {
                 StudentId = student.StudentId,
@@ -221,11 +216,10 @@ namespace BusBuddy.Tests.Core
 
             deleted.Should().BeTrue();
             (await _dbContext.Students.FindAsync(student.StudentId)).Should().BeNull();
-            _dbContext.StudentSchedules.Should().BeEmpty();
             _dbContext.StudentSchoolTransfers.Should().BeEmpty();
             var log = _dbContext.StudentDeletionLogs.Should().ContainSingle().Subject;
             log.Reason.Should().Be(nameof(StudentDeletionReason.NotAttending));
-            log.ScheduleCount.Should().Be(1);
+            log.ScheduleCount.Should().Be(0);
             log.TransferCount.Should().Be(1);
         }
 

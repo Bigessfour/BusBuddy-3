@@ -336,8 +336,8 @@ public partial class StudentService
 
     /// <summary>
     /// A student who no longer rides a session cannot keep that session's route.
-    /// Trip rows (<c>StudentSchedules</c>) stay: a trip is not the year route pairing.
     /// Same clear as <c>RouteService.RemoveStudentFromRouteAsync</c> (slot name and key only).
+    /// One-off trips stay on <c>TripEvent</c>; attendance rows are not part of the product (#109).
     /// </summary>
     private static void ClearSlotWhenEligibilityEnds(Student student, Student previous)
     {
@@ -439,9 +439,6 @@ public partial class StudentService
                     return false;
                 }
 
-                var schedules = await context.StudentSchedules
-                    .Where(x => x.StudentId == studentId)
-                    .ToListAsync();
                 var transfers = await context.StudentSchoolTransfers
                     .Where(x => x.StudentId == studentId)
                     .ToListAsync();
@@ -457,13 +454,17 @@ public partial class StudentService
                     Reason = reason.ToString(),
                     Notes = TruncateDeletionNotes(notes),
                     WasActive = student.Active,
-                    ScheduleCount = schedules.Count,
+                    // Legacy column: attendance StudentSchedules table removed (#109). Keep 0 for new rows.
+                    ScheduleCount = 0,
                     TransferCount = transfers.Count,
                     RiderExceptionCount = exceptions.Count,
                     DeletedUtc = DateTime.UtcNow,
                 };
 
-                context.StudentSchedules.RemoveRange(schedules);
+                // Pre-migration safety: FK_StudentSchedules_Student is Restrict. Clear leftover
+                // attendance rows if the table still exists; no-op after DropStudentSchedules / InMemory.
+                await ClearLegacyStudentSchedulesIfPresentAsync(context, studentId).ConfigureAwait(false);
+
                 context.StudentSchoolTransfers.RemoveRange(transfers);
                 context.RouteRiderExceptions.RemoveRange(exceptions);
                 var removedStops = await RemoveStudentHomeStopsAsync(context, student).ConfigureAwait(false);
@@ -498,6 +499,32 @@ public partial class StudentService
             DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student record {StudentId}", studentId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Deletes legacy <c>StudentSchedules</c> rows when that table still exists (Restrict FK).
+    /// No-op after <c>DropStudentSchedules</c> or on InMemory test providers. #109 transitional.
+    /// </summary>
+    private static async Task ClearLegacyStudentSchedulesIfPresentAsync(BusBuddyDbContext context, int studentId)
+    {
+        var provider = context.Database.ProviderName;
+        if (provider is null
+            || provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // Int-only interpolation: Npgsql cannot bind parameters inside a DO body.
+        await context.Database.ExecuteSqlRawAsync(
+            $"""
+            DO $do$
+            BEGIN
+              IF to_regclass('public."StudentSchedules"') IS NOT NULL THEN
+                DELETE FROM "StudentSchedules" WHERE "StudentId" = {studentId};
+              END IF;
+            END
+            $do$;
+            """).ConfigureAwait(false);
     }
 
     /// <summary>

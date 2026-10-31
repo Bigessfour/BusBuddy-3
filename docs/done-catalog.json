@@ -91,6 +91,17 @@
         "IUserContextService"
       ],
       "reason": "Issue #138: single locked-down clerk PC. Windows session account is the audit actor. HasOperatorIdentity is not authentication. In-app login is out of project-done scope unless a later product decision overturns specs/README.md."
+    },
+    {
+      "id": "no-attendance-student-schedules",
+      "kind": "spec-deferral",
+      "symbols": [
+        "StudentSchedule",
+        "IStudentScheduleService",
+        "StudentScheduleService",
+        "StudentSchedules"
+      ],
+      "reason": "Issue #109: attendance is not required. StudentSchedules table and services dropped. Roster assignment stays AmRouteId/PmRouteId. Do not rebuild attendance."
     }
   ],
   "action_item_nonblocking": [

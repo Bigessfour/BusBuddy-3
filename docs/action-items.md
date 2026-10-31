@@ -36,9 +36,9 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
 
-**Verdict:** Ship-ready for clerk Core. **Next High:** [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) or [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) on board #104.
+**Verdict:** Ship-ready for clerk Core. **Next High:** [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) fleet chrome / Bus edit.
 
-**Open boxes on this file (parked / #104):** `AMRoute`/`PMRoute` name-string drop (#108); `IStudentScheduleService` (#109); fleet chrome / BusEditDialog (#115).
+**Open boxes on this file:** Route FK name-string drop (#108); fleet chrome / BusEditDialog (#115). `IStudentScheduleService` / attendance **dropped** (#109) — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
 ---
 
@@ -85,7 +85,7 @@ Parked (not ship-blocking) — hops 1–3 ribbon and hygiene (from PR #92 audit;
 
 - [x] **AddressService DI:** Retired `AddressService`. Grid validate uses Google Maps / geocode only (`IAddressValidationService`); format-only is not success.
 - [ ] Parked (not ship-blocking) Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
-- [ ] Parked (not ship-blocking) **IStudentScheduleService:** registered in `AddDataServices`, no consumer. Wire a clerk surface or drop the registration.
+- [x] **IStudentScheduleService / attendance dropped (#109):** service, DI, model, and `StudentSchedules` table removed. Roster assignment stays `AmRouteId`/`PmRouteId`. Do not rebuild attendance.
 - [ ] Parked (not ship-blocking) **Fleet chrome filenames:** persist type is `Bus`; `VehicleForm` / `VehiclesView` / `AssignVehicleCommand` / SQL `Vehicles` are leftover names. Rename UI/SQL in a dedicated pass — do not add a `Vehicle` entity.
 
 ### Maps coupling checklist (harden / test)
@@ -149,17 +149,26 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — Issue #109 drop StudentSchedule attendance
+
+- **Decision:** Attendance is not required in BusBuddy. Drop, do not wire a clerk surface.
+- **Removed:** `IStudentScheduleService`, `StudentScheduleService`, `StudentSchedule` model, DbSet, EF config, DI registration; migration `20261031190000_DropStudentSchedules`.
+- **Kept:** `StudentDeletionLog.ScheduleCount` column (always 0 for new deletes). Trip board stays on `TripEvent`.
+- **Delete path:** `ClearLegacyStudentSchedulesIfPresentAsync` clears Restrict-FK attendance rows if the table still exists (pre-migration window); no-op after drop / InMemory.
+- **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~StudentArchiveAndEligibility'` → **Passed: 40, Failed: 0** (2026-10-31).
+- **Do not reopen** as unfinished attendance. Next High: #115 fleet Bus edit opener.
+
 ### 2026-10-31 — Issue #143 README: live GPS is future, not enabled
 
 - **Change:** Vision / Core Features / Route Management / Long-term Vision no longer claim live vehicle tracking or real-time GPS as current. Explicit **future / deferred — not enabled** note cites `specs/README.md` / `specs/maps.md`.
 - **Do not:** wire `UpdateBusLocationAsync` to the map or enable `IsLiveTrackingEnabled` under this card.
-- **Queue:** Next High is #109 or #115.
+- **Queue:** Next High is #115 (after #109 lands).
 
 ### 2026-10-31 — Action-items queue catch-up (boards #142 / #104)
 
 - **Why:** Live leftover table still listed Item 5 / Maps slice 1 as Order 1–2 after those boxes were `[x]`, which caused agents to redo guest proof. Status snapshot was stuck on 2026-10-26.
-- **Now:** Ordered queue points at #109 / #115. #143 and #140/#141 recorded as done. Completed walks stay `[x]` only.
-- **Do not redo:** #138/#139, #140/#141, #143, prod walk Items 1–6, Maps slice 1, District Map Export/Move leftovers.
+- **Now:** Ordered queue points at #115 after #109. #143 and #140/#141 recorded as done. Completed walks stay `[x]` only.
+- **Do not redo:** #138/#139, #140/#141, #143, #109, prod walk Items 1–6, Maps slice 1, District Map Export/Move leftovers.
 
 ### 2026-10-31 — Issue #140 CI runs clerk and map WPF suites
 
