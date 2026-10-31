@@ -161,9 +161,9 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ### 2026-10-31 — P2 Batch A inventory proof (Bus / Drivers / DriverForm)
 
-- **Surfaces proved:** `BusManagementView`(+VM wiring), `DriversView`(+VM home-route warning + command CanExecute), `DriverFormViewModel` Save carries `SchoolBusEndorsement`.
-- **Tests:** `BusManagementViewTests`, `DriversViewTests`, `DriversViewModelTests`, `DriverFormViewModelSaveTests`.
-- **Guest:** `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~BusManagementViewTests|FullyQualifiedName~DriversViewTests|FullyQualifiedName~DriversViewModelTests|FullyQualifiedName~DriverFormViewModelSaveTests'` → **Passed: 8, Failed: 0**.
+- **Surfaces proved:** `BusManagementView`(+VM Save/CanSave/Cancel), `DriversView`(+VM home-route warning + command CanExecute), `DriverFormViewModel` Save carries `SchoolBusEndorsement`.
+- **Tests:** `BusManagementViewTests`, `BusManagementViewModelTests`, `DriversViewTests`, `DriversViewModelTests`, `DriverFormViewModelSaveTests` (incl. AllowEditing=False + PM expired-license warning).
+- **Guest:** filter `BusManagementViewTests|BusManagementViewModelTests|DriversViewTests|DriversViewModelTests|DriverFormViewModelSaveTests` → green (hardenings pass).
 - **Inventory:** regenerated after #152 allowlist — Batch A rows no longer `NO PROOF`. Remaining gaps are Batch B/C (Fuel/Maintenance/Map) plus schedule/stops shells.
 - **Out of scope:** #117; Fuel/Maintenance/Map proofs; endorsement rule changes.
 
@@ -211,7 +211,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 - **Scan:** `surfaces` mode — **65** tracked / **55** with proof / **10** without (all P2).
 - **Allowlist adds:** `BusService`, `BusManagementView`(+VM), `DriverStudentRouteEligibility`, `TripEventService`, Drivers/DriverForm (+VMs).
-- **P1 write paths:** still covered (Student/Route/Bus/Driver/Trip services + primary views). Proof gaps are P2 shells (schedule window, stops editor, map host/launcher, fuel/maintenance dialog VMs, Drivers UI).
+- **P1 write paths:** still covered (Student/Route/Bus/Driver/Trip services + primary views). Drivers / BusManagement Batch A UI proofs landed after this refresh — see Done log. Remaining P2 gaps: schedule window, stops editor, map host/launcher, fuel/maintenance dialog VMs (Batch B/C).
 - **Tree:** `docs/function-tree.md` includes BusManagement, Drivers, TripEvent, eligibility gate.
 - **Do not:** treat inventory count as ship gate; chase P2 proof only when touching that surface.
 
