@@ -739,12 +739,23 @@ public class TripBoardImportTests
             new Bus { BusNumber = "Transit 1", Year = 2019, Make = "Ford", Model = "Transit", SeatingCapacity = 14, VINNumber = "VINT1", LicenseNumber = "LT1", Status = "Active" },
             new Bus { BusNumber = "EXP", Year = 2017, Make = "Chevy", Model = "Express", SeatingCapacity = 7, VINNumber = "VINEXP", LicenseNumber = "LEXP", Status = "Active" });
         db.Drivers.AddRange(
-            new Driver { DriverName = "Elby Sneller", DriversLicenceType = "B" },
-            new Driver { DriverName = "Steve McKitrick", DriversLicenceType = "B" },
-            new Driver { DriverName = "Rod Jagers", DriversLicenceType = "B" },
-            new Driver { DriverName = "Tim Weeks", DriversLicenceType = "B" });
+            QualifiedTripDriver("Elby Sneller"),
+            QualifiedTripDriver("Steve McKitrick"),
+            QualifiedTripDriver("Rod Jagers"),
+            QualifiedTripDriver("Tim Weeks"));
         await db.SaveChangesAsync();
     }
+
+    private static Driver QualifiedTripDriver(string name) => new()
+    {
+        DriverName = name,
+        DriversLicenceType = "CDL",
+        LicenseClass = "Class B",
+        SchoolBusEndorsement = true,
+        TrainingComplete = true,
+        Status = "Active",
+        LicenseExpiryDate = DateTime.Today.AddYears(1)
+    };
 
     private static Destination ValidatedDestination(
         string name = "Strasburg HS",

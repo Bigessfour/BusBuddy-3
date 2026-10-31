@@ -160,6 +160,12 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Driver with ID {driverId} not found");
                     }
 
+                    if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var blockReason))
+                    {
+                        return Result.FailureResult<bool>(
+                            $"Driver {driver.DriverName} is not qualified for assignment ({blockReason})");
+                    }
+
                     switch (timeSlot)
                     {
                         case RouteTimeSlot.AM:

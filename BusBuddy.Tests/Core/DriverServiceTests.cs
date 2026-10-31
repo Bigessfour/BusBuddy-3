@@ -60,10 +60,12 @@ namespace BusBuddy.Tests.Core
 
             _dbContext.Drivers.AddRange(new[]
             {
-                new Driver { DriverId = 1, DriverName = "Alice Driver", DriversLicenceType = "Standard", Status = "Active", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
-                new Driver { DriverId = 2, DriverName = "Bob Driver", DriversLicenceType = "Standard", Status = "Active", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
-                new Driver { DriverId = 3, DriverName = "Inactive", DriversLicenceType = "Standard", Status = "Inactive", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
-                new Driver { DriverId = 4, DriverName = "Expired License", DriversLicenceType = "Standard", Status = "Active", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(-1) }
+                new Driver { DriverId = 1, DriverName = "Alice Driver", DriversLicenceType = "CDL", Status = "Active", TrainingComplete = true, LicenseClass = "Class B", SchoolBusEndorsement = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
+                new Driver { DriverId = 2, DriverName = "Bob Driver", DriversLicenceType = "CDL", Status = "Active", TrainingComplete = true, LicenseClass = "Class B", SchoolBusEndorsement = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
+                new Driver { DriverId = 3, DriverName = "Inactive", DriversLicenceType = "CDL", Status = "Inactive", TrainingComplete = true, LicenseClass = "Class B", SchoolBusEndorsement = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
+                new Driver { DriverId = 4, DriverName = "Expired License", DriversLicenceType = "CDL", Status = "Active", TrainingComplete = true, LicenseClass = "Class B", SchoolBusEndorsement = true, LicenseExpiryDate = DateTime.Today.AddDays(-1) },
+                new Driver { DriverId = 5, DriverName = "No School Bus S", DriversLicenceType = "CDL", Status = "Active", TrainingComplete = true, LicenseClass = "Class B", SchoolBusEndorsement = false, LicenseExpiryDate = DateTime.Today.AddDays(90) },
+                new Driver { DriverId = 6, DriverName = "Class C Only", DriversLicenceType = "CDL", Status = "Active", TrainingComplete = true, LicenseClass = "Class C", SchoolBusEndorsement = true, LicenseExpiryDate = DateTime.Today.AddDays(90) }
             });
 
             _dbContext.SaveChanges();
@@ -141,6 +143,33 @@ namespace BusBuddy.Tests.Core
             // Driver 4 has expired license
             Func<Task> act = async () => await _driverService.AssignDriverToRouteAsync(4, 1, true);
             _ = act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not qualified*");
+        }
+
+        [Test]
+        public void AssignDriverToRouteAsync_MissingSchoolBusEndorsement_ThrowsNotQualified()
+        {
+            Func<Task> act = async () => await _driverService.AssignDriverToRouteAsync(5, 1, true);
+            _ = act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*missing school-bus endorsement*");
+        }
+
+        [Test]
+        public void AssignDriverToRouteAsync_ClassC_ThrowsNotQualified()
+        {
+            Func<Task> act = async () => await _driverService.AssignDriverToRouteAsync(6, 1, true);
+            _ = act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*CDL class must be A or B*");
+        }
+
+        [Test]
+        public async Task AssignDriverToRouteAsync_ClassBWithEndorsement_Assigns()
+        {
+            var ok = await _driverService.AssignDriverToRouteAsync(2, 2, isAMRoute: false);
+            ok.Should().BeTrue();
+
+            _dbContext.ChangeTracker.Clear();
+            var route = await _dbContext.Routes.FindAsync(2);
+            route!.PMDriverId.Should().Be(2);
         }
 
         [Test]

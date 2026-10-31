@@ -33,6 +33,7 @@ internal sealed class DriverConfiguration : IEntityTypeConfiguration<Driver>
         entity.Property(e => e.VehicleCategory).HasMaxLength(60);
         entity.Property(e => e.CdlRestrictions).HasMaxLength(50);
         entity.Property(e => e.MedicalFormType).HasMaxLength(40);
+        entity.Property(e => e.SchoolBusEndorsement).HasDefaultValue(false);
 
         entity.HasMany(e => e.TrainingRecords)
             .WithOne(t => t.Driver)

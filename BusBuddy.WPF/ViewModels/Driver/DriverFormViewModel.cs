@@ -413,6 +413,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                         : driver.DriversLicenceType,
                     LicenseExpiryDate = driver.LicenseExpiryDate,
                     Endorsements = driver.Endorsements,
+                    SchoolBusEndorsement = driver.SchoolBusEndorsement,
                     Status = NormalizeStatus(driver.Status),
                     TrainingComplete = driver.TrainingComplete,
                     BackgroundCheckDate = driver.BackgroundCheckDate,

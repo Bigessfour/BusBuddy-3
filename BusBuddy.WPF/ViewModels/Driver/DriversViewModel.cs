@@ -277,6 +277,8 @@ namespace BusBuddy.WPF.ViewModels.Driver
                         .ConfigureAwait(true);
                 }
 
+                await ApplyHomeRouteEligibilityWarningsAsync(drivers).ConfigureAwait(true);
+
                 Drivers.Clear();
                 foreach (var driver in drivers.OrderBy(d => d.DriverName))
                 {
@@ -681,6 +683,52 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
             RefreshRosterStats();
             LogState("ApplyFilters:After");
+        }
+
+        /// <summary>
+        /// Warn when a home-route AM/PM driver no longer meets Class A/B + school-bus + expiry.
+        /// Does not clear route FKs (#114).
+        /// </summary>
+        private async Task ApplyHomeRouteEligibilityWarningsAsync(IReadOnlyList<Core.Models.Driver> drivers)
+        {
+            foreach (var driver in drivers)
+            {
+                driver.HomeRouteEligibilityWarning = null;
+            }
+
+            using var context = _contextFactory.CreateDbContext();
+            var homeDriverIds = await context.Routes.AsNoTracking()
+                .Where(r => r.IsActive)
+                .Select(r => new { r.AMDriverId, r.PMDriverId })
+                .ToListAsync()
+                .ConfigureAwait(true);
+
+            var assignedIds = new HashSet<int>();
+            foreach (var row in homeDriverIds)
+            {
+                if (row.AMDriverId is int am)
+                {
+                    assignedIds.Add(am);
+                }
+
+                if (row.PMDriverId is int pm)
+                {
+                    assignedIds.Add(pm);
+                }
+            }
+
+            foreach (var driver in drivers)
+            {
+                if (!assignedIds.Contains(driver.DriverId))
+                {
+                    continue;
+                }
+
+                if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var reason))
+                {
+                    driver.HomeRouteEligibilityWarning = reason;
+                }
+            }
         }
 
         /// <summary>

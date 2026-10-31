@@ -92,6 +92,8 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("AddressText=\"{Binding Driver.Address"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding StatusOptions}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding LicenseClassOptions}\""));
+        Assert.That(xaml, Does.Contain("Driver.SchoolBusEndorsement"));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"School-bus endorsement\""));
         Assert.That(xaml, Does.Contain("Value=\"{Binding Driver.DriverPhone"));
         Assert.That(xaml, Does.Not.Contain("Mask=\"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+"));
         Assert.That(xaml, Does.Not.Contain("SelectedValuePath=\"Content\""));
@@ -104,6 +106,7 @@ public class MainWindowClerkPathTests
         Assert.That(vm, Does.Contain("OnDriverModelPropertyChanged"));
         Assert.That(vm, Does.Contain("HasUsableDriverName"));
         Assert.That(vm, Does.Contain("HireDate = driver.HireDate"));
+        Assert.That(vm, Does.Contain("SchoolBusEndorsement = driver.SchoolBusEndorsement"));
         Assert.That(vm, Does.Contain("StatusOptions"));
         Assert.That(vm, Does.Contain("LicenseClassOptions"));
     }

@@ -537,13 +537,14 @@ namespace BusBuddy.Core.Services
                         return false;
                     }
 
-                    if (driver.Status != "Active" || !driver.TrainingComplete || driver.LicenseStatus == "Expired")
+                    if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var blockReason))
                     {
-                        Logger.Warning("Driver {DriverId} is not qualified for assignment", driverId);
-                        throw new InvalidOperationException("Driver is not qualified for assignment: " +
-                            (driver.Status != "Active" ? "inactive status" :
-                             !driver.TrainingComplete ? "training incomplete" :
-                             "expired license"));
+                        Logger.Warning(
+                            "Driver {DriverId} is not qualified for assignment: {Reason}",
+                            driverId,
+                            blockReason);
+                        throw new InvalidOperationException(
+                            "Driver is not qualified for assignment: " + blockReason);
                     }
 
                     var route = await context.Routes.FindAsync(routeId);
