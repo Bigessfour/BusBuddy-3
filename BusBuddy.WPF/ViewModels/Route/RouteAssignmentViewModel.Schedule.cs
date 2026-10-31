@@ -3,9 +3,11 @@ using System.Windows;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.RouteDetermination;
+using BusBuddy.WPF;
 using BusBuddy.WPF.Commands;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Views.Route;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.WPF.ViewModels.Route;
 
@@ -195,6 +197,7 @@ public partial class RouteAssignmentViewModel
         }
 
         var notRidingIds = await LoadNotRidingStudentIdsAsync();
+        await RefreshDatedSchedulesAsync();
 
         ResolveSelectedSlotBusAndDriver(out var bus, out var driver);
         if (!RouteScheduleViewModel.TryCreate(
@@ -208,7 +211,8 @@ public partial class RouteAssignmentViewModel
                 ReTimeSelectedRouteSheetAsync,
                 PrintSelectedRouteSheetPreview,
                 ConfirmOverwritePublishedClocks,
-                notRidingIds)
+                notRidingIds,
+                SaveDatedSubstituteAsync)
             || scheduleVm is null)
         {
             return;
@@ -246,6 +250,7 @@ public partial class RouteAssignmentViewModel
             return null;
         }
 
+        await RefreshDatedSchedulesAsync();
         return BuildSelectedRouteSheet(await LoadNotRidingStudentIdsAsync());
     }
 
@@ -277,4 +282,95 @@ public partial class RouteAssignmentViewModel
 
     private void PrintSelectedRouteSheetPreview() =>
         SaveRouteSheet(includeMap: false);
+
+    /// <summary>
+    /// Dated spare bus / substitute driver for <see cref="Route.Date"/> only.
+    /// Writes <see cref="Schedule"/>; never calls Assign* on year-default Route FKs.
+    /// </summary>
+    private async Task<RouteSummarySheet?> SaveDatedSubstituteAsync()
+    {
+        if (SelectedRoute is null)
+        {
+            return null;
+        }
+
+        await RefreshDatedSchedulesAsync();
+        ResolveSelectedSlotBusAndDriver(out var currentBus, out var currentDriver);
+
+        var dialogVm = new RouteDatedSubstituteViewModel(
+            GetRouteDisplayName(SelectedRoute),
+            RouteDailyPairing.ServiceDateUtc(SelectedRoute),
+            AvailableBuses,
+            AvailableDrivers,
+            currentBus,
+            currentDriver);
+        var dialog = new RouteDatedSubstituteDialog(dialogVm);
+        DialogOwner.Assign(dialog);
+        var accepted = dialog.ShowDialog() == true;
+        if (!accepted || dialogVm.SelectedBus is null || dialogVm.SelectedDriver is null)
+        {
+            return null;
+        }
+
+        var bus = dialogVm.SelectedBus;
+        var driver = dialogVm.SelectedDriver;
+        if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var reason))
+        {
+            MessageBox.Show(
+                $"Cannot assign substitute driver {driver.DriverName}: {reason}",
+                "Substitute blocked",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return null;
+        }
+
+        var slot = NormalizeTimeSlot(SelectedTimeSlot);
+        var row = RouteDailyPairing.BuildSessionRow(SelectedRoute, slot, bus.BusId, driver.DriverId);
+        var tripService = App.ServiceProvider?.GetService<ITripEventService>();
+        if (tripService is not null)
+        {
+            var warnings = await tripService
+                .GetAssignmentWarningsAsync(bus.BusId, driver.DriverId, row.DepartureTime, row.ArrivalTime)
+                .ConfigureAwait(true);
+            if (warnings.Count > 0)
+            {
+                var text = string.Join(Environment.NewLine, warnings)
+                    + Environment.NewLine
+                    + Environment.NewLine
+                    + "Home-route year defaults stay unchanged. Save substitute anyway?";
+                if (MessageBox.Show(
+                        text,
+                        "Trip overlap warning",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                {
+                    return null;
+                }
+            }
+        }
+
+        var schedules = App.ServiceProvider?.GetService<IScheduleService>();
+        if (schedules is null)
+        {
+            MessageBox.Show(
+                "Schedule service is not available.",
+                "Substitute",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return null;
+        }
+
+        await schedules.AddScheduleAsync(row).ConfigureAwait(true);
+        Logger.Information(
+            "Saved dated substitute RouteId={RouteId} Date={Date} BusId={BusId} DriverId={DriverId} RouteAmBus={AmBus} RouteAmDriver={AmDriver}",
+            SelectedRoute.RouteId,
+            row.ScheduleDate,
+            bus.BusId,
+            driver.DriverId,
+            SelectedRoute.AMVehicleId,
+            SelectedRoute.AMDriverId);
+
+        await RefreshDatedSchedulesAsync();
+        return BuildSelectedRouteSheet(await LoadNotRidingStudentIdsAsync());
+    }
 }

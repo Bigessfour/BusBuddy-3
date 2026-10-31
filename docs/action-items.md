@@ -39,10 +39,11 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | School-bus endorsement (#114)    | **Met** — #149; fail-closed assign/confirm/import; grandfather incumbents                                    |
 | Special-needs aide (#118)        | **Met** — #150; `Route.AideName` + grid + stop-sheet meta                                                    |
 | Confirmed → Changed prior (#117) | **Met** — #154; re-confirm clears `Prior*`                                                                   |
+| Dated substitute / spare (#113)  | **Met** — Schedule for `route.Date`; `RouteDailyPairing`; spare replaces same-slot siblings                  |
 | a11y Phase 2 / live GPS product  | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker             | Re-run after Medium catch-up; ship-ready ≠ checker 0                                                         |
 
-**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **Next build card:** [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) (dated substitute / spare). Then #112 (duty events) — one at a time. **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
+**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **Next build card:** [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) (duty events). **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
 
 **Open boxes on this file:** Parked #108 name-string drop; optional ribbon hops; Restore-only-if-needed orphans. Closed Highs/Mediums above — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
@@ -56,8 +57,8 @@ Do in this order. Do **not** re-open completed prod-walk / Maps / closed High-Me
 
 | Order | Item                                                                                                                              | Why this slot                                                                          |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 1     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) — Substitute driver or spare bus for one date                         | Next Medium. Must not overwrite year-default `Route.AM*`/`PM*`.                        |
-| 2     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Larger shape (shared driver+bus collection). After #113 unless product says otherwise. |
+| 1     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Next after #113. Shared driver+bus duty collection.                                    |
+| —     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) Dated substitute / spare                                              | **Done** — `Schedule` + `RouteDailyPairing`; year-default `Route.AM*`/`PM*` unchanged. |
 | —     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) Confirmed → Changed prior                                             | **Done** — #154; re-confirm clears `Prior*`. Do not reopen.                            |
 | —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                                 |
 | —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                                 |
@@ -159,6 +160,13 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-10-31 — Issue #113 dated substitute / spare bus
+
+- **Design:** Dated pairing is a `Schedule` row for `route.Date` (`DriverId`/`BusId`). Year defaults stay on `Route.AM*`/`PM*`. Resolver: `RouteDailyPairing` (newest same-slot row wins).
+- **Write:** Substitute / Generate cancel other active same-slot siblings so a spare bus does not leave a competing home-bus row.
+- **UI:** Route Schedule **Substitute** → `RouteDatedSubstituteDialog`. Trip overlap warns via `GetAssignmentWarningsAsync`; never clears Home FKs.
+- **Print:** Assignment Export/Print refreshes dated schedules; `WriteSchedulePdfAsync` resolves through `RouteDailyPairing`.
 
 ### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
 

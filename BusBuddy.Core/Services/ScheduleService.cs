@@ -99,6 +99,32 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<IReadOnlyList<Schedule>> GetSchedulesForRouteOnDateAsync(
+            int routeId,
+            DateTime scheduleDate,
+            CancellationToken cancellationToken = default)
+        {
+            var day = DateTime.SpecifyKind(scheduleDate.Date, DateTimeKind.Utc);
+            var next = day.AddDays(1);
+            var context = _contextFactory.CreateDbContext();
+            try
+            {
+                return await context.Schedules
+                    .AsNoTracking()
+                    .Where(s =>
+                        s.RouteId == routeId
+                        && s.ScheduleDate >= day
+                        && s.ScheduleDate < next)
+                    .OrderBy(s => s.DepartureTime)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                await context.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
         public async Task AddScheduleAsync(Schedule schedule)
         {
             ArgumentNullException.ThrowIfNull(schedule);

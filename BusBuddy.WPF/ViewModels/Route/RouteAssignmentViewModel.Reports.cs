@@ -2,9 +2,11 @@ using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF;
 using BusBuddy.WPF.Commands;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Views.Reports;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.WPF.ViewModels.Route;
 
@@ -28,6 +30,31 @@ public partial class RouteAssignmentViewModel
             () => SaveRouteSheet(includeMap: true),
             () => SelectedRoute != null);
 
+    private IReadOnlyList<BusBuddy.Core.Models.Schedule> _datedSchedulesForSelected =
+        Array.Empty<BusBuddy.Core.Models.Schedule>();
+
+    private async Task RefreshDatedSchedulesAsync()
+    {
+        if (SelectedRoute is null)
+        {
+            _datedSchedulesForSelected = Array.Empty<BusBuddy.Core.Models.Schedule>();
+            return;
+        }
+
+        var schedules = App.ServiceProvider?.GetService<IScheduleService>();
+        if (schedules is null)
+        {
+            _datedSchedulesForSelected = Array.Empty<BusBuddy.Core.Models.Schedule>();
+            return;
+        }
+
+        _datedSchedulesForSelected = await schedules
+            .GetSchedulesForRouteOnDateAsync(
+                SelectedRoute.RouteId,
+                RouteDailyPairing.ServiceDateUtc(SelectedRoute))
+            .ConfigureAwait(true);
+    }
+
     private void ResolveSelectedSlotBusAndDriver(out BusBuddy.Core.Models.Bus? bus, out BusBuddy.Core.Models.Driver? driver)
     {
         bus = null;
@@ -37,29 +64,19 @@ public partial class RouteAssignmentViewModel
             return;
         }
 
-        if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM)
+        var pairing = RouteDailyPairing.Resolve(
+            SelectedRoute,
+            NormalizeTimeSlot(SelectedTimeSlot),
+            _datedSchedulesForSelected);
+
+        if (pairing.BusId is int busId)
         {
-            if (SelectedRoute.PMVehicleId.HasValue)
-            {
-                bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.PMVehicleId.Value);
-            }
-
-            if (SelectedRoute.PMDriverId.HasValue)
-            {
-                driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.PMDriverId.Value);
-            }
-
-            return;
+            bus = AvailableBuses.FirstOrDefault(b => b.BusId == busId);
         }
 
-        if (SelectedRoute.AMVehicleId.HasValue)
+        if (pairing.DriverId is int driverId)
         {
-            bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.AMVehicleId.Value);
-        }
-
-        if (SelectedRoute.AMDriverId.HasValue)
-        {
-            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.AMDriverId.Value);
+            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == driverId);
         }
     }
 

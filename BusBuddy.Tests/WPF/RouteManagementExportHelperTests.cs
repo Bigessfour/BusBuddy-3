@@ -146,6 +146,7 @@ public class RouteManagementExportHelperTests
             RouteId = 6,
             RouteName = "Hop 5",
             School = "Wiley Elementary",
+            Date = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc),
             AMVehicleId = 2,
             AMDriverId = 4,
             AMBeginTime = new TimeSpan(6, 45, 0),
@@ -159,6 +160,7 @@ public class RouteManagementExportHelperTests
         captured!.RouteId.Should().Be(6);
         captured.BusId.Should().Be(2);
         captured.DriverId.Should().Be(4);
+        captured.ScheduleDate.Should().Be(route.Date);
         captured.ScheduleDate.Kind.Should().Be(DateTimeKind.Utc);
         captured.ScheduleDate.TimeOfDay.Should().Be(TimeSpan.Zero);
         captured.DepartureTime.Should().Be(captured.ScheduleDate.Add(new TimeSpan(6, 45, 0)));
@@ -177,13 +179,21 @@ public class RouteManagementExportHelperTests
             .Callback<Schedule>(s => captured = s)
             .Returns(Task.CompletedTask);
 
-        var route = new Route { RouteId = 9, PMVehicleId = 11, PMDriverId = 12 };
+        var route = new Route
+        {
+            RouteId = 9,
+            Date = new DateTime(2026, 11, 6, 0, 0, 0, DateTimeKind.Utc),
+            PMVehicleId = 11,
+            PMDriverId = 12,
+            PMBeginTime = TimeSpan.FromHours(14)
+        };
 
         (await RouteManagementExportHelper.TryPersistScheduleAsync(route, scheduleService.Object)).Should().BeTrue();
 
         captured!.BusId.Should().Be(11);
         captured.DriverId.Should().Be(12);
-        captured.DepartureTime.Should().Be(captured.ScheduleDate.AddHours(7));
+        captured.ScheduleDate.Should().Be(route.Date);
+        captured.DepartureTime.Should().Be(captured.ScheduleDate.AddHours(14));
         captured.ArrivalTime.Should().Be(captured.DepartureTime.AddMinutes(45));
     }
 
@@ -279,5 +289,101 @@ public class RouteManagementExportHelperTests
         ascii.Should().NotContain("Daily Schedule");
         ascii.Should().NotContain("Mock insight");
         ascii.Should().NotContain("AM begin");
+    }
+
+    [Test]
+    public async Task WriteSchedulePdfAsync_UsesDatedSchedulePairingOverRouteDefaults()
+    {
+        var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);
+        var route = new Route
+        {
+            RouteId = 4,
+            RouteName = "AM Special Needs",
+            Session = RouteSession.SpecialNeeds,
+            IsSpecialNeedsRoute = true,
+            School = "North High",
+            Date = day,
+            IsActive = true,
+            AMVehicleId = 2,
+            AMDriverId = 3,
+            AMBeginTime = new TimeSpan(7, 0, 0)
+        };
+        var stops = new List<RouteStop>
+        {
+            new()
+            {
+                StopOrder = 1,
+                StopName = "Home pickup",
+                ScheduledArrival = new TimeSpan(7, 30, 0),
+                ScheduledDeparture = new TimeSpan(7, 30, 0),
+                Status = "Active"
+            }
+        };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetRouteStopsAsync(4))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routeService.Setup(s => s.GetStudentsForRouteAsync(4, RouteTimeSlot.AM))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>()));
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus>
+            {
+                new() { BusId = 2, BusNumber = "5" },
+                new() { BusId = 12, BusNumber = "12" }
+            }));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver>
+            {
+                new() { DriverId = 3, DriverName = "Home Driver" },
+                new() { DriverId = 8, DriverName = "Pool Driver" }
+            }));
+
+        var scheduleService = new Mock<IScheduleService>();
+        scheduleService
+            .Setup(s => s.GetSchedulesForRouteOnDateAsync(4, day, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Schedule>
+            {
+                new()
+                {
+                    RouteId = 4,
+                    BusId = 12,
+                    DriverId = 8,
+                    ScheduleDate = day,
+                    DepartureTime = day.AddHours(7),
+                    ArrivalTime = day.AddHours(8),
+                    Status = "Scheduled"
+                }
+            });
+
+        var previousOpen = RouteManagementExportHelper.OpenAfterWrite;
+        RouteManagementExportHelper.OpenAfterWrite = false;
+        SchedulePdfResult pdf;
+        try
+        {
+            pdf = await RouteManagementExportHelper.WriteSchedulePdfAsync(
+                route,
+                routeService.Object,
+                _tempDir,
+                openAfter: false,
+                scheduleService: scheduleService.Object);
+        }
+        finally
+        {
+            RouteManagementExportHelper.OpenAfterWrite = previousOpen;
+        }
+
+        var sheet = RouteSummarySheetBuilder.Build(
+            route,
+            stops,
+            Array.Empty<Student>(),
+            new Bus { BusId = 12, BusNumber = "12" },
+            new Driver { DriverId = 8, DriverName = "Pool Driver" },
+            RouteTimeSlot.AM);
+        sheet.BusLabel.Should().Contain("12");
+        sheet.DriverLabel.Should().Be("Pool Driver");
+        pdf.StopCount.Should().Be(1);
+        scheduleService.Verify(
+            s => s.GetSchedulesForRouteOnDateAsync(4, day, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

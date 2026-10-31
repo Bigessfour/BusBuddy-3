@@ -130,6 +130,13 @@
 
         <DockPanel Grid.Row="5" LastChildFill="True">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <syncfusion:ButtonAdv Label="Substitute"
+                                      MinWidth="100"
+                                      Height="40"
+                                      Margin="0,0,8,0"
+                                      Command="{Binding SubstituteCommand}"
+                                      ToolTip="{Binding SubstituteToolTip}"
+                                      AutomationProperties.Name="Substitute for this date"/>
                 <syncfusion:ButtonAdv Label="Re-time"
                                       MinWidth="90"
                                       Height="40"

@@ -880,7 +880,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     .TryPersistScheduleAsync(SelectedRoute, _scheduleService)
                     .ConfigureAwait(true);
                 var pdf = await RouteManagementExportHelper
-                    .WriteSchedulePdfAsync(SelectedRoute, _routeService)
+                    .WriteSchedulePdfAsync(SelectedRoute, _routeService, scheduleService: _scheduleService)
                     .ConfigureAwait(true);
                 var file = Path.GetFileName(pdf.Path);
                 StatusMessage = persisted
