@@ -20,6 +20,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
         private readonly IBusService _busService;
         private readonly IFuelLocationCatalog? _fuelLocationCatalog;
         private readonly IUserSettingsService? _userSettings;
+        private readonly Func<FuelModel, (bool? Result, bool RememberedNewLocation)>? _showFuelDialog;
 
         private ObservableCollection<FuelModel> _fuelRecords = new();
         public ObservableCollection<FuelModel> FuelRecords
@@ -69,13 +70,15 @@ namespace BusBuddy.WPF.ViewModels.Fuel
             IFuelService fuelService,
             IBusService busService,
             IFuelLocationCatalog? fuelLocationCatalog = null,
-            IUserSettingsService? userSettings = null)
+            IUserSettingsService? userSettings = null,
+            Func<FuelModel, (bool? Result, bool RememberedNewLocation)>? showFuelDialog = null)
             : base()
         {
             _fuelService = fuelService;
             _busService = busService;
             _fuelLocationCatalog = fuelLocationCatalog;
             _userSettings = userSettings;
+            _showFuelDialog = showFuelDialog;
 
             using (LogContext.PushProperty("ViewModelType", nameof(FuelManagementViewModel)))
             using (LogContext.PushProperty("OperationType", "Construction"))
@@ -155,13 +158,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         TotalCost = null
                     };
 
-                    var dialog = new FuelDialog(newFuel, _busService, _fuelLocationCatalog, _fuelService);
-                    if (dialog.Owner == null && Application.Current?.MainWindow != null)
-                    {
-                        dialog.Owner = Application.Current.MainWindow;
-                    }
-
-                    var result = dialog.ShowDialog();
+                    var (result, rememberedNewLocation) = OpenFuelDialog(newFuel);
                     if (result.HasValue && result.Value)
                     {
                         if (_fuelLocationCatalog != null && !string.IsNullOrWhiteSpace(newFuel.FuelLocation))
@@ -177,7 +174,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         UserToast.Success(
                             $"Fuel record saved — {newFuel.Gallons:N3} gal on {newFuel.FuelDate:d}.",
                             "Save successful");
-                        if (dialog.RememberedNewLocation)
+                        if (rememberedNewLocation)
                         {
                             UserToast.Info(
                                 $"“{newFuel.FuelLocation}” saved to the fuel location list for future fill-ups.",
@@ -228,13 +225,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         Notes = SelectedFuelRecord.Notes
                     };
 
-                    var dialog = new FuelDialog(recordToEdit, _busService, _fuelLocationCatalog, _fuelService);
-                    if (dialog.Owner == null && Application.Current?.MainWindow != null)
-                    {
-                        dialog.Owner = Application.Current.MainWindow;
-                    }
-
-                    var result = dialog.ShowDialog();
+                    var (result, rememberedNewLocation) = OpenFuelDialog(recordToEdit);
                     if (result.HasValue && result.Value)
                     {
                         if (_fuelLocationCatalog != null && !string.IsNullOrWhiteSpace(recordToEdit.FuelLocation))
@@ -255,7 +246,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                         UserToast.Success(
                             $"Fuel record #{recordToEdit.FuelId} saved successfully.",
                             "Save successful");
-                        if (dialog.RememberedNewLocation)
+                        if (rememberedNewLocation)
                         {
                             UserToast.Info(
                                 $"“{recordToEdit.FuelLocation}” saved to the fuel location list for future fill-ups.",
@@ -271,6 +262,25 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     }
                 }
             });
+        }
+
+        /// <summary>
+        /// Opens the fuel dialog (or a test seam). Persist happens inside FuelDialogViewModel.
+        /// </summary>
+        private (bool? Result, bool RememberedNewLocation) OpenFuelDialog(FuelModel fuel)
+        {
+            if (_showFuelDialog != null)
+            {
+                return _showFuelDialog(fuel);
+            }
+
+            var dialog = new FuelDialog(fuel, _busService, _fuelLocationCatalog, _fuelService);
+            if (dialog.Owner == null && Application.Current?.MainWindow != null)
+            {
+                dialog.Owner = Application.Current.MainWindow;
+            }
+
+            return (dialog.ShowDialog(), dialog.RememberedNewLocation);
         }
 
         private async Task DeleteFuelRecordAsync()

@@ -201,4 +201,28 @@ public class FuelDialogViewModelTests
         closed.Should().BeFalse();
         fuel.Verify(f => f.CreateFuelRecordAsync(It.IsAny<Fuel>()), Times.Once);
     }
+
+    [Test]
+    public async Task Save_WithoutFuelService_DoesNotClose_EvenWhenValid()
+    {
+        var busService = new Mock<IBusService>();
+        busService.Setup(b => b.GetAllBusesAsync()).ReturnsAsync(new List<Bus> { SampleBus() });
+
+        var catalog = new Mock<IFuelLocationCatalog>();
+        catalog.Setup(c => c.GetLocationsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<string> { "Barn" });
+
+        var draft = NewDraft();
+        var vm = new FuelDialogViewModel(draft, busService.Object, catalog.Object, fuelService: null);
+        await WaitForBusesAsync(vm);
+        FillValidFields(vm, vm.AvailableBuses[0]);
+
+        var closed = false;
+        vm.CloseRequested += (_, _) => closed = true;
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        closed.Should().BeFalse("missing IFuelService must fail closed — no DialogResult=true without a DB write");
+        draft.FuelId.Should().Be(0);
+    }
 }

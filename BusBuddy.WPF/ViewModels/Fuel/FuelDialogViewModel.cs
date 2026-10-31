@@ -739,14 +739,12 @@ public partial class FuelDialogViewModel : BaseViewModel
 
         if (_fuelService is null)
         {
-            using (LogContext.PushProperty("ViewModelType", nameof(FuelDialogViewModel)))
-            {
-                Logger.Information(
-                    "Fuel dialog save accepted without IFuelService FuelId={FuelId} (caller persists)",
-                    Fuel.FuelId);
-            }
-
-            CloseRequested?.Invoke(this, true);
+            Logger.Error(
+                "Fuel dialog save blocked — IFuelService was not provided FuelId={FuelId}",
+                Fuel.FuelId);
+            UserToast.Error(
+                "Fuel service is unavailable — cannot save this fill-up.",
+                "Save failed");
             return;
         }
 
