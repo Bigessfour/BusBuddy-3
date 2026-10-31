@@ -162,7 +162,9 @@
                 <syncfusion:GridTextColumn HeaderText="Phone" MappingName="DriverPhone" Width="120"/>
                 <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
                 <syncfusion:GridCheckBoxColumn HeaderText="Training Complete" MappingName="TrainingComplete" Width="130"/>
-                <syncfusion:GridTextColumn HeaderText="Endorsements" MappingName="Endorsements" Width="150"/>
+                <syncfusion:GridCheckBoxColumn HeaderText="School Bus S" MappingName="SchoolBusEndorsement" Width="110"/>
+                <syncfusion:GridTextColumn HeaderText="Endorsements" MappingName="Endorsements" Width="120"/>
+                <syncfusion:GridTextColumn HeaderText="Home Route Warning" MappingName="HomeRouteEligibilityWarning" Width="220"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
 

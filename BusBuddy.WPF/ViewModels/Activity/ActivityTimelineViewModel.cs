@@ -229,11 +229,9 @@ namespace BusBuddy.WPF.ViewModels.Activity
             }
             finally
             {
-                if (version == _refreshVersion)
-                {
-                    IsLoading = false;
-                }
-
+                // Always clear here. A superseded refresh used to leave IsLoading true
+                // until the successor ran; between gate handoffs that raced tests and UI.
+                IsLoading = false;
                 _refreshGate.Release();
             }
         }

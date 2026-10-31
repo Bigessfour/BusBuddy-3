@@ -348,7 +348,7 @@
                                                 SelectedItem="{Binding Driver.LicenseClass, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="License Class"
-                                                AutomationProperties.HelpText="Select CDL license class" />
+                                                AutomationProperties.HelpText="Student routes require Class A or Class B" />
                     </StackPanel>
                     <StackPanel Grid.Row="1"
                                 Grid.Column="0">
@@ -375,12 +375,17 @@
                     <StackPanel Grid.Row="2"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="3">
-                        <TextBlock Text="Endorsements:"
+                        <CheckBox Content="School-bus (S) endorsement"
+                                  IsChecked="{Binding Driver.SchoolBusEndorsement, Mode=TwoWay}"
+                                  Margin="0,0,0,10"
+                                  AutomationProperties.Name="School-bus endorsement"
+                                  AutomationProperties.HelpText="Required for student-carrying routes and trips" />
+                        <TextBlock Text="Other endorsements:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfTextBoxExt Text="{Binding Driver.Endorsements, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="License Endorsements"
-                                                 AutomationProperties.HelpText="Enter license endorsements (P, S, N, etc.)" />
+                                                 AutomationProperties.HelpText="Optional other endorsements (P, N, etc.). School-bus uses the checkbox above." />
                     </StackPanel>
                 </Grid>
             </GroupBox>

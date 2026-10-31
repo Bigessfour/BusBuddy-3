@@ -128,6 +128,8 @@ public sealed partial class TripEventService : ITripEventService
         ApplyBoardStatus(tripEvent, previousStatus: null, previousBoard: null, isNew: true);
 
         using var context = _contextFactory.CreateWriteDbContext();
+        await EnsureTripDriverIsQualifiedAsync(context, tripEvent.DriverId, previousDriverId: null)
+            .ConfigureAwait(false);
         context.TripEvents.Add(tripEvent);
         await context.SaveChangesAsync();
     }
@@ -155,6 +157,8 @@ public sealed partial class TripEventService : ITripEventService
             return;
         }
 
+        await EnsureTripDriverIsQualifiedAsync(context, tripEvent.DriverId, existing.DriverId)
+            .ConfigureAwait(false);
         CopyBoardOntoTracked(context, existing, tripEvent);
         await context.SaveChangesAsync().ConfigureAwait(false);
     }
@@ -265,9 +269,17 @@ public sealed partial class TripEventService : ITripEventService
             var driver = await context.Drivers.AsNoTracking()
                 .FirstOrDefaultAsync(d => d.DriverId == driverId.Value, cancellationToken)
                 .ConfigureAwait(false);
-            if (driver is not null && !driver.IsAvailable)
+            if (driver is not null)
             {
-                warnings.Add($"Driver {driver.DriverName} is not available (inactive, training, or license).");
+                if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var credentialReason))
+                {
+                    warnings.Add(
+                        $"Driver {driver.DriverName} is not qualified for assignment ({credentialReason}).");
+                }
+                else if (!driver.IsAvailable)
+                {
+                    warnings.Add($"Driver {driver.DriverName} is not available (inactive, training, or license).");
+                }
             }
         }
 
@@ -554,10 +566,62 @@ public sealed partial class TripEventService : ITripEventService
                 warnings.Add(
                     $"Ticket {row.ExternalTicketNo}: driver '{row.DriverName}' was not found.");
             }
+            else if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var reason))
+            {
+                trip.DriverId = null;
+                warnings.Add(
+                    $"Ticket {row.ExternalTicketNo}: driver '{row.DriverName}' {reason} and was not assigned.");
+            }
             else
             {
                 trip.DriverId = driver.DriverId;
             }
+        }
+        else if (trip.DriverId is int existingDriverId)
+        {
+            // Blank driver cell on re-import: drop a stale unqualified assignment (#114).
+            var existing = drivers.FirstOrDefault(d => d.DriverId == existingDriverId);
+            string? clearReason = null;
+            if (existing is null)
+            {
+                clearReason = "was not found";
+            }
+            else if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(existing, out var staleReason))
+            {
+                clearReason = staleReason;
+            }
+
+            if (clearReason is not null)
+            {
+                trip.DriverId = null;
+                warnings.Add(
+                    $"Ticket {row.ExternalTicketNo}: previously assigned driver {(existing?.DriverName ?? existingDriverId.ToString())} "
+                    + $"{clearReason} and was cleared.");
+            }
+        }
+    }
+
+    private static async Task EnsureTripDriverIsQualifiedAsync(
+        BusBuddyDbContext context,
+        int? nextDriverId,
+        int? previousDriverId)
+    {
+        if (!nextDriverId.HasValue || nextDriverId == previousDriverId)
+        {
+            return;
+        }
+
+        var driver = await context.Drivers.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.DriverId == nextDriverId.Value)
+            .ConfigureAwait(false);
+        if (driver is null)
+        {
+            throw new InvalidOperationException($"Cannot assign driver to trip: driver {nextDriverId.Value} was not found");
+        }
+
+        if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var reason))
+        {
+            throw new InvalidOperationException($"Cannot assign driver to trip: {reason}");
         }
     }
 

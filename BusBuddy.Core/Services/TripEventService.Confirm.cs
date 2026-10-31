@@ -18,6 +18,7 @@ public sealed partial class TripEventService
             .AsTracking()
             .Include(t => t.DestinationLocation)
             .Include(t => t.Vehicle)
+            .Include(t => t.Driver)
             .FirstOrDefaultAsync(t => t.TripEventId == tripEventId, cancellationToken)
             .ConfigureAwait(false);
 
@@ -25,6 +26,31 @@ public sealed partial class TripEventService
         if (refused is not null)
         {
             return refused;
+        }
+
+        // Confirm is a new go/no-go: do not grandfather an unqualified driver on the row.
+        if (trip!.Driver is not null
+            && DriverStudentRouteEligibility.TryGetAssignmentBlockReason(trip.Driver, out var driverReason))
+        {
+            return Result.Failure(
+                $"Cannot confirm trip: driver {trip.Driver.DriverName} is not qualified ({driverReason}).");
+        }
+
+        if (trip.DriverId.HasValue && trip.Driver is null)
+        {
+            var driver = await context.Drivers.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DriverId == trip.DriverId.Value, cancellationToken)
+                .ConfigureAwait(false);
+            if (driver is null)
+            {
+                return Result.Failure("Cannot confirm trip: assigned driver was not found.");
+            }
+
+            if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out driverReason))
+            {
+                return Result.Failure(
+                    $"Cannot confirm trip: driver {driver.DriverName} is not qualified ({driverReason}).");
+            }
         }
 
         var sessionWarning = await SessionLoadWarningAsync(trip!, cancellationToken).ConfigureAwait(false);

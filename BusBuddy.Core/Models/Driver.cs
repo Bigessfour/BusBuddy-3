@@ -318,6 +318,13 @@ public class Driver : INotifyPropertyChanged
     [Display(Name = "Endorsements")]
     public string? Endorsements { get; set; }
 
+    /// <summary>
+    /// School-bus (S) endorsement required for student-carrying route and trip assignment (#114).
+    /// Free-text <see cref="Endorsements"/> stays for P/N/other; assignment reads this flag.
+    /// </summary>
+    [Display(Name = "School-Bus Endorsement")]
+    public bool SchoolBusEndorsement { get; set; }
+
     [Display(Name = "Hire Date")]
     public DateTime? HireDate { get; set; }
 
@@ -483,7 +490,20 @@ public class Driver : INotifyPropertyChanged
 
     [NotMapped]
     [Display(Name = "Needs Attention")]
-    public bool NeedsAttention => !TrainingComplete || LicenseStatus == "Expired" || LicenseStatus == "Expiring Soon";
+    public bool NeedsAttention => !TrainingComplete || LicenseStatus == "Expired" || LicenseStatus == "Expiring Soon"
+        || !DriverStudentRouteEligibility.MeetsAssignmentEligibility(this);
+
+    /// <summary>
+    /// Set by the drivers list when this driver is a home AM/PM on an active route but
+    /// no longer meets assignment credentials. Never clears the route FK.
+    /// </summary>
+    [NotMapped]
+    [Display(Name = "Home Route Warning")]
+    public string? HomeRouteEligibilityWarning { get; set; }
+
+    [NotMapped]
+    public bool MeetsStudentRouteAssignmentEligibility =>
+        DriverStudentRouteEligibility.MeetsAssignmentEligibility(this);
 
     [NotMapped]
     [Display(Name = "Contact Phone")]

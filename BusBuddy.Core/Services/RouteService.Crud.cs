@@ -153,6 +153,17 @@ namespace BusBuddy.Core.Services
                             $"A route with name '{route.RouteName}' already exists for {route.Date:yyyy-MM-dd}");
                     }
 
+                    var driverGate = await GuardNewDriverAssignmentsAsync(
+                        context,
+                        previousAmDriverId: null,
+                        previousPmDriverId: null,
+                        route.AMDriverId,
+                        route.PMDriverId);
+                    if (driverGate is not null)
+                    {
+                        return Result.FailureResult<Route>(driverGate);
+                    }
+
                     context.Routes.Add(route);
                     await context.SaveChangesAsync();
 
@@ -193,6 +204,19 @@ namespace BusBuddy.Core.Services
                     var previousName = tracked.RouteName;
                     var previousDescription = tracked.Description;
                     var previousSpecialNeeds = tracked.IsSpecialNeedsRoute;
+                    var previousAmDriverId = tracked.AMDriverId;
+                    var previousPmDriverId = tracked.PMDriverId;
+
+                    var driverGate = await GuardNewDriverAssignmentsAsync(
+                        context,
+                        previousAmDriverId,
+                        previousPmDriverId,
+                        route.AMDriverId,
+                        route.PMDriverId);
+                    if (driverGate is not null)
+                    {
+                        return Result.FailureResult<Route>(driverGate);
+                    }
 
                     context.Entry(tracked).CurrentValues.SetValues(route);
 
@@ -236,6 +260,66 @@ namespace BusBuddy.Core.Services
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error updating route {RouteId}", route.RouteId);
                 return Result.FailureResult<Route>($"Error updating route: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Fail closed when a grid/update assigns a new AM/PM driver who lacks Class A/B,
+        /// school-bus endorsement, or a current license. Leaving an already-assigned
+        /// unqualified driver alone is allowed (warn in UI; do not wipe the FK).
+        /// </summary>
+        private static async Task<string?> GuardNewDriverAssignmentsAsync(
+            BusBuddyDbContext context,
+            int? previousAmDriverId,
+            int? previousPmDriverId,
+            int? nextAmDriverId,
+            int? nextPmDriverId)
+        {
+            async Task<string?> CheckNewAsync(int? previousId, int? nextId)
+            {
+                if (!nextId.HasValue || nextId == previousId)
+                {
+                    return null;
+                }
+
+                var driver = await context.Drivers.AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.DriverId == nextId.Value);
+                if (driver is null)
+                {
+                    return $"Driver with ID {nextId.Value} not found";
+                }
+
+                if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var reason))
+                {
+                    return $"Driver {driver.DriverName} is not qualified for assignment ({reason})";
+                }
+
+                return null;
+            }
+
+            return await CheckNewAsync(previousAmDriverId, nextAmDriverId)
+                ?? await CheckNewAsync(previousPmDriverId, nextPmDriverId);
+        }
+
+        /// <summary>
+        /// Clone copies year-default drivers only when they still meet assignment eligibility.
+        /// Missing or unqualified drivers become null so the stop list still clones.
+        /// </summary>
+        private static async Task<int?> EligibleDriverIdOrNullAsync(BusBuddyDbContext context, int? driverId)
+        {
+            if (!driverId.HasValue)
+            {
+                return null;
+            }
+
+            var driver = await context.Drivers.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DriverId == driverId.Value);
+            if (driver is null
+                || DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out _))
+            {
+                return null;
+            }
+
+            return driverId;
         }
 
         /// <summary>

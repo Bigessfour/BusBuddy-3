@@ -966,9 +966,10 @@ namespace BusBuddy.Tests.Core
             Assert.That(result.Value!.RouteName, Is.EqualTo("Copy of Route A"));
             Assert.That(result.Value.IsActive, Is.False);
             Assert.That(result.Value.AMVehicleId, Is.EqualTo(11));
-            Assert.That(result.Value.AMDriverId, Is.EqualTo(12));
+            // Drivers 12/14 were never seeded — clone drops missing/unqualified driver FKs (#114).
+            Assert.That(result.Value.AMDriverId, Is.Null);
             Assert.That(result.Value.PMVehicleId, Is.EqualTo(13));
-            Assert.That(result.Value.PMDriverId, Is.EqualTo(14));
+            Assert.That(result.Value.PMDriverId, Is.Null);
 
             var clonedStops = await _dbContext.RouteStops
                 .Where(s => s.RouteId == result.Value.RouteId)

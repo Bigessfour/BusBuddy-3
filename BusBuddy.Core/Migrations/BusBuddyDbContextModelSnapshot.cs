@@ -693,6 +693,11 @@ namespace BusBuddy.Core.Migrations
                     b.Property<DateTime?>("PhysicalExamExpiry")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("SchoolBusEndorsement")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("State")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");

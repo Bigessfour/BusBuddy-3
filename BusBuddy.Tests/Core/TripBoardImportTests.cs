@@ -203,6 +203,183 @@ public class TripBoardImportTests
     }
 
     [Test]
+    public async Task ImportBoardCsv_UnqualifiedDriver_LeavesDriverNull_AndWarns()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var elby = db.Drivers.Single(d => d.DriverName == "Elby Sneller");
+            elby.SchoolBusEndorsement = false;
+            await db.SaveChangesAsync();
+        }
+
+        var service = new TripEventService(factory);
+        var csv = $"""
+            {FleetHeader}
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319198871,25,,338,Elby Sneller,25,,Sep 2026
+            """;
+
+        var result = await service.ImportBoardCsvAsync(csv);
+        Assert.That(result.Created, Is.EqualTo(1));
+        Assert.That(
+            result.Warnings.Any(w =>
+                w.Contains("Elby Sneller", StringComparison.Ordinal)
+                && w.Contains("school-bus endorsement", StringComparison.Ordinal)
+                && w.Contains("was not assigned", StringComparison.Ordinal)),
+            Is.True);
+
+        var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319198871");
+        Assert.That(trip.DriverId, Is.Null);
+        Assert.That(trip.VehicleId, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task ImportBoardCsv_UpdateBlankDriver_ClearsUnqualifiedIncumbent()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        var withDriver = $"""
+            {FleetHeader}
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319298871,25,,338,Elby Sneller,25,,Sep 2026
+            """;
+        await service.ImportBoardCsvAsync(withDriver);
+        var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319298871");
+        Assert.That(trip.DriverId, Is.Not.Null);
+
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var elby = db.Drivers.Single(d => d.DriverName == "Elby Sneller");
+            elby.SchoolBusEndorsement = false;
+            await db.SaveChangesAsync();
+        }
+
+        var blankDriver = $"""
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319298871,25,,338,,25,,Sep 2026
+            """;
+        var second = await service.ImportBoardCsvAsync(blankDriver);
+        Assert.That(
+            second.Warnings.Any(w =>
+                w.Contains("Elby Sneller", StringComparison.Ordinal)
+                && w.Contains("cleared", StringComparison.Ordinal)),
+            Is.True);
+
+        trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319298871");
+        Assert.That(trip.DriverId, Is.Null);
+    }
+
+    [Test]
+    public async Task ConfirmTripAsync_UnqualifiedDriver_Fails()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        int tripId;
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var dest = ValidatedDestination();
+            db.Destinations.Add(dest);
+            var driver = db.Drivers.First(d => d.DriverName == "Elby Sneller");
+            driver.SchoolBusEndorsement = false;
+            var bus = db.Buses.First(b => b.BusNumber == "25");
+            var trip = new TripEvent
+            {
+                ExternalTicketNo = "confirm-bad-driver",
+                TripDate = new DateTime(2026, 9, 5),
+                PickupTime = TimeSpan.FromHours(6),
+                ReturnClockTime = TimeSpan.FromHours(23),
+                DestinationName = dest.Name,
+                DestinationLocationId = dest.DestinationId,
+                DriverId = driver.DriverId,
+                VehicleId = bus.BusId,
+                Status = TripStatus.Assigned,
+                POCName = string.Empty
+            };
+            db.TripEvents.Add(trip);
+            await db.SaveChangesAsync();
+            tripId = trip.TripEventId;
+        }
+
+        var denied = await service.ConfirmTripAsync(tripId);
+        Assert.That(denied.IsFailure, Is.True);
+        Assert.That(denied.Error, Does.Contain("school-bus endorsement"));
+    }
+
+    [Test]
+    public async Task AddTripAsync_UnqualifiedDriver_Throws()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        int badDriverId;
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var driver = db.Drivers.First(d => d.DriverName == "Elby Sneller");
+            driver.SchoolBusEndorsement = false;
+            await db.SaveChangesAsync();
+            badDriverId = driver.DriverId;
+        }
+
+        var trip = new TripEvent
+        {
+            ExternalTicketNo = "add-bad-driver",
+            TripDate = new DateTime(2026, 9, 5),
+            DriverId = badDriverId,
+            Status = TripStatus.Draft,
+            POCName = string.Empty
+        };
+
+        AsyncTestDelegate act = async () => await service.AddTripAsync(trip);
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(act);
+        Assert.That(ex!.Message, Does.Contain("school-bus endorsement"));
+    }
+
+    [Test]
+    public async Task UpdateTripAsync_KeepingUnqualifiedDriver_AllowsGrandfather()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        TripEvent saved;
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var driver = db.Drivers.First(d => d.DriverName == "Elby Sneller");
+            var trip = new TripEvent
+            {
+                ExternalTicketNo = "keep-driver",
+                TripDate = new DateTime(2026, 9, 5),
+                DriverId = driver.DriverId,
+                Status = TripStatus.Assigned,
+                POCName = string.Empty
+            };
+            db.TripEvents.Add(trip);
+            await db.SaveChangesAsync();
+            saved = trip;
+        }
+
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var driver = db.Drivers.Single(d => d.DriverName == "Elby Sneller");
+            driver.SchoolBusEndorsement = false;
+            await db.SaveChangesAsync();
+        }
+
+        saved.GroupOrActivity = "Updated activity";
+        await service.UpdateTripAsync(saved);
+        var again = await service.GetTripByIdAsync(saved.TripEventId);
+        Assert.That(again!.DriverId, Is.EqualTo(saved.DriverId));
+        Assert.That(again.GroupOrActivity, Is.EqualTo("Updated activity"));
+    }
+
+    [Test]
     public async Task AddTrip_AllowsMissingInfoWithoutDestination()
     {
         var factory = new TestDbContextFactory(CreateOptions());
@@ -739,12 +916,23 @@ public class TripBoardImportTests
             new Bus { BusNumber = "Transit 1", Year = 2019, Make = "Ford", Model = "Transit", SeatingCapacity = 14, VINNumber = "VINT1", LicenseNumber = "LT1", Status = "Active" },
             new Bus { BusNumber = "EXP", Year = 2017, Make = "Chevy", Model = "Express", SeatingCapacity = 7, VINNumber = "VINEXP", LicenseNumber = "LEXP", Status = "Active" });
         db.Drivers.AddRange(
-            new Driver { DriverName = "Elby Sneller", DriversLicenceType = "B" },
-            new Driver { DriverName = "Steve McKitrick", DriversLicenceType = "B" },
-            new Driver { DriverName = "Rod Jagers", DriversLicenceType = "B" },
-            new Driver { DriverName = "Tim Weeks", DriversLicenceType = "B" });
+            QualifiedTripDriver("Elby Sneller"),
+            QualifiedTripDriver("Steve McKitrick"),
+            QualifiedTripDriver("Rod Jagers"),
+            QualifiedTripDriver("Tim Weeks"));
         await db.SaveChangesAsync();
     }
+
+    private static Driver QualifiedTripDriver(string name) => new()
+    {
+        DriverName = name,
+        DriversLicenceType = "CDL",
+        LicenseClass = "Class B",
+        SchoolBusEndorsement = true,
+        TrainingComplete = true,
+        Status = "Active",
+        LicenseExpiryDate = DateTime.Today.AddYears(1)
+    };
 
     private static Destination ValidatedDestination(
         string name = "Strasburg HS",

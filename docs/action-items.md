@@ -36,7 +36,7 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
 
-**Verdict:** Ship-ready for clerk Core. **Next:** Medium #118 (special-needs aide) after #114. #108 / #116 parked. Do not drop SchoolCalendar / AIInsights without an explicit decision.
+**Verdict:** Ship-ready for clerk Core. **Next:** land #114 (school-bus endorsement), then Medium cards on board #104. #108 / #116 stay parked. Do not drop `SchoolCalendar` / `AIInsights` without an explicit product decision (#111 keep-schema).
 
 **Open boxes on this file:** Route FK name-string drop (#108). Attendance #109 and fleet chrome #115 done — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
@@ -156,6 +156,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **PDF:** stop sheet prints **Aide** meta line only when set.
 - **Generate Routes:** does not invent an aide (determination never writes `AideName`).
 - **Migration:** `20261101120000_RouteAideName`.
+
+### 2026-10-31 — Issue #114 school-bus endorsement gate
+
+- **Gate:** `DriverStudentRouteEligibility` — Active, training complete, license not expired, Class A/B, `SchoolBusEndorsement`.
+- **Writers:** `RouteService.AssignDriverToRouteAsync`, `UpdateRouteAsync` (new AM/PM FK only), `DriverService.AssignDriverToRouteAsync`, trip add/update + board import.
+- **UI:** Driver form checkbox; Drivers grid Home Route Warning (does not clear route FKs).
+- **Migration:** `20261031200000_DriverSchoolBusEndorsement` (+ Endorsements text backfill).
+- **Do not:** drop SchoolCalendar / AIInsights on this queue; do not wipe home-route driver FKs on expiry.
 
 ### 2026-10-31 — Issue #115 fleet chrome Bus names + one editor
 

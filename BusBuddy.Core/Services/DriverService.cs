@@ -537,15 +537,6 @@ namespace BusBuddy.Core.Services
                         return false;
                     }
 
-                    if (driver.Status != "Active" || !driver.TrainingComplete || driver.LicenseStatus == "Expired")
-                    {
-                        Logger.Warning("Driver {DriverId} is not qualified for assignment", driverId);
-                        throw new InvalidOperationException("Driver is not qualified for assignment: " +
-                            (driver.Status != "Active" ? "inactive status" :
-                             !driver.TrainingComplete ? "training incomplete" :
-                             "expired license"));
-                    }
-
                     var route = await context.Routes.FindAsync(routeId);
                     if (route == null)
                     {
@@ -553,7 +544,31 @@ namespace BusBuddy.Core.Services
                         return false;
                     }
 
+                    var alreadyOnSlot = isAMRoute
+                        ? route.AMDriverId == driverId
+                        : route.PMDriverId == driverId;
+
+                    // Match RouteService: re-applying the incumbent is allowed (grandfather).
+                    if (!alreadyOnSlot
+                        && DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out var blockReason))
+                    {
+                        Logger.Warning(
+                            "Driver {DriverId} is not qualified for assignment: {Reason}",
+                            driverId,
+                            blockReason);
+                        throw new InvalidOperationException(
+                            "Driver is not qualified for assignment: " + blockReason);
+                    }
+
                     routeDate = route.Date;
+
+                    if (!alreadyOnSlot
+                        && !await IsDriverAvailableForRouteAsync(driverId, routeDate, isAMRoute))
+                    {
+                        Logger.Warning("Driver {DriverId} is already assigned to another route on {Date}",
+                            driverId, routeDate.ToShortDateString());
+                        throw new InvalidOperationException("Driver is already assigned to another route at this time");
+                    }
                 }
                 finally
                 {
@@ -561,13 +576,6 @@ namespace BusBuddy.Core.Services
                     {
                         await context.DisposeAsync();
                     }
-                }
-
-                if (!await IsDriverAvailableForRouteAsync(driverId, routeDate, isAMRoute))
-                {
-                    Logger.Warning("Driver {DriverId} is already assigned to another route on {Date}",
-                        driverId, routeDate.ToShortDateString());
-                    throw new InvalidOperationException("Driver is already assigned to another route at this time");
                 }
 
                 var slot = isAMRoute ? RouteTimeSlot.AM : RouteTimeSlot.PM;
