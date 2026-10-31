@@ -8,6 +8,10 @@
 >
 > Reviewer? Start with [docs/instructor-packet/](docs/instructor-packet/README.md).
 
+### Threat model (clerk workstation)
+
+BusBuddy is a **single locked-down clerk PC** app. There is **no in-app login**. The Windows session account is the audit actor (`IUserContextService.HasOperatorIdentity` / `GetCurrentUserForAudit`). Anyone who can launch the app and reach Postgres can read and change student PII — protect the machine and the database, not a login dialog. Multi-user auth is a separate product decision; do not treat operator identity as authentication. Domain rule: [specs/README.md](specs/README.md).
+
 ## 🎯 **Project Vision**
 
 BusBuddy streamlines school transportation operations through intelligent route management, vehicle tracking, and student assignment systems. Built with modern .NET technologies, professional-grade UI components, and state-of-the-art PowerShell 7.5.2 automation with machine-specific hyperthreading optimization.

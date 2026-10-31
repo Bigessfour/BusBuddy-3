@@ -81,6 +81,16 @@
       "kind": "tooling",
       "paths": ["Tools/SfMapTileProbe"],
       "reason": "OSM allowed only in the Syncfusion isolation probe. Product WPF/Core must stay Google-only."
+    },
+    {
+      "id": "no-app-login",
+      "kind": "spec-deferral",
+      "symbols": [
+        "IsAuthenticated",
+        "HasOperatorIdentity",
+        "IUserContextService"
+      ],
+      "reason": "Issue #138: single locked-down clerk PC. Windows session account is the audit actor. HasOperatorIdentity is not authentication. In-app login is out of project-done scope unless a later product decision overturns specs/README.md."
     }
   ],
   "action_item_nonblocking": [

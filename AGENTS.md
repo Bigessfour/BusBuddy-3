@@ -45,6 +45,8 @@ Before architectural, auth, CI, or cross-cutting changes:
 
 ## Secrets & authentication
 
+**App login:** none. Threat model is a single locked-down clerk PC; `IUserContextService` stores the Windows session account for audit fields only (`HasOperatorIdentity` is not authentication). See [specs/README.md](specs/README.md) and [#138](https://github.com/Bigessfour/BusBuddy-3/issues/138).
+
 ### macOS Passwords (entry Name = env var)
 
 Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.

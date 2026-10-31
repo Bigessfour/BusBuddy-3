@@ -402,16 +402,21 @@ public class DatabasePerformanceOptimizer
 
 ### **UserContextService**
 
+Workstation operator identity for audit columns. **Not authentication.** Default bind is `Environment.UserName`. See [specs/README.md](../../specs/README.md) threat-model hard rule and issue #138.
+
 ```csharp
 /// <summary>
-/// User session and context management
+/// Operator identity for CreatedBy / UpdatedBy on a single-clerk PC.
 /// </summary>
 public class UserContextService : IUserContextService
 {
-    public Task<UserContext> GetCurrentUserContextAsync();
-    public Task<bool> SetUserPreferencesAsync(UserPreferences preferences);
-    public Task<List<UserRole>> GetUserRolesAsync(string userId);
-    public Task<bool> HasPermissionAsync(string userId, string permission);
+    string CurrentUserId { get; }
+    string CurrentUserName { get; }
+    string CurrentUserEmail { get; }
+    bool HasOperatorIdentity { get; } // bound identity — not an auth check
+    void SetCurrentUser(string userId, string userName, string userEmail);
+    void ClearCurrentUser(); // audit falls back to "SYSTEM"
+    string GetCurrentUserForAudit();
 }
 ```
 

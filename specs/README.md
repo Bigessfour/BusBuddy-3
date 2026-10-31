@@ -40,6 +40,7 @@ Students (who rides)
 - **Live fleet GPS is deferred.** Do not enable `IsLiveTrackingEnabled` to “finish” the map.
 - Plot only **validated** lat/lng. No 0,0 pins, no US centroid guesses.
 - **Never commit student PII** (names, addresses, rosters). Load through clerk forms; keep paper/Excel rosters local.
+- **Threat model:** single locked-down clerk PC. The Windows session account is the audit actor (`IUserContextService`). There is no in-app login. Do not treat `HasOperatorIdentity` as authentication, and do not add OAuth / role tables / a login dialog unless a new product decision overturns this.
 
 ## Code-first anchors
 
