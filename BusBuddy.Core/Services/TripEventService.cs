@@ -577,6 +577,28 @@ public sealed partial class TripEventService : ITripEventService
                 trip.DriverId = driver.DriverId;
             }
         }
+        else if (trip.DriverId is int existingDriverId)
+        {
+            // Blank driver cell on re-import: drop a stale unqualified assignment (#114).
+            var existing = drivers.FirstOrDefault(d => d.DriverId == existingDriverId);
+            string? clearReason = null;
+            if (existing is null)
+            {
+                clearReason = "was not found";
+            }
+            else if (DriverStudentRouteEligibility.TryGetAssignmentBlockReason(existing, out var staleReason))
+            {
+                clearReason = staleReason;
+            }
+
+            if (clearReason is not null)
+            {
+                trip.DriverId = null;
+                warnings.Add(
+                    $"Ticket {row.ExternalTicketNo}: previously assigned driver {(existing?.DriverName ?? existingDriverId.ToString())} "
+                    + $"{clearReason} and was cleared.");
+            }
+        }
     }
 
     private static async Task EnsureTripDriverIsQualifiedAsync(

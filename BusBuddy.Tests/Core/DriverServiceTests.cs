@@ -173,6 +173,19 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task AssignDriverToRouteAsync_ReapplyIncumbent_AllowsGrandfather()
+        {
+            await _driverService.AssignDriverToRouteAsync(1, 1, isAMRoute: true);
+
+            var incumbent = await _dbContext.Drivers.FindAsync(1);
+            incumbent!.SchoolBusEndorsement = false;
+            await _dbContext.SaveChangesAsync();
+
+            var ok = await _driverService.AssignDriverToRouteAsync(1, 1, isAMRoute: true);
+            ok.Should().BeTrue();
+        }
+
+        [Test]
         public async Task IsDriverAvailableForRouteAsync_ReturnsFalseWhenAlreadyAssigned()
         {
             // Assign driver 2 to AM Route 1
