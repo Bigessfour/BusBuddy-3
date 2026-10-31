@@ -508,8 +508,8 @@ namespace BusBuddy.Core.Services
                             EstimatedDuration = source.EstimatedDuration,
                             AMVehicleId = source.AMVehicleId,
                             PMVehicleId = source.PMVehicleId,
-                            AMDriverId = source.AMDriverId,
-                            PMDriverId = source.PMDriverId,
+                            AMDriverId = await EligibleDriverIdOrNullAsync(context, source.AMDriverId),
+                            PMDriverId = await EligibleDriverIdOrNullAsync(context, source.PMDriverId),
                             StopCount = stops.Count,
                             StudentCount = 0
                         };

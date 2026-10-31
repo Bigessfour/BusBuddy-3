@@ -5,6 +5,7 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core;
@@ -32,7 +33,8 @@ public class RouteDriverEligibilityTests
     public void SetUp()
     {
         _options = new DbContextOptionsBuilder<BusBuddyDbContext>()
-            .UseInMemoryDatabase($"RouteDriverCred_{Guid.NewGuid()}")
+            .UseInMemoryDatabase($"RouteDriverElig_{Guid.NewGuid()}")
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         using var db = new BusBuddyDbContext(_options);
@@ -120,6 +122,54 @@ public class RouteDriverEligibilityTests
         var stored = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == 1);
         stored.AMDriverId.Should().Be(1);
         stored.RouteName.Should().Be("AM Proof Renamed");
+    }
+
+    [Test]
+    public async Task CreateRouteAsync_UnqualifiedDriver_ReturnsFailure()
+    {
+        var route = new Route
+        {
+            RouteName = "New With Bad Driver",
+            Date = DateTime.UtcNow.Date.AddDays(1),
+            IsActive = true,
+            School = "T",
+            AMDriverId = 3
+        };
+
+        var result = await _routeService.CreateRouteAsync(route);
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("missing school-bus endorsement");
+    }
+
+    [Test]
+    public async Task CloneRouteAsync_DropsUnqualifiedDriver_KeepsEligible()
+    {
+        await using (var db = new BusBuddyDbContext(_options))
+        {
+            var source = await db.Routes.SingleAsync(r => r.RouteId == 1);
+            source.AMDriverId = 1;
+            source.PMDriverId = 3;
+            await db.SaveChangesAsync();
+        }
+
+        var result = await _routeService.CloneRouteAsync(1, DateTime.UtcNow.Date.AddDays(2), "Clone Proof");
+        result.IsSuccess.Should().BeTrue(because: result.Error);
+        result.Value!.AMDriverId.Should().Be(1);
+        result.Value.PMDriverId.Should().BeNull();
+    }
+
+    [Test]
+    public async Task AssignDriverToRouteAsync_ReapplyIncumbent_AllowsGrandfather()
+    {
+        await using (var db = new BusBuddyDbContext(_options))
+        {
+            var home = await db.Drivers.SingleAsync(d => d.DriverId == 1);
+            home.SchoolBusEndorsement = false;
+            await db.SaveChangesAsync();
+        }
+
+        var result = await _routeService.AssignDriverToRouteAsync(1, 1, RouteTimeSlot.AM);
+        result.IsSuccess.Should().BeTrue();
     }
 
     private static Driver Qualified(int id, string name) => new()

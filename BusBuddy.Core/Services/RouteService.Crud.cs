@@ -153,6 +153,17 @@ namespace BusBuddy.Core.Services
                             $"A route with name '{route.RouteName}' already exists for {route.Date:yyyy-MM-dd}");
                     }
 
+                    var driverGate = await GuardNewDriverAssignmentsAsync(
+                        context,
+                        previousAmDriverId: null,
+                        previousPmDriverId: null,
+                        route.AMDriverId,
+                        route.PMDriverId);
+                    if (driverGate is not null)
+                    {
+                        return Result.FailureResult<Route>(driverGate);
+                    }
+
                     context.Routes.Add(route);
                     await context.SaveChangesAsync();
 
@@ -287,6 +298,28 @@ namespace BusBuddy.Core.Services
 
             return await CheckNewAsync(previousAmDriverId, nextAmDriverId)
                 ?? await CheckNewAsync(previousPmDriverId, nextPmDriverId);
+        }
+
+        /// <summary>
+        /// Clone copies year-default drivers only when they still meet assignment eligibility.
+        /// Missing or unqualified drivers become null so the stop list still clones.
+        /// </summary>
+        private static async Task<int?> EligibleDriverIdOrNullAsync(BusBuddyDbContext context, int? driverId)
+        {
+            if (!driverId.HasValue)
+            {
+                return null;
+            }
+
+            var driver = await context.Drivers.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.DriverId == driverId.Value);
+            if (driver is null
+                || DriverStudentRouteEligibility.TryGetAssignmentBlockReason(driver, out _))
+            {
+                return null;
+            }
+
+            return driverId;
         }
 
         /// <summary>

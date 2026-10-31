@@ -203,6 +203,39 @@ public class TripBoardImportTests
     }
 
     [Test]
+    public async Task ImportBoardCsv_UnqualifiedDriver_LeavesDriverNull_AndWarns()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var elby = db.Drivers.Single(d => d.DriverName == "Elby Sneller");
+            elby.SchoolBusEndorsement = false;
+            await db.SaveChangesAsync();
+        }
+
+        var service = new TripEventService(factory);
+        var csv = $"""
+            {FleetHeader}
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319198871,25,,338,Elby Sneller,25,,Sep 2026
+            """;
+
+        var result = await service.ImportBoardCsvAsync(csv);
+        Assert.That(result.Created, Is.EqualTo(1));
+        Assert.That(
+            result.Warnings.Any(w =>
+                w.Contains("Elby Sneller", StringComparison.Ordinal)
+                && w.Contains("school-bus endorsement", StringComparison.Ordinal)
+                && w.Contains("was not assigned", StringComparison.Ordinal)),
+            Is.True);
+
+        var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319198871");
+        Assert.That(trip.DriverId, Is.Null);
+        Assert.That(trip.VehicleId, Is.Not.Null);
+    }
+
+    [Test]
     public async Task AddTrip_AllowsMissingInfoWithoutDestination()
     {
         var factory = new TestDbContextFactory(CreateOptions());
