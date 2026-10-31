@@ -9,7 +9,8 @@ cd "${ROOT}"
 
 SOLUTION="BusBuddy.sln"
 CONFIG="Release"
-TEST_FILTER='Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation|XamlCompliance|Theme)'
+# Same filter as .github/workflows/ci.yml — no FQN token allowlist (see issue #140).
+TEST_FILTER='Category!=Integration&Category!=InMemoryFlaky'
 
 echo "==> Docker: build Core image + Postgres health"
 docker compose --profile db --profile test build busbuddy-test
@@ -17,34 +18,34 @@ docker compose --profile db up -d postgres
 trap 'docker compose --profile db down' EXIT
 
 for _ in $(seq 1 30); do
-  if docker compose exec -T postgres pg_isready -U busbuddy >/dev/null 2>&1; then
-    break
-  fi
-  sleep 1
+	if docker compose exec -T postgres pg_isready -U busbuddy >/dev/null 2>&1; then
+		break
+	fi
+	sleep 1
 done
 docker compose exec -T postgres pg_isready -U busbuddy
 
 echo "==> Docker: verify Core build inside container"
 docker compose --profile db --profile test run --rm busbuddy-test \
-  dotnet build BusBuddy.Core/BusBuddy.Core.csproj \
-  -c "${CONFIG}" --no-restore -p:EnableWindowsTargeting=true -v minimal
+	dotnet build BusBuddy.Core/BusBuddy.Core.csproj \
+	-c "${CONFIG}" --no-restore -p:EnableWindowsTargeting=true -v minimal
 
 echo "==> Host: restore and build (compile gate)"
 dotnet restore "${SOLUTION}" -p:EnableWindowsTargeting=true --verbosity minimal
 dotnet build "${SOLUTION}" --configuration "${CONFIG}" --no-restore \
-  -p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false /p:WarningLevel=1
+	-p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false /p:WarningLevel=1
 
 OS_NAME="$(uname -s)"
-if [[ "${OS_NAME}" == "MINGW"* ]] || [[ "${OS_NAME}" == "MSYS"* ]] || [[ "${OS_NAME}" == "CYGWIN"* ]] || [[ "${OS_NAME}" == "Windows_NT" ]]; then
-  echo "==> Host: run tests (Windows — same filter as CI)"
-  dotnet test "${SOLUTION}" --configuration "${CONFIG}" --no-build \
-    --verbosity normal \
-    --filter "${TEST_FILTER}"
+if [[ ${OS_NAME} == "MINGW"* ]] || [[ ${OS_NAME} == "MSYS"* ]] || [[ ${OS_NAME} == "CYGWIN"* ]] || [[ ${OS_NAME} == "Windows_NT" ]]; then
+	echo "==> Host: run tests (Windows — same filter as CI)"
+	dotnet test "${SOLUTION}" --configuration "${CONFIG}" --no-build \
+		--verbosity normal \
+		--filter "${TEST_FILTER}"
 else
-  echo "==> Host: XAML theme compliance on ${OS_NAME} (net9.0 — no WindowsDesktop)"
-  dotnet test BusBuddy.XamlCompliance.Tests/BusBuddy.XamlCompliance.Tests.csproj \
-    --configuration "${CONFIG}" --no-build --verbosity normal
-  echo "==> Skipping WPF BusBuddy.Tests on ${OS_NAME}: requires Windows (CI runs on windows-latest)."
+	echo "==> Host: XAML theme compliance on ${OS_NAME} (net9.0 — no WindowsDesktop)"
+	dotnet test BusBuddy.XamlCompliance.Tests/BusBuddy.XamlCompliance.Tests.csproj \
+		--configuration "${CONFIG}" --no-build --verbosity normal
+	echo "==> Skipping WPF BusBuddy.Tests on ${OS_NAME}: requires Windows (CI runs on windows-latest)."
 fi
 
 echo "==> Local CI validation passed"

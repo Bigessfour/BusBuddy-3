@@ -146,6 +146,13 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — Issue #140 CI runs clerk and map WPF suites
+
+- **Change:** `.github/workflows/ci.yml` and `.github/scripts/validate-ci-local.sh` Test filter is now `Category!=Integration&Category!=InMemoryFlaky` only (FQN token allowlist removed).
+- **Why:** The old `FullyQualifiedName~Core|Seed|Student|Route|…` allowlist skipped ~164 tests (Map/Settings/MainWindow/Places/Trip/Activity/Dashboard/DriverSchedule).
+- **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'Category!=Integration&Category!=InMemoryFlaky'` → **Passed: 900, Failed: 0** (2026-10-31). Timeout left at 25 minutes.
+- **Out of scope (do not reopen this card for):** `TreatWarningsAsErrors`, vulnerable-package fail-closed.
+
 ### 2026-10-31 — Issue #138 single-clerk threat model (operator identity)
 
 - **Decision:** BusBuddy stays a single locked-down clerk PC. No in-app login. Windows session account is the audit actor.
