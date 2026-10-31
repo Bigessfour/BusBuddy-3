@@ -29,6 +29,7 @@ public class Bus : INotifyPropertyChanged
     private DateTime? _dateLastInspection;
     private int? _currentOdometer;
     private string _status = "Active";
+    private string? _fleetType;
     private DateTime? _purchaseDate;
     private decimal? _purchasePrice;
     private string? _insurancePolicyNumber;
@@ -377,7 +378,22 @@ public class Bus : INotifyPropertyChanged
 
     [StringLength(20)]
     [Display(Name = "Fleet Type")]
-    public string? FleetType { get; set; } // Regular, Special Needs, Activity, etc.
+    public string? FleetType
+    {
+        get => _fleetType;
+        set
+        {
+            var newValue = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            if (_fleetType == newValue)
+            {
+                return;
+            }
+
+            _fleetType = newValue;
+            OnPropertyChanged(nameof(FleetType));
+            OnPropertyChanged(nameof(VehicleKind));
+        }
+    } // Regular, Special Needs, Activity, etc.
 
     [Display(Name = "Fuel Capacity")]
     [Column(TypeName = "decimal(8,2)")]

@@ -79,7 +79,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         public ICommand LoadBusesCommand { get; }
         public ICommand AddBusCommand { get; }
-        public ICommand EditBusCommand { get; }
         public ICommand UpdateBusCommand { get; }
         public ICommand SaveBusCommand { get; }
         public ICommand DeleteBusCommand { get; }
@@ -93,7 +92,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
             LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync);
             AddBusCommand = new AsyncRelayCommand(AddBusDraftAsync);
-            EditBusCommand = new AsyncRelayCommand(EditBusAsync, CanEditBus);
             UpdateBusCommand = new AsyncRelayCommand(UpdateBusFromFormAsync, CanUpdateBus);
             SaveBusCommand = new AsyncRelayCommand(SaveBusAsync, CanSaveBus);
             DeleteBusCommand = new AsyncRelayCommand(DeleteBusAsync, CanDeleteBus);
@@ -131,7 +129,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         private void RefreshCommandStates()
         {
-            ((AsyncRelayCommand)EditBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)UpdateBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)SaveBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)DeleteBusCommand).NotifyCanExecuteChanged();
@@ -263,20 +260,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 IsBusy = false;
             }
 
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Focus the detail panel for the selected bus (selection already binds the form).
-        /// </summary>
-        private Task EditBusAsync()
-        {
-            if (SelectedBus == null)
-            {
-                return Task.CompletedTask;
-            }
-
-            StatusMessage = $"Editing bus {SelectedBus.BusNumber}";
             return Task.CompletedTask;
         }
 
@@ -542,14 +525,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
             SearchText = string.Empty;
             SelectedStatusFilter = "All Status";
             await LoadBusesAsync();
-        }
-
-        /// <summary>
-        /// Check if a bus can be edited
-        /// </summary>
-        private bool CanEditBus()
-        {
-            return SelectedBus != null && !IsBusy;
         }
 
         /// <summary>
