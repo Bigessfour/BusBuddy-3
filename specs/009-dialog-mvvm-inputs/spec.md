@@ -17,7 +17,7 @@ PR **#48** (`fix: data-entry forms audit + Maps Platform key wiring`) is merged.
 | Route edit / builder UserControls | `RouteEditDialog` (+ `.xaml.cs`) + `RouteForm` exist; no live navigation. `MainWindowClerkPathTests.RouteEditDialog_SaveCommandIsImplemented` still reads those files.                                                             | **Delete** both (and unused `RouteEditDialogViewModel`) **and** update that clerk-path test in Wave 1                                                                     |
 | Bus add/edit dialog               | `BusEditDialog` is code-behind (`SfTextBoxExt` names + Click); VM unused, namespace `ViewModels.BusManagement`                                                                                                                     | Bind XAML to `BusEditDialogViewModel` in `ViewModels.Bus`                                                                                                                 |
 | Fuel record dialog                | Live; `DataContext = this` on the Window; TwoWay bindings present on several fields                                                                                                                                                | TwoWay confirm (Wave 2); dedicated VM later (Wave 3)                                                                                                                      |
-| Vehicle add/edit window           | `VehicleForm` hosts `VehicleManagementView` (fleet grid)                                                                                                                                                                           | Host **BusForm** (add/edit), not the fleet grid                                                                                                                           |
+| Vehicle add/edit window           | `VehicleForm` hosts `BusManagementView` (fleet grid)                                                                                                                                                                               | Host **BusForm** (add/edit), not the fleet grid                                                                                                                           |
 | ComboBoxAdv                       | **DriverForm already** `ItemsSource` + `SelectedItem` (no WPF `ComboBoxItem`, no `SelectedValuePath=Content`). StudentForm still has nested PriorityBinding ItemsSource on Grade/State and `SelectedValuePath=RouteName` on AM/PM. | Keep DriverForm as-is. Other in-scope forms: ItemsSource + SelectedItem (+ DisplayMemberPath for objects). Ban WPF ComboBoxItem children and `SelectedValuePath=Content`. |
 | Field chrome                      | DriverForm local `FieldInputStyle` is Height **40**, Padding 8,5. Clerk-path tests assert `Height="40"`. StudentForm / SchoolDestinationForm also Height **40**.                                                                   | Shared `FieldInputStyle`: Height=**40**, Padding=8,5 (match PR #48 + clerk-path tests). Do **not** standardize on Height 32 unless the user explicitly overrides.         |
 | School destination                | `SchoolDestinationForm` (+ VM) exists on `master`                                                                                                                                                                                  | Wave 4 hygiene; do not treat as absent                                                                                                                                    |
@@ -56,10 +56,10 @@ Live route work stays on Route Assignment / Route Management. Do not reimplement
 
 ### 4. VehicleForm hosts BusForm (add/edit)
 
-- `VehicleForm` MUST host **BusForm**, not `VehicleManagementView`.
-- Fleet grid stays on `VehicleManagementView` / `VehiclesView` / the MainWindow Buses window.
+- `VehicleForm` MUST host **BusForm**, not `BusManagementView`.
+- Fleet grid stays on `BusManagementView` / `VehiclesView` / the MainWindow Buses window.
 - `BusForm` is a `ChromelessWindow`. Wave 3 may extract a shared user-control surface or have `VehicleForm` show/host BusForm without nesting two windows incorrectly.
-- No `new VehicleForm(` callers today; still retarget the host so leftover/future navigation cannot open the fleet grid as a “form.”
+- No `new BusFleetWindow(` callers today; still retarget the host so leftover/future navigation cannot open the fleet grid as a “form.”
 
 ### 5. ComboBoxAdv pattern
 
@@ -107,13 +107,13 @@ As a clerk adding or editing a bus, fields I type (number, make, model, year, se
 
 **Why this priority**: Unbound BusEditDialog and VehicleForm-as-grid are the main MVVM gaps on the fleet path.
 
-**Independent Test**: BusEditDialog XAML uses `{Binding}` to `BusEditDialogViewModel` in namespace `ViewModels.Bus`. VehicleForm content is BusForm (add/edit), not VehicleManagementView. Fleet grid still opens from Buses / VehiclesView.
+**Independent Test**: BusEditDialog XAML uses `{Binding}` to `BusEditDialogViewModel` in namespace `ViewModels.Bus`. VehicleForm content is BusForm (add/edit), not BusManagementView. Fleet grid still opens from Buses / VehiclesView.
 
 **Acceptance Scenarios**:
 
 1. **Given** BusEditDialog is shown with an existing bus, **When** the clerk changes seating capacity and Save, **Then** the ViewModel (not code-behind TextBox names) supplies the saved values.
 2. **Given** VehicleForm is opened, **When** the window loads, **Then** the clerk sees BusForm add/edit fields, not the fleet SfDataGrid.
-3. **Given** MainWindow Buses (or VehiclesView), **When** the clerk opens fleet management, **Then** VehicleManagementView still lists buses.
+3. **Given** MainWindow Buses (or VehiclesView), **When** the clerk opens fleet management, **Then** BusManagementView still lists buses.
 
 ---
 
@@ -150,7 +150,7 @@ As a clerk, status, school, bus, and similar dropdowns show a list and keep the 
 ### Edge Cases
 
 - BusEditDialog remains unreachable from UI if fleet CRUD never constructs `BusManagementViewModel` — still KEEP and bind; do not delete. VM smoke may note “unreachable until fleet wires it.”
-- VehicleForm has no `new VehicleForm(` callers — still retarget host.
+- VehicleForm has no `new BusFleetWindow(` callers — still retarget host.
 - Nested ChromelessWindow (VehicleForm hosting BusForm as another window) is invalid; extract a user control or replace VehicleForm content without two chrome windows.
 - StudentForm AM/PM `SelectedValuePath="RouteName"` is not the banned Content pattern.
 - MapView / MainWindow `ComboBoxItemAdv` children are out of scope (do not rewrite as ItemsSource in this feature).
@@ -166,7 +166,7 @@ As a clerk, status, school, bus, and similar dropdowns show a list and keep the 
 - **FR-003**: `BusEditDialog` MUST set DataContext to `BusEditDialogViewModel` and bind fields TwoWay; Save/Cancel MUST use VM commands (not named-control click copy).
 - **FR-004**: Types under `BusBuddy.WPF/ViewModels/Bus/` MUST use namespace `BusBuddy.WPF.ViewModels.Bus` (not `ViewModels.BusManagement`).
 - **FR-005**: Wave 2 MAY complete TwoWay bindings on `FuelDialog` while the Window remains DataContext; Wave 3 MUST introduce `FuelDialogViewModel` and stop `DataContext = this`.
-- **FR-006**: `VehicleForm` MUST host BusForm add/edit content, not `VehicleManagementView`. Fleet listing MUST remain on VehicleManagementView / VehiclesView / MainWindow Buses.
+- **FR-006**: `VehicleForm` MUST host BusForm add/edit content, not `BusManagementView`. Fleet listing MUST remain on BusManagementView / VehiclesView / MainWindow Buses.
 - **FR-007**: ComboBoxAdv on in-scope forms MUST use ItemsSource + SelectedItem (DisplayMemberPath for objects). WPF ComboBoxItem children and `SelectedValuePath=Content` are forbidden on those forms. DriverForm already satisfies this on `master`.
 - **FR-008**: Shared `FieldInputStyle` MUST set Height=40, Padding=8,5 to match PR #48 and clerk-path tests. Wave 5 applies it; earlier waves MUST NOT standardize on Height=32.
 - **FR-009**: UI MUST remain Syncfusion-only for ComboBoxAdv, SfMaskedEdit, ButtonAdv, SfDatePicker, and DoubleTextBox (no stock WPF replacements).
@@ -177,7 +177,7 @@ As a clerk, status, school, bus, and similar dropdowns show a list and keep the 
 - **Keep-and-bind dialog**: BusEditDialog, FuelDialog, DriverForm, BusForm — live or reserved surfaces that agents must not delete.
 - **Delete-orphan**: RouteEditDialog, RouteForm, RouteEditDialogViewModel — no live constructor/navigation.
 - **Host window**: VehicleForm — add/edit host, not fleet grid.
-- **Fleet grid**: VehicleManagementView / VehiclesView — listing only.
+- **Fleet grid**: BusManagementView / VehiclesView — listing only.
 
 ## Success Criteria _(mandatory)_
 
@@ -203,7 +203,7 @@ As a clerk, status, school, bus, and similar dropdowns show a list and keep the 
 - Route Assignment drag-drop, Maps/007, Earth Engine.
 - Replacing Syncfusion inputs with stock WPF.
 - Rewriting DriverForm ComboBoxAdv / option lists (done on `master`).
-- Deleting BusEditDialog, FuelDialog, DriverForm, RouteStopsEditor, or VehicleManagementView (grid).
+- Deleting BusEditDialog, FuelDialog, DriverForm, RouteStopsEditor, or BusManagementView (grid).
 - `specify init --here --force`.
 - Rewriting MainWindow theme ComboBoxAdv or MapView interval ComboBoxItemAdv.
 - Wave 1 XAML/C# in the Wave 0 PR.

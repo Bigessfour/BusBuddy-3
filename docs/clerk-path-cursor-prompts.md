@@ -401,7 +401,7 @@ Goal
 
 Code anchors:
 - IBusService, Core Bus
-- VehicleManagementView / VehicleManagementViewModel (live surface)
+- BusManagementView / BusManagementViewModel (live surface)
 - Route capacity check on assign / auto-assign
 
 Do not:

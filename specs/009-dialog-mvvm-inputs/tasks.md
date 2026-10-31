@@ -86,7 +86,7 @@
 
 ## Wave 3 — FuelDialog VM + VehicleForm hosts BusForm (Priority: P1/P2)
 
-**Goal**: FuelDialog DataContext is a ViewModel. VehicleForm hosts BusForm add/edit, not VehicleManagementView. Do not nest two ChromelessWindows.
+**Goal**: FuelDialog DataContext is a ViewModel. VehicleForm hosts BusForm add/edit, not BusManagementView. Do not nest two ChromelessWindows.
 
 **Branch**: `feature/009-w3-fuel-vm-vehicleform`
 
@@ -98,8 +98,8 @@
 - [x] T021 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs` — stop `DataContext = this`; construct/assign FuelDialogViewModel. **On `master`:** `DataContext = _viewModel`. Supersedes Wave 2 T012's "may remain".
 - [x] T022 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml` — bindings target the new VM (no Window-as-VM). **On `master`:** `DialogTitle`, `FuelLocations`, `SelectedBus`, and the numeric fields bind to `FuelDialogViewModel`.
 - [x] T023 [US3] `BusBuddy.WPF/ViewModels/Fuel/FuelManagementViewModel.cs` — **superseded on `master`:** the management view model constructs `FuelDialog(fuel, busService, locationCatalog, fuelService)`, and `FuelDialog` constructs `FuelDialogViewModel`. Services are not passed through a Window-as-VM. Do not rewrite this into a different constructor.
-- [ ] T024 [US2] `BusBuddy.WPF/Views/Vehicle/VehicleForm.xaml` — host BusForm add/edit; remove `VehicleManagementView` as content
-- [ ] T025 [US2] `BusBuddy.WPF/Views/Vehicle/VehicleForm.xaml.cs` — wire host (show BusForm or embedded user-control; no nested second ChromelessWindow)
+- [ ] T024 [US2] `BusBuddy.WPF/Views/Bus/BusFleetWindow.xaml` — host BusForm add/edit; remove `BusManagementView` as content
+- [ ] T025 [US2] `BusBuddy.WPF/Views/Bus/BusFleetWindow.xaml.cs` — wire host (show BusForm or embedded user-control; no nested second ChromelessWindow)
 - [ ] T026 [US2] `BusBuddy.WPF/Views/Bus/BusForm.xaml` — extract shared user-control surface **only if** required to host inside VehicleForm
 - [ ] T027 [US2] `BusBuddy.WPF/Views/Bus/BusForm.xaml.cs` — match extract/host change from T026 (skip if T026 unused)
 
@@ -181,7 +181,7 @@ Run inside the Windows guest after each wave’s Mac build is green (`./run-wpf.
 
 - [ ] FuelDialog — Add/Edit still works after VM extract
 - [ ] VehicleForm / BusForm add-edit — Add Bus or Vehicle Form shows **bus fields**, not the fleet grid
-- [ ] Fleet grid still opens from MainWindow Buses / VehiclesView (`VehicleManagementView`)
+- [ ] Fleet grid still opens from MainWindow Buses / VehiclesView (`BusManagementView`)
 
 ### Wave 4
 

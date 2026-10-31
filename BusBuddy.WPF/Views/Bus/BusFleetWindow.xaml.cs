@@ -1,27 +1,28 @@
 using System.Windows;
 using BusBuddy.WPF.Utilities;
-using BusBuddy.WPF.ViewModels.Vehicle;
+using BusBuddy.WPF.ViewModels.Bus;
 using Serilog;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Shared;
 
-namespace BusBuddy.WPF.Views.Vehicle
+namespace BusBuddy.WPF.Views.Bus
 {
     /// <summary>
-    /// Modal host for fleet CRUD. Content is always <see cref="VehiclesView"/> (which hosts <see cref="VehicleManagementView"/>).
+    /// Modal host for fleet CRUD. Content is always <see cref="BusesView"/> (hosts <see cref="BusManagementView"/>).
+    /// Not <c>BusForm</c> — that surface was removed; do not resurrect it.
     /// </summary>
-    public partial class VehicleForm : ChromelessWindow
+    public partial class BusFleetWindow : ChromelessWindow
     {
-        private static readonly ILogger Log = Serilog.Log.ForContext<VehicleForm>();
+        private static readonly ILogger Log = Serilog.Log.ForContext<BusFleetWindow>();
 
-        public VehicleForm() : this(VehicleManagementStartup.None)
+        public BusFleetWindow() : this(BusManagementStartup.None)
         {
         }
 
-        public VehicleForm(VehicleManagementStartup startup)
+        public BusFleetWindow(BusManagementStartup startup)
         {
             InitializeComponent();
-            Content = new VehiclesView(startup);
+            Content = new BusesView(startup);
             ApplySyncfusionTheme();
             Loaded += OnLoaded;
         }

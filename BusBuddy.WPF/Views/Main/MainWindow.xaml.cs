@@ -12,7 +12,7 @@ using BusBuddy.WPF.ViewModels.AIAssist;
 using BusBuddy.WPF.Views.Dashboard;
 using BusBuddy.WPF.ViewModels.Route; // Needed for RouteManagementViewModel reference
 using BusBuddy.WPF.ViewModels.Student;
-using BusBuddy.WPF.ViewModels.Vehicle;
+using BusBuddy.WPF.ViewModels.Bus;
 using BusBuddy.WPF.Views.Student;
 using BusBuddy.WPF.Views.Driver;
 using BusBuddy.WPF.ViewModels.Driver;
@@ -20,7 +20,7 @@ using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Activity;
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Settings;
-using BusBuddy.WPF.Views.Vehicle;
+using BusBuddy.WPF.Views.Bus;
 using BusBuddy.WPF.Views.Reports;
 using BusBuddy.WPF.Views.Fuel;
 using BusBuddy.WPF.Views.Maintenance;
@@ -892,7 +892,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Buses navigation requested");
             try
             {
-                VehicleFleetLauncher.ShowDialog(this);
+                BusFleetLauncher.ShowDialog(this);
                 RefreshBusesGrid();
             }
             catch (Exception ex)
@@ -1037,13 +1037,13 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
-                VehicleFleetLauncher.ShowDialog(this, VehicleManagementStartup.AddVehicle);
+                BusFleetLauncher.ShowDialog(this, BusManagementStartup.AddBus);
                 RefreshBusesGrid();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening vehicle fleet for add bus");
-                MessageBox.Show($"Error opening vehicle management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Error opening bus fleet for add bus");
+                MessageBox.Show($"Error opening bus management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

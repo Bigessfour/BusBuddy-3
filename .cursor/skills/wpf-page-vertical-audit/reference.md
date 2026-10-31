@@ -126,26 +126,26 @@ C:\dev\logs\   (if copied manually)
 
 ## Vehicle views folder (`Views/Vehicle/`)
 
-| Surface                 | Role                     | Status                             |
-| ----------------------- | ------------------------ | ---------------------------------- |
-| `VehicleManagementView` | Fleet CRUD (grid+detail) | **Canonical** surface              |
-| `VehicleForm`           | ChromelessWindow host    | Hosts `VehicleManagementView`      |
-| `VehiclesView`          | Navigation stub          | Embeds `VehicleManagementView`     |
-| ~~`BusForm`~~           | Removed 2026-09-03       | Use `VehicleFleetLauncher` instead |
+| Surface             | Role                     | Status                         |
+| ------------------- | ------------------------ | ------------------------------ |
+| `BusManagementView` | Fleet CRUD (grid+detail) | **Canonical** surface          |
+| `VehicleForm`       | ChromelessWindow host    | Hosts `BusManagementView`      |
+| `VehiclesView`      | Navigation stub          | Embeds `BusManagementView`     |
+| ~~`BusForm`~~       | Removed 2026-09-03       | Use `BusFleetLauncher` instead |
 
-**Single entry:** `VehicleFleetLauncher.ShowDialog(owner, startup)` — MainWindow, QuickActions, Dashboard.
+**Single entry:** `BusFleetLauncher.ShowDialog(owner, startup)` — MainWindow, QuickActions, Dashboard.
 
 ### Vehicle code-complete checklist (2026-09-03)
 
-| Item                                                                   | Status              |
-| ---------------------------------------------------------------------- | ------------------- |
-| `VehicleManagementViewModel` save via `AddBusAsync` / `UpdateBusAsync` | Done                |
-| Delete via `DeleteBusAsync` (no in-memory-only delete)                 | Done                |
-| No client-invented `BusId` before persist                              | Done                |
-| Structured Serilog (`LogContext` + `BusId` / `BusNumber`)              | Done                |
-| `BusForm` removed; `VehicleFleetLauncher` unified entry                | Done                |
-| XAML polish (header, toolbar, VIN, empty state)                        | Done                |
-| VM smoke Hop 4 — add bus → Serilog `Added vehicle BusId=`              | **Windows VM only** |
+| Item                                                               | Status              |
+| ------------------------------------------------------------------ | ------------------- |
+| `BusManagementViewModel` save via `AddBusAsync` / `UpdateBusAsync` | Done                |
+| Delete via `DeleteBusAsync` (no in-memory-only delete)             | Done                |
+| No client-invented `BusId` before persist                          | Done                |
+| Structured Serilog (`LogContext` + `BusId` / `BusNumber`)          | Done                |
+| `BusForm` removed; `BusFleetLauncher` unified entry                | Done                |
+| XAML polish (header, toolbar, VIN, empty state)                    | Done                |
+| VM smoke Hop 4 — add bus → Serilog `Added vehicle BusId=`          | **Windows VM only** |
 
 ### Known failure modes (P0 — fixed 2026-09-03)
 

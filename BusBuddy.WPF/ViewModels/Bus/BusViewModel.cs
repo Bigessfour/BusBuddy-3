@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace BusBuddy.WPF.ViewModels.Bus
 {
     /// <summary>
-    /// Clerk/view DTO for <see cref="Bus"/>. AutoMapper and BusEditDialog share this type.
+    /// Clerk/view DTO for <see cref="Bus"/>. AutoMapper maps Core <c>Bus</c> ↔ this type.
     /// </summary>
     public class BusViewModel : BaseViewModel
     {

@@ -36,9 +36,9 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
 
-**Verdict:** Ship-ready for clerk Core. **Next High:** [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) fleet chrome / Bus edit.
+**Verdict:** Ship-ready for clerk Core. **Next:** Medium cards on board #104 (e.g. #108 Route name strings) after #115 merges.
 
-**Open boxes on this file:** Route FK name-string drop (#108); fleet chrome / BusEditDialog (#115). `IStudentScheduleService` / attendance **dropped** (#109) — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
+**Open boxes on this file:** Route FK name-string drop (#108). Attendance #109 and fleet chrome #115 done — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
 ---
 
@@ -85,8 +85,8 @@ Parked (not ship-blocking) — hops 1–3 ribbon and hygiene (from PR #92 audit;
 
 - [x] **AddressService DI:** Retired `AddressService`. Grid validate uses Google Maps / geocode only (`IAddressValidationService`); format-only is not success.
 - [ ] Parked (not ship-blocking) Optional Hop 1–6 ribbon clicks on VM (Clerk path “After hops” boxes) — only if you want UI confirmation beyond DbPrep
-- [x] **IStudentScheduleService / attendance dropped (#109):** service, DI, model, and `StudentSchedules` table removed. Roster assignment stays `AmRouteId`/`PmRouteId`. Do not rebuild attendance.
-- [ ] Parked (not ship-blocking) **Fleet chrome filenames:** persist type is `Bus`; `VehicleForm` / `VehiclesView` / `AssignVehicleCommand` / SQL `Vehicles` are leftover names. Rename UI/SQL in a dedicated pass — do not add a `Vehicle` entity.
+- [x] **IStudentScheduleService / attendance dropped (#109):** see Done log / PR #146. Do not rebuild attendance.
+- [x] **Fleet chrome Bus names (#115):** `BusFleetLauncher` → `BusFleetWindow` → `BusesView` → `BusManagementView` is the only editor. Dead `BusEditDialog` / orphan VM removed. SQL `Vehicles` table and route `AssignVehicle*` names stay until a later migration/pass.
 
 ### Maps coupling checklist (harden / test)
 
@@ -149,6 +149,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — Issue #115 fleet chrome Bus names + one editor
+
+- **Keep:** `BusFleetLauncher` → `BusFleetWindow` → `BusesView` → `BusManagementView` / `BusManagementViewModel` (grid + detail Save via `IBusService`).
+- **Removed:** unreachable `BusEditDialog`, `BusEditDialogViewModel`, and the orphan pre-rename `BusManagementViewModel` that only opened that dialog.
+- **Not in this PR:** SQL `Vehicles` table rename; route `AssignVehicle*` command/API names.
+- **Proof:** Guest filter `MainWindowClerkPathTests|ActivityOperationalSurfaceTests|BusTerminology` → **Passed: 18, Failed: 0** (2026-10-31).
+- **Do not:** resurrect `BusForm` or wire a second bus editor.
+
 ### 2026-10-31 — Issue #109 drop StudentSchedule attendance
 
 - **Decision:** Attendance is not required in BusBuddy. Drop, do not wire a clerk surface.
@@ -156,7 +164,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Kept:** `StudentDeletionLog.ScheduleCount` column (always 0 for new deletes). Trip board stays on `TripEvent`.
 - **Delete path:** `ClearLegacyStudentSchedulesIfPresentAsync` clears Restrict-FK attendance rows if the table still exists (pre-migration window); no-op after drop / InMemory.
 - **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~StudentArchiveAndEligibility'` → **Passed: 40, Failed: 0** (2026-10-31).
-- **Do not reopen** as unfinished attendance. Next High: #115 fleet Bus edit opener.
+- **Do not reopen** as unfinished attendance.
 
 ### 2026-10-31 — Issue #143 README: live GPS is future, not enabled
 

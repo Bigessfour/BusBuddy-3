@@ -135,7 +135,7 @@ Verify every non-trivial property in XAML exists in Syncfusion 34.x API. Flag:
 
 Compare against a known-good surface of the same control family:
 
-- Grids: `StudentsView.xaml`, `VehicleManagementView.xaml`
+- Grids: `StudentsView.xaml`, `BusManagementView.xaml`
 - Charts: `StudentStatisticsPanel.xaml`, `AnalyticsDashboardView.xaml`
 - Forms: `SchoolDestinationForm.xaml` (note `PushFieldsToViewModel` pattern if bindings alone leave VM empty)
 
