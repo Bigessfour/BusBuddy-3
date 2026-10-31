@@ -159,6 +159,15 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — Issue #117 Confirmed → Changed keeps prior plan
+
+- **Design:** Prior-value snapshot columns on `TripEvent` (`Prior*`), not a history table. Captured when status leaves Confirmed for Changed; later Changed edits keep that confirmed snapshot. Live row stays the new plan.
+- **UI:** Trip board **Was (confirmed)** (`PriorPlanSummary`); edit dialog `PriorPlanDisplay`.
+- **Migration:** `20261102120000_TripEventPriorPlanSnapshot`.
+- **Invariant:** Route != Trip; Cancel / MissingInfo unchanged; #114 endorsement gates untouched.
+- **Proof:** Guest filter `TripBoardImportTests|TripEventEditDialogViewModelTests|ActivityOperationalSurfaceTests` → **Passed: 44, Failed: 0**.
+- **Follow-up:** `/code-review` after this first slice lands.
+
 ### 2026-10-31 — P2 Batch A inventory proof (Bus / Drivers / DriverForm)
 
 - **Surfaces proved:** `BusManagementView`(+VM wiring), `DriversView`(+VM home-route warning + command CanExecute), `DriverFormViewModel` Save carries `SchoolBusEndorsement`.

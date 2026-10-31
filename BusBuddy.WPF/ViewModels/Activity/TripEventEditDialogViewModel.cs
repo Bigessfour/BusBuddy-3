@@ -143,6 +143,12 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
 
     public string StatusDisplay => $"Status: {_original.Status}";
 
+    /// <summary>Confirmed plan before the edit that moved status to Changed (#117).</summary>
+    public string PriorPlanDisplay =>
+        _original.HasPriorPlan && !string.IsNullOrWhiteSpace(_original.PriorPlanSummary)
+            ? $"Was (confirmed): {_original.PriorPlanSummary}"
+            : string.Empty;
+
     public string PathMilesDisplay
     {
         get
@@ -790,6 +796,7 @@ public sealed class TripEventEditDialogViewModel : INotifyPropertyChanged
         EnsureInList(PurposeOptions, Purpose);
         EnsureInList(SportKinds, SportKind);
         OnPropertyChanged(nameof(StatusDisplay));
+        OnPropertyChanged(nameof(PriorPlanDisplay));
         OnPropertyChanged(nameof(PathMilesDisplay));
         OnPropertyChanged(nameof(DriverHoursDisplay));
     }

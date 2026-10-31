@@ -388,6 +388,8 @@ public sealed partial class TripEventService : ITripEventService
             trip.RouteId = null;
             await AttachValidatedTripPlaceAsync(context, trip, cancellationToken);
             ApplyBoardStatus(trip, previousStatus, previousBoard, isNew);
+            var priorCaptured = CapturePriorPlanIfLeavingConfirmed(
+                context, trip, previousStatus, previousBoard);
 
             if (trip.Status == TripStatus.MissingInfo)
             {
@@ -408,6 +410,11 @@ public sealed partial class TripEventService : ITripEventService
                 entry.Property(t => t.DestinationLocationId).IsModified = true;
                 entry.Property(t => t.Status).IsModified = true;
                 entry.Property(t => t.UpdatedDate).IsModified = true;
+                if (priorCaptured)
+                {
+                    MarkPriorPlanModified(entry);
+                }
+
                 updated++;
             }
         }
@@ -841,6 +848,86 @@ public sealed partial class TripEventService : ITripEventService
         }
 
         trip.Status = inferred;
+    }
+
+    /// <summary>
+    /// Spec: Changed keeps prior place/times/bus/driver. Capture when leaving Confirmed
+    /// (not on later Changed edits, Cancel, or MissingInfo). Live row stays the new plan.
+    /// Re-confirm then change again refreshes the snapshot from that confirmed plan.
+    /// </summary>
+    private static bool CapturePriorPlanIfLeavingConfirmed(
+        BusBuddyDbContext context,
+        TripEvent trip,
+        string? previousStatus,
+        BoardSnapshot? previousBoard,
+        Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TripEvent>? entry = null)
+    {
+        if (previousStatus != TripStatus.Confirmed
+            || trip.Status != TripStatus.Changed
+            || previousBoard is not BoardSnapshot before)
+        {
+            return false;
+        }
+
+        trip.PriorPlanCapturedUtc = DateTime.UtcNow;
+        trip.PriorDestinationName = before.DestinationName;
+        trip.PriorOriginName = before.OriginName;
+        trip.PriorPickupTime = before.PickupTime;
+        trip.PriorReturnClockTime = before.ReturnClockTime;
+        trip.PriorReturnIsNextDay = before.ReturnIsNextDay;
+        trip.PriorVehicleId = before.VehicleId;
+        trip.PriorAssignedBusNumber = before.AssignedBusNumber;
+        trip.PriorDriverId = before.DriverId;
+        trip.PriorDriverName = ResolveDriverName(context, before.DriverId, trip.Driver);
+
+        if (entry is not null)
+        {
+            MarkPriorPlanModified(entry);
+        }
+
+        return true;
+    }
+
+    private static void MarkPriorPlanModified(
+        Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<TripEvent> entry)
+    {
+        entry.Property(t => t.PriorPlanCapturedUtc).IsModified = true;
+        entry.Property(t => t.PriorDestinationName).IsModified = true;
+        entry.Property(t => t.PriorOriginName).IsModified = true;
+        entry.Property(t => t.PriorPickupTime).IsModified = true;
+        entry.Property(t => t.PriorReturnClockTime).IsModified = true;
+        entry.Property(t => t.PriorReturnIsNextDay).IsModified = true;
+        entry.Property(t => t.PriorVehicleId).IsModified = true;
+        entry.Property(t => t.PriorAssignedBusNumber).IsModified = true;
+        entry.Property(t => t.PriorDriverId).IsModified = true;
+        entry.Property(t => t.PriorDriverName).IsModified = true;
+    }
+
+    private static string? ResolveDriverName(BusBuddyDbContext context, int? driverId, Driver? loaded)
+    {
+        if (loaded is not null && loaded.DriverId == driverId)
+        {
+            return Norm(loaded.DriverName);
+        }
+
+        if (driverId is not int id)
+        {
+            return null;
+        }
+
+        var name = context.Drivers.Local
+            .FirstOrDefault(d => d.DriverId == id)
+            ?.DriverName;
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            return Norm(name);
+        }
+
+        return Norm(
+            context.Drivers.AsNoTracking()
+                .Where(d => d.DriverId == id)
+                .Select(d => d.DriverName)
+                .FirstOrDefault());
     }
 
     private static bool IsTerminal(string? status) =>

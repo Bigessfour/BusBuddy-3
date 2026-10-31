@@ -68,7 +68,9 @@ public sealed partial class TripEventService
         ApplyLeaveReturn(existing);
         existing.UpdatedDate = DateTime.UtcNow;
         ApplyBoardStatus(existing, previousStatus, previousBoard, isNew: false);
+        // Prior* are not board columns: MarkBoardColumns would revert them if set earlier.
         MarkBoardColumns(entry);
+        CapturePriorPlanIfLeavingConfirmed(context, existing, previousStatus, previousBoard, entry);
     }
 
     private static void MarkBoardColumns(EntityEntry<TripEvent> entry)

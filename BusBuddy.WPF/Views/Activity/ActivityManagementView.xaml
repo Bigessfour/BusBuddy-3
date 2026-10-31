@@ -133,6 +133,7 @@
                 <syncfusion:GridTextColumn HeaderText="Return" MappingName="ReturnClockTime" Width="80"/>
                 <syncfusion:GridTextColumn HeaderText="Ticket #" MappingName="ExternalTicketNo" Width="110"/>
                 <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="110"/>
+                <syncfusion:GridTextColumn HeaderText="Was (confirmed)" MappingName="PriorPlanSummary" Width="280"/>
                 <syncfusion:GridTextColumn HeaderText="PAX" MappingName="PlannedHeadcount" Width="60"/>
                 <syncfusion:GridTextColumn HeaderText="Rode" MappingName="ActualHeadcount" Width="60"/>
                 <syncfusion:GridTextColumn HeaderText="Driver" MappingName="Driver.DriverName" Width="140"/>

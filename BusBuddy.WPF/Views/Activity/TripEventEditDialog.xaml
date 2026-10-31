@@ -38,11 +38,18 @@
         </Grid.RowDefinitions>
 
         <DockPanel Grid.Row="0" Margin="0,0,0,16" LastChildFill="True">
-            <TextBlock DockPanel.Dock="Right"
-                       Text="{Binding StatusDisplay, Mode=OneWay}"
-                       VerticalAlignment="Center"
-                       FontSize="14"
-                       Margin="16,0,0,0"/>
+            <StackPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding StatusDisplay, Mode=OneWay}"
+                           FontSize="14"
+                           HorizontalAlignment="Right"/>
+                <TextBlock Text="{Binding PriorPlanDisplay, Mode=OneWay}"
+                           FontSize="12"
+                           Opacity="0.85"
+                           TextWrapping="Wrap"
+                           MaxWidth="360"
+                           HorizontalAlignment="Right"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
             <StackPanel>
                 <TextBlock Text="{Binding DialogTitle}"
                            FontSize="22"
