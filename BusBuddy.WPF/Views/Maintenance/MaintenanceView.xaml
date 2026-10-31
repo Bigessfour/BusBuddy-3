@@ -1,4 +1,5 @@
 <UserControl x:Class="BusBuddy.WPF.Views.Maintenance.MaintenanceView"
+             x:Name="MaintenanceRoot"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -56,12 +57,13 @@
                                AutomationProperties.Name="Maintenance records grid">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="110" Pattern="ShortDate"/>
+                <!-- ElementName: GridComboBoxColumn is not under UserControl in the visual tree (Syncfusion). -->
                 <syncfusion:GridComboBoxColumn MappingName="VehicleId"
                                                HeaderText="Bus"
                                                Width="120"
                                                DisplayMemberPath="BusNumber"
                                                SelectedValuePath="BusId"
-                                               ItemsSource="{Binding DataContext.Vehicles, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               ItemsSource="{Binding DataContext.Vehicles, ElementName=MaintenanceRoot}"
                                                AllowEditing="True"/>
                 <syncfusion:GridNumericColumn MappingName="OdometerReading" HeaderText="Odometer" Width="100"/>
                 <syncfusion:GridTextColumn MappingName="MaintenanceCompleted" HeaderText="Work" Width="160"/>
@@ -70,12 +72,12 @@
                 <syncfusion:GridComboBoxColumn MappingName="Status"
                                                HeaderText="Status"
                                                Width="120"
-                                               ItemsSource="{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               ItemsSource="{Binding DataContext.StatusOptions, ElementName=MaintenanceRoot}"
                                                AllowEditing="True"/>
                 <syncfusion:GridComboBoxColumn MappingName="Priority"
                                                HeaderText="Priority"
                                                Width="100"
-                                               ItemsSource="{Binding DataContext.PriorityOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               ItemsSource="{Binding DataContext.PriorityOptions, ElementName=MaintenanceRoot}"
                                                AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="200"/>
             </syncfusion:SfDataGrid.Columns>

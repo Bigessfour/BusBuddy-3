@@ -80,6 +80,10 @@ namespace BusBuddy.WPF.Views.Main
                 // Explicit 'this.' to help certain analyzers/linkers detect generated partial method
                 this.InitializeComponent();
 
+                // Bind SfAIAssistView before MainWindow DataContext is applied so Messages/CurrentUser
+                // do not resolve against MainWindowViewModel (guest BindingExpression errors on launch).
+                EnsureAIAssistViewModel();
+
                 if (RouteAssignmentPaneView.DataContext is RouteAssignmentViewModel assignmentVm)
                 {
                     assignmentVm.RoutesGenerated += OnAssignmentRoutesGenerated;
@@ -215,21 +219,33 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         /// <summary>
-        /// Attach DI-backed AIAssistViewModel (Ollama) to the AutoHidden AI Assistant pane.
+        /// Attach DI-backed AIAssistViewModel (Ollama) to the AutoHidden AI Assistant pane
+        /// and the SfAIAssistView control (local DataContext so MainWindow VM inheritance cannot win).
         /// </summary>
         private void EnsureAIAssistViewModel()
         {
             try
             {
-                if (AIAssistPane?.DataContext is AIAssistViewModel)
+                if (AIAssistViewControl?.DataContext is AIAssistViewModel
+                    && AIAssistPane?.DataContext is AIAssistViewModel)
                 {
                     return;
                 }
 
                 var fromDi = App.ServiceProvider?.GetService<AIAssistViewModel>();
-                AIAssistPane.DataContext = fromDi ?? new AIAssistViewModel();
+                var vm = fromDi ?? new AIAssistViewModel();
+                if (AIAssistPane != null)
+                {
+                    AIAssistPane.DataContext = vm;
+                }
+
+                if (AIAssistViewControl != null)
+                {
+                    AIAssistViewControl.DataContext = vm;
+                }
+
                 Logger.Information(
-                    "AIAssistPane DataContext set ({Source})",
+                    "AIAssist DataContext set on pane+control ({Source})",
                     fromDi != null ? "DI/Ollama" : "parameterless-fallback");
             }
             catch (Exception ex)
@@ -237,7 +253,16 @@ namespace BusBuddy.WPF.Views.Main
                 Logger.Error(ex, "Failed to attach AIAssistViewModel; using offline fallback VM");
                 try
                 {
-                    AIAssistPane.DataContext = new AIAssistViewModel();
+                    var fallback = new AIAssistViewModel();
+                    if (AIAssistPane != null)
+                    {
+                        AIAssistPane.DataContext = fallback;
+                    }
+
+                    if (AIAssistViewControl != null)
+                    {
+                        AIAssistViewControl.DataContext = fallback;
+                    }
                 }
                 catch (Exception fallbackEx)
                 {
