@@ -16,6 +16,9 @@ public sealed class RouteSummarySheet
     public required string ServiceDate { get; init; }
     public required string DriverLabel { get; init; }
     public required string BusLabel { get; init; }
+
+    /// <summary>Special-needs aide name when set; null omits the PDF meta line.</summary>
+    public string? AideLabel { get; init; }
     public required string DepartureText { get; init; }
     public required string ArrivalText { get; init; }
     public required string TotalMilesText { get; init; }

@@ -499,6 +499,7 @@ namespace BusBuddy.Core.Services
                             School = source.School,
                             Session = source.Session,
                             IsSpecialNeedsRoute = source.IsSpecialNeedsRoute,
+                            AideName = source.AideName,
                             RouteDescription = source.RouteDescription,
                             Boundaries = source.Boundaries,
                             Path = source.Path,

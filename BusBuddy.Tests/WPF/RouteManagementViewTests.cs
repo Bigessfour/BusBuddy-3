@@ -22,6 +22,8 @@ public class RouteManagementViewTests
         Assert.That(xaml, Does.Contain("MappingName=\"Session\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AssignVehicleCommand}\""));
         Assert.That(xaml, Does.Contain("AllowEditing=\"True\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"IsSpecialNeedsRoute\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"AideName\""));
         Assert.That(xaml, Does.Contain("MappingName=\"AMVehicleId\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AvailableDrivers}\""));
         Assert.That(xaml, Does.Contain("SelectedValue=\"{Binding SelectedDriverId, Mode=TwoWay}\""));

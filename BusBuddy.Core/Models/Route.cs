@@ -18,6 +18,7 @@ public partial class Route : INotifyPropertyChanged
     private string? _description;
     private bool _isActive = true;
     private bool _isSpecialNeedsRoute;
+    private string? _aideName;
     private int? _studentCount;
     private int? _stopCount;
     private string? _school;
@@ -123,6 +124,30 @@ public partial class Route : INotifyPropertyChanged
                 {
                     Session = RouteSession.SpecialNeeds;
                 }
+                else
+                {
+                    AideName = null;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Aide / assistant name for a special-needs run (#118). Not a CDL driver record.
+    /// Clerk-entered only; Generate Routes does not invent an aide.
+    /// </summary>
+    [StringLength(100)]
+    [Display(Name = "Aide Name")]
+    public string? AideName
+    {
+        get => _aideName;
+        set
+        {
+            var next = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+            if (_aideName != next)
+            {
+                _aideName = next;
+                OnPropertyChanged();
             }
         }
     }

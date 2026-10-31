@@ -196,6 +196,13 @@ namespace BusBuddy.Core.Services
 
                     context.Entry(tracked).CurrentValues.SetValues(route);
 
+                    // Aide is only for special-needs runs (#118). Clear even if the grid
+                    // re-committed a stale Aide cell after Special Needs was unchecked.
+                    if (!tracked.IsSpecialNeedsRoute)
+                    {
+                        tracked.AideName = null;
+                    }
+
                     var renamed = !string.Equals(previousName, tracked.RouteName, StringComparison.Ordinal);
                     var sessionInputsChanged = renamed
                         || !string.Equals(previousDescription, tracked.Description, StringComparison.Ordinal)

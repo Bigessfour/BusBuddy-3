@@ -36,7 +36,7 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
 
-**Verdict:** Ship-ready for clerk Core. **Next:** Medium cards on board #104 (e.g. #108 Route name strings) after #115 merges.
+**Verdict:** Ship-ready for clerk Core. **Next:** Medium #118 (special-needs aide) after #114. #108 / #116 parked. Do not drop SchoolCalendar / AIInsights without an explicit decision.
 
 **Open boxes on this file:** Route FK name-string drop (#108). Attendance #109 and fleet chrome #115 done — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
@@ -148,6 +148,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-10-31 — Issue #118 special-needs route aide name
+
+- **Field:** `Route.AideName` (nullable string, max 100). Not a driver FK. Clearing Special Needs clears the aide.
+- **UI:** Route Management grid **Aide** column; Save Grid Changes persists via `UpdateRouteAsync`.
+- **PDF:** stop sheet prints **Aide** meta line only when set.
+- **Generate Routes:** does not invent an aide (determination never writes `AideName`).
+- **Migration:** `20261101120000_RouteAideName`.
 
 ### 2026-10-31 — Issue #115 fleet chrome Bus names + one editor
 

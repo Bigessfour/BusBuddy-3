@@ -15,6 +15,7 @@ internal sealed class RouteConfiguration : IEntityTypeConfiguration<Route>
         entity.Property(e => e.RouteName).IsRequired().HasMaxLength(50);
         entity.Property(e => e.Description).HasMaxLength(500);
         entity.Property(e => e.IsSpecialNeedsRoute).HasDefaultValue(false);
+        entity.Property(e => e.AideName).HasMaxLength(100);
         entity.Property(e => e.Session).IsRequired().HasMaxLength(20).HasDefaultValue(RouteSession.AM);
         entity.Property(e => e.AMVehicleId).HasColumnName("AMVehicleID");
         entity.Property(e => e.AMDriverId).HasColumnName("AMDriverID");
