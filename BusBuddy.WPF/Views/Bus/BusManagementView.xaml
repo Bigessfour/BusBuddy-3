@@ -49,14 +49,16 @@
             </Style>
 
             <Style x:Key="BusIntegerTextBox" TargetType="syncfusion:IntegerTextBox">
-                <Setter Property="Height" Value="42"/>
-                <Setter Property="MinHeight" Value="42"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="MinHeight" Value="40"/>
                 <Setter Property="Padding" Value="12,0,10,0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="FontFamily" Value="Segoe UI"/>
                 <Setter Property="FontSize" Value="14"/>
             </Style>
+
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -92,11 +94,6 @@
                                           Style="{StaticResource BusPrimaryButton}"
                                           AutomationProperties.Name="Add Bus"
                                           ToolTip="Create a new bus record"/>
-                    <syncfusion:ButtonAdv Label="Edit selected"
-                                          Command="{Binding EditBusCommand}"
-                                          Style="{StaticResource BusToolbarButton}"
-                                          AutomationProperties.Name="Edit selected bus"
-                                          ToolTip="Focus the detail panel for the selected row"/>
                     <syncfusion:ButtonAdv Label="Delete"
                                           Command="{Binding DeleteBusCommand}"
                                           Style="{StaticResource BusToolbarButton}"
@@ -154,7 +151,7 @@
                                    AutoGenerateColumns="False"
                                    AllowEditing="False"
                                    AllowSorting="True"
-                                   AllowFiltering="True"
+                                   AllowFiltering="False"
                                    ShowRowHeader="True"
                                    SelectionMode="Single"
                                    GridLinesVisibility="Horizontal"
@@ -230,7 +227,6 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -264,18 +260,22 @@
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="VIN:" Style="{StaticResource FormLabelStyle}"/>
                                 <syncfusion:SfTextBoxExt Grid.Row="4" Grid.Column="1"
                                                          Text="{Binding SelectedBus.VINNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Watermark="Optional VIN"
+                                                         Watermark="17-character VIN (required)"
                                                          AutomationProperties.Name="VIN Number"/>
 
                                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Capacity:" Style="{StaticResource FormLabelStyle}"/>
                                 <syncfusion:IntegerTextBox Grid.Row="5" Grid.Column="1"
                                                            Style="{StaticResource BusIntegerTextBox}"
+                                                           MinValue="1"
+                                                           MaxValue="100"
                                                            Value="{Binding SelectedBus.SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                            AutomationProperties.Name="Seating Capacity"/>
 
                                 <TextBlock Grid.Row="6" Grid.Column="0" Text="Year:" Style="{StaticResource FormLabelStyle}"/>
                                 <syncfusion:IntegerTextBox Grid.Row="6" Grid.Column="1"
                                                            Style="{StaticResource BusIntegerTextBox}"
+                                                           MinValue="1990"
+                                                           MaxValue="2030"
                                                            Value="{Binding SelectedBus.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                            AutomationProperties.Name="Year"/>
 
@@ -305,21 +305,6 @@
                                                           AutomationProperties.Name="Cancel bus edit"/>
                                 </StackPanel>
 
-                                <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2"
-                                            HorizontalAlignment="Center" Margin="0,12,0,0">
-                                    <StackPanel.Style>
-                                        <Style TargetType="StackPanel">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </StackPanel.Style>
-                                    <TextBlock Text="Processing..."
-                                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
-                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </ScrollViewer>
@@ -352,6 +337,17 @@
                     </TextBlock.Text>
                 </TextBlock>
             </Grid>
+        </Border>
+
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                Background="{DynamicResource BusBuddy.Brush.Overlay.Dim}"
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                IsHitTestVisible="True">
+            <syncfusion:SfBusyIndicator IsBusy="{Binding IsBusy}"
+                                        Header="{Binding StatusMessage}"
+                                        AutomationProperties.Name="Bus management busy"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </UserControl>

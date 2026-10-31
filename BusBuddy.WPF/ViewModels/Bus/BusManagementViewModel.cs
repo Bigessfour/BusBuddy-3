@@ -79,7 +79,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         public ICommand LoadBusesCommand { get; }
         public ICommand AddBusCommand { get; }
-        public ICommand EditBusCommand { get; }
         public ICommand UpdateBusCommand { get; }
         public ICommand SaveBusCommand { get; }
         public ICommand DeleteBusCommand { get; }
@@ -91,15 +90,14 @@ namespace BusBuddy.WPF.ViewModels.Bus
         {
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 
-            LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync);
-            AddBusCommand = new AsyncRelayCommand(AddBusDraftAsync);
-            EditBusCommand = new AsyncRelayCommand(EditBusAsync, CanEditBus);
+            LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync, () => !IsBusy);
+            AddBusCommand = new AsyncRelayCommand(AddBusDraftAsync, () => !IsBusy);
             UpdateBusCommand = new AsyncRelayCommand(UpdateBusFromFormAsync, CanUpdateBus);
             SaveBusCommand = new AsyncRelayCommand(SaveBusAsync, CanSaveBus);
             DeleteBusCommand = new AsyncRelayCommand(DeleteBusAsync, CanDeleteBus);
-            CancelEditCommand = new RelayCommand(CancelEdit);
-            SearchBusesCommand = new AsyncRelayCommand(SearchBusesAsync);
-            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+            CancelEditCommand = new RelayCommand(CancelEdit, () => !IsBusy);
+            SearchBusesCommand = new AsyncRelayCommand(SearchBusesAsync, () => !IsBusy);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => !IsBusy);
 
             _initialLoadTask = LoadBusesAsync();
         }
@@ -131,10 +129,26 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         private void RefreshCommandStates()
         {
-            ((AsyncRelayCommand)EditBusCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)LoadBusesCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)AddBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)UpdateBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)SaveBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)DeleteBusCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)SearchBusesCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)RefreshCommand).NotifyCanExecuteChanged();
+            (CancelEditCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        }
+
+        private bool TryBeginBusy()
+        {
+            if (IsBusy)
+            {
+                StatusMessage = "Please wait — another fleet action is still running";
+                return false;
+            }
+
+            IsBusy = true;
+            return true;
         }
 
         /// <summary>
@@ -142,11 +156,15 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// </summary>
         private async Task LoadBusesAsync()
         {
+            if (!TryBeginBusy())
+            {
+                return;
+            }
+
             using (LogContext.PushProperty("Operation", "LoadBuses"))
             {
                 try
                 {
-                    IsBusy = true;
                     StatusMessage = "Loading buses...";
                     Logger.Information("Loading buses from IBusService");
 
@@ -159,6 +177,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     }
 
                     ApplyFilters();
+                    ReselectBusAfterReload();
                     StatusMessage = $"Loaded {Buses.Count} buses";
                     Logger.Information("Loaded {BusCount} buses", Buses.Count);
                 }
@@ -172,6 +191,18 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     IsBusy = false;
                 }
             }
+        }
+
+        private void ReselectBusAfterReload()
+        {
+            var priorId = SelectedBus?.BusId ?? 0;
+            if (priorId <= 0)
+            {
+                SelectedBus = null;
+                return;
+            }
+
+            SelectedBus = Buses.FirstOrDefault(b => b.BusId == priorId);
         }
 
         /// <summary>
@@ -230,28 +261,40 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// </summary>
         private Task AddBusDraftAsync()
         {
+            if (!TryBeginBusy())
+            {
+                return Task.CompletedTask;
+            }
+
             try
             {
-                IsBusy = true;
                 StatusMessage = "Adding new bus...";
 
+                // Unique placeholders until the clerk fills plate/VIN — blank coerces to TEMP-*-000
+                // and collides on IX_Vehicles_LicenseNumber / IX_Vehicles_VINNumber.
+                var busNumber = NextDraftBusNumber();
+                var draftKey = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture)[..8].ToUpperInvariant();
                 var newBus = new BusBuddy.Core.Models.Bus
                 {
-                    BusNumber = NextDraftBusNumber(),
-                    Make = "",
-                    Model = "",
-                    LicenseNumber = "",
+                    BusNumber = busNumber,
+                    Make = "Unknown",
+                    Model = "Unknown",
+                    LicenseNumber = $"DRAFT-{draftKey}",
+                    VINNumber = $"DRAFT{draftKey}".PadRight(17, 'X')[..17],
                     SeatingCapacity = 40,
                     Year = DateTime.Now.Year,
                     Status = "Active",
                     FleetType = "Regular"
                 };
 
+                Buses.Add(newBus);
+                ApplyFilters();
                 SelectedBus = newBus;
                 StatusMessage = "Ready to add new bus - fill in details and click Save";
                 Logger.Information(
-                    "Prepared new bus draft BusNumber={BusNumber}",
-                    newBus.BusNumber);
+                    "Prepared new bus draft BusNumber={BusNumber} DraftKey={DraftKey}",
+                    newBus.BusNumber,
+                    draftKey);
             }
             catch (Exception ex)
             {
@@ -263,20 +306,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 IsBusy = false;
             }
 
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Focus the detail panel for the selected bus (selection already binds the form).
-        /// </summary>
-        private Task EditBusAsync()
-        {
-            if (SelectedBus == null)
-            {
-                return Task.CompletedTask;
-            }
-
-            StatusMessage = $"Editing bus {SelectedBus.BusNumber}";
             return Task.CompletedTask;
         }
 
@@ -297,6 +326,19 @@ namespace BusBuddy.WPF.ViewModels.Bus
             return string.Format(CultureInfo.InvariantCulture, "BUS{0:000}", next);
         }
 
+        private static bool LooksLikeDraftPlaceholder(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return true;
+            }
+
+            return value.StartsWith("DRAFT", StringComparison.OrdinalIgnoreCase)
+                   || value.StartsWith("TEMP-", StringComparison.OrdinalIgnoreCase)
+                   || value.StartsWith("TEMP-VIN-", StringComparison.OrdinalIgnoreCase)
+                   || value.StartsWith("TEMP-LIC-", StringComparison.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Save bus (add or update)
         /// </summary>
@@ -310,13 +352,17 @@ namespace BusBuddy.WPF.ViewModels.Bus
             var bus = SelectedBus;
             var isNew = bus.BusId == 0;
 
+            if (!TryBeginBusy())
+            {
+                return;
+            }
+
             using (LogContext.PushProperty("Operation", "SaveBus"))
             using (LogContext.PushProperty("BusId", bus.BusId))
             using (LogContext.PushProperty("BusNumber", bus.BusNumber))
             {
                 try
                 {
-                    IsBusy = true;
                     StatusMessage = "Saving bus...";
                     Logger.Information(
                         "Saving bus BusNumber={BusNumber} IsNew={IsNew}",
@@ -330,10 +376,28 @@ namespace BusBuddy.WPF.ViewModels.Bus
                         return;
                     }
 
+                    if (LooksLikeDraftPlaceholder(bus.LicenseNumber) || LooksLikeDraftPlaceholder(bus.VINNumber))
+                    {
+                        Logger.Warning(
+                            "Bus save blocked — draft License/VIN placeholders still present BusNumber={BusNumber}",
+                            bus.BusNumber);
+                        StatusMessage = "Enter a real license plate and VIN before saving";
+                        return;
+                    }
+
                     if (isNew)
                     {
                         var added = await _busService.AddBusAsync(bus);
-                        Buses.Add(added);
+                        var draftIndex = Buses.ToList().FindIndex(v => ReferenceEquals(v, bus) || (v.BusId == 0 && v.BusNumber == bus.BusNumber));
+                        if (draftIndex >= 0)
+                        {
+                            Buses[draftIndex] = added;
+                        }
+                        else
+                        {
+                            Buses.Add(added);
+                        }
+
                         SelectedBus = added;
                         Logger.Information(
                             "Added bus BusId={BusId} BusNumber={BusNumber}",
@@ -420,12 +484,16 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 return;
             }
 
+            if (!TryBeginBusy())
+            {
+                return;
+            }
+
             using (LogContext.PushProperty("Operation", "DeleteBus"))
             using (LogContext.PushProperty("BusId", busId))
             {
                 try
                 {
-                    IsBusy = true;
                     StatusMessage = $"Removing bus {busNumber}...";
                     Logger.Information(
                         "Deleting bus BusId={BusId} BusNumber={BusNumber}",
@@ -506,8 +574,10 @@ namespace BusBuddy.WPF.ViewModels.Bus
             if (SelectedBus.BusId == 0)
             {
                 Logger.Information("Cancelled unsaved bus draft");
+                Buses.Remove(SelectedBus);
                 SelectedBus = null;
                 _editSnapshot = null;
+                ApplyFilters();
                 StatusMessage = "Edit cancelled";
                 return;
             }
@@ -539,17 +609,14 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// </summary>
         private async Task RefreshAsync()
         {
+            if (IsBusy)
+            {
+                return;
+            }
+
             SearchText = string.Empty;
             SelectedStatusFilter = "All Status";
-            await LoadBusesAsync();
-        }
-
-        /// <summary>
-        /// Check if a bus can be edited
-        /// </summary>
-        private bool CanEditBus()
-        {
-            return SelectedBus != null && !IsBusy;
+            await LoadBusesAsync().ConfigureAwait(true);
         }
 
         /// <summary>
