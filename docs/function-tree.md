@@ -15,6 +15,9 @@ flowchart TB
     Reports[ReportsView]
     RouteAssign[RouteAssignmentView]
     RouteSched[RouteScheduleWindow]
+    RouteMgmt[RouteManagementView]
+    BusMgmt[BusManagementView]
+    DriversView[DriversView]
     Dashboard[DashboardView]
     MaintView[MaintenanceView]
     SchedView[DriverScheduleView]
@@ -30,6 +33,9 @@ flowchart TB
     ReportsSvc[OperationalReportService]
     Pdf[PdfReportService]
     DriverSvc[DriverService]
+    BusSvc[BusService]
+    TripEvt[TripEventService]
+    Eligibility[DriverStudentRouteEligibility]
     Sched[ScheduleService]
     Avail[DriverAvailabilityCalculator]
     Maint[MaintenanceService]
@@ -64,6 +70,12 @@ flowchart TB
   MaintView --> Maint
   SchedView --> Sched
   SchedView --> Avail
+  BusMgmt --> BusSvc
+  DriversView --> DriverSvc
+  DriversView --> Eligibility
+  RouteMgmt --> RouteSvc
+  RouteMgmt --> Eligibility
+  TripEvt --> Eligibility
   Opt --> RouteSvc
   RouteDet --> RouteSvc
   Theme --> ui

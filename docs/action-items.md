@@ -17,9 +17,9 @@
 
 **Project-done:** [done-checklist.md](./done-checklist.md) — `python3 .github/scripts/check-project-done.py`. Ship-ready is a subset. The project is done only when the checker exits 0.
 
-### Status snapshot (2026-10-31)
+### Status snapshot (2026-10-31 EOD)
 
-Branch **`master`** includes [PR #139](https://github.com/Bigessfour/BusBuddy-3/pull/139) (#138) and [PR #141](https://github.com/Bigessfour/BusBuddy-3/pull/141) (#140 CI filter). Prod walk Items 1–6 + Maps slice 1 are guest-proofed (Done log). **Do not reopen** those walks, #138, or #140 as unfinished work.
+Branch **`master`** tip includes High catch-up plus Medium #114 / #118. Prod walk Items 1–6 + Maps slice 1 are guest-proofed (Done log). **Do not reopen** those walks or closed Highs as unfinished work.
 
 Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (production-readiness) · [#104](https://github.com/Bigessfour/BusBuddy-3/issues/104) (undeveloped surfaces).
 
@@ -33,12 +33,17 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | Threat model (#138)             | **Met** — single clerk PC; `HasOperatorIdentity`; no in-app login                                            |
 | CI clerk/map suites (#140)      | **Met** — #141 merged; filter `Category!=Integration&Category!=InMemoryFlaky`. Do not restore FQN allowlist. |
 | README live GPS wording (#143)  | **Met** — GPS is future/deferred, not enabled                                                                |
+| Attendance drop (#109)          | **Met** — #146; do not rebuild `StudentSchedule*`                                                            |
+| Fleet Bus chrome (#115)         | **Met** — #147; one editor path; no second BusEditDialog                                                     |
+| Bus Management polish           | **Met** — #148 Syncfusion busy overlay / bindings                                                            |
+| School-bus endorsement (#114)   | **Met** — #149; fail-closed assign/confirm/import; grandfather incumbents                                    |
+| Special-needs aide (#118)       | **Met** — #150; `Route.AideName` + grid + stop-sheet meta                                                    |
 | a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
-| Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
+| Project-done checker            | Re-run after Medium catch-up; ship-ready ≠ checker 0                                                         |
 
-**Verdict:** Ship-ready for clerk Core. **Next:** Medium on board #104 — prefer #117 (confirmed trip keeps prior values). #108 / #116 parked. Do not drop `SchoolCalendar` / `AIInsights` without an explicit product decision (#111 keep-schema).
+**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **Next build card:** [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) (Confirmed → Changed keeps prior place/times/bus/driver). Then #113 (dated substitute) or #112 (duty events) — one at a time. **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
 
-**Open boxes on this file:** Route FK name-string drop (#108). Attendance #109 and fleet chrome #115 done — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
+**Open boxes on this file:** Parked #108 name-string drop; optional ribbon hops; Restore-only-if-needed orphans. Closed Highs/Mediums above — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
 ---
 
@@ -46,18 +51,23 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 
 ### Live leftover queue (ordered)
 
-Do in this order. Do **not** re-open completed prod-walk / Maps / #138 rows (they are `[x]` below and in the Done log). Do not start parked campaigns from this table in the same pass as a High card.
+Do in this order. Do **not** re-open completed prod-walk / Maps / closed High-Medium rows (they are `[x]` below and in the Done log). Do not start parked campaigns in the same pass as the active Medium.
 
-| Order | Item                                                                                                                              | Why this slot                                                                    |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| 1     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) — Retire or specify `StudentScheduleService`                          | Next High on [#104](https://github.com/Bigessfour/BusBuddy-3/issues/104) / #142. |
-| 2     | [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) — Fleet Vehicle→Bus chrome + one BusEditDialog opener                 | High on #104. One at a time after or instead of #109.                            |
-| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** this pass — do not redo.                                                |
-| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                              |
-| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (~300 refs). **Do not start in one pass.**                                |
-| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not “finish” as hop 4.                                                |
-| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                           |
-| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                              |
+| Order | Item                                                                                                                              | Why this slot                                                                               |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 1     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) — Keep prior values when Confirmed → Changed                          | Next Medium. Clear done-when; sits on trip board we just hardened (#114).                   |
+| 2     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) — Substitute driver or spare bus for one date                         | After #117. Must not overwrite year-default `Route.AM*`/`PM*`.                              |
+| 3     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Larger shape (shared driver+bus collection). After #117/#113 unless product says otherwise. |
+| —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                                      |
+| —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                                      |
+| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** — do not redo.                                                                     |
+| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                                         |
+| —     | [#110](https://github.com/Bigessfour/BusBuddy-3/issues/110) Families / Guardians                                                  | Decision: build small clerk surface **or** drop. Not auto-next.                             |
+| —     | [#111](https://github.com/Bigessfour/BusBuddy-3/issues/111) SchoolCalendar / AIInsights                                           | **Keep schema** unless product explicitly chooses drop or calendar UI.                      |
+| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (multi-PR). **Do not start in one pass.**                                            |
+| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not dual-write to “finish” the table.                                            |
+| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                                      |
+| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                                         |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
@@ -187,13 +197,28 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 - **Change:** Vision / Core Features / Route Management / Long-term Vision no longer claim live vehicle tracking or real-time GPS as current. Explicit **future / deferred — not enabled** note cites `specs/README.md` / `specs/maps.md`.
 - **Do not:** wire `UpdateBusLocationAsync` to the map or enable `IsLiveTrackingEnabled` under this card.
-- **Queue:** Next High is #115 (after #109 lands).
+- **Queue (historical):** Next High was #115 after #109 — both now closed.
+
+### 2026-10-31 — Function inventory refresh
+
+- **Scan:** `surfaces` mode — **65** tracked / **55** with proof / **10** without (all P2).
+- **Allowlist adds:** `BusService`, `BusManagementView`(+VM), `DriverStudentRouteEligibility`, `TripEventService`, Drivers/DriverForm (+VMs).
+- **P1 write paths:** still covered (Student/Route/Bus/Driver/Trip services + primary views). Proof gaps are P2 shells (schedule window, stops editor, map host/launcher, fuel/maintenance dialog VMs, Drivers UI).
+- **Tree:** `docs/function-tree.md` includes BusManagement, Drivers, TripEvent, eligibility gate.
+- **Do not:** treat inventory count as ship gate; chase P2 proof only when touching that surface.
+
+### 2026-10-31 — Board review (remaining #104 / #142 cards)
+
+- **Closed this cycle (do not reopen):** #109/#146, #115/#147, bus-mgmt polish #148, #114/#149, #118/#150, #143, #138/#139, #140/#141.
+- **Remaining open children:** #117 (next), #113, #112, #110 (decision), #111 (keep-schema / explicit decision), #108 (parked), #116 (parked). Boards #104 and #142 stay open as living indexes.
+- **Ordered build:** #117 → #113 → #112. Park #108/#116. Do not start #110/#111 without an explicit product call.
+- **Do not redo:** closed cards above, prod walk Items 1–6, Maps slice 1, District Map Export/Move leftovers.
 
 ### 2026-10-31 — Action-items queue catch-up (boards #142 / #104)
 
 - **Why:** Live leftover table still listed Item 5 / Maps slice 1 as Order 1–2 after those boxes were `[x]`, which caused agents to redo guest proof. Status snapshot was stuck on 2026-10-26.
-- **Now:** Ordered queue points at #115 after #109. #143 and #140/#141 recorded as done. Completed walks stay `[x]` only.
-- **Do not redo:** #138/#139, #140/#141, #143, #109, prod walk Items 1–6, Maps slice 1, District Map Export/Move leftovers.
+- **Now (superseded EOD):** Highs #109/#115 and Mediums #114/#118 closed; live queue points at #117. See “Board review” Done-log entry above.
+- **Do not redo:** #138/#139, #140/#141, #143, #109, #115, #114, #118, prod walk Items 1–6, Maps slice 1, District Map Export/Move leftovers.
 
 ### 2026-10-31 — Issue #140 CI runs clerk and map WPF suites
 
