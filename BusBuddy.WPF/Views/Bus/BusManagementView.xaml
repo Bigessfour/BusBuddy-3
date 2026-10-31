@@ -260,7 +260,7 @@
                                 <TextBlock Grid.Row="4" Grid.Column="0" Text="VIN:" Style="{StaticResource FormLabelStyle}"/>
                                 <syncfusion:SfTextBoxExt Grid.Row="4" Grid.Column="1"
                                                          Text="{Binding SelectedBus.VINNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                         Watermark="Optional VIN"
+                                                         Watermark="17-character VIN (required)"
                                                          AutomationProperties.Name="VIN Number"/>
 
                                 <TextBlock Grid.Row="5" Grid.Column="0" Text="Capacity:" Style="{StaticResource FormLabelStyle}"/>
