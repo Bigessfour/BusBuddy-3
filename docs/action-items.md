@@ -36,7 +36,7 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
 
-**Verdict:** Ship-ready for clerk Core. **Next:** land #114 (school-bus endorsement), then Medium cards on board #104. #108 / #116 stay parked. Do not drop `SchoolCalendar` / `AIInsights` without an explicit product decision (#111 keep-schema).
+**Verdict:** Ship-ready for clerk Core. **Next:** Medium on board #104 — prefer #117 (confirmed trip keeps prior values). #108 / #116 parked. Do not drop `SchoolCalendar` / `AIInsights` without an explicit product decision (#111 keep-schema).
 
 **Open boxes on this file:** Route FK name-string drop (#108). Attendance #109 and fleet chrome #115 done — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
