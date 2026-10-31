@@ -2,24 +2,20 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-10-31T22:36:45.360245+00:00
+Generated: 2026-10-31T22:45:05.126242+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
 **Configured surfaces:** 65 (from `.function-inventory.json` `surfaces` allowlist)
 
-**Summary:** 65 correctness surfaces | 55 with proof | 10 without proof
+**Summary:** 65 correctness surfaces | 59 with proof | 6 without proof
 This list is the **correctness queue** — resident/clerk-critical pages, services, and handlers only. Tiny helpers, Angular route paths, and demoted UI shells are omitted.
 
 Ship gate remains project acceptance / smoke checklists — inventory count alone is not “done.”
 
 ## Surfaces without proof (review these)
-- **P2** Other Public: BusManagementView.xaml.BusManagementView.xaml @ BusBuddy.WPF/Views/Bus/BusManagementView.xaml.cs:1
 - **P2** Other Public: RouteScheduleWindow.xaml.RouteScheduleWindow.xaml @ BusBuddy.WPF/Views/Route/RouteScheduleWindow.xaml.cs:1
 - **P2** Other Public: RouteStopsEditor.xaml.RouteStopsEditor.xaml @ BusBuddy.WPF/Views/Route/RouteStopsEditor.xaml.cs:1
-- **P2** Other Public: DriversView.xaml.DriversView.xaml @ BusBuddy.WPF/Views/Driver/DriversView.xaml.cs:1
-- **P2** Other Public: DriversViewModel.DriversViewModel @ BusBuddy.WPF/ViewModels/Driver/DriversViewModel.cs:1
-- **P2** Other Public: DriverFormViewModel.DriverFormViewModel @ BusBuddy.WPF/ViewModels/Driver/DriverFormViewModel.cs:1
 - **P2** Other Public: MaintenanceViewModel.MaintenanceViewModel @ BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1
 - **P2** Other Public: MapMarkerHost.MapMarkerHost @ BusBuddy.WPF/Utilities/MapMarkerHost.cs:1
 - **P2** Other Public: MapViewLauncher.MapViewLauncher @ BusBuddy.WPF/Utilities/MapViewLauncher.cs:1
@@ -64,8 +60,8 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P1 | Other Public | RouteManagementView.xaml.RouteManagementView.xaml | BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs:1 | BusBuddy.Tests/WPF/RouteManagementViewTests.cs, BusBuddy.Tes... | has logic |
 | P1 | Other Public | RouteAssignmentView.xaml.RouteAssignmentView.xaml | BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml.cs:1 | BusBuddy.Tests/WPF/RouteAssignmentViewTests.cs | has logic |
 | P2 | Core Service | BusService.BusService | BusBuddy.Core/Services/BusService.cs:1 | BusBuddy.Tests/Core/RouteEastAssignmentTests.cs, BusBuddy.Te... | has logic |
-| P2 | Other Public | BusManagementView.xaml.BusManagementView.xaml | BusBuddy.WPF/Views/Bus/BusManagementView.xaml.cs:1 | NO PROOF FOUND | has logic |
-| P2 | Other Public | BusManagementViewModel.BusManagementViewModel | BusBuddy.WPF/ViewModels/Bus/BusManagementViewModel.cs:1 | BusBuddy.Tests/WPF/MainWindowClerkPathTests.cs | has logic |
+| P2 | Other Public | BusManagementView.xaml.BusManagementView.xaml | BusBuddy.WPF/Views/Bus/BusManagementView.xaml.cs:1 | BusBuddy.Tests/WPF/BusManagementViewTests.cs | has logic |
+| P2 | Other Public | BusManagementViewModel.BusManagementViewModel | BusBuddy.WPF/ViewModels/Bus/BusManagementViewModel.cs:1 | BusBuddy.Tests/WPF/BusManagementViewTests.cs, BusBuddy.Tests... | has logic |
 | P2 | Core Service | DriverService.DriverService | BusBuddy.Core/Services/DriverService.cs:1 | BusBuddy.Tests/Core/DriverServiceTests.cs | has logic |
 | P2 | Other Public | DriverStudentRouteEligibility.DriverStudentRouteEligibility | BusBuddy.Core/Models/DriverStudentRouteEligibility.cs:1 | BusBuddy.Tests/Core/DriverStudentRouteEligibilityTests.cs | has logic |
 | P2 | Core Service | TripEventService.TripEventService | BusBuddy.Core/Services/TripEventService.cs:1 | BusBuddy.Tests/Core/BusServiceContractTests.cs, BusBuddy.Tes... | has logic |
@@ -82,10 +78,10 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P2 | Core Service | OperationalReportService.OperationalReportService | BusBuddy.Core/Services/OperationalReportService.cs:1 | BusBuddy.Tests/Core/OperationalReportServiceTests.cs | has logic |
 | P2 | Core Service | PdfReportService.PdfReportService | BusBuddy.Core/Services/PdfReportService.cs:1 | BusBuddy.Tests/Core/PdfReportServiceTests.cs | has logic |
 | P2 | Other Public | ReportsView.xaml.ReportsView.xaml | BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1 | BusBuddy.Tests/WPF/ReportsViewTests.cs | has logic |
-| P2 | Other Public | DriversView.xaml.DriversView.xaml | BusBuddy.WPF/Views/Driver/DriversView.xaml.cs:1 | NO PROOF FOUND | has logic |
-| P2 | Other Public | DriversViewModel.DriversViewModel | BusBuddy.WPF/ViewModels/Driver/DriversViewModel.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | DriversView.xaml.DriversView.xaml | BusBuddy.WPF/Views/Driver/DriversView.xaml.cs:1 | BusBuddy.Tests/WPF/DriversViewTests.cs | has logic |
+| P2 | Other Public | DriversViewModel.DriversViewModel | BusBuddy.WPF/ViewModels/Driver/DriversViewModel.cs:1 | BusBuddy.Tests/WPF/DriversViewModelTests.cs | has logic |
 | P2 | Other Public | DriverForm.xaml.DriverForm.xaml | BusBuddy.WPF/Views/Driver/DriverForm.xaml.cs:1 | BusBuddy.Tests/WPF/PlacesAddressSurfaceTests.cs | has logic |
-| P2 | Other Public | DriverFormViewModel.DriverFormViewModel | BusBuddy.WPF/ViewModels/Driver/DriverFormViewModel.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | DriverFormViewModel.DriverFormViewModel | BusBuddy.WPF/ViewModels/Driver/DriverFormViewModel.cs:1 | BusBuddy.Tests/WPF/DriverFormViewModelSaveTests.cs | has logic |
 | P2 | Core Service | ScheduleService.ScheduleService | BusBuddy.Core/Services/ScheduleService.cs:1 | BusBuddy.Tests/Core/ScheduleServiceTests.cs | has logic |
 | P2 | Other Public | ScheduleTimestampNormalizer.ScheduleTimestampNormalizer | BusBuddy.Core/Services/ScheduleTimestampNormalizer.cs:1 | BusBuddy.Tests/Core/ScheduleTimestampNormalizerTests.cs | has logic |
 | P2 | Core Service | MaintenanceService.MaintenanceService | BusBuddy.Core/Services/MaintenanceService.cs:1 | BusBuddy.Tests/Core/MaintenanceServiceTests.cs | has logic |

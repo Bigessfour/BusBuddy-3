@@ -159,6 +159,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — P2 Batch A inventory proof (Bus / Drivers / DriverForm)
+
+- **Surfaces proved:** `BusManagementView`(+VM wiring), `DriversView`(+VM home-route warning + command CanExecute), `DriverFormViewModel` Save carries `SchoolBusEndorsement`.
+- **Tests:** `BusManagementViewTests`, `DriversViewTests`, `DriversViewModelTests`, `DriverFormViewModelSaveTests`.
+- **Guest:** `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~BusManagementViewTests|FullyQualifiedName~DriversViewTests|FullyQualifiedName~DriversViewModelTests|FullyQualifiedName~DriverFormViewModelSaveTests'` → **Passed: 8, Failed: 0**.
+- **Inventory:** regenerated after #152 allowlist — Batch A rows no longer `NO PROOF`. Remaining gaps are Batch B/C (Fuel/Maintenance/Map) plus schedule/stops shells.
+- **Out of scope:** #117; Fuel/Maintenance/Map proofs; endorsement rule changes.
+
 ### 2026-10-31 — Issue #118 special-needs route aide name
 
 - **Field:** `Route.AideName` (nullable string, max 100). Not a driver FK. Clearing Special Needs clears the aide.
