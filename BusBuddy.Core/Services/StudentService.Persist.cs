@@ -461,6 +461,10 @@ public partial class StudentService
                     DeletedUtc = DateTime.UtcNow,
                 };
 
+                // Pre-migration safety: FK_StudentSchedules_Student is Restrict. Clear leftover
+                // attendance rows if the table still exists; no-op after DropStudentSchedules / InMemory.
+                await ClearLegacyStudentSchedulesIfPresentAsync(context, studentId).ConfigureAwait(false);
+
                 context.StudentSchoolTransfers.RemoveRange(transfers);
                 context.RouteRiderExceptions.RemoveRange(exceptions);
                 var removedStops = await RemoveStudentHomeStopsAsync(context, student).ConfigureAwait(false);
@@ -495,6 +499,32 @@ public partial class StudentService
             DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student record {StudentId}", studentId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Deletes legacy <c>StudentSchedules</c> rows when that table still exists (Restrict FK).
+    /// No-op after <c>DropStudentSchedules</c> or on InMemory test providers. #109 transitional.
+    /// </summary>
+    private static async Task ClearLegacyStudentSchedulesIfPresentAsync(BusBuddyDbContext context, int studentId)
+    {
+        var provider = context.Database.ProviderName;
+        if (provider is null
+            || provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // Int-only interpolation: Npgsql cannot bind parameters inside a DO body.
+        await context.Database.ExecuteSqlRawAsync(
+            $"""
+            DO $do$
+            BEGIN
+              IF to_regclass('public."StudentSchedules"') IS NOT NULL THEN
+                DELETE FROM "StudentSchedules" WHERE "StudentId" = {studentId};
+              END IF;
+            END
+            $do$;
+            """).ConfigureAwait(false);
     }
 
     /// <summary>
