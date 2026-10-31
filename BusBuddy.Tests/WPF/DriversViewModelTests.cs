@@ -114,13 +114,52 @@ public class DriversViewModelTests
         }
     }
 
+    [Test]
+    public async Task LoadDrivers_PmHomeRouteExpiredLicense_SetsWarning_WithoutClearingRoute()
+    {
+        var options = NewDbOptions();
+        await using (var db = new BusBuddyDbContext(options))
+        {
+            db.Drivers.Add(Qualified(5, "PM Expired", schoolBus: true, expiry: DateTime.Today.AddDays(-1)));
+            db.Routes.Add(new Route
+            {
+                RouteId = 20,
+                RouteName = "PM Proof",
+                Date = DateTime.UtcNow.Date,
+                IsActive = true,
+                School = "Wiley",
+                PMDriverId = 5
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var roster = new List<Driver>
+        {
+            Qualified(5, "PM Expired", schoolBus: true, expiry: DateTime.Today.AddDays(-1))
+        };
+        var driverService = new Mock<IDriverService>();
+        driverService.Setup(s => s.GetAllDriversAsync()).ReturnsAsync(roster);
+
+        var vm = new DriversViewModel(new TestDbContextFactory(options), driverService.Object);
+        await vm.LoadDriversAsync();
+
+        var pm = vm.Drivers.Should().ContainSingle(d => d.DriverId == 5).Subject;
+        pm.HomeRouteEligibilityWarning.Should().Contain("expired license");
+
+        await using (var verify = new BusBuddyDbContext(options))
+        {
+            var route = await verify.Routes.AsNoTracking().SingleAsync(r => r.RouteId == 20);
+            route.PMDriverId.Should().Be(5, "warning must not clear grandfathered PM route FKs");
+        }
+    }
+
     private static DbContextOptions<BusBuddyDbContext> NewDbOptions() =>
         new DbContextOptionsBuilder<BusBuddyDbContext>()
             .UseInMemoryDatabase($"DriversVm_{Guid.NewGuid():N}")
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
-    private static Driver Qualified(int id, string name, bool schoolBus) =>
+    private static Driver Qualified(int id, string name, bool schoolBus, DateTime? expiry = null) =>
         new()
         {
             DriverId = id,
@@ -129,6 +168,6 @@ public class DriversViewModelTests
             TrainingComplete = true,
             LicenseClass = "Class B",
             SchoolBusEndorsement = schoolBus,
-            LicenseExpiryDate = DateTime.Today.AddDays(90)
+            LicenseExpiryDate = expiry ?? DateTime.Today.AddDays(90)
         };
 }

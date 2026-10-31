@@ -2,7 +2,7 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-10-31T22:45:05.126242+00:00
+Generated: 2026-10-31T22:51:45.181044+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
@@ -61,7 +61,7 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P1 | Other Public | RouteAssignmentView.xaml.RouteAssignmentView.xaml | BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml.cs:1 | BusBuddy.Tests/WPF/RouteAssignmentViewTests.cs | has logic |
 | P2 | Core Service | BusService.BusService | BusBuddy.Core/Services/BusService.cs:1 | BusBuddy.Tests/Core/RouteEastAssignmentTests.cs, BusBuddy.Te... | has logic |
 | P2 | Other Public | BusManagementView.xaml.BusManagementView.xaml | BusBuddy.WPF/Views/Bus/BusManagementView.xaml.cs:1 | BusBuddy.Tests/WPF/BusManagementViewTests.cs | has logic |
-| P2 | Other Public | BusManagementViewModel.BusManagementViewModel | BusBuddy.WPF/ViewModels/Bus/BusManagementViewModel.cs:1 | BusBuddy.Tests/WPF/BusManagementViewTests.cs, BusBuddy.Tests... | has logic |
+| P2 | Other Public | BusManagementViewModel.BusManagementViewModel | BusBuddy.WPF/ViewModels/Bus/BusManagementViewModel.cs:1 | BusBuddy.Tests/WPF/BusManagementViewModelTests.cs | has logic |
 | P2 | Core Service | DriverService.DriverService | BusBuddy.Core/Services/DriverService.cs:1 | BusBuddy.Tests/Core/DriverServiceTests.cs | has logic |
 | P2 | Other Public | DriverStudentRouteEligibility.DriverStudentRouteEligibility | BusBuddy.Core/Models/DriverStudentRouteEligibility.cs:1 | BusBuddy.Tests/Core/DriverStudentRouteEligibilityTests.cs | has logic |
 | P2 | Core Service | TripEventService.TripEventService | BusBuddy.Core/Services/TripEventService.cs:1 | BusBuddy.Tests/Core/BusServiceContractTests.cs, BusBuddy.Tes... | has logic |

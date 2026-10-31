@@ -23,6 +23,7 @@ public class BusManagementViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding CancelEditCommand}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding FilteredBuses}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedBus, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("AllowEditing=\"False\""));
         Assert.That(xaml, Does.Contain("Text=\"{Binding SelectedBus.BusNumber, Mode=TwoWay"));
         Assert.That(xaml, Does.Contain("Value=\"{Binding SelectedBus.SeatingCapacity, Mode=TwoWay"));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedBus.Status, Mode=TwoWay}\""));
