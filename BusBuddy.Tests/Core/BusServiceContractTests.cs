@@ -137,7 +137,7 @@ public class BusServiceContractTests
                 Longitude = -102.7m,
                 DestinationType = DestinationTypes.TripDestination
             };
-            var driver = new Driver { DriverName = "Pat", DriversLicenceType = "B" };
+            var driver = QualifiedTripDriver("Pat");
             db.Routes.Add(route);
             db.Destinations.Add(dest);
             db.Drivers.Add(driver);
@@ -203,7 +203,7 @@ public class BusServiceContractTests
                 Longitude = -102.7m,
                 DestinationType = DestinationTypes.TripDestination
             };
-            var driver = new Driver { DriverName = "Sam", DriversLicenceType = "B" };
+            var driver = QualifiedTripDriver("Sam");
             db.Routes.Add(route);
             db.Destinations.Add(dest);
             db.Drivers.Add(driver);
@@ -256,6 +256,18 @@ public class BusServiceContractTests
         var cache = new BusCachingService(new MemoryCache(new MemoryCacheOptions()));
         return (new BusService(factory, cache), factory);
     }
+
+    private static Driver QualifiedTripDriver(string name) =>
+        new()
+        {
+            DriverName = name,
+            DriversLicenceType = "CDL",
+            LicenseClass = "Class B",
+            SchoolBusEndorsement = true,
+            TrainingComplete = true,
+            Status = "Active",
+            LicenseExpiryDate = DateTime.Today.AddYears(1)
+        };
 
     private static Bus NewBus(string number, string vin, string plate, int seats = 40) =>
         new()
