@@ -1,362 +1,171 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Windows;
+using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
 using Serilog;
-using Views = BusBuddy.WPF.Views;
+using Serilog.Context;
 
 namespace BusBuddy.WPF.ViewModels.Bus
 {
-    public partial class BusManagementViewModel : ObservableObject
+    /// <summary>
+    /// ViewModel for managing the bus fleet
+    /// CRUD for district buses via IBusService
+    /// </summary>
+    public partial class BusManagementViewModel : BaseViewModel
     {
-        private static readonly ILogger Logger = Log.ForContext<BusManagementViewModel>();
+        private static new readonly ILogger Logger = Log.ForContext<BusManagementViewModel>();
+
         private readonly IBusService _busService;
-
-
-        [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _buses;
-
-        [ObservableProperty]
-        private BusBuddy.Core.Models.Bus _selectedBus;
+        private BusBuddy.Core.Models.Bus? _lastSelectedBus;
+        private BusEditSnapshot? _editSnapshot;
+        private readonly Task _initialLoadTask;
 
         [ObservableProperty]
-        private int _currentPage = 1;
+        private ObservableCollection<BusBuddy.Core.Models.Bus> _buses = new();
 
         [ObservableProperty]
-        private int _pageSize = 20;
+        private ObservableCollection<BusBuddy.Core.Models.Bus> _filteredBuses = new();
 
         [ObservableProperty]
-        private int _totalPages;
+        private BusBuddy.Core.Models.Bus? _selectedBus;
 
         [ObservableProperty]
-        private int _totalRecords;
+        private string _searchText = string.Empty;
+
+        [ObservableProperty]
+        private string _selectedStatusFilter = "All Status";
 
         [ObservableProperty]
         private bool _isBusy;
 
-        [ObservableProperty]
-        private string _sortColumn = "BusNumber";
+        // Status filter options for the ComboBox
+        public List<string> StatusFilterOptions { get; } = new()
+        {
+            "All Status",
+            "Active",
+            "InService",
+            "Maintenance",
+            "OutOfService",
+            "Retired"
+        };
 
-        [ObservableProperty]
-        private bool _isSortAscending = true;
+        // Operational status options for bus form
+        public List<string> OperationalStatusOptions { get; } = new()
+        {
+            "Active",
+            "InService",
+            "Maintenance",
+            "OutOfService",
+            "Retired"
+        };
 
-        public IAsyncRelayCommand LoadBusesCommand { get; }
-        public IAsyncRelayCommand AddBusCommand { get; }
-        public IAsyncRelayCommand UpdateBusCommand { get; }
-        public IAsyncRelayCommand DeleteBusCommand { get; }
-        public IAsyncRelayCommand NextPageCommand { get; }
-        public IAsyncRelayCommand PreviousPageCommand { get; }
-        public IAsyncRelayCommand FirstPageCommand { get; }
-        public IAsyncRelayCommand LastPageCommand { get; }
-        public IAsyncRelayCommand<string> SortCommand { get; }
+        // Operational status options for bus form
+        public List<string> FleetTypeOptions { get; } = new()
+        {
+            "Regular",
+            "Special Needs",
+            "Activity"
+        };
+
+        // Total bus count for status bar
+        public int TotalBusCount => FilteredBuses?.Count ?? 0;
+
+        public ICommand LoadBusesCommand { get; }
+        public ICommand AddBusCommand { get; }
+        public ICommand EditBusCommand { get; }
+        public ICommand UpdateBusCommand { get; }
+        public ICommand SaveBusCommand { get; }
+        public ICommand DeleteBusCommand { get; }
+        public ICommand CancelEditCommand { get; }
+        public ICommand SearchBusesCommand { get; }
+        public ICommand RefreshCommand { get; }
 
         public BusManagementViewModel(IBusService busService)
         {
-            _busService = busService;
-            _buses = new ObservableCollection<BusBuddy.Core.Models.Bus>();
-            _selectedBus = new BusBuddy.Core.Models.Bus();
+            _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 
             LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync);
-            AddBusCommand = new AsyncRelayCommand(AddBusAsync);
-            UpdateBusCommand = new AsyncRelayCommand(UpdateBusAsync, CanUpdateOrDelete);
-            DeleteBusCommand = new AsyncRelayCommand(DeleteBusAsync, CanUpdateOrDelete);
+            AddBusCommand = new AsyncRelayCommand(AddBusDraftAsync);
+            EditBusCommand = new AsyncRelayCommand(EditBusAsync, CanEditBus);
+            UpdateBusCommand = new AsyncRelayCommand(UpdateBusFromFormAsync, CanUpdateBus);
+            SaveBusCommand = new AsyncRelayCommand(SaveBusAsync, CanSaveBus);
+            DeleteBusCommand = new AsyncRelayCommand(DeleteBusAsync, CanDeleteBus);
+            CancelEditCommand = new RelayCommand(CancelEdit);
+            SearchBusesCommand = new AsyncRelayCommand(SearchBusesAsync);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
 
-            // Pagination commands
-            NextPageCommand = new AsyncRelayCommand(NextPageAsync, CanGoToNextPage);
-            PreviousPageCommand = new AsyncRelayCommand(PreviousPageAsync, CanGoToPreviousPage);
-            FirstPageCommand = new AsyncRelayCommand(GoToFirstPageAsync, CanGoToPreviousPage);
-            LastPageCommand = new AsyncRelayCommand(GoToLastPageAsync, CanGoToNextPage);
-
-            // Sorting command
-            SortCommand = new AsyncRelayCommand<string>(SortDataAsync);
-
-            _ = LoadBusesAsync();
+            _initialLoadTask = LoadBusesAsync();
         }
 
+        /// <summary>
+        /// Runs a deferred startup action after the view loads (e.g. Add Bus shortcut).
+        /// Waits for the initial fleet load so draft bus numbers are not stamped from an empty list.
+        /// </summary>
+        public async Task ApplyStartupAsync(BusManagementStartup startup)
+        {
+            if (startup == BusManagementStartup.None)
+            {
+                return;
+            }
+
+            await _initialLoadTask.ConfigureAwait(true);
+
+            using (LogContext.PushProperty("Startup", startup.ToString()))
+            {
+                Logger.Information("Applying fleet startup action {Startup}", startup);
+                switch (startup)
+                {
+                    case BusManagementStartup.AddBus:
+                        await AddBusDraftAsync().ConfigureAwait(true);
+                        break;
+                }
+            }
+        }
+
+        private void RefreshCommandStates()
+        {
+            ((AsyncRelayCommand)EditBusCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)UpdateBusCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)SaveBusCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)DeleteBusCommand).NotifyCanExecuteChanged();
+        }
+
+        /// <summary>
+        /// Load all buses from the service
+        /// </summary>
         private async Task LoadBusesAsync()
         {
-            try
+            using (LogContext.PushProperty("Operation", "LoadBuses"))
             {
-                IsBusy = true;
-
-                // Use the paginated method
-                var result = new
-                {
-                    Buses = await _busService.GetAllBusesAsync(),
-                    TotalCount = 0
-                };
-
-                // Update the collection
-                Buses.Clear();
-                foreach (var b in result.Buses)
-                {
-                    Buses.Add(b);
-                }
-
-                TotalRecords = result.TotalCount;
-                TotalPages = (int)Math.Ceiling(TotalRecords / (double)PageSize);
-                Logger.Information("Buses loaded Count={Count} Page={Page}", Buses.Count, CurrentPage);
-
-                // Ensure currentPage is valid
-                if (CurrentPage > TotalPages && TotalPages > 0)
-                {
-                    CurrentPage = TotalPages;
-                    await LoadBusesAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to load buses");
-            }
-            finally
-            {
-                IsBusy = false;
-
-                // Update command states
-                (NextPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-                (PreviousPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-                (FirstPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-                (LastPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-            }
-        }
-
-        private async Task SortDataAsync(string? column)
-        {
-            if (column == SortColumn)
-            {
-                // Toggle sort direction if same column
-                IsSortAscending = !IsSortAscending;
-            }
-            else if (column != null)
-            {
-                // New column, default to ascending
-                SortColumn = column;
-                IsSortAscending = true;
-            }
-
-            await LoadBusesAsync();
-        }
-
-        private async Task NextPageAsync()
-        {
-            if (CurrentPage < TotalPages)
-            {
-                CurrentPage++;
-                await LoadBusesAsync();
-            }
-        }
-
-        private async Task PreviousPageAsync()
-        {
-            if (CurrentPage > 1)
-            {
-                CurrentPage--;
-                await LoadBusesAsync();
-            }
-        }
-
-        private async Task GoToFirstPageAsync()
-        {
-            CurrentPage = 1;
-            await LoadBusesAsync();
-        }
-
-        private async Task GoToLastPageAsync()
-        {
-            CurrentPage = TotalPages;
-            await LoadBusesAsync();
-        }
-
-        private bool CanGoToNextPage() => CurrentPage < TotalPages && !IsBusy;
-
-        private bool CanGoToPreviousPage() => CurrentPage > 1 && !IsBusy;
-
-        private async Task AddBusAsync()
-        {
-            IsBusy = true;
-            try
-            {
-                // Create a new bus instance
-                var newBus = new BusBuddy.Core.Models.Bus
-                {
-                    Status = "Active",
-                    Year = DateTime.Now.Year
-                };
-
-                // Show the edit dialog
-                var dialog = new Views.Bus.BusEditDialog(newBus);
-                dialog.Owner = Application.Current.MainWindow;
-
-                var result = dialog.ShowDialog();
-
-                if (result == true)
-                {
-                    // Add the new bus to the database
-                    var addedBus = await _busService.AddBusAsync(dialog.Bus);
-                    Logger.Information("Added bus BusId={BusId} Number={BusNumber}", addedBus.BusId, dialog.Bus.BusNumber);
-
-                    // Reload the data
-                    await LoadBusesAsync();
-
-                    // Select the newly added bus
-                    var busInList = Buses.FirstOrDefault(b => b.BusId == addedBus.BusId);
-                    if (busInList != null)
-                    {
-                        SelectedBus = busInList;
-                    }
-
-                    // Show success notification
-                    var notification = new Views.Bus.NotificationWindow(
-                        $"Bus #{dialog.Bus.BusNumber} was successfully added.",
-                        "Bus Added",
-                        Views.Bus.NotificationWindow.NotificationType.Success);
-                    notification.Owner = Application.Current.MainWindow;
-                    notification.ShowDialog();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to add bus");
-                var notification = new Views.Bus.NotificationWindow(
-                    $"Failed to add bus: {ex.Message}",
-                    "Error",
-                    Views.Bus.NotificationWindow.NotificationType.Error);
-                notification.Owner = Application.Current.MainWindow;
-                notification.ShowDialog();
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task UpdateBusAsync()
-        {
-            if (SelectedBus == null)
-            {
-                // Show notification to select a bus first
-                var notification = new Views.Bus.NotificationWindow(
-                    "Please select a bus to update.",
-                    "No Bus Selected",
-                    Views.Bus.NotificationWindow.NotificationType.Warning);
-                notification.Owner = Application.Current.MainWindow;
-                notification.ShowDialog();
-                return;
-            }
-
-            IsBusy = true;
-            try
-            {
-                // Create a clone for editing
-                var busToEdit = SelectedBus;
-
-                // Show the edit dialog
-                var dialog = new Views.Bus.BusEditDialog(busToEdit);
-                dialog.Owner = Application.Current.MainWindow;
-
-                var result = dialog.ShowDialog();
-
-                if (result == true)
-                {
-                    // Update the bus in the database
-                    await _busService.UpdateBusAsync(dialog.Bus);
-                    Logger.Information("Updated bus BusId={BusId} Number={BusNumber}", dialog.Bus.BusId, dialog.Bus.BusNumber);
-
-                    // Reload the data
-                    await LoadBusesAsync();
-
-                    // Try to re-select the same bus
-                    var updatedBus = Buses.FirstOrDefault(b => b.BusId == busToEdit.BusId);
-                    if (updatedBus != null)
-                    {
-                        SelectedBus = updatedBus;
-                    }
-
-                    // Show success notification
-                    var notification = new Views.Bus.NotificationWindow(
-                        $"Bus #{dialog.Bus.BusNumber} was successfully updated.",
-                        "Bus Updated",
-                        Views.Bus.NotificationWindow.NotificationType.Success);
-                    notification.Owner = Application.Current.MainWindow;
-                    notification.ShowDialog();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to update bus BusId={BusId}", SelectedBus.BusId);
-                // Show error notification
-                var notification = new Views.Bus.NotificationWindow(
-                    $"Failed to update bus: {ex.Message}",
-                    "Error",
-                    Views.Bus.NotificationWindow.NotificationType.Error);
-                notification.Owner = Application.Current.MainWindow;
-                notification.ShowDialog();
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task DeleteBusAsync()
-        {
-            if (SelectedBus == null)
-            {
-                // Show notification to select a bus first
-                var notification = new Views.Bus.NotificationWindow(
-                    "Please select a bus to delete.",
-                    "No Bus Selected",
-                    Views.Bus.NotificationWindow.NotificationType.Warning);
-                notification.Owner = Application.Current.MainWindow;
-                notification.ShowDialog();
-                return;
-            }
-
-            // Show confirmation dialog
-            var busNumber = SelectedBus.BusNumber;
-            var busId = SelectedBus.BusId;
-
-            var confirmDialog = new Views.Bus.ConfirmationDialog(
-                $"Are you sure you want to delete Bus #{busNumber}? This action cannot be undone.",
-                "Confirm Delete");
-            confirmDialog.Owner = Application.Current.MainWindow;
-
-            var result = confirmDialog.ShowDialog();
-
-            if (result == true)
-            {
-                IsBusy = true;
                 try
                 {
-                    // Delete the bus from the database
-                    await _busService.DeleteBusAsync(busId);
-                    Logger.Information("Deleted bus BusId={BusId} Number={BusNumber}", busId, busNumber);
+                    IsBusy = true;
+                    StatusMessage = "Loading buses...";
+                    Logger.Information("Loading buses from IBusService");
 
-                    // Reload the data
-                    await LoadBusesAsync();
+                    var vehicles = await _busService.GetAllBusesAsync();
 
-                    // Show success notification
-                    var notification = new Views.Bus.NotificationWindow(
-                        $"Bus #{busNumber} was successfully deleted.",
-                        "Bus Deleted",
-                        Views.Bus.NotificationWindow.NotificationType.Success);
-                    notification.Owner = Application.Current.MainWindow;
-                    notification.ShowDialog();
+                    Buses.Clear();
+                    foreach (var vehicle in vehicles)
+                    {
+                        Buses.Add(vehicle);
+                    }
+
+                    ApplyFilters();
+                    StatusMessage = $"Loaded {Buses.Count} buses";
+                    Logger.Information("Loaded {BusCount} buses", Buses.Count);
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to delete bus BusId={BusId}", busId);
-                    var notification = new Views.Bus.NotificationWindow(
-                        $"Failed to delete bus: {ex.Message}",
-                        "Error",
-                        Views.Bus.NotificationWindow.NotificationType.Error);
-                    notification.Owner = Application.Current.MainWindow;
-                    notification.ShowDialog();
+                    StatusMessage = $"Error loading buses: {ex.Message}";
+                    Logger.Error(ex, "Failed to load buses; leaving bus grid empty");
                 }
                 finally
                 {
@@ -365,23 +174,527 @@ namespace BusBuddy.WPF.ViewModels.Bus
             }
         }
 
-        private bool CanUpdateOrDelete()
+        /// <summary>
+        /// Apply search and status filters
+        /// </summary>
+        private void ApplyFilters()
         {
-            return SelectedBus != null && SelectedBus.BusId != 0 && !IsBusy;
+            if (Buses == null)
+            {
+                return;
+            }
+
+            var filtered = Buses.AsEnumerable();
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var search = SearchText;
+                filtered = filtered.Where(v =>
+                    (v.Make?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (v.Model?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (v.LicenseNumber?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (v.BusNumber?.Contains(search, StringComparison.OrdinalIgnoreCase) == true));
+            }
+
+            // Apply status filter
+            if (!string.IsNullOrWhiteSpace(SelectedStatusFilter) && SelectedStatusFilter != "All Status")
+            {
+                filtered = filtered.Where(v => v.Status == SelectedStatusFilter);
+            }
+
+            FilteredBuses.Clear();
+            foreach (var vehicle in filtered)
+            {
+                FilteredBuses.Add(vehicle);
+            }
+
+            OnPropertyChanged(nameof(TotalBusCount));
         }
 
-        partial void OnSelectedBusChanged(BusBuddy.Core.Models.Bus value)
+        /// <summary>
+        /// Property change handlers to trigger filtering
+        /// </summary>
+        partial void OnSearchTextChanged(string value)
         {
-            (UpdateBusCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-            (DeleteBusCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            ApplyFilters();
         }
 
-        partial void OnCurrentPageChanged(int value)
+        partial void OnSelectedStatusFilterChanged(string value)
         {
-            (NextPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-            (PreviousPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-            (FirstPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
-            (LastPageCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+            ApplyFilters();
         }
+
+        /// <summary>
+        /// Start a new bus draft in the detail panel
+        /// </summary>
+        private Task AddBusDraftAsync()
+        {
+            try
+            {
+                IsBusy = true;
+                StatusMessage = "Adding new bus...";
+
+                var newBus = new BusBuddy.Core.Models.Bus
+                {
+                    BusNumber = NextDraftBusNumber(),
+                    Make = "",
+                    Model = "",
+                    LicenseNumber = "",
+                    SeatingCapacity = 40,
+                    Year = DateTime.Now.Year,
+                    Status = "Active",
+                    FleetType = "Regular"
+                };
+
+                SelectedBus = newBus;
+                StatusMessage = "Ready to add new bus - fill in details and click Save";
+                Logger.Information(
+                    "Prepared new bus draft BusNumber={BusNumber}",
+                    newBus.BusNumber);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error adding bus: {ex.Message}";
+                Logger.Error(ex, "Error preparing new bus draft");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Focus the detail panel for the selected bus (selection already binds the form).
+        /// </summary>
+        private Task EditBusAsync()
+        {
+            if (SelectedBus == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            StatusMessage = $"Editing bus {SelectedBus.BusNumber}";
+            return Task.CompletedTask;
+        }
+
+        private string NextDraftBusNumber()
+        {
+            var next = 1;
+            foreach (var bus in Buses)
+            {
+                var number = bus.BusNumber?.Trim() ?? string.Empty;
+                if (number.StartsWith("BUS", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(number.AsSpan(3), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+                {
+                    next = Math.Max(next, n + 1);
+                }
+            }
+
+            next = Math.Max(next, Buses.Count + 1);
+            return string.Format(CultureInfo.InvariantCulture, "BUS{0:000}", next);
+        }
+
+        /// <summary>
+        /// Save bus (add or update)
+        /// </summary>
+        private async Task SaveBusAsync()
+        {
+            if (SelectedBus is null)
+            {
+                return;
+            }
+
+            var bus = SelectedBus;
+            var isNew = bus.BusId == 0;
+
+            using (LogContext.PushProperty("Operation", "SaveBus"))
+            using (LogContext.PushProperty("BusId", bus.BusId))
+            using (LogContext.PushProperty("BusNumber", bus.BusNumber))
+            {
+                try
+                {
+                    IsBusy = true;
+                    StatusMessage = "Saving bus...";
+                    Logger.Information(
+                        "Saving bus BusNumber={BusNumber} IsNew={IsNew}",
+                        bus.BusNumber,
+                        isNew);
+
+                    if (string.IsNullOrWhiteSpace(bus.BusNumber))
+                    {
+                        Logger.Warning("Bus save blocked — BusNumber blank");
+                        StatusMessage = "Bus Number is required";
+                        return;
+                    }
+
+                    if (isNew)
+                    {
+                        var added = await _busService.AddBusAsync(bus);
+                        Buses.Add(added);
+                        SelectedBus = added;
+                        Logger.Information(
+                            "Added bus BusId={BusId} BusNumber={BusNumber}",
+                            added.BusId,
+                            added.BusNumber);
+                        StatusMessage = $"Bus {added.BusNumber} added successfully";
+                    }
+                    else
+                    {
+                        var updated = await _busService.UpdateBusAsync(bus);
+                        if (!updated)
+                        {
+                            Logger.Warning(
+                                "UpdateBusAsync reported no changes for BusId={BusId}",
+                                bus.BusId);
+                        }
+
+                        var index = Buses.ToList().FindIndex(v => v.BusId == bus.BusId);
+                        if (index >= 0)
+                        {
+                            Buses[index] = bus;
+                        }
+
+                        Logger.Information(
+                            "Updated bus BusId={BusId} BusNumber={BusNumber}",
+                            bus.BusId,
+                            bus.BusNumber);
+                        StatusMessage = $"Bus {bus.BusNumber} updated successfully";
+                    }
+
+                    _editSnapshot = SelectedBus is { BusId: > 0 }
+                        ? BusEditSnapshot.Capture(SelectedBus)
+                        : null;
+                    ApplyFilters();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(
+                        ex,
+                        "Error saving bus BusId={BusId} BusNumber={BusNumber}",
+                        bus.BusId,
+                        bus.BusNumber);
+                    StatusMessage = $"Error saving bus: {ex.Message}";
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Update selected bus
+        /// </summary>
+        private async Task UpdateBusFromFormAsync()
+        {
+            await SaveBusAsync(); // Delegate to save method
+        }
+
+        /// <summary>
+        /// Delete selected bus — hard-delete when Restrict FKs are clear; otherwise soft-retire.
+        /// </summary>
+        private async Task DeleteBusAsync()
+        {
+            if (SelectedBus is null)
+            {
+                return;
+            }
+
+            var bus = SelectedBus;
+            var busId = bus.BusId;
+            var busNumber = bus.BusNumber;
+
+            var confirm = MessageBox.Show(
+                $"Remove bus {busNumber} from the fleet?\n\n"
+                + "If the bus is still on a route or has fuel/maintenance history, it will be retired instead of hard-deleted.",
+                "Confirm remove bus",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                StatusMessage = "Remove cancelled";
+                return;
+            }
+
+            using (LogContext.PushProperty("Operation", "DeleteBus"))
+            using (LogContext.PushProperty("BusId", busId))
+            {
+                try
+                {
+                    IsBusy = true;
+                    StatusMessage = $"Removing bus {busNumber}...";
+                    Logger.Information(
+                        "Deleting bus BusId={BusId} BusNumber={BusNumber}",
+                        busId,
+                        busNumber);
+
+                    if (busId <= 0)
+                    {
+                        Buses.Remove(bus);
+                        SelectedBus = null;
+                        ApplyFilters();
+                        Logger.Information("Removed unsaved bus draft from list");
+                        StatusMessage = "Draft bus removed";
+                        return;
+                    }
+
+                    var ok = await _busService.DeleteBusAsync(busId);
+                    if (!ok)
+                    {
+                        Logger.Warning("DeleteBusAsync returned false for BusId={BusId}", busId);
+                        StatusMessage = "Bus could not be removed";
+                        UserToast.Error(
+                            $"Could not remove bus {busNumber} (not found or blocked).",
+                            "Bus remove failed");
+                        return;
+                    }
+
+                    // Hard delete removes the row; soft-retire leaves Status=Retired when FKs remain.
+                    var stillPresent = await _busService.GetBusByIdAsync(busId);
+                    if (stillPresent is null)
+                    {
+                        Buses.Remove(bus);
+                        SelectedBus = null;
+                        ApplyFilters();
+                        StatusMessage = $"Bus {busNumber} deleted";
+                        UserToast.Success($"Deleted bus {busNumber}.", "Bus deleted");
+                        Logger.Information("Hard-deleted bus BusId={BusId}", busId);
+                        return;
+                    }
+
+                    bus.Status = stillPresent.Status;
+                    _editSnapshot = BusEditSnapshot.Capture(bus);
+                    ApplyFilters();
+                    StatusMessage =
+                        $"Bus {busNumber} retired — still referenced by routes or fuel/maintenance history";
+                    UserToast.Warning(
+                        $"Bus {busNumber} is assigned to a route or has fuel/maintenance history.\n" +
+                        "It was retired (not hard-deleted). Unassign on Route Management if you need a hard delete later.",
+                        "Bus retired");
+                    Logger.Information("Soft-retired bus BusId={BusId} Status={Status}", busId, stillPresent.Status);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error deleting bus BusId={BusId}", busId);
+                    StatusMessage = "Error removing bus — see toast for details";
+                    UserToast.Error(
+                        $"Could not remove bus {busNumber}.\nUse Route Management to unassign first if it is still on a route.",
+                        "Bus remove failed");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cancel edit: drop an unsaved draft, or restore the last snapshot for an existing bus.
+        /// </summary>
+        private void CancelEdit()
+        {
+            if (SelectedBus is null)
+            {
+                StatusMessage = "Edit cancelled";
+                return;
+            }
+
+            if (SelectedBus.BusId == 0)
+            {
+                Logger.Information("Cancelled unsaved bus draft");
+                SelectedBus = null;
+                _editSnapshot = null;
+                StatusMessage = "Edit cancelled";
+                return;
+            }
+
+            if (_editSnapshot is not null)
+            {
+                _editSnapshot.Restore(SelectedBus);
+                ApplyFilters();
+                Logger.Information(
+                    "Restored bus edit snapshot BusId={BusId} BusNumber={BusNumber}",
+                    SelectedBus.BusId,
+                    SelectedBus.BusNumber);
+            }
+
+            StatusMessage = "Edit cancelled";
+        }
+
+        /// <summary>
+        /// Search buses by text
+        /// </summary>
+        private Task SearchBusesAsync()
+        {
+            ApplyFilters();
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Refresh the bus list
+        /// </summary>
+        private async Task RefreshAsync()
+        {
+            SearchText = string.Empty;
+            SelectedStatusFilter = "All Status";
+            await LoadBusesAsync();
+        }
+
+        /// <summary>
+        /// Check if a bus can be edited
+        /// </summary>
+        private bool CanEditBus()
+        {
+            return SelectedBus != null && !IsBusy;
+        }
+
+        /// <summary>
+        /// Check if a bus can be updated
+        /// </summary>
+        private bool CanUpdateBus()
+        {
+            return SelectedBus != null &&
+                SelectedBus.BusId > 0 &&
+                      !IsBusy;
+        }
+
+        /// <summary>
+        /// Check if a bus can be saved
+        /// </summary>
+        private bool CanSaveBus()
+        {
+            return SelectedBus != null &&
+                   !string.IsNullOrWhiteSpace(SelectedBus.BusNumber) &&
+                   SelectedBus.SeatingCapacity > 0 &&
+                   SelectedBus.Year > 0 &&
+                   !IsBusy;
+        }
+
+        /// <summary>
+        /// Check if a bus can be deleted
+        /// </summary>
+        private bool CanDeleteBus()
+        {
+            return SelectedBus != null &&
+                SelectedBus.BusId > 0 &&
+                      !IsBusy;
+        }
+
+        /// <summary>
+        /// Property change notification for selected bus
+        /// </summary>
+        partial void OnSelectedBusChanged(BusBuddy.Core.Models.Bus? value)
+        {
+            // Unsubscribe from previous selection changes
+            if (_lastSelectedBus is not null)
+            {
+                _lastSelectedBus.PropertyChanged -= SelectedBus_PropertyChanged;
+            }
+
+            // Subscribe to new selection changes
+            if (value is not null)
+            {
+                value.PropertyChanged += SelectedBus_PropertyChanged;
+            }
+
+            _lastSelectedBus = value;
+            _editSnapshot = value is { BusId: > 0 } ? BusEditSnapshot.Capture(value) : null;
+
+            // Refresh command states
+            RefreshCommandStates();
+        }
+
+        private void SelectedBus_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // When any field of the selected bus changes (e.g., BusNumber),
+            // update command CanExecute states so Save becomes enabled immediately.
+            RefreshCommandStates();
+        }
+
+        /// <summary>
+        /// Property change notification for busy state
+        /// </summary>
+        partial void OnIsBusyChanged(bool value)
+        {
+            // Refresh all command states when busy state changes
+            RefreshCommandStates();
+        }
+
+        /// <summary>
+        /// Get bus fleet summary for dashboard
+        /// </summary>
+        public BusFleetSummary GetFleetSummary()
+        {
+            return new BusFleetSummary
+            {
+                TotalVehicles = Buses.Count,
+                ActiveVehicles = Buses.Count(v => v.Status == "Active"),
+                InactiveVehicles = Buses.Count(v => v.Status != "Active"),
+                VehiclesInService = Buses.Count(v => v.Status == "InService"),
+                VehiclesInMaintenance = Buses.Count(v => v.Status == "Maintenance"),
+                VehiclesOutOfService = Buses.Count(v => v.Status == "OutOfService"),
+                AverageCapacity = Buses.Any() ? (int)Buses.Average(v => v.SeatingCapacity) : 0
+            };
+        }
+
+        /// <summary>
+        /// Captures detail-panel fields so Cancel can restore an existing bus after TwoWay edits.
+        /// </summary>
+        private sealed class BusEditSnapshot
+        {
+            public required string BusNumber { get; init; }
+            public required string Make { get; init; }
+            public required string Model { get; init; }
+            public required string LicenseNumber { get; init; }
+            public required string VinNumber { get; init; }
+            public int SeatingCapacity { get; init; }
+            public int Year { get; init; }
+            public required string Status { get; init; }
+            public string? FleetType { get; init; }
+
+            public static BusEditSnapshot Capture(BusBuddy.Core.Models.Bus bus) => new()
+            {
+                BusNumber = bus.BusNumber ?? string.Empty,
+                Make = bus.Make ?? string.Empty,
+                Model = bus.Model ?? string.Empty,
+                LicenseNumber = bus.LicenseNumber ?? string.Empty,
+                VinNumber = bus.VINNumber ?? string.Empty,
+                SeatingCapacity = bus.SeatingCapacity,
+                Year = bus.Year,
+                Status = bus.Status ?? "Active",
+                FleetType = bus.FleetType,
+            };
+
+            public void Restore(BusBuddy.Core.Models.Bus bus)
+            {
+                bus.BusNumber = BusNumber;
+                bus.Make = Make;
+                bus.Model = Model;
+                bus.LicenseNumber = LicenseNumber;
+                bus.VINNumber = VinNumber;
+                bus.SeatingCapacity = SeatingCapacity;
+                bus.Year = Year;
+                bus.Status = Status;
+                bus.FleetType = FleetType;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Summary data for bus fleet dashboard
+    /// </summary>
+    public class BusFleetSummary
+    {
+        public int TotalVehicles { get; set; }
+        public int ActiveVehicles { get; set; }
+        public int InactiveVehicles { get; set; }
+        public int VehiclesInService { get; set; }
+        public int VehiclesInMaintenance { get; set; }
+        public int VehiclesOutOfService { get; set; }
+        public int AverageCapacity { get; set; }
     }
 }

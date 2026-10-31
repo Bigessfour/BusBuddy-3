@@ -9,27 +9,27 @@ using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Utilities;
-using BusBuddy.WPF.ViewModels.Vehicle;
+using BusBuddy.WPF.ViewModels.Bus;
 
-namespace BusBuddy.WPF.Views.Vehicle
+namespace BusBuddy.WPF.Views.Bus
 {
     /// <summary>
-    /// Interaction logic for VehicleManagementView.xaml
+    /// Interaction logic for BusManagementView.xaml
     /// Code-behind with ViewModel binding
     /// </summary>
-    public partial class VehicleManagementView : UserControl
+    public partial class BusManagementView : UserControl
     {
-        private static readonly ILogger Logger = Log.ForContext<VehicleManagementView>();
-        private readonly VehicleManagementStartup _startup;
+        private static readonly ILogger Logger = Log.ForContext<BusManagementView>();
+        private readonly BusManagementStartup _startup;
 
-        public VehicleManagementView() : this(VehicleManagementStartup.None)
+        public BusManagementView() : this(BusManagementStartup.None)
         {
         }
 
-        public VehicleManagementView(VehicleManagementStartup startup)
+        public BusManagementView(BusManagementStartup startup)
         {
             _startup = startup;
-            Logger.Debug("VehicleManagementView ctor start Startup={Startup}", startup);
+            Logger.Debug("BusManagementView ctor start Startup={Startup}", startup);
             try
             {
                 InitializeComponent();
@@ -37,12 +37,12 @@ namespace BusBuddy.WPF.Views.Vehicle
                 try
                 {
                     var busService = App.ServiceProvider.GetRequiredService<IBusService>();
-                    this.DataContext = new VehicleManagementViewModel(busService);
-                    Logger.Information("VehicleManagementView DataContext set to VehicleManagementViewModel");
+                    this.DataContext = new BusManagementViewModel(busService);
+                    Logger.Information("BusManagementView DataContext set to BusManagementViewModel");
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to resolve IBusService for VehicleManagementViewModel. Commands may be disabled.");
+                    Logger.Error(ex, "Failed to resolve IBusService for BusManagementViewModel. Commands may be disabled.");
                 }
                 Loaded += OnLoaded;
                 Unloaded += OnUnloaded;
@@ -56,32 +56,32 @@ namespace BusBuddy.WPF.Views.Vehicle
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warning(ex, "VehicleManagementView: failed to attach handlers");
+                    Logger.Warning(ex, "BusManagementView: failed to attach handlers");
                 }
 
-                Logger.Information("VehicleManagementView initialized");
+                Logger.Information("BusManagementView initialized");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "VehicleManagementView initialization failed");
+                Logger.Error(ex, "BusManagementView initialization failed");
                 throw;
             }
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
-            Logger.Information("VehicleManagementView Loaded");
-            if (_startup != VehicleManagementStartup.None && DataContext is VehicleManagementViewModel vm)
+            Logger.Information("BusManagementView Loaded");
+            if (_startup != BusManagementStartup.None && DataContext is BusManagementViewModel vm)
             {
                 _ = vm.ApplyStartupAsync(_startup);
             }
 
-            try { Dispatcher.BeginInvoke(new Action(() => ButtonAccessibilityAudit.Run(this, Logger, "VehicleMgmt")), DispatcherPriority.Loaded); } catch (Exception ex) { Logger.Warning(ex, "VehicleManagementView: audit scheduling failed"); }
+            try { Dispatcher.BeginInvoke(new Action(() => ButtonAccessibilityAudit.Run(this, Logger, "BusMgmt")), DispatcherPriority.Loaded); } catch (Exception ex) { Logger.Warning(ex, "BusManagementView: audit scheduling failed"); }
         }
 
         private void OnUnloaded(object? sender, RoutedEventArgs e)
         {
-            Logger.Information("VehicleManagementView Unloaded — cleaning up");
+            Logger.Information("BusManagementView Unloaded — cleaning up");
             try
             {
                 Loaded -= OnLoaded; Unloaded -= OnUnloaded;
@@ -105,22 +105,22 @@ namespace BusBuddy.WPF.Views.Vehicle
                 {
                     bool? canExec = null; try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { }
                     var autoName = AutomationProperties.GetName(badv);
-                    Logger.Information("VehicleMgmt ButtonAdv: Name={Name} Label={Label} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", name, badv.Label, autoName, badv.Command != null, canExec);
+                    Logger.Information("BusMgmt ButtonAdv: Name={Name} Label={Label} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", name, badv.Label, autoName, badv.Command != null, canExec);
                 }
                 else if (src is Button btn)
                 {
                     bool? canExec = null; try { if (btn.Command != null) canExec = btn.Command.CanExecute(btn.CommandParameter); } catch { }
                     var autoName = AutomationProperties.GetName(btn);
-                    Logger.Information("VehicleMgmt Button: Name={Name} Content={Content} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", name, btn.Content?.ToString(), autoName, btn.Command != null, canExec);
+                    Logger.Information("BusMgmt Button: Name={Name} Content={Content} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", name, btn.Content?.ToString(), autoName, btn.Command != null, canExec);
                 }
                 else
                 {
-                    Logger.Information("VehicleMgmt Click: Type={Type} Name={Name}", type, name);
+                    Logger.Information("BusMgmt Click: Type={Type} Name={Name}", type, name);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "VehicleManagementView: button logging failed");
+                Logger.Warning(ex, "BusManagementView: button logging failed");
             }
         }
 
@@ -132,11 +132,11 @@ namespace BusBuddy.WPF.Views.Vehicle
                 var fe = src as FrameworkElement;
                 var name = fe?.Name ?? "(unnamed)";
                 var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
-                Logger.Information("VehicleMgmt SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
+                Logger.Information("BusMgmt SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "VehicleManagementView: selection logging failed");
+                Logger.Warning(ex, "BusManagementView: selection logging failed");
             }
         }
 
@@ -149,11 +149,11 @@ namespace BusBuddy.WPF.Views.Vehicle
                 var name = fe?.Name ?? "(unnamed)";
                 var type = src.GetType().Name;
                 int? len = src is TextBox tb ? tb.Text?.Length : null;
-                Logger.Information("VehicleMgmt TextChanged: Type={Type} Name={Name} Length={Length}", type, name, len);
+                Logger.Information("BusMgmt TextChanged: Type={Type} Name={Name} Length={Length}", type, name, len);
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "VehicleManagementView: text logging failed");
+                Logger.Warning(ex, "BusManagementView: text logging failed");
             }
         }
 
@@ -165,11 +165,11 @@ namespace BusBuddy.WPF.Views.Vehicle
                 var fe = src as FrameworkElement;
                 var name = fe?.Name ?? "(unnamed)";
                 var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
-                Logger.Warning("VehicleMgmt Validation{Action}: Type={Type} Name={Name} Error={Error}", e.Action, type, name, e.Error?.ErrorContent);
+                Logger.Warning("BusMgmt Validation{Action}: Type={Type} Name={Name} Error={Error}", e.Action, type, name, e.Error?.ErrorContent);
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "VehicleManagementView: validation logging failed");
+                Logger.Warning(ex, "BusManagementView: validation logging failed");
             }
         }
 

@@ -61,7 +61,7 @@ public static class UiSurfaceProbe
     }
 
     /// <summary>
-    /// Chrome hosts (VehicleForm → VehiclesView → VehicleManagementView) and document windows
+    /// Chrome hosts (BusFleetWindow → BusesView → BusManagementView) and document windows
     /// (PdfPreviewWindow) load with a null DataContext by design. Feature dialogs and UserControls
     /// with neither their own nor a descendant view-model are a miswire.
     /// </summary>

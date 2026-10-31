@@ -111,13 +111,13 @@ Do not park unused code as `*.disabled`. Delete it. Git history is the archive.
 
 ### Non-blocking / optional
 
-| Job                      | When                                                                                                                                | Notes                                     |
+| Job | When | Notes |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --- | -------------------------- |
-| **Release artifacts**    | `workflow_dispatch` on `master` (or a human push) after Build & Test; auto-merged squashes are bot-attributed and do not trigger it | Publishes win-x64 WPF package as artifact |
-| **Docker CI simulation** | Manual (`workflow_dispatch`)                                                                                                        | Postgres + container test parity          |
-| **CI with AI Analysis**  | Manual only                                                                                                                         | Deprecated as merge gate; experimental    |
-| Dependency vuln audit    | Inside Build & Test                                                                                                                 | Informational (`                          |     | true` in CI), not blocking |
-| Code coverage            | Local / future                                                                                                                      | Not gated until flaky tests stabilized    |
+| **Release artifacts** | `workflow_dispatch` on `master` (or a human push) after Build & Test; auto-merged squashes are bot-attributed and do not trigger it | Publishes win-x64 WPF package as artifact |
+| **Docker CI simulation** | Manual (`workflow_dispatch`) | Postgres + container test parity |
+| **CI with AI Analysis** | Manual only | Deprecated as merge gate; experimental |
+| Dependency vuln audit | Inside Build & Test | Informational (`                          |     | true` in CI), not blocking |
+| Code coverage | Local / future | Not gated until flaky tests stabilized |
 
 ### Local pre-PR commands
 
@@ -983,7 +983,7 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 
 - **StudentsView.xaml**: Working SfDataGrid with proper column configuration
 - **FuelReconciliationDialog.xaml**: Working SfDataGrid with custom styling
-- **VehicleManagementView.xaml**: RECENTLY UPGRADED to SfDataGrid - maintain this progress!
+- **BusManagementView.xaml**: RECENTLY UPGRADED to SfDataGrid - maintain this progress!
 - **Multiple Views**: 20+ SfDataGrid instances already successfully implemented
 - **Resource Dictionaries**: Validated Syncfusion V30 styling and themes
 
@@ -1014,7 +1014,7 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 ✅ **RECENTLY UPGRADED (MAJOR PROGRESS):**
 
 ```xml
-<!-- VehicleManagementView.xaml - Successfully converted from DataGrid -->
+<!-- BusManagementView.xaml - Successfully converted from DataGrid -->
 <syncfusion:SfDataGrid Grid.Column="0"
                        x:Name="VehicleDataGrid"
                        ItemsSource="{Binding FilteredVehicles}"
@@ -1033,7 +1033,7 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 ⚠️ **REQUIRES SIMILAR UPGRADE (NO REGRESSION ALLOWED):**
 
 - Any remaining DataGrid instances should be upgraded to SfDataGrid using above patterns
-- MapView.xaml DataGrid → Convert to SfDataGrid following VehicleManagementView pattern
+- MapView.xaml DataGrid → Convert to SfDataGrid following BusManagementView pattern
 - VehiclesView.xaml → Add Syncfusion namespace and implement SfDataGrid
 - VehicleForm.xaml → Any data display should use SfDataGrid patterns
 

@@ -107,12 +107,12 @@ public class ActivityOperationalSurfaceTests
     }
 
     [Test]
-    public void VehicleForm_HostsVehiclesView()
+    public void BusFleetWindow_HostsBusesView()
     {
-        var form = XamlViewFile.Read("Views/Vehicle/VehicleForm.xaml.cs");
-        Assert.That(form, Does.Contain("new VehiclesView(startup)"));
-        var host = XamlViewFile.Read("Views/Vehicle/VehiclesView.xaml.cs");
-        Assert.That(host, Does.Contain("new VehicleManagementView(startup)"));
+        var form = XamlViewFile.Read("Views/Bus/BusFleetWindow.xaml.cs");
+        Assert.That(form, Does.Contain("new BusesView(startup)"));
+        var host = XamlViewFile.Read("Views/Bus/BusesView.xaml.cs");
+        Assert.That(host, Does.Contain("new BusManagementView(startup)"));
     }
 
     [Test]

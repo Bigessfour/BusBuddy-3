@@ -44,12 +44,12 @@ Dock **Students / Routes / Buses / Drivers** grids are summaries of Postgres. Th
 
 Keep both for now. After a dialog closes, the dock grid refreshes from the service.
 
-| Entity   | Dock pane          | Full editor                                              |
-| -------- | ------------------ | -------------------------------------------------------- |
-| Students | left Students grid | Students window                                          |
-| Buses    | Buses document     | Vehicle Management window (`Bus` type, `Vehicles` table) |
-| Drivers  | Drivers document   | Drivers window                                           |
-| Routes   | right Routes grid  | Route Assignments document                               |
+| Entity   | Dock pane          | Full editor                                                                                    |
+| -------- | ------------------ | ---------------------------------------------------------------------------------------------- |
+| Students | left Students grid | Students window                                                                                |
+| Buses    | Buses document     | Bus Management window (`BusFleetLauncher` → `BusManagementView`; `Bus` type, `Vehicles` table) |
+| Drivers  | Drivers document   | Drivers window                                                                                 |
+| Routes   | right Routes grid  | Route Assignments document                                                                     |
 
 ---
 

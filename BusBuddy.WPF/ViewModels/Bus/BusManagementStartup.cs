@@ -1,8 +1,8 @@
-namespace BusBuddy.WPF.ViewModels.Vehicle;
+namespace BusBuddy.WPF.ViewModels.Bus;
 
 /// <summary>Optional action when fleet management opens (e.g. MainWindow Add Bus shortcut).</summary>
-public enum VehicleManagementStartup
+public enum BusManagementStartup
 {
     None,
-    AddVehicle,
+    AddBus,
 }

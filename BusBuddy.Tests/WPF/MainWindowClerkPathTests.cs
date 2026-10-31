@@ -37,16 +37,16 @@ public class MainWindowClerkPathTests
     }
 
     [Test]
-    public void VehicleManagementViewModelSource_DoesNotInventSampleBuses()
+    public void BusManagementViewModelSource_DoesNotInventSampleBuses()
     {
-        var source = XamlViewFile.Read("ViewModels/Vehicle/VehicleManagementViewModel.cs");
+        var source = XamlViewFile.Read("ViewModels/Bus/BusManagementViewModel.cs");
         Assert.That(source, Does.Not.Contain("LoadSampleData"));
         Assert.That(source, Does.Not.Contain("BUS001"));
-        Assert.That(source, Does.Not.Contain("Vehicles.Max(v => v.BusId)"));
+        Assert.That(source, Does.Not.Contain("Buses.Max(v => v.BusId)"));
         Assert.That(source, Does.Not.Contain("catch { /* ignore service failure */ }"));
         Assert.That(source, Does.Contain("await _busService.AddBusAsync"));
         Assert.That(source, Does.Contain("await _busService.DeleteBusAsync"));
-        Assert.That(source, Does.Contain("Log.ForContext<VehicleManagementViewModel>"));
+        Assert.That(source, Does.Contain("Log.ForContext<BusManagementViewModel>"));
     }
 
     [Test]
@@ -153,15 +153,25 @@ public class MainWindowClerkPathTests
     }
 
     [Test]
-    public void BusForm_IsRemoved_FleetUsesVehicleFleetLauncher()
+    public void BusForm_IsRemoved_FleetUsesBusFleetLauncher()
     {
         Assert.That(XamlViewFile.Exists("Views/Bus/BusForm.xaml"), Is.False);
         Assert.That(XamlViewFile.Exists("ViewModels/Bus/BusFormViewModel.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("Views/Bus/BusEditDialog.xaml"), Is.False);
+        Assert.That(XamlViewFile.Exists("ViewModels/Bus/BusEditDialogViewModel.cs"), Is.False);
 
         var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");
-        Assert.That(main, Does.Contain("VehicleFleetLauncher.ShowDialog"));
-        Assert.That(main, Does.Contain("VehicleManagementStartup.AddVehicle"));
+        Assert.That(main, Does.Contain("BusFleetLauncher.ShowDialog"));
+        Assert.That(main, Does.Contain("BusManagementStartup.AddBus"));
         Assert.That(main, Does.Not.Contain("new BusForm"));
+        Assert.That(main, Does.Not.Contain("BusEditDialog"));
+
+        Assert.That(XamlViewFile.Exists("Views/Bus/BusFleetWindow.xaml"), Is.True);
+        Assert.That(XamlViewFile.Exists("Views/Bus/BusManagementView.xaml"), Is.True);
+        Assert.That(XamlViewFile.Exists("ViewModels/Bus/BusManagementViewModel.cs"), Is.True);
+        var fleetVm = XamlViewFile.Read("ViewModels/Bus/BusManagementViewModel.cs");
+        Assert.That(fleetVm, Does.Contain("SaveBusCommand"));
+        Assert.That(fleetVm, Does.Contain("AddBusAsync"));
     }
 
     [Test]

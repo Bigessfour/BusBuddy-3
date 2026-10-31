@@ -258,12 +258,12 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Fleet details view requested");
-                VehicleFleetLauncher.Show(Window.GetWindow(this));
-                UiProofLog.Write(Logger, click, "VehicleManagementView", "opened");
+                BusFleetLauncher.Show(Window.GetWindow(this));
+                UiProofLog.Write(Logger, click, "BusManagementView", "opened");
             }
             catch (Exception ex)
             {
-                UiProofLog.Failed(Logger, ex, click, "VehicleManagementView");
+                UiProofLog.Failed(Logger, ex, click, "BusManagementView");
             }
         }
 

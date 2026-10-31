@@ -97,7 +97,7 @@ Do not regress working grids or revert to `DataGrid`:
 
 - `BusBuddy.WPF/Views/Student/StudentsView.xaml`
 - `BusBuddy.WPF/Views/Fuel/FuelReconciliationDialog.xaml`
-- `BusBuddy.WPF/Views/Bus/VehicleManagementView.xaml`
+- `BusBuddy.WPF/Views/Bus/BusManagementView.xaml`
 
 Prefer matching patterns in these files when touching similar views.
 
