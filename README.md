@@ -14,16 +14,18 @@ BusBuddy is a **single locked-down clerk PC** app. There is **no in-app login**.
 
 ## 🎯 **Project Vision**
 
-BusBuddy streamlines school transportation operations through intelligent route management, vehicle tracking, and student assignment systems. Built with modern .NET technologies, professional-grade UI components, and state-of-the-art PowerShell 7.5.2 automation with machine-specific hyperthreading optimization.
+BusBuddy streamlines school transportation operations through route management, fleet records, and student assignment for a district transportation clerk. Built with .NET 9, Syncfusion WPF, and Postgres via EF Core. The District Map shows published routes and validated pins — **not** live bus positions.
 
 ### **Core Features**
 
-- 🚌 **Fleet Management**: Vehicle tracking, maintenance scheduling, driver assignments
-- 📍 **Route Optimization**: Google Maps Platform Address Validation + Syncfusion SfMap
-- 👥 **Student Management**: Student enrollment, route assignments, pickup/dropoff tracking
-- 📊 **Analytics Dashboard**: Real-time metrics, performance reports, operational insights
-- 🔧 **Maintenance Tracking**: Scheduled maintenance, repair history, compliance monitoring
-- ⚡ **Performance Optimization**: Hyperthreading-aware parallel processing and machine-specific tuning
+- 🚌 **Fleet Management**: Bus inventory, maintenance and fuel records, driver assignments on routes
+- 📍 **Route Planning & Maps**: Google Maps Platform Address Validation + Routes; Syncfusion SfMap with Google Map Tiles (display only)
+- 👥 **Student Management**: Enrollment, school/pickup places, route assignments
+- 📊 **Analytics Dashboard**: Counts and reports from the database (refresh on demand — not a live GPS feed)
+- 🔧 **Maintenance Tracking**: Scheduled maintenance, repair history, compliance records
+- ⚡ **Performance**: Parallel-friendly Core services and machine-local tuning for clerk workflows
+
+**Live fleet GPS** (device breadcrumbs, parent “where is the bus,” `IsLiveTrackingEnabled`) is a **future / deferred** feature. It is **not enabled** in the current app. Domain rule: [specs/README.md](specs/README.md) and [specs/maps.md](specs/maps.md).
 
 ## 🚀 **Quick Start**
 
@@ -448,10 +450,10 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 #### **📍 Route Management**
 
 - Interactive route planning with Syncfusion SfMap and Maps Platform routing
-- Stop optimization and timing
+- Stop optimization and published clocks
 - Student assignment to routes
-- Real-time tracking and updates
-- Performance analytics
+- District Map overlays for published paths and validated pins (not live GPS)
+- Operational reports from stored route data
 
 #### **👥 Student Management**
 
@@ -654,7 +656,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 - Integration with state transportation reporting systems
 - Multi-district support
-- IoT device integration for real-time tracking
+- **Deferred — not enabled today:** live fleet GPS / IoT device breadcrumbs (see Core Features note and `specs/maps.md`)
 - Environmental impact tracking and reporting
 
 ## 📞 **Support**
