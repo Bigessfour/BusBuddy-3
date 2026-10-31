@@ -221,6 +221,44 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public void GenerateRouteSummaryReport_PrintsAide_WhenAideNameSet()
+        {
+            var route = new Route
+            {
+                RouteName = "SN Bus 5",
+                School = "Wiley School",
+                IsSpecialNeedsRoute = true,
+                AideName = "Pat Aide",
+                Date = new DateTime(2026, 9, 17, 0, 0, 0, DateTimeKind.Utc),
+                Session = RouteSession.SpecialNeeds
+            };
+            var stops = new[]
+            {
+                new RouteStop
+                {
+                    StopOrder = 1,
+                    StopName = "Home",
+                    ScheduledArrival = new TimeSpan(7, 0, 0),
+                    ScheduledDeparture = new TimeSpan(7, 1, 0)
+                }
+            };
+
+            var bytes = _service.GenerateRouteSummaryReport(
+                route, stops, Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
+            Assert.That(bytes.Length, Is.GreaterThan(500));
+            Assert.That(bytes[0], Is.EqualTo((byte)'%'));
+            var sheet = RouteSummarySheetBuilder.Build(
+                route, stops, Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
+            Assert.That(sheet.AideLabel, Is.EqualTo("Pat Aide"));
+            var renderer = System.IO.File.ReadAllText(
+                System.IO.Path.Combine(
+                    TestContext.CurrentContext.TestDirectory,
+                    "..", "..", "..", "..",
+                    "BusBuddy.Core", "Services", "RouteSummaryPdfRenderer.cs"));
+            Assert.That(renderer, Does.Contain("DrawPair(g, labelFont, valueFont, body, muted, \"Aide\", model.AideLabel"));
+        }
+
+        [Test]
         public void GenerateRouteSummaryReport_AssignedStudent_AppearsWithGrade()
         {
             var route = new Route { RouteName = "Town AM", School = "Wiley School", Session = RouteSession.AM };

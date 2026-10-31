@@ -238,6 +238,10 @@
                                              AllowEditing="True"/>
         <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
                 <syncfusion:GridCheckBoxColumn MappingName="IsSpecialNeedsRoute" HeaderText="Special Needs" Width="110"/>
+                <syncfusion:GridTextColumn MappingName="AideName"
+                                          HeaderText="Aide"
+                                          Width="140"
+                                          AllowEditing="True"/>
                 <syncfusion:GridComboBoxColumn MappingName="School"
                                              HeaderText="School"
                                              Width="160"

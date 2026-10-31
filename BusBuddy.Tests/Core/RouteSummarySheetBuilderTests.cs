@@ -209,6 +209,66 @@ public class RouteSummarySheetBuilderTests
         Assert.That(sheet.Title, Does.Contain("PM Route Sheet"));
     }
 
+    [Test]
+    public void Build_SetsAideLabel_WhenAideNameSet()
+    {
+        var route = new Route
+        {
+            RouteName = "SN AM",
+            School = "Wiley School",
+            IsSpecialNeedsRoute = true,
+            AideName = "  Pat Aide  "
+        };
+
+        var sheet = RouteSummarySheetBuilder.Build(
+            route, Array.Empty<RouteStop>(), Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
+
+        Assert.That(sheet.AideLabel, Is.EqualTo("Pat Aide"));
+    }
+
+    [Test]
+    public void Build_OmitsAideLabel_WhenAideNameNullOrWhitespace()
+    {
+        var route = new Route
+        {
+            RouteName = "SN AM",
+            School = "Wiley School",
+            IsSpecialNeedsRoute = true,
+            AideName = "   "
+        };
+        var sheet = RouteSummarySheetBuilder.Build(
+            route, Array.Empty<RouteStop>(), Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
+
+        Assert.That(sheet.AideLabel, Is.Null);
+    }
+
+    [Test]
+    public void Build_OmitsAideLabel_WhenNotSpecialNeeds_EvenIfNameSet()
+    {
+        // AideName can be set while Special Needs is already false (initializer order);
+        // the sheet must still omit the PDF line.
+        var route = new Route
+        {
+            RouteName = "Town AM",
+            School = "Wiley School",
+            IsSpecialNeedsRoute = false,
+            AideName = "Pat Aide"
+        };
+        Assert.That(route.AideName, Is.EqualTo("Pat Aide"));
+        var sheet = RouteSummarySheetBuilder.Build(
+            route, Array.Empty<RouteStop>(), Array.Empty<Student>(), null, null, RouteTimeSlot.AM);
+
+        Assert.That(sheet.AideLabel, Is.Null);
+    }
+
+    [Test]
+    public void ClearingSpecialNeeds_ClearsAideName()
+    {
+        var route = new Route { IsSpecialNeedsRoute = true, AideName = "Pat Aide" };
+        route.IsSpecialNeedsRoute = false;
+        Assert.That(route.AideName, Is.Null);
+    }
+
     private static RouteStop Stop(int order, string name, TimeSpan arr, TimeSpan dep, string? notes = null) =>
         new()
         {

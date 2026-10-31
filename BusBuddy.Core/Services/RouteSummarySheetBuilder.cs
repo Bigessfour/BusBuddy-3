@@ -130,6 +130,9 @@ public static class RouteSummarySheetBuilder
                 : route.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             DriverLabel = string.IsNullOrWhiteSpace(driverName) ? "Unassigned" : driverName.Trim(),
             BusLabel = string.IsNullOrWhiteSpace(busNumber) ? "Unassigned" : $"Bus {busNumber.Trim()}",
+            AideLabel = route.IsSpecialNeedsRoute && !string.IsNullOrWhiteSpace(route.AideName)
+                ? route.AideName.Trim()
+                : null,
             DepartureText = ordered.Count > 0 ? FormatClock(ArrivalClock(ordered[0])) : "—",
             ArrivalText = ordered.Count > 0 ? FormatClock(ArrivalClock(ordered[^1])) : "—",
             TotalMilesText = totalMiles,
