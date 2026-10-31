@@ -17,25 +17,28 @@
 
 **Project-done:** [done-checklist.md](./done-checklist.md) — `python3 .github/scripts/check-project-done.py`. Ship-ready is a subset. The project is done only when the checker exits 0.
 
-### Status snapshot (2026-10-26)
+### Status snapshot (2026-10-31)
 
-Branch **`master`** at `42ae5f8` — [PR #126](https://github.com/Bigessfour/BusBuddy-3/pull/126) merged on top of [PR #102](https://github.com/Bigessfour/BusBuddy-3/pull/102) (`d6e5739`). Prod walk: [clerk-path-cursor-prompts.md](./clerk-path-cursor-prompts.md). **Now:** Item 5 + Maps slice 1 guest-proofed 2026-10-26 (see Done log). Next: remaining parked dual-write / FK work. PRs #97–#102 and #126 are merged; do not reopen them. Guest-proof boxes below stay open until a log is recorded in this file.
+Branch **`master`** includes [PR #139](https://github.com/Bigessfour/BusBuddy-3/pull/139) (#138) and [PR #141](https://github.com/Bigessfour/BusBuddy-3/pull/141) (#140 CI filter). Prod walk Items 1–6 + Maps slice 1 are guest-proofed (Done log). **Do not reopen** those walks, #138, or #140 as unfinished work.
 
-| Criterion                       | Status                                                                                                                                                                                                                           |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Clerk hops 1–6                  | **Met** — DbPrep on Docker Postgres + PR #64                                                                                                                                                                                     |
-| Windows VM proof                | **Met (hybrid)** — UTM testhost + live District Map 2026-09-10 / 09-17; hops 1–3 ribbon clicks still optional                                                                                                                    |
-| District Map / Settings         | **Camera met** (2026-09-18 relaunch `DistrictSource=user-settings HasDepotKey=true`). Open: Export toast + Move pin live clicks                                                                                                  |
-| Schedule window / PDF           | **Met** — 2026-09-18: `RouteScheduleWindow` + PdfGrid preview (`Verb=none`). Queue #1 closed.                                                                                                                                    |
-| Path-consistent clocks (Item 3) | **Met (guest 2026-09-21)** — Bus 5 `RouteId=4`: Drive path `42069m` / `3580s`; `Published clocks … Source=PathDuration` **07:30→08:43**; schedule `FirstLast=07:30 → 08:43`. Supersedes 09-18 **lying** `07:30→07:43` staircase. |
-| Follow-up PR #65                | **Merged** 2026-09-10 (`District Map interaction proof and Google Maps attribution logo`)                                                                                                                                        |
-| PRs #97–#102                    | **Merged** on `master`. See Done log 2026-10-26.                                                                                                                                                                                 |
-| a11y Phase 2 / wishlist         | Out of scope                                                                                                                                                                                                                     |
-| Project-done checker            | **Not 0** — guest Item 5 / Maps slice 1 / Export-Move / hops 1–3 UI cited 2026-10-26; re-run checker after this commit. B12 cleared by #126. Ship-ready ≠ checker 0                                                              |
+Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (production-readiness) · [#104](https://github.com/Bigessfour/BusBuddy-3/issues/104) (undeveloped surfaces).
 
-**Verdict:** Ship-ready for clerk Core. Prod walk **Items 1–6** and **Maps slice 1** are guest-proofed (2026-09-21 + 2026-10-26 logs). Remaining open work is parked dual-write / FK follow-ups.
+| Criterion                       | Status                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Clerk hops 1–6                  | **Met** — DbPrep + guest UI proof 2026-10-26                                                                 |
+| Windows VM proof                | **Met (hybrid)** — UTM testhost + District Map                                                               |
+| District Map / Settings         | **Met** — camera + tiles + Export/Move leftover clicks logged 2026-10-26                                     |
+| Schedule window / PDF           | **Met**                                                                                                      |
+| Path-consistent clocks (Item 3) | **Met (guest 2026-09-21)**                                                                                   |
+| Threat model (#138)             | **Met** — single clerk PC; `HasOperatorIdentity`; no in-app login                                            |
+| CI clerk/map suites (#140)      | **Met** — #141 merged; filter `Category!=Integration&Category!=InMemoryFlaky`. Do not restore FQN allowlist. |
+| README live GPS wording (#143)  | **Met** — GPS is future/deferred, not enabled                                                                |
+| a11y Phase 2 / live GPS product | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
+| Project-done checker            | Re-run after queue catch-up; ship-ready ≠ checker 0                                                          |
 
-**Open boxes on this file:** Route FK name-string drop; `IStudentScheduleService`; fleet chrome filenames. Item 5, Maps slice 1, District Map Export/Move, and optional hops 1–3 UI closed with 2026-10-26 guest evidence. Parked rows stay parked.
+**Verdict:** Ship-ready for clerk Core. **Next High:** [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) or [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) on board #104.
+
+**Open boxes on this file (parked / #104):** `AMRoute`/`PMRoute` name-string drop (#108); `IStudentScheduleService` (#109); fleet chrome / BusEditDialog (#115).
 
 ---
 
@@ -43,18 +46,18 @@ Branch **`master`** at `42ae5f8` — [PR #126](https://github.com/Bigessfour/Bus
 
 ### Live leftover queue (ordered)
 
-Do in this order. Do not start parked campaigns from this table.
+Do in this order. Do **not** re-open completed prod-walk / Maps / #138 rows (they are `[x]` below and in the Done log). Do not start parked campaigns from this table in the same pass as a High card.
 
-| Order | Item                                                                                                                                                                                                                          | Why this slot                                                                                                      |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 1     | Prod walk **Item 5** — assignment **Refresh Route Data** → stable `Data refreshed successfully` log (partial 13:59:19 on the 2026-09-21 log).                                                                                 | Item 6 schedule + PdfGrid preview **closed** 13:57 guest log. Leave this box open until a later log is cited here. |
-| 2     | **Maps slice 1 — tiles** (walk Item 7). Guest: `MapsConnectionProbe` + `SfMapTileProbe google-urltemplate` + District Map `MapTileBootstrap Host=DistrictMap Outcome=ok`. Unconfigured overview until a depot is set. No OSM. | After Item 5. Competing tile strategies blanked the map. Contract: `specs/maps.md`.                                |
-| —     | District Map leftover: **Export Route** toast + **Move to selected route**                                                                                                                                                    | Parked until slices 1–3 pass. Not a tile/pin/path fix.                                                             |
-| —     | Student form map live confirm                                                                                                                                                                                                 | **Met** 2026-09-20 — `Opening home pin map` + `Clerk adjusted home pin` StudentId=65.                              |
-| —     | `AMRoute` / `PMRoute` name-string drop                                                                                                                                                                                        | Parked campaign (~300 refs / ~56 files). Dual-write stays until then. **Do not start in one pass.**                |
-| —     | `IRouteRepository`                                                                                                                                                                                                            | **Keep.** Address Validation `GetAllAsync`. Not a stub                                                             |
-| —     | `StudentsBulkRouteCoordinator` / `RouteAssignments` writers                                                                                                                                                                   | Parked. Do not “finish” `RouteAssignments`                                                                         |
-| —     | Generate also assign roster keys                                                                                                                                                                                              | Schedule smoke is closed. Decide wrap onto `AssignStudentToRouteAsync` or leave Generate-stops-only                |
+| Order | Item                                                                                                                              | Why this slot                                                                    |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) — Retire or specify `StudentScheduleService`                          | Next High on [#104](https://github.com/Bigessfour/BusBuddy-3/issues/104) / #142. |
+| 2     | [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) — Fleet Vehicle→Bus chrome + one BusEditDialog opener                 | High on #104. One at a time after or instead of #109.                            |
+| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** this pass — do not redo.                                                |
+| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                              |
+| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (~300 refs). **Do not start in one pass.**                                |
+| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not “finish” as hop 4.                                                |
+| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                           |
+| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                              |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
@@ -146,11 +149,23 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — Issue #143 README: live GPS is future, not enabled
+
+- **Change:** Vision / Core Features / Route Management / Long-term Vision no longer claim live vehicle tracking or real-time GPS as current. Explicit **future / deferred — not enabled** note cites `specs/README.md` / `specs/maps.md`.
+- **Do not:** wire `UpdateBusLocationAsync` to the map or enable `IsLiveTrackingEnabled` under this card.
+- **Queue:** Next High is #109 or #115.
+
+### 2026-10-31 — Action-items queue catch-up (boards #142 / #104)
+
+- **Why:** Live leftover table still listed Item 5 / Maps slice 1 as Order 1–2 after those boxes were `[x]`, which caused agents to redo guest proof. Status snapshot was stuck on 2026-10-26.
+- **Now:** Ordered queue points at #109 / #115. #143 and #140/#141 recorded as done. Completed walks stay `[x]` only.
+- **Do not redo:** #138/#139, #140/#141, #143, prod walk Items 1–6, Maps slice 1, District Map Export/Move leftovers.
+
 ### 2026-10-31 — Issue #140 CI runs clerk and map WPF suites
 
 - **Change:** `.github/workflows/ci.yml` and `.github/scripts/validate-ci-local.sh` Test filter is now `Category!=Integration&Category!=InMemoryFlaky` only (FQN token allowlist removed).
 - **Why:** The old `FullyQualifiedName~Core|Seed|Student|Route|…` allowlist skipped ~164 tests (Map/Settings/MainWindow/Places/Trip/Activity/Dashboard/DriverSchedule).
-- **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'Category!=Integration&Category!=InMemoryFlaky'` → **Passed: 900, Failed: 0** (2026-10-31). Timeout left at 25 minutes.
+- **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'Category!=Integration&Category!=InMemoryFlaky'` → **Passed: 900, Failed: 0** (2026-10-31). Timeout left at 25 minutes. Merged as [PR #141](https://github.com/Bigessfour/BusBuddy-3/pull/141).
 - **Out of scope (do not reopen this card for):** `TreatWarningsAsErrors`, vulnerable-package fail-closed.
 
 ### 2026-10-31 — Issue #138 single-clerk threat model (operator identity)
