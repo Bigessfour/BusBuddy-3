@@ -71,6 +71,8 @@ public sealed partial class TripEventService
 
         trip.Status = TripStatus.Confirmed;
         trip.UpdatedDate = DateTime.UtcNow;
+        // Re-confirm resets the #117 snapshot baseline so "Was (confirmed)" does not lie.
+        ClearPriorPlan(trip, context.Entry(trip));
         context.Entry(trip).Property(t => t.Status).IsModified = true;
         context.Entry(trip).Property(t => t.UpdatedDate).IsModified = true;
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
