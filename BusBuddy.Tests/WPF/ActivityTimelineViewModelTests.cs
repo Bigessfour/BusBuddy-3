@@ -38,13 +38,25 @@ public class ActivityTimelineViewModelTests
             option.IsSelected = false;
         }
 
-        var deadline = DateTime.UtcNow.AddSeconds(3);
-        while (DateTime.UtcNow < deadline && inflight > 0)
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (DateTime.UtcNow < deadline)
         {
-            await Task.Delay(20);
+            if (inflight == 0 && !vm.IsLoading)
+            {
+                await Task.Delay(50);
+                if (inflight == 0 && !vm.IsLoading)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                await Task.Delay(20);
+            }
         }
 
         Assert.That(maxInflight, Is.EqualTo(1));
+        Assert.That(inflight, Is.EqualTo(0));
         Assert.That(vm.IsLoading, Is.False);
     }
 }
