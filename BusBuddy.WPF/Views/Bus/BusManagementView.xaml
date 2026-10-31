@@ -275,7 +275,7 @@
                                 <syncfusion:IntegerTextBox Grid.Row="6" Grid.Column="1"
                                                            Style="{StaticResource BusIntegerTextBox}"
                                                            MinValue="1990"
-                                                           MaxValue="2100"
+                                                           MaxValue="2030"
                                                            Value="{Binding SelectedBus.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                            AutomationProperties.Name="Year"/>
 
@@ -312,17 +312,6 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2"
-                Background="{DynamicResource BusBuddy.Brush.Overlay.Dim}"
-                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
-                IsHitTestVisible="True">
-            <syncfusion:SfBusyIndicator IsBusy="{Binding IsBusy}"
-                                        Header="{Binding StatusMessage}"
-                                        AutomationProperties.Name="Bus management busy"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"/>
-        </Border>
-
         <!-- Status bar -->
         <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
                 Height="32" Margin="0,12,0,0" CornerRadius="2">
@@ -348,6 +337,17 @@
                     </TextBlock.Text>
                 </TextBlock>
             </Grid>
+        </Border>
+
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                Background="{DynamicResource BusBuddy.Brush.Overlay.Dim}"
+                Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}"
+                IsHitTestVisible="True">
+            <syncfusion:SfBusyIndicator IsBusy="{Binding IsBusy}"
+                                        Header="{Binding StatusMessage}"
+                                        AutomationProperties.Name="Bus management busy"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </UserControl>

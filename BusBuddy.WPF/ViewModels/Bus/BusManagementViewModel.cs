@@ -90,14 +90,14 @@ namespace BusBuddy.WPF.ViewModels.Bus
         {
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 
-            LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync);
-            AddBusCommand = new AsyncRelayCommand(AddBusDraftAsync);
+            LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync, () => !IsBusy);
+            AddBusCommand = new AsyncRelayCommand(AddBusDraftAsync, () => !IsBusy);
             UpdateBusCommand = new AsyncRelayCommand(UpdateBusFromFormAsync, CanUpdateBus);
             SaveBusCommand = new AsyncRelayCommand(SaveBusAsync, CanSaveBus);
             DeleteBusCommand = new AsyncRelayCommand(DeleteBusAsync, CanDeleteBus);
-            CancelEditCommand = new RelayCommand(CancelEdit);
-            SearchBusesCommand = new AsyncRelayCommand(SearchBusesAsync);
-            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+            CancelEditCommand = new RelayCommand(CancelEdit, () => !IsBusy);
+            SearchBusesCommand = new AsyncRelayCommand(SearchBusesAsync, () => !IsBusy);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => !IsBusy);
 
             _initialLoadTask = LoadBusesAsync();
         }
@@ -129,9 +129,25 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         private void RefreshCommandStates()
         {
+            ((AsyncRelayCommand)LoadBusesCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)AddBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)UpdateBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)SaveBusCommand).NotifyCanExecuteChanged();
             ((AsyncRelayCommand)DeleteBusCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)SearchBusesCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)RefreshCommand).NotifyCanExecuteChanged();
+            (CancelEditCommand as IRelayCommand)?.NotifyCanExecuteChanged();
+        }
+
+        private bool TryBeginBusy()
+        {
+            if (IsBusy)
+            {
+                return false;
+            }
+
+            IsBusy = true;
+            return true;
         }
 
         /// <summary>
@@ -139,11 +155,15 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// </summary>
         private async Task LoadBusesAsync()
         {
+            if (!TryBeginBusy())
+            {
+                return;
+            }
+
             using (LogContext.PushProperty("Operation", "LoadBuses"))
             {
                 try
                 {
-                    IsBusy = true;
                     StatusMessage = "Loading buses...";
                     Logger.Information("Loading buses from IBusService");
 
@@ -227,9 +247,13 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// </summary>
         private Task AddBusDraftAsync()
         {
+            if (!TryBeginBusy())
+            {
+                return Task.CompletedTask;
+            }
+
             try
             {
-                IsBusy = true;
                 StatusMessage = "Adding new bus...";
 
                 var newBus = new BusBuddy.Core.Models.Bus
@@ -293,13 +317,17 @@ namespace BusBuddy.WPF.ViewModels.Bus
             var bus = SelectedBus;
             var isNew = bus.BusId == 0;
 
+            if (!TryBeginBusy())
+            {
+                return;
+            }
+
             using (LogContext.PushProperty("Operation", "SaveBus"))
             using (LogContext.PushProperty("BusId", bus.BusId))
             using (LogContext.PushProperty("BusNumber", bus.BusNumber))
             {
                 try
                 {
-                    IsBusy = true;
                     StatusMessage = "Saving bus...";
                     Logger.Information(
                         "Saving bus BusNumber={BusNumber} IsNew={IsNew}",
@@ -403,12 +431,16 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 return;
             }
 
+            if (!TryBeginBusy())
+            {
+                return;
+            }
+
             using (LogContext.PushProperty("Operation", "DeleteBus"))
             using (LogContext.PushProperty("BusId", busId))
             {
                 try
                 {
-                    IsBusy = true;
                     StatusMessage = $"Removing bus {busNumber}...";
                     Logger.Information(
                         "Deleting bus BusId={BusId} BusNumber={BusNumber}",
@@ -522,9 +554,14 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// </summary>
         private async Task RefreshAsync()
         {
+            if (IsBusy)
+            {
+                return;
+            }
+
             SearchText = string.Empty;
             SelectedStatusFilter = "All Status";
-            await LoadBusesAsync();
+            await LoadBusesAsync().ConfigureAwait(true);
         }
 
         /// <summary>
