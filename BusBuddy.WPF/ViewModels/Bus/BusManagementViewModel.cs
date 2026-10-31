@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -22,6 +24,8 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         private readonly IBusService _busService;
         private BusBuddy.Core.Models.Bus? _lastSelectedBus;
+        private BusEditSnapshot? _editSnapshot;
+        private readonly Task _initialLoadTask;
 
         [ObservableProperty]
         private ObservableCollection<BusBuddy.Core.Models.Bus> _buses = new();
@@ -97,12 +101,12 @@ namespace BusBuddy.WPF.ViewModels.Bus
             SearchBusesCommand = new AsyncRelayCommand(SearchBusesAsync);
             RefreshCommand = new AsyncRelayCommand(RefreshAsync);
 
-            // Initialize with loading
-            _ = LoadBusesAsync();
+            _initialLoadTask = LoadBusesAsync();
         }
 
         /// <summary>
         /// Runs a deferred startup action after the view loads (e.g. Add Bus shortcut).
+        /// Waits for the initial fleet load so draft bus numbers are not stamped from an empty list.
         /// </summary>
         public async Task ApplyStartupAsync(BusManagementStartup startup)
         {
@@ -111,13 +115,15 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 return;
             }
 
+            await _initialLoadTask.ConfigureAwait(true);
+
             using (LogContext.PushProperty("Startup", startup.ToString()))
             {
                 Logger.Information("Applying fleet startup action {Startup}", startup);
                 switch (startup)
                 {
                     case BusManagementStartup.AddBus:
-                        await AddBusDraftAsync();
+                        await AddBusDraftAsync().ConfigureAwait(true);
                         break;
                 }
             }
@@ -222,16 +228,16 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// <summary>
         /// Start a new bus draft in the detail panel
         /// </summary>
-        private async Task AddBusDraftAsync()
+        private Task AddBusDraftAsync()
         {
             try
             {
                 IsBusy = true;
-                StatusMessage = "Adding new vehicle...";
+                StatusMessage = "Adding new bus...";
 
                 var newBus = new BusBuddy.Core.Models.Bus
                 {
-                    BusNumber = $"BUS{(Buses.Count + 1):000}",
+                    BusNumber = NextDraftBusNumber(),
                     Make = "",
                     Model = "",
                     LicenseNumber = "",
@@ -249,26 +255,46 @@ namespace BusBuddy.WPF.ViewModels.Bus
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error adding vehicle: {ex.Message}";
+                StatusMessage = $"Error adding bus: {ex.Message}";
                 Logger.Error(ex, "Error preparing new bus draft");
             }
             finally
             {
                 IsBusy = false;
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Edit selected bus
+        /// Focus the detail panel for the selected bus (selection already binds the form).
         /// </summary>
-        private async Task EditBusAsync()
+        private Task EditBusAsync()
         {
             if (SelectedBus == null)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             StatusMessage = $"Editing bus {SelectedBus.BusNumber}";
+            return Task.CompletedTask;
+        }
+
+        private string NextDraftBusNumber()
+        {
+            var next = 1;
+            foreach (var bus in Buses)
+            {
+                var number = bus.BusNumber?.Trim() ?? string.Empty;
+                if (number.StartsWith("BUS", StringComparison.OrdinalIgnoreCase)
+                    && int.TryParse(number.AsSpan(3), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+                {
+                    next = Math.Max(next, n + 1);
+                }
+            }
+
+            next = Math.Max(next, Buses.Count + 1);
+            return string.Format(CultureInfo.InvariantCulture, "BUS{0:000}", next);
         }
 
         /// <summary>
@@ -281,12 +307,12 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 return;
             }
 
-            var vehicle = SelectedBus;
-            var isNew = vehicle.BusId == 0;
+            var bus = SelectedBus;
+            var isNew = bus.BusId == 0;
 
             using (LogContext.PushProperty("Operation", "SaveBus"))
-            using (LogContext.PushProperty("BusId", vehicle.BusId))
-            using (LogContext.PushProperty("BusNumber", vehicle.BusNumber))
+            using (LogContext.PushProperty("BusId", bus.BusId))
+            using (LogContext.PushProperty("BusNumber", bus.BusNumber))
             {
                 try
                 {
@@ -294,13 +320,10 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     StatusMessage = "Saving bus...";
                     Logger.Information(
                         "Saving bus BusNumber={BusNumber} IsNew={IsNew}",
-                        vehicle.BusNumber,
+                        bus.BusNumber,
                         isNew);
 
-                    // Ensure latest UI edits are propagated (in case some controls haven't lost focus yet)
-                    vehicle.BusNumber = vehicle.BusNumber;
-
-                    if (string.IsNullOrWhiteSpace(vehicle.BusNumber))
+                    if (string.IsNullOrWhiteSpace(bus.BusNumber))
                     {
                         Logger.Warning("Bus save blocked — BusNumber blank");
                         StatusMessage = "Bus Number is required";
@@ -309,7 +332,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
                     if (isNew)
                     {
-                        var added = await _busService.AddBusAsync(vehicle);
+                        var added = await _busService.AddBusAsync(bus);
                         Buses.Add(added);
                         SelectedBus = added;
                         Logger.Information(
@@ -320,27 +343,30 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     }
                     else
                     {
-                        var updated = await _busService.UpdateBusAsync(vehicle);
+                        var updated = await _busService.UpdateBusAsync(bus);
                         if (!updated)
                         {
                             Logger.Warning(
                                 "UpdateBusAsync reported no changes for BusId={BusId}",
-                                vehicle.BusId);
+                                bus.BusId);
                         }
 
-                        var index = Buses.ToList().FindIndex(v => v.BusId == vehicle.BusId);
+                        var index = Buses.ToList().FindIndex(v => v.BusId == bus.BusId);
                         if (index >= 0)
                         {
-                            Buses[index] = vehicle;
+                            Buses[index] = bus;
                         }
 
                         Logger.Information(
                             "Updated bus BusId={BusId} BusNumber={BusNumber}",
-                            vehicle.BusId,
-                            vehicle.BusNumber);
-                        StatusMessage = $"Bus {vehicle.BusNumber} updated successfully";
+                            bus.BusId,
+                            bus.BusNumber);
+                        StatusMessage = $"Bus {bus.BusNumber} updated successfully";
                     }
 
+                    _editSnapshot = SelectedBus is { BusId: > 0 }
+                        ? BusEditSnapshot.Capture(SelectedBus)
+                        : null;
                     ApplyFilters();
                 }
                 catch (Exception ex)
@@ -348,8 +374,8 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     Logger.Error(
                         ex,
                         "Error saving bus BusId={BusId} BusNumber={BusNumber}",
-                        vehicle.BusId,
-                        vehicle.BusNumber);
+                        bus.BusId,
+                        bus.BusNumber);
                     StatusMessage = $"Error saving bus: {ex.Message}";
                 }
                 finally
@@ -377,9 +403,22 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 return;
             }
 
-            var vehicle = SelectedBus;
-            var busId = vehicle.BusId;
-            var busNumber = vehicle.BusNumber;
+            var bus = SelectedBus;
+            var busId = bus.BusId;
+            var busNumber = bus.BusNumber;
+
+            var confirm = MessageBox.Show(
+                $"Remove bus {busNumber} from the fleet?\n\n"
+                + "If the bus is still on a route or has fuel/maintenance history, it will be retired instead of hard-deleted.",
+                "Confirm remove bus",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No);
+            if (confirm != MessageBoxResult.Yes)
+            {
+                StatusMessage = "Remove cancelled";
+                return;
+            }
 
             using (LogContext.PushProperty("Operation", "DeleteBus"))
             using (LogContext.PushProperty("BusId", busId))
@@ -387,7 +426,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 try
                 {
                     IsBusy = true;
-                    StatusMessage = $"Removing vehicle {busNumber}...";
+                    StatusMessage = $"Removing bus {busNumber}...";
                     Logger.Information(
                         "Deleting bus BusId={BusId} BusNumber={BusNumber}",
                         busId,
@@ -395,7 +434,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
                     if (busId <= 0)
                     {
-                        Buses.Remove(vehicle);
+                        Buses.Remove(bus);
                         SelectedBus = null;
                         ApplyFilters();
                         Logger.Information("Removed unsaved bus draft from list");
@@ -418,7 +457,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     var stillPresent = await _busService.GetBusByIdAsync(busId);
                     if (stillPresent is null)
                     {
-                        Buses.Remove(vehicle);
+                        Buses.Remove(bus);
                         SelectedBus = null;
                         ApplyFilters();
                         StatusMessage = $"Bus {busNumber} deleted";
@@ -427,7 +466,8 @@ namespace BusBuddy.WPF.ViewModels.Bus
                         return;
                     }
 
-                    vehicle.Status = stillPresent.Status;
+                    bus.Status = stillPresent.Status;
+                    _editSnapshot = BusEditSnapshot.Capture(bus);
                     ApplyFilters();
                     StatusMessage =
                         $"Bus {busNumber} retired — still referenced by routes or fuel/maintenance history";
@@ -453,14 +493,33 @@ namespace BusBuddy.WPF.ViewModels.Bus
         }
 
         /// <summary>
-        /// Cancel edit operation
+        /// Cancel edit: drop an unsaved draft, or restore the last snapshot for an existing bus.
         /// </summary>
         private void CancelEdit()
         {
-            if (SelectedBus?.BusId == 0)
+            if (SelectedBus is null)
+            {
+                StatusMessage = "Edit cancelled";
+                return;
+            }
+
+            if (SelectedBus.BusId == 0)
             {
                 Logger.Information("Cancelled unsaved bus draft");
                 SelectedBus = null;
+                _editSnapshot = null;
+                StatusMessage = "Edit cancelled";
+                return;
+            }
+
+            if (_editSnapshot is not null)
+            {
+                _editSnapshot.Restore(SelectedBus);
+                ApplyFilters();
+                Logger.Information(
+                    "Restored bus edit snapshot BusId={BusId} BusNumber={BusNumber}",
+                    SelectedBus.BusId,
+                    SelectedBus.BusNumber);
             }
 
             StatusMessage = "Edit cancelled";
@@ -469,9 +528,10 @@ namespace BusBuddy.WPF.ViewModels.Bus
         /// <summary>
         /// Search buses by text
         /// </summary>
-        private async Task SearchBusesAsync()
+        private Task SearchBusesAsync()
         {
-            ApplyFilters(); // Just apply filters, no need for separate search
+            ApplyFilters();
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -542,6 +602,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
             }
 
             _lastSelectedBus = value;
+            _editSnapshot = value is { BusId: > 0 } ? BusEditSnapshot.Capture(value) : null;
 
             // Refresh command states
             RefreshCommandStates();
@@ -578,6 +639,48 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 VehiclesOutOfService = Buses.Count(v => v.Status == "OutOfService"),
                 AverageCapacity = Buses.Any() ? (int)Buses.Average(v => v.SeatingCapacity) : 0
             };
+        }
+
+        /// <summary>
+        /// Captures detail-panel fields so Cancel can restore an existing bus after TwoWay edits.
+        /// </summary>
+        private sealed class BusEditSnapshot
+        {
+            public required string BusNumber { get; init; }
+            public required string Make { get; init; }
+            public required string Model { get; init; }
+            public required string LicenseNumber { get; init; }
+            public required string VinNumber { get; init; }
+            public int SeatingCapacity { get; init; }
+            public int Year { get; init; }
+            public required string Status { get; init; }
+            public string? FleetType { get; init; }
+
+            public static BusEditSnapshot Capture(BusBuddy.Core.Models.Bus bus) => new()
+            {
+                BusNumber = bus.BusNumber ?? string.Empty,
+                Make = bus.Make ?? string.Empty,
+                Model = bus.Model ?? string.Empty,
+                LicenseNumber = bus.LicenseNumber ?? string.Empty,
+                VinNumber = bus.VINNumber ?? string.Empty,
+                SeatingCapacity = bus.SeatingCapacity,
+                Year = bus.Year,
+                Status = bus.Status ?? "Active",
+                FleetType = bus.FleetType,
+            };
+
+            public void Restore(BusBuddy.Core.Models.Bus bus)
+            {
+                bus.BusNumber = BusNumber;
+                bus.Make = Make;
+                bus.Model = Model;
+                bus.LicenseNumber = LicenseNumber;
+                bus.VINNumber = VinNumber;
+                bus.SeatingCapacity = SeatingCapacity;
+                bus.Year = Year;
+                bus.Status = Status;
+                bus.FleetType = FleetType;
+            }
         }
     }
 

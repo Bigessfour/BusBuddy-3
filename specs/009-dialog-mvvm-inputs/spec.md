@@ -6,6 +6,8 @@
 
 **Status**: Draft (Wave 0 scope lock)
 
+**Superseded by #115 (2026-10-31):** `BusEditDialog` / `BusForm` KEEP goals and Wave 3 T024–T027 (`VehicleForm` hosts `BusForm`) are **cancelled**. Canonical fleet editor is `BusFleetLauncher` → `BusFleetWindow` → `BusesView` → `BusManagementView`. Do not resurrect those dialogs from this spec.
+
 **Input**: Clerks enter buses, drivers, fuel, students, and related records on Syncfusion WPF dialogs. Several of those surfaces are unbound, self-as-DataContext, or dead XAML that agents keep “fixing.” Lock which dialogs to delete, which must bind to a ViewModel, ComboBoxAdv rules, and a shared field style — then remediate one wave per PR.
 
 ## Baseline (as of Wave 0, after PR #48 on `master`)

@@ -154,8 +154,9 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Keep:** `BusFleetLauncher` → `BusFleetWindow` → `BusesView` → `BusManagementView` / `BusManagementViewModel` (grid + detail Save via `IBusService`).
 - **Removed:** unreachable `BusEditDialog`, `BusEditDialogViewModel`, and the orphan pre-rename `BusManagementViewModel` that only opened that dialog.
 - **Not in this PR:** SQL `Vehicles` table rename; route `AssignVehicle*` command/API names.
+- **Review follow-up:** Cancel restores a snapshot of detail fields; Delete confirms; Add Bus waits for initial load before drafting a number.
 - **Proof:** Guest filter `MainWindowClerkPathTests|ActivityOperationalSurfaceTests|BusTerminology` → **Passed: 18, Failed: 0** (2026-10-31).
-- **Do not:** resurrect `BusForm` or wire a second bus editor.
+- **Do not:** resurrect `BusForm` or wire a second bus editor. Spec 009 Wave 3 T024–T027 / KEEP `BusEditDialog` are superseded by this card.
 
 ### 2026-10-31 — Issue #109 drop StudentSchedule attendance
 

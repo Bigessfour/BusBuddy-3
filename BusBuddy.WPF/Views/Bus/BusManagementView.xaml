@@ -196,7 +196,7 @@
                         <TextBlock Text="&#xE7EC;" FontFamily="Segoe MDL2 Assets" FontSize="32"
                                    HorizontalAlignment="Center" Margin="0,0,0,8"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
-                        <TextBlock Text="Select a vehicle from the grid or click Add Bus."
+                        <TextBlock Text="Select a bus from the grid or click Add Bus."
                                    TextWrapping="Wrap" TextAlignment="Center"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     </StackPanel>
