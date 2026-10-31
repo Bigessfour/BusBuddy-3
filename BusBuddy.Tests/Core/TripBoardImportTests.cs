@@ -551,6 +551,14 @@ public class TripBoardImportTests
         Assert.That(trip.Status, Is.EqualTo(TripStatus.Changed));
         Assert.That(trip.DestinationName, Is.EqualTo("Woodland Park HS"));
         Assert.That(trip.DestinationLocationId, Is.Null);
+        Assert.That(trip.HasPriorPlan, Is.True);
+        Assert.That(trip.PriorDestinationName, Is.EqualTo("Strasburg HS"));
+        Assert.That(trip.PriorPickupTime, Is.EqualTo(TimeSpan.FromHours(6)));
+        Assert.That(trip.PriorReturnClockTime, Is.EqualTo(TimeSpan.FromHours(23)));
+        Assert.That(trip.PriorAssignedBusNumber, Is.EqualTo("25"));
+        Assert.That(trip.PriorDriverName, Is.EqualTo("Elby Sneller"));
+        Assert.That(trip.PriorPlanSummary, Does.Contain("Strasburg HS"));
+        Assert.That(trip.PriorPlanSummary, Does.Contain("Elby Sneller"));
     }
 
     [Test]
@@ -581,12 +589,56 @@ public class TripBoardImportTests
         await service.UpdateTripAsync(stored!);
         stored = await service.GetTripByIdAsync(trip.TripEventId);
         Assert.That(stored!.Status, Is.EqualTo(TripStatus.Confirmed));
+        Assert.That(stored.HasPriorPlan, Is.False);
 
         stored.PickupTime = TimeSpan.FromHours(7);
         await service.UpdateTripAsync(stored);
         stored = await service.GetTripByIdAsync(trip.TripEventId);
         Assert.That(stored!.Status, Is.EqualTo(TripStatus.Changed));
         Assert.That(stored.PickupTime, Is.EqualTo(TimeSpan.FromHours(7)));
+        Assert.That(stored.HasPriorPlan, Is.True);
+        Assert.That(stored.PriorPickupTime, Is.EqualTo(TimeSpan.FromHours(6)));
+        Assert.That(stored.PriorDestinationName, Is.EqualTo("Strasburg HS"));
+        Assert.That(stored.PriorAssignedBusNumber, Is.EqualTo("25"));
+        Assert.That(stored.PriorDriverName, Is.EqualTo("Elby Sneller"));
+
+        // Later Changed edits keep the confirmed snapshot; live row is the new plan.
+        stored.PickupTime = TimeSpan.FromHours(8);
+        await service.UpdateTripAsync(stored);
+        stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored!.Status, Is.EqualTo(TripStatus.Changed));
+        Assert.That(stored.PickupTime, Is.EqualTo(TimeSpan.FromHours(8)));
+        Assert.That(stored.PriorPickupTime, Is.EqualTo(TimeSpan.FromHours(6)));
+    }
+
+    [Test]
+    public async Task CancelTrip_DoesNotWritePriorPlanSnapshot()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        await SeedFleetAsync(factory);
+        var service = new TripEventService(factory);
+
+        using (var db = factory.CreateWriteDbContext())
+        {
+            db.Destinations.Add(ValidatedDestination("Strasburg HS"));
+            await db.SaveChangesAsync();
+        }
+
+        var csv = $"""
+            {Header}
+            "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Strasburg HS,6:00 AM,11:00 PM,319098880,25,,338,Elby Sneller,25,,Sep 2026
+            """;
+
+        await service.ImportBoardCsvAsync(csv);
+        var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098880");
+        var confirmed = await service.ConfirmTripAsync(trip.TripEventId);
+        Assert.That(confirmed.IsSuccess, Is.True, confirmed.Error);
+
+        var cancelled = await service.CancelTripAsync(trip.TripEventId);
+        Assert.That(cancelled.IsSuccess, Is.True, cancelled.Error);
+        var stored = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(stored!.Status, Is.EqualTo(TripStatus.Cancelled));
+        Assert.That(stored.HasPriorPlan, Is.False);
     }
 
     [Test]

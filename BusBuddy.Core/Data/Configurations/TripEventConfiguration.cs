@@ -31,6 +31,10 @@ internal sealed class TripEventConfiguration : IEntityTypeConfiguration<TripEven
         entity.Property(e => e.RequestingSchool).HasMaxLength(8);
         entity.Property(e => e.GroupOrActivity).HasMaxLength(200);
         entity.Property(e => e.AssignedBusNumber).HasMaxLength(40);
+        entity.Property(e => e.PriorDestinationName).HasMaxLength(200);
+        entity.Property(e => e.PriorOriginName).HasMaxLength(200);
+        entity.Property(e => e.PriorAssignedBusNumber).HasMaxLength(40);
+        entity.Property(e => e.PriorDriverName).HasMaxLength(100);
         entity.Property(e => e.PlannedMiles).HasColumnType("decimal(8,2)");
         entity.Property(e => e.PathMiles).HasColumnType("decimal(8,2)");
         entity.Property(e => e.ApprovedBy).HasMaxLength(100);

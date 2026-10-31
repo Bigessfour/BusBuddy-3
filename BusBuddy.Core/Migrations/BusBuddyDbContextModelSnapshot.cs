@@ -2207,6 +2207,40 @@ namespace BusBuddy.Core.Migrations
                     b.Property<decimal?>("PlannedMiles")
                         .HasColumnType("decimal(8,2)");
 
+                    b.Property<string>("PriorAssignedBusNumber")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("PriorDestinationName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("PriorDriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PriorDriverName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PriorOriginName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<TimeSpan?>("PriorPickupTime")
+                        .HasColumnType("interval");
+
+                    b.Property<DateTime?>("PriorPlanCapturedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<TimeSpan?>("PriorReturnClockTime")
+                        .HasColumnType("interval");
+
+                    b.Property<bool>("PriorReturnIsNextDay")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("PriorVehicleId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("RequestingSchool")
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)");

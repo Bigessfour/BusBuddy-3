@@ -60,6 +60,7 @@ public class ActivityOperationalSurfaceTests
         Assert.That(xaml, Does.Contain("MappingName=\"ExternalTicketNo\""));
         Assert.That(xaml, Does.Contain("MappingName=\"DisplayTripType\""));
         Assert.That(xaml, Does.Contain("MappingName=\"DriverHours\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"PriorPlanSummary\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedTrip, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Not.Contain("IsTrip"));
         Assert.That(xaml, Does.Not.Contain("new ActivitySchedule"));
@@ -72,6 +73,7 @@ public class ActivityOperationalSurfaceTests
         Assert.That(dialog, Does.Contain("Text=\"{Binding Purpose, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding SportKind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding StatusDisplay, Mode=OneWay}\""));
+        Assert.That(dialog, Does.Contain("Text=\"{Binding PriorPlanDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding PathMilesDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("Text=\"{Binding DriverHoursDisplay, Mode=OneWay}\""));
         Assert.That(dialog, Does.Contain("IsChecked=\"{Binding IsOvernightPending, Mode=TwoWay}\""));
@@ -80,6 +82,7 @@ public class ActivityOperationalSurfaceTests
         Assert.That(dialog, Does.Not.Contain("<Run Text=\"{Binding DriverHoursDisplay"));
         var dialogVm = XamlViewFile.Read("ViewModels/Activity/TripEventEditDialogViewModel.cs");
         Assert.That(dialogVm, Does.Contain("ITripReasonCatalog"));
+        Assert.That(dialogVm, Does.Contain("PriorPlanDisplay"));
         Assert.That(dialogVm, Does.Contain("RefreshDisplayedMilesAsync"));
         Assert.That(dialogVm, Does.Contain("never sets RouteId"));
         Assert.That(dialog, Does.Contain("Visibility=\"{Binding HasOrigins"));

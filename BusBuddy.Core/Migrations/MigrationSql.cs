@@ -19,6 +19,13 @@ public static class MigrationSql
     public static string DateTimeType(MigrationBuilder builder) =>
         IsNpgsql(builder) ? "timestamp with time zone" : "datetime2";
 
+    /// <summary>EF maps <see cref="TimeSpan"/> to Postgres interval; SQL Server uses time.</summary>
+    public static string TimeSpanType(MigrationBuilder builder) =>
+        IsNpgsql(builder) ? "interval" : "time";
+
+    public static string IntType(MigrationBuilder builder) =>
+        IsNpgsql(builder) ? "integer" : "int";
+
     public static string StringType(MigrationBuilder builder, int? maxLength = null)
     {
         if (IsNpgsql(builder))

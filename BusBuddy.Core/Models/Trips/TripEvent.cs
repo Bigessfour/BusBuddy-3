@@ -189,6 +189,78 @@ namespace BusBuddy.Core.Models.Trips
         [Display(Name = "Board Bus #")]
         public string? AssignedBusNumber { get; set; }
 
+        /// <summary>
+        /// Last confirmed place/times/bus/driver captured when status moves Confirmed → Changed.
+        /// Live board columns stay the new plan; these fields are the prior snapshot (#117).
+        /// </summary>
+        [Display(Name = "Prior plan captured")]
+        public DateTime? PriorPlanCapturedUtc { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Prior destination")]
+        public string? PriorDestinationName { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Prior origin")]
+        public string? PriorOriginName { get; set; }
+
+        [Display(Name = "Prior pickup")]
+        public TimeSpan? PriorPickupTime { get; set; }
+
+        [Display(Name = "Prior return")]
+        public TimeSpan? PriorReturnClockTime { get; set; }
+
+        [Display(Name = "Prior return next day")]
+        public bool PriorReturnIsNextDay { get; set; }
+
+        [Display(Name = "Prior vehicle")]
+        public int? PriorVehicleId { get; set; }
+
+        [StringLength(40)]
+        [Display(Name = "Prior bus #")]
+        public string? PriorAssignedBusNumber { get; set; }
+
+        [Display(Name = "Prior driver")]
+        public int? PriorDriverId { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "Prior driver name")]
+        public string? PriorDriverName { get; set; }
+
+        /// <summary>True when a Confirmed → Changed edit stored the prior plan.</summary>
+        [NotMapped]
+        public bool HasPriorPlan => PriorPlanCapturedUtc.HasValue;
+
+        /// <summary>One-line prior place / times / bus / driver for the trip board grid.</summary>
+        [NotMapped]
+        public string? PriorPlanSummary
+        {
+            get
+            {
+                if (!HasPriorPlan)
+                {
+                    return null;
+                }
+
+                var place = !string.IsNullOrWhiteSpace(PriorDestinationName)
+                    ? PriorDestinationName.Trim()
+                    : "TBD";
+                var leave = PriorPickupTime is TimeSpan pickup
+                    ? DateTime.Today.Add(pickup).ToString("h:mm tt")
+                    : "—";
+                var ret = PriorReturnClockTime is TimeSpan retClock
+                    ? DateTime.Today.Add(retClock).ToString("h:mm tt") + (PriorReturnIsNextDay ? " (+1)" : string.Empty)
+                    : "—";
+                var bus = !string.IsNullOrWhiteSpace(PriorAssignedBusNumber)
+                    ? PriorAssignedBusNumber.Trim()
+                    : PriorVehicleId?.ToString() ?? "—";
+                var driver = !string.IsNullOrWhiteSpace(PriorDriverName)
+                    ? PriorDriverName.Trim()
+                    : PriorDriverId?.ToString() ?? "—";
+                return $"{place}; {leave}–{ret}; Bus {bus}; {driver}";
+            }
+        }
+
         /// <summary>Board Driver column — alias for <see cref="DriverId"/>.</summary>
         [NotMapped]
         public int? AssignedDriverId

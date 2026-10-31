@@ -53,15 +53,15 @@ MissingInfo → Draft (Scheduled) → Assigned → Confirmed → Completed
          any non-terminal → Cancelled
 ```
 
-| Status      | Meaning                                                                                             |
-| ----------- | --------------------------------------------------------------------------------------------------- |
-| MissingInfo | Ticket (and often PAX) exist; place and/or time still unknown. Keep the row.                        |
-| Draft       | Scheduled request with enough to show on the board; bus/driver not both assigned. Alias: Scheduled. |
-| Assigned    | Bus and/or driver proposed.                                                                         |
-| Confirmed   | Validated destination + times + driver + bus accepted.                                              |
-| Changed     | Confirmed trip whose time, place, bus, or driver was edited. Keep prior values in history.          |
-| Cancelled   | Will not run. Remains on the calendar.                                                              |
-| Completed   | Ran (or was closed after return).                                                                   |
+| Status      | Meaning                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| MissingInfo | Ticket (and often PAX) exist; place and/or time still unknown. Keep the row.                                       |
+| Draft       | Scheduled request with enough to show on the board; bus/driver not both assigned. Alias: Scheduled.                |
+| Assigned    | Bus and/or driver proposed.                                                                                        |
+| Confirmed   | Validated destination + times + driver + bus accepted.                                                             |
+| Changed     | Confirmed trip whose time, place, bus, or driver was edited. Keep prior values (`Prior*` snapshot on `TripEvent`). |
+| Cancelled   | Will not run. Remains on the calendar.                                                                             |
+| Completed   | Ran (or was closed after return).                                                                                  |
 
 ## Relationships
 
@@ -97,6 +97,7 @@ MissingInfo → Draft (Scheduled) → Assigned → Confirmed → Completed
 | Spec term             | Existing code                                                                                       |
 | --------------------- | --------------------------------------------------------------------------------------------------- |
 | Trip aggregate        | `BusBuddy.Core.Models.Trips.TripEvent` (extend — do not clone `Route`)                              |
+| Confirmed → Changed   | `Prior*` columns + `PriorPlanSummary` on `TripEvent` (not a history table; live row stays new plan) |
 | Trip store            | `TripEvent` only. `Activity` and `ActivitySchedule` are removed. Do not merge trips into Route.     |
 | Places                | `IDestinationService`, `IPickupStopService`, `DestinationTypes.TripDestination`                     |
 | Bus / driver loan     | `IBusService`, driver services                                                                      |
