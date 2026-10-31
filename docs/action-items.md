@@ -160,6 +160,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
+
+- **Surfaces proved:** `FuelDialogViewModel` (validate → create/update via `IFuelService`; invalid/service-error/`IFuelService` missing fail closed); `MaintenanceViewModel` (load/save create+update/delete against mocked `IMaintenanceService`, confirm seam for delete).
+- **Tests:** `FuelDialogViewModelTests`, `MaintenanceViewModelTests`, `FuelManagementViewModelTests` (no double Create/Update after dialog).
+- **Guest:** filter `FuelDialogViewModelTests|MaintenanceViewModelTests|FuelManagementViewModelTests` → see PR #157 harden commit.
+- **Inventory:** 65 tracked / 61 with proof / 4 without (Batch C: MapMarkerHost, MapViewLauncher, RouteScheduleWindow, RouteStopsEditor).
+- **Out of scope:** Batch C; reopen #117/#114.
+
 ### 2026-10-31 — Issue #117 Confirmed → Changed keeps prior plan
 
 - **Design:** Prior-value snapshot columns on `TripEvent` (`Prior*`), not a history table. Captured when status leaves Confirmed for Changed; later Changed edits keep that confirmed snapshot. Live row stays the new plan.
@@ -167,7 +175,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Migration:** `20261102120000_TripEventPriorPlanSnapshot`.
 - **Invariant:** Route != Trip; Cancel / MissingInfo unchanged; #114 endorsement gates untouched.
 - **Re-confirm:** `ConfirmTripAsync` clears all `Prior*` so the next Confirmed→Changed capture starts from the new baseline. `ShowsPriorPlan` / `PriorPlanSummary` only when `Status == Changed`.
-- **Proof:** Guest filter `TripBoardImportTests|TripEventEditDialogViewModelTests|ActivityOperationalSurfaceTests`.
+- **Proof:** Guest filter `TripBoardImportTests|TripEventEditDialogViewModelTests|ActivityOperationalSurfaceTests` → **Passed: 44, Failed: 0**.
 - **Follow-up:** `/code-review` after this first slice lands.
 
 ### 2026-10-31 — P2 Batch A inventory proof (Bus / Drivers / DriverForm)

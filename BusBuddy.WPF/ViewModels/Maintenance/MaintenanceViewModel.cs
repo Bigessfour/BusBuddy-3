@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
@@ -16,12 +17,17 @@ public class MaintenanceViewModel : BaseViewModel
     private static readonly new ILogger Logger = Log.ForContext<MaintenanceViewModel>();
     private readonly IMaintenanceService _maintenanceService;
     private readonly IBusService _busService;
+    private readonly Func<string, string, bool> _confirmDelete;
     private MaintenanceModel? _selectedRecord;
 
-    public MaintenanceViewModel(IMaintenanceService maintenanceService, IBusService busService)
+    public MaintenanceViewModel(
+        IMaintenanceService maintenanceService,
+        IBusService busService,
+        Func<string, string, bool>? confirmDelete = null)
     {
         _maintenanceService = maintenanceService;
         _busService = busService;
+        _confirmDelete = confirmDelete ?? DefaultConfirmDelete;
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
         AddCommand = new AsyncRelayCommand(AddAsync);
         SaveCommand = new AsyncRelayCommand(SaveAsync, () => SelectedRecord != null);
@@ -29,6 +35,10 @@ public class MaintenanceViewModel : BaseViewModel
         Logger.Information("MaintenanceViewModel constructed — loading records");
         _ = LoadAsync();
     }
+
+    private static bool DefaultConfirmDelete(string message, string caption) =>
+        MessageBox.Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Warning)
+            == MessageBoxResult.Yes;
 
     public ObservableCollection<MaintenanceModel> Records { get; } = new();
     public ObservableCollection<BusModel> Vehicles { get; } = new();
@@ -181,12 +191,9 @@ public class MaintenanceViewModel : BaseViewModel
         }
 
         var id = SelectedRecord.MaintenanceId;
-        var confirm = MessageBox.Show(
-            "Delete this maintenance record? This cannot be undone.",
-            "Confirm Delete",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-        if (confirm != MessageBoxResult.Yes)
+        if (!_confirmDelete(
+                "Delete this maintenance record? This cannot be undone.",
+                "Confirm Delete"))
         {
             Logger.Information("Delete cancelled for maintenance record {MaintenanceId}", id);
             StatusMessage = "Delete cancelled";
