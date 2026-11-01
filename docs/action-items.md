@@ -160,6 +160,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-10-31 — P2 Batch C inventory proof (Map host / launcher / schedule / stops)
+
+- **Surfaces proved:** `MapMarkerHost` (fail-closed CanHost/TryAssign without live SfMap; layout + retry constants); `MapViewLauncher` (IsOpen / docked activate no-op guards + docked-MapView contract); `RouteScheduleWindow` (SfDataGrid + ReTime/Print/Close XAML + CloseRequested code-behind; VM/print already covered by `RouteScheduleViewModelTests` + Item 6 guest); `RouteStopsEditor` (stop command bindings + double-click → EditStopCommand).
+- **Tests:** `MapMarkerHostTests`, `MapViewLauncherTests`, `RouteScheduleWindowTests`, `RouteStopsEditorTests`.
+- **Guest:** filter `MapMarkerHostTests|MapViewLauncherTests|RouteScheduleWindowTests|RouteStopsEditorTests` → **Passed: 12, Failed: 0**.
+- **Inventory:** 65 tracked / 65 with proof / 0 without.
+- **Out of scope:** #113 / #112 product features.
+
 ### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
 
 - **Surfaces proved:** `FuelDialogViewModel` (validate → create/update via `IFuelService`; invalid/service-error/`IFuelService` missing fail closed); `MaintenanceViewModel` (load/save create+update/delete against mocked `IMaintenanceService`, confirm seam for delete).
