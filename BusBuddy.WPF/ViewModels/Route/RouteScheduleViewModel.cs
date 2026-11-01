@@ -18,7 +18,8 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
     public const string EmDash = "—";
 
     private readonly Func<Task<RouteSummarySheet?>>? _reTimeAsync;
-    private readonly Action? _print;
+    private readonly Func<Task<RouteSummarySheet?>>? _substituteAsync;
+    private readonly Func<Task<bool>>? _printAsync;
     private readonly Func<bool>? _confirmOverwriteClocks;
     private RouteSummarySheet _sheet;
     private string _statusMessage = string.Empty;
@@ -27,15 +28,18 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
     public RouteScheduleViewModel(
         RouteSummarySheet sheet,
         Func<Task<RouteSummarySheet?>>? reTimeAsync = null,
-        Action? print = null,
-        Func<bool>? confirmOverwriteClocks = null)
+        Func<Task<bool>>? printAsync = null,
+        Func<bool>? confirmOverwriteClocks = null,
+        Func<Task<RouteSummarySheet?>>? substituteAsync = null)
     {
         _sheet = sheet ?? throw new ArgumentNullException(nameof(sheet));
         _reTimeAsync = reTimeAsync;
-        _print = print;
+        _printAsync = printAsync;
         _confirmOverwriteClocks = confirmOverwriteClocks;
+        _substituteAsync = substituteAsync;
         ReTimeCommand = new RelayCommand(async () => await ReTimeAsync(), () => CanReTime);
-        PrintCommand = new RelayCommand(Print, () => CanPrint);
+        PrintCommand = new RelayCommand(async () => await PrintAsync(), () => CanPrint);
+        SubstituteCommand = new RelayCommand(async () => await SubstituteAsync(), () => CanSubstitute);
         CloseCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
         if (HasEmptyStops)
         {
@@ -50,6 +54,8 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
     public ICommand ReTimeCommand { get; }
 
     public ICommand PrintCommand { get; }
+
+    public ICommand SubstituteCommand { get; }
 
     public ICommand CloseCommand { get; }
 
@@ -90,6 +96,7 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(PrintToolTip));
             (ReTimeCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (SubstituteCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
     }
 
@@ -105,7 +112,14 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
 
     public bool CanReTime => !IsBusy && !HasEmptyStops && _reTimeAsync != null;
 
-    public bool CanPrint => !IsBusy && _print != null;
+    public bool CanPrint => !IsBusy && _printAsync != null;
+
+    public bool CanSubstitute => !IsBusy && _substituteAsync != null;
+
+    public string SubstituteToolTip =>
+        IsBusy
+            ? "Wait for the current operation to finish."
+            : "Set a spare bus or substitute driver for this route date only (does not change year-default pairing).";
 
     public string ReTimeToolTip
     {
@@ -148,9 +162,10 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
         CoreModels.RouteTimeSlot timeSlot,
         out RouteScheduleViewModel? viewModel,
         Func<Task<RouteSummarySheet?>>? reTimeAsync = null,
-        Action? print = null,
+        Func<Task<bool>>? printAsync = null,
         Func<bool>? confirmOverwriteClocks = null,
-        IReadOnlySet<int>? notRidingStudentIds = null)
+        IReadOnlySet<int>? notRidingStudentIds = null,
+        Func<Task<RouteSummarySheet?>>? substituteAsync = null)
     {
         if (route is null)
         {
@@ -166,7 +181,12 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
             driver,
             timeSlot,
             notRidingStudentIds: notRidingStudentIds);
-        viewModel = new RouteScheduleViewModel(sheet, reTimeAsync, print, confirmOverwriteClocks);
+        viewModel = new RouteScheduleViewModel(
+            sheet,
+            reTimeAsync,
+            printAsync,
+            confirmOverwriteClocks,
+            substituteAsync);
         return true;
     }
 
@@ -211,15 +231,56 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
         }
     }
 
-    private void Print()
+    private async Task PrintAsync()
     {
-        if (!CanPrint)
+        if (!CanPrint || _printAsync is null)
         {
             return;
         }
 
-        _print?.Invoke();
-        StatusMessage = "Printed PdfGrid route sheet";
+        try
+        {
+            IsBusy = true;
+            var ok = await _printAsync().ConfigureAwait(true);
+            StatusMessage = ok
+                ? "Printed PdfGrid route sheet"
+                : "Print failed";
+        }
+        finally
+        {
+            IsBusy = false;
+            OnPropertyChanged(nameof(PrintToolTip));
+        }
+    }
+
+    private async Task SubstituteAsync()
+    {
+        if (!CanSubstitute || _substituteAsync is null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsBusy = true;
+            StatusMessage = "Opening dated substitute…";
+            var next = await _substituteAsync();
+            if (next is null)
+            {
+                StatusMessage = "Substitute cancelled";
+                return;
+            }
+
+            Sheet = next;
+            StatusMessage = $"Substitute saved — {Sheet.BusLabel}; Driver: {Sheet.DriverLabel}";
+        }
+        finally
+        {
+            IsBusy = false;
+            OnPropertyChanged(nameof(ReTimeToolTip));
+            OnPropertyChanged(nameof(PrintToolTip));
+            OnPropertyChanged(nameof(SubstituteToolTip));
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>

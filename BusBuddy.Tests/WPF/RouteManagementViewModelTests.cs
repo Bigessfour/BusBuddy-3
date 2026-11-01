@@ -236,7 +236,8 @@ public class RouteManagementViewModelTests
             .ReturnsAsync(Result.SuccessResult(new List<Driver>()));
 
         var schedule = new Mock<IScheduleService>();
-        schedule.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
+        schedule
+            .Setup(s => s.SaveRouteSessionScheduleAsync(It.IsAny<Schedule>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         routeService.Setup(s => s.GetRouteStopsAsync(1))
@@ -276,8 +277,11 @@ public class RouteManagementViewModelTests
             RouteManagementExportHelper.OpenAfterWrite = previousOpen;
         }
 
-        schedule.Verify(s => s.AddScheduleAsync(It.Is<Schedule>(row =>
-            row.RouteId == 1 && row.BusId == 7 && row.DriverId == 9)), Times.Once);
+        schedule.Verify(
+            s => s.SaveRouteSessionScheduleAsync(
+                It.Is<Schedule>(row => row.RouteId == 1 && row.BusId == 7 && row.DriverId == 9),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
         vm.StatusMessage.Should().Contain("Schedule saved");
         vm.StatusMessage.Should().Contain("1 stops");
         vm.StatusMessage.Should().Contain("1 students");

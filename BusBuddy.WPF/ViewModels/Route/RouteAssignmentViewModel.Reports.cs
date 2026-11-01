@@ -2,9 +2,11 @@ using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF;
 using BusBuddy.WPF.Commands;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Views.Reports;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.WPF.ViewModels.Route;
 
@@ -19,14 +21,39 @@ public partial class RouteAssignmentViewModel
 
     public ICommand ExportRouteSheetCommand =>
         _exportRouteSheetCommand ??= new RelayCommand(
-            () => SaveRouteSheet(includeMap: false),
+            async () => await SaveRouteSheetAsync(includeMap: false),
             () => SelectedRoute != null);
 
     /// <summary>PdfGrid sheet with the current map snapshot embedded when one exists.</summary>
     public ICommand PrintRouteSheetCommand =>
         _printRouteSheetCommand ??= new RelayCommand(
-            () => SaveRouteSheet(includeMap: true),
+            async () => await SaveRouteSheetAsync(includeMap: true),
             () => SelectedRoute != null);
+
+    private IReadOnlyList<BusBuddy.Core.Models.Schedule> _datedSchedulesForSelected =
+        Array.Empty<BusBuddy.Core.Models.Schedule>();
+
+    private async Task RefreshDatedSchedulesAsync()
+    {
+        if (SelectedRoute is null)
+        {
+            _datedSchedulesForSelected = Array.Empty<BusBuddy.Core.Models.Schedule>();
+            return;
+        }
+
+        var schedules = App.ServiceProvider?.GetService<IScheduleService>();
+        if (schedules is null)
+        {
+            _datedSchedulesForSelected = Array.Empty<BusBuddy.Core.Models.Schedule>();
+            return;
+        }
+
+        _datedSchedulesForSelected = await schedules
+            .GetSchedulesForRouteOnDateAsync(
+                SelectedRoute.RouteId,
+                RouteDailyPairing.ServiceDateUtc(SelectedRoute))
+            .ConfigureAwait(true);
+    }
 
     private void ResolveSelectedSlotBusAndDriver(out BusBuddy.Core.Models.Bus? bus, out BusBuddy.Core.Models.Driver? driver)
     {
@@ -37,29 +64,25 @@ public partial class RouteAssignmentViewModel
             return;
         }
 
-        if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM)
+        var pairing = RouteDailyPairing.Resolve(
+            SelectedRoute,
+            NormalizeTimeSlot(SelectedTimeSlot),
+            _datedSchedulesForSelected);
+
+        var nav = RouteDailyPairing.PreferActiveNavMatch(
+            _datedSchedulesForSelected,
+            pairing.BusId,
+            pairing.DriverId,
+            pairing.FromSchedule);
+
+        if (pairing.BusId is int busId)
         {
-            if (SelectedRoute.PMVehicleId.HasValue)
-            {
-                bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.PMVehicleId.Value);
-            }
-
-            if (SelectedRoute.PMDriverId.HasValue)
-            {
-                driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.PMDriverId.Value);
-            }
-
-            return;
+            bus = AvailableBuses.FirstOrDefault(b => b.BusId == busId) ?? nav?.Bus;
         }
 
-        if (SelectedRoute.AMVehicleId.HasValue)
+        if (pairing.DriverId is int driverId)
         {
-            bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.AMVehicleId.Value);
-        }
-
-        if (SelectedRoute.AMDriverId.HasValue)
-        {
-            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.AMDriverId.Value);
+            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == driverId) ?? nav?.Driver;
         }
     }
 
@@ -84,16 +107,18 @@ public partial class RouteAssignmentViewModel
             notRidingStudentIds: notRidingStudentIds);
     }
 
-    private void SaveRouteSheet(bool includeMap)
+    private async Task<bool> SaveRouteSheetAsync(bool includeMap)
     {
         if (SelectedRoute == null)
         {
             MessageBox.Show("Select a route first.", "Route required", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            return false;
         }
 
         try
         {
+            await RefreshDatedSchedulesAsync().ConfigureAwait(true);
+
             byte[]? mapPng = null;
             if (includeMap)
             {
@@ -142,12 +167,14 @@ public partial class RouteAssignmentViewModel
                 pdfBytes.Length,
                 fullPath,
                 mapPng != null);
+            return true;
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "Route sheet export failed RouteId={RouteId}", SelectedRoute.RouteId);
             StatusMessage = $"Report failed: {ex.Message}";
             MessageBox.Show($"Could not build the route sheet:\n{ex.Message}", "Report", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
         }
     }
 }

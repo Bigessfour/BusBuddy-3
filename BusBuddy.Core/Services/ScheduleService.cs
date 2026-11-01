@@ -99,6 +99,131 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<IReadOnlyList<Schedule>> GetSchedulesForRouteOnDateAsync(
+            int routeId,
+            DateTime scheduleDate,
+            CancellationToken cancellationToken = default)
+        {
+            var day = DateTime.SpecifyKind(scheduleDate.Date, DateTimeKind.Utc);
+            var next = day.AddDays(1);
+            var context = _contextFactory.CreateDbContext();
+            try
+            {
+                return await context.Schedules
+                    .AsNoTracking()
+                    .Include(s => s.Bus)
+                    .Include(s => s.Driver)
+                    .Where(s =>
+                        s.RouteId == routeId
+                        && s.ScheduleDate >= day
+                        && s.ScheduleDate < next)
+                    .OrderBy(s => s.DepartureTime)
+                    .ThenByDescending(s => s.UpdatedDate ?? s.CreatedDate)
+                    .ThenByDescending(s => s.ScheduleId)
+                    .ToListAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                await context.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
+        public async Task SaveRouteSessionScheduleAsync(
+            Schedule schedule,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(schedule);
+
+            DeriveTripDetails(schedule);
+            ScheduleTimestampNormalizer.NormalizeForPersist(schedule);
+
+            var context = _contextFactory.CreateWriteDbContext();
+            try
+            {
+                if (!await context.Routes.AnyAsync(r => r.RouteId == schedule.RouteId, cancellationToken)
+                        .ConfigureAwait(false))
+                {
+                    throw new ArgumentException("Invalid route ID.");
+                }
+
+                if (!await context.Buses.AnyAsync(b => b.BusId == schedule.BusId, cancellationToken)
+                        .ConfigureAwait(false))
+                {
+                    throw new ArgumentException("Invalid bus ID.");
+                }
+
+                if (!await context.Drivers.AnyAsync(d => d.DriverId == schedule.DriverId, cancellationToken)
+                        .ConfigureAwait(false))
+                {
+                    throw new ArgumentException("Invalid driver ID.");
+                }
+
+                if (schedule.DepartureTime >= schedule.ArrivalTime)
+                {
+                    throw new ArgumentException("Departure time must be before arrival time.");
+                }
+
+                await CancelSameSlotSiblingsAsync(context, schedule, cancellationToken).ConfigureAwait(false);
+                await SaveOrRefreshRouteBusDepartureAsync(context, schedule).ConfigureAwait(false);
+                Logger.Information(
+                    "Saved route-session schedule RouteId={RouteId} Date={Date} BusId={BusId} DriverId={DriverId} Departure={Departure}",
+                    schedule.RouteId,
+                    schedule.ScheduleDate,
+                    schedule.BusId,
+                    schedule.DriverId,
+                    schedule.DepartureTime);
+            }
+            finally
+            {
+                await context.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Cancels other active rows for the same route, calendar day, and departure clock
+        /// so a spare-bus substitute replaces the home-bus Generate row instead of competing with it.
+        /// </summary>
+        private static async Task CancelSameSlotSiblingsAsync(
+            BusBuddyDbContext context,
+            Schedule schedule,
+            CancellationToken cancellationToken)
+        {
+            var day = DateTime.SpecifyKind(schedule.ScheduleDate.Date, DateTimeKind.Utc);
+            var next = day.AddDays(1);
+            var clock = schedule.DepartureTime.TimeOfDay;
+            // Date-range filter translates on Postgres; TimeOfDay compare stays in-memory
+            // so Npgsql never has to project .TimeOfDay in SQL.
+            var dayRows = await context.Schedules
+                .Where(s =>
+                    s.RouteId == schedule.RouteId
+                    && s.ScheduleDate >= day
+                    && s.ScheduleDate < next
+                    && s.Status != "Cancelled")
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var siblings = dayRows
+                .Where(s =>
+                    s.DepartureTime.TimeOfDay == clock
+                    && (s.BusId != schedule.BusId || s.DepartureTime != schedule.DepartureTime))
+                .ToList();
+
+            foreach (var sibling in siblings)
+            {
+                sibling.Status = "Cancelled";
+                sibling.UpdatedDate = DateTime.UtcNow;
+                sibling.Notes = string.IsNullOrWhiteSpace(sibling.Notes)
+                    ? "Superseded by dated session pairing"
+                    : sibling.Notes + " | Superseded by dated session pairing";
+            }
+
+            if (siblings.Count > 0)
+            {
+                await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
         public async Task AddScheduleAsync(Schedule schedule)
         {
             ArgumentNullException.ThrowIfNull(schedule);

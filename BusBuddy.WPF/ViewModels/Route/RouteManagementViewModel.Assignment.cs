@@ -327,7 +327,11 @@ namespace BusBuddy.WPF.ViewModels.Route
                 IsBusy = true;
                 StatusMessage = $"Printing schedule for '{SelectedRoute.RouteName}'...";
                 var pdf = await RouteManagementExportHelper
-                    .WriteSchedulePdfAsync(SelectedRoute, _routeService, openAfter: false)
+                    .WriteSchedulePdfAsync(
+                        SelectedRoute,
+                        _routeService,
+                        openAfter: false,
+                        scheduleService: _scheduleService)
                     .ConfigureAwait(true);
                 var preview = new PdfPreviewWindow(
                     pdf.Pdf,
