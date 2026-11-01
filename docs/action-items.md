@@ -39,7 +39,7 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | School-bus endorsement (#114)    | **Met** — #149; fail-closed assign/confirm/import; grandfather incumbents                                    |
 | Special-needs aide (#118)        | **Met** — #150; `Route.AideName` + grid + stop-sheet meta                                                    |
 | Confirmed → Changed prior (#117) | **Met** — #154; re-confirm clears `Prior*`                                                                   |
-| Dated substitute / spare (#113)  | **Met** — Schedule for `route.Date`; `RouteDailyPairing`; spare replaces same-slot siblings                  |
+| Dated substitute / spare (#113)  | **Met** — PR #158; review harden on branch (slot-scoped Resolve, sibling cancel, print await)                |
 | a11y Phase 2 / live GPS product  | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker             | Re-run after Medium catch-up; ship-ready ≠ checker 0                                                         |
 
@@ -55,21 +55,21 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 
 Do in this order. Do **not** re-open completed prod-walk / Maps / closed High-Medium rows (they are `[x]` below and in the Done log). Do not start parked campaigns in the same pass as the active Medium.
 
-| Order | Item                                                                                                                              | Why this slot                                                                          |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 1     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Next after #113. Shared driver+bus duty collection.                                    |
-| —     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) Dated substitute / spare                                              | **Done** — `Schedule` + `RouteDailyPairing`; year-default `Route.AM*`/`PM*` unchanged. |
-| —     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) Confirmed → Changed prior                                             | **Done** — #154; re-confirm clears `Prior*`. Do not reopen.                            |
-| —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                                 |
-| —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                                 |
-| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** — do not redo.                                                                |
-| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                                    |
-| —     | [#110](https://github.com/Bigessfour/BusBuddy-3/issues/110) Families / Guardians                                                  | Decision: build small clerk surface **or** drop. Not auto-next.                        |
-| —     | [#111](https://github.com/Bigessfour/BusBuddy-3/issues/111) SchoolCalendar / AIInsights                                           | **Keep schema** unless product explicitly chooses drop or calendar UI.                 |
-| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (multi-PR). **Do not start in one pass.**                                       |
-| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not dual-write to “finish” the table.                                       |
-| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                                 |
-| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                                    |
+| Order | Item                                                                                                                              | Why this slot                                                          |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 1     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Next after #113. Shared driver+bus duty collection.                    |
+| —     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) Dated substitute / spare                                              | **Done** — PR #158 open; review harden in flight before merge.         |
+| —     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) Confirmed → Changed prior                                             | **Done** — #154; re-confirm clears `Prior*`. Do not reopen.            |
+| —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                 |
+| —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                 |
+| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** — do not redo.                                                |
+| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                    |
+| —     | [#110](https://github.com/Bigessfour/BusBuddy-3/issues/110) Families / Guardians                                                  | Decision: build small clerk surface **or** drop. Not auto-next.        |
+| —     | [#111](https://github.com/Bigessfour/BusBuddy-3/issues/111) SchoolCalendar / AIInsights                                           | **Keep schema** unless product explicitly chooses drop or calendar UI. |
+| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (multi-PR). **Do not start in one pass.**                       |
+| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not dual-write to “finish” the table.                       |
+| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                 |
+| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                    |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
@@ -168,7 +168,9 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **UI:** Route Schedule **Substitute** → `RouteDatedSubstituteDialog`. Trip overlap warns via `GetAssignmentWarningsAsync`; never clears Home FKs.
 - **Print:** Assignment Export/Print refreshes dated schedules; `WriteSchedulePdfAsync` resolves through `RouteDailyPairing`.
 - **Review harden (2026-11-01):** `SaveRouteSessionScheduleAsync` + sibling cancel; print refresh before sheet; schedule Bus/Driver nav when available-only miss; trip-service missing fails closed with confirm.
-- **Proof:** Guest filter `RouteDailyPairing|RouteManagementExportHelper|RouteDatedSubstitute|RouteAssignmentViewTests|GenerateSchedule_Persists` → **Passed: 26, Failed: 0**.
+- **Code-review follow-up (2026-11-01):** Slot-scoped Resolve (no cross AM/PM newest); `TryPersist` FKs follow `ToAssignmentSlot`; sibling cancel loads day rows then filters clock in-memory (Postgres-safe); schedule Print awaits `SaveRouteSheetAsync`; PDF result exposes `BusLabel`/`DriverLabel` for nav-fallback proof.
+- **PR:** [#158](https://github.com/Bigessfour/BusBuddy-3/pull/158) — open on `feature/113-dated-substitute`.
+- **Proof:** Guest filter `RouteDailyPairing|RouteManagementExportHelper|RouteDatedSubstitute|RouteAssignmentViewTests|RouteScheduleViewModelTests|GenerateSchedule_Persists` → **Passed: 37, Failed: 0**.
 
 ### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
 

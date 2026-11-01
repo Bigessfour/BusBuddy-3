@@ -10,6 +10,9 @@ public static class RouteDailyPairing
 {
     public readonly record struct Pairing(int? BusId, int? DriverId, bool FromSchedule);
 
+    /// <summary>Noon boundary: AM departures are before this; PM are at/after.</summary>
+    public static readonly TimeSpan SessionSplit = TimeSpan.FromHours(12);
+
     /// <summary>UTC calendar day used for sheet print and rider exceptions.</summary>
     public static DateTime ServiceDateUtc(Route route)
     {
@@ -21,6 +24,7 @@ public static class RouteDailyPairing
     /// <summary>
     /// Prefer a non-cancelled <see cref="Schedule"/> for the route on <see cref="ServiceDateUtc"/>;
     /// otherwise the year-default AM/PM FKs. Never mutates <see cref="Route"/>.
+    /// Stays inside the requested session window so a newer PM spare cannot win an AM resolve.
     /// </summary>
     public static Pairing Resolve(
         Route route,
@@ -41,20 +45,17 @@ public static class RouteDailyPairing
             ? route.PMBeginTime
             : route.AMBeginTime;
 
-        // Newest same-slot row wins so a spare-bus substitute beats an older home-bus Generate row.
-        static Schedule? Newest(IEnumerable<Schedule> rows) =>
-            rows
-                .OrderByDescending(s => s.UpdatedDate ?? s.CreatedDate)
-                .ThenByDescending(s => s.ScheduleId)
-                .FirstOrDefault();
+        var scoped = candidates.Where(s => MatchesSessionWindow(s.DepartureTime.TimeOfDay, slot)).ToList();
 
+        // Newest exact clock, else nearest clock in-session, else newest in-session.
         Schedule? match = null;
         if (preferredBegin is TimeSpan begin)
         {
-            match = Newest(candidates.Where(s => s.DepartureTime.TimeOfDay == begin));
+            match = Newest(scoped.Where(s => s.DepartureTime.TimeOfDay == begin));
+            match ??= NearestThenNewest(scoped, begin);
         }
 
-        match ??= Newest(candidates);
+        match ??= Newest(scoped);
         if (match is not null)
         {
             return new Pairing(match.BusId, match.DriverId, FromSchedule: true);
@@ -106,4 +107,23 @@ public static class RouteDailyPairing
             CreatedDate = DateTime.UtcNow
         };
     }
+
+    /// <summary>True when <paramref name="departureClock"/> belongs to the AM or PM session window.</summary>
+    public static bool MatchesSessionWindow(TimeSpan departureClock, RouteTimeSlot slot) =>
+        slot == RouteTimeSlot.PM
+            ? departureClock >= SessionSplit
+            : departureClock < SessionSplit;
+
+    private static Schedule? Newest(IEnumerable<Schedule> rows) =>
+        rows
+            .OrderByDescending(s => s.UpdatedDate ?? s.CreatedDate)
+            .ThenByDescending(s => s.ScheduleId)
+            .FirstOrDefault();
+
+    private static Schedule? NearestThenNewest(IEnumerable<Schedule> rows, TimeSpan preferredBegin) =>
+        rows
+            .OrderBy(s => Math.Abs((s.DepartureTime.TimeOfDay - preferredBegin).Ticks))
+            .ThenByDescending(s => s.UpdatedDate ?? s.CreatedDate)
+            .ThenByDescending(s => s.ScheduleId)
+            .FirstOrDefault();
 }

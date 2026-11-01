@@ -192,16 +192,22 @@ namespace BusBuddy.Core.Services
             var day = DateTime.SpecifyKind(schedule.ScheduleDate.Date, DateTimeKind.Utc);
             var next = day.AddDays(1);
             var clock = schedule.DepartureTime.TimeOfDay;
-            var siblings = await context.Schedules
+            // Date-range filter translates on Postgres; TimeOfDay compare stays in-memory
+            // so Npgsql never has to project .TimeOfDay in SQL.
+            var dayRows = await context.Schedules
                 .Where(s =>
                     s.RouteId == schedule.RouteId
                     && s.ScheduleDate >= day
                     && s.ScheduleDate < next
-                    && s.DepartureTime.TimeOfDay == clock
-                    && (s.BusId != schedule.BusId || s.DepartureTime != schedule.DepartureTime)
                     && s.Status != "Cancelled")
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
+
+            var siblings = dayRows
+                .Where(s =>
+                    s.DepartureTime.TimeOfDay == clock
+                    && (s.BusId != schedule.BusId || s.DepartureTime != schedule.DepartureTime))
+                .ToList();
 
             foreach (var sibling in siblings)
             {

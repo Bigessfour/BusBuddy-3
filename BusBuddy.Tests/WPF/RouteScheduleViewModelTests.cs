@@ -149,12 +149,13 @@ public class RouteScheduleViewModelTests
                 new Driver { DriverName = "Robert Truitt" },
                 RouteTimeSlot.AM,
                 out var vm,
-                print: () =>
+                printAsync: () =>
                 {
                     printed = true;
                     var again = RouteSummaryPdfRenderer.Render(
                         route, stops, Array.Empty<Student>(), new Bus { BusNumber = "5" }, null, RouteTimeSlot.AM);
                     Assert.That(Encoding.ASCII.GetString(again, 0, 4), Is.EqualTo("%PDF"));
+                    return Task.CompletedTask;
                 }),
             Is.True);
         vm!.PrintCommand.Execute(null);

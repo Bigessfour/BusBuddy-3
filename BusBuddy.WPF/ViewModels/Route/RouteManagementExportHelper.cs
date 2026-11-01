@@ -153,7 +153,13 @@ internal static class RouteManagementExportHelper
             RevealOrOpen(path);
         }
 
-        return new SchedulePdfResult(path, sheet.Stops.Count, sheet.Students.Count, bytes);
+        return new SchedulePdfResult(
+            path,
+            sheet.Stops.Count,
+            sheet.Students.Count,
+            bytes,
+            sheet.BusLabel,
+            sheet.DriverLabel);
     }
 
     private static async Task<BusBuddy.Core.Models.Bus?> FindBusAsync(IRouteService routeService, int? busId)
@@ -197,14 +203,14 @@ internal static class RouteManagementExportHelper
             return false;
         }
 
-        var busId = route.AMVehicleId ?? route.PMVehicleId;
-        var driverId = route.AMDriverId ?? route.PMDriverId;
+        var slot = RouteSession.ToAssignmentSlot(route);
+        var busId = slot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+        var driverId = slot == RouteTimeSlot.PM ? route.PMDriverId : route.AMDriverId;
         if (!busId.HasValue || !driverId.HasValue)
         {
             return false;
         }
 
-        var slot = RouteSession.ToAssignmentSlot(route);
         var row = RouteDailyPairing.BuildSessionRow(route, slot, busId.Value, driverId.Value);
         row.Notes = $"Generated from Route Management for {route.RouteName}";
         await scheduleService.SaveRouteSessionScheduleAsync(row).ConfigureAwait(true);
@@ -213,4 +219,10 @@ internal static class RouteManagementExportHelper
 }
 
 /// <summary>Printed stop sheet for one route.</summary>
-internal readonly record struct SchedulePdfResult(string Path, int StopCount, int StudentCount, byte[] Pdf);
+internal readonly record struct SchedulePdfResult(
+    string Path,
+    int StopCount,
+    int StudentCount,
+    byte[] Pdf,
+    string BusLabel = "",
+    string DriverLabel = "");

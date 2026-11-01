@@ -190,6 +190,10 @@ public class RouteManagementExportHelperTests
             RouteName = "Bus 5-PM",
             Session = RouteSession.PM,
             Date = new DateTime(2026, 11, 6, 0, 0, 0, DateTimeKind.Utc),
+            // Leftover AM FKs must not win when the row is a PM session.
+            AMVehicleId = 2,
+            AMDriverId = 3,
+            AMBeginTime = TimeSpan.FromHours(7),
             PMVehicleId = 11,
             PMDriverId = 12,
             PMBeginTime = TimeSpan.FromHours(14)
@@ -503,15 +507,8 @@ public class RouteManagementExportHelperTests
                 openAfter: false,
                 scheduleService: scheduleService.Object);
 
-            var sheet = RouteSummarySheetBuilder.Build(
-                route,
-                stops,
-                Array.Empty<Student>(),
-                new Bus { BusId = 12, BusNumber = "12-SPARE" },
-                new Driver { DriverId = 8, DriverName = "Pool Driver" },
-                RouteTimeSlot.AM);
-            sheet.BusLabel.Should().Contain("12-SPARE");
-            sheet.DriverLabel.Should().Be("Pool Driver");
+            pdf.BusLabel.Should().Contain("12-SPARE");
+            pdf.DriverLabel.Should().Be("Pool Driver");
             pdf.StopCount.Should().Be(2);
         }
         finally

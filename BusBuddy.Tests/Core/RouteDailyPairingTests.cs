@@ -245,6 +245,53 @@ public sealed class RouteDailyPairingTests
     }
 
     [Test]
+    public void Resolve_DoesNotPickNewerPmRowWhenResolvingAmAfterClockDrift()
+    {
+        var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);
+        var route = new Route
+        {
+            RouteId = 4,
+            Date = day,
+            AMVehicleId = 2,
+            AMDriverId = 3,
+            AMBeginTime = TimeSpan.FromHours(7).Add(TimeSpan.FromMinutes(15)), // re-timed off stored 07:00
+            PMVehicleId = 20,
+            PMDriverId = 21,
+            PMBeginTime = TimeSpan.FromHours(14)
+        };
+        var amSpare = new Schedule
+        {
+            ScheduleId = 1,
+            RouteId = 4,
+            BusId = 12,
+            DriverId = 8,
+            ScheduleDate = day,
+            DepartureTime = day.AddHours(7),
+            ArrivalTime = day.AddHours(8),
+            Status = "Scheduled",
+            UpdatedDate = day.AddHours(-2)
+        };
+        var newerPm = new Schedule
+        {
+            ScheduleId = 2,
+            RouteId = 4,
+            BusId = 99,
+            DriverId = 98,
+            ScheduleDate = day,
+            DepartureTime = day.AddHours(14),
+            ArrivalTime = day.AddHours(15),
+            Status = "Scheduled",
+            UpdatedDate = day.AddMinutes(-1)
+        };
+
+        var pairing = RouteDailyPairing.Resolve(route, RouteTimeSlot.AM, new[] { amSpare, newerPm });
+
+        Assert.That(pairing.FromSchedule, Is.True);
+        Assert.That(pairing.BusId, Is.EqualTo(12), "AM resolve must stay in morning window");
+        Assert.That(pairing.DriverId, Is.EqualTo(8));
+    }
+
+    [Test]
     public void Resolve_PrefersNewestSameSlotRowOverOlderHomeBusRow()
     {
         var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);

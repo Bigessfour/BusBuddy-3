@@ -53,7 +53,7 @@ public class RouteAssignmentViewTests
         var schedule = XamlViewFile.Read("ViewModels/Route/RouteAssignmentViewModel.Schedule.cs");
         Assert.That(schedule, Does.Contain("Opened route schedule"));
         Assert.That(schedule, Does.Contain("Clocks={Clocks}"));
-        Assert.That(schedule, Does.Contain("PrintSelectedRouteSheetPreview"));
+        Assert.That(schedule, Does.Contain("PrintSelectedRouteSheetPreviewAsync"));
         Assert.That(schedule, Does.Contain("SaveRouteSheetAsync(includeMap: false)"));
         Assert.That(schedule, Does.Contain("new RouteScheduleWindow"));
         Assert.That(schedule, Does.Not.Contain("new DriverScheduleView"));

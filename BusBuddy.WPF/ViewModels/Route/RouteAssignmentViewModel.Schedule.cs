@@ -209,7 +209,7 @@ public partial class RouteAssignmentViewModel
                 NormalizeTimeSlot(SelectedTimeSlot),
                 out var scheduleVm,
                 ReTimeSelectedRouteSheetAsync,
-                PrintSelectedRouteSheetPreview,
+                PrintSelectedRouteSheetPreviewAsync,
                 ConfirmOverwritePublishedClocks,
                 notRidingIds,
                 SaveDatedSubstituteAsync)
@@ -280,8 +280,8 @@ public partial class RouteAssignmentViewModel
             : null;
     }
 
-    private void PrintSelectedRouteSheetPreview() =>
-        _ = SaveRouteSheetAsync(includeMap: false);
+    private Task PrintSelectedRouteSheetPreviewAsync() =>
+        SaveRouteSheetAsync(includeMap: false);
 
     /// <summary>
     /// Dated spare bus / substitute driver for the selected route's service date only.

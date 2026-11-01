@@ -41,10 +41,17 @@ public sealed class RouteDatedSubstituteSurfaceTests
         Assert.That(reports, Does.Contain("RefreshDatedSchedulesAsync"));
         Assert.That(reports, Does.Contain("SaveRouteSheetAsync"));
         Assert.That(reports, Does.Contain("await RefreshDatedSchedulesAsync"));
+        Assert.That(assignment, Does.Contain("PrintSelectedRouteSheetPreviewAsync"));
+
+        var scheduleVm = XamlViewFile.Read("ViewModels/Route/RouteScheduleViewModel.cs");
+        Assert.That(scheduleVm, Does.Contain("Func<Task>? printAsync"));
+        Assert.That(scheduleVm, Does.Contain("await _printAsync()"));
 
         var export = XamlViewFile.Read("ViewModels/Route/RouteManagementExportHelper.cs");
         Assert.That(export, Does.Contain("matchedSchedule?.Bus"));
         Assert.That(export, Does.Contain("matchedSchedule?.Driver"));
         Assert.That(export, Does.Contain("SaveRouteSessionScheduleAsync"));
+        Assert.That(export, Does.Contain("slot == RouteTimeSlot.PM ? route.PMVehicleId"));
+        Assert.That(export, Does.Contain("sheet.BusLabel"));
     }
 }
