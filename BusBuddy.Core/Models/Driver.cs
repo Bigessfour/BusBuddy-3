@@ -544,6 +544,7 @@ public class Driver : INotifyPropertyChanged
     public virtual ICollection<Route> AMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Route> PMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
+    public virtual ICollection<DutyEvent> DutyEvents { get; set; } = new List<DutyEvent>();
 
     // INotifyPropertyChanged implementation for Syncfusion data binding
     public event PropertyChangedEventHandler? PropertyChanged;

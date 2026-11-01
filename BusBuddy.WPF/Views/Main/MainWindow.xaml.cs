@@ -23,6 +23,7 @@ using BusBuddy.WPF.Views.Settings;
 using BusBuddy.WPF.Views.Bus;
 using BusBuddy.WPF.Views.Reports;
 using BusBuddy.WPF.Views.Fuel;
+using BusBuddy.WPF.Views.Duty;
 using BusBuddy.WPF.Views.Maintenance;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.Logging;
@@ -929,6 +930,20 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Error(ex, "Error opening Fuel Management view");
                 MessageBox.Show($"Error opening Fuel Management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void DutyLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information("Duty log navigation requested");
+            try
+            {
+                ShowViewInWindow(new DutyLogView(), "Duty Log", 1200, 850);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Duty Log view");
+                MessageBox.Show($"Error opening Duty Log: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

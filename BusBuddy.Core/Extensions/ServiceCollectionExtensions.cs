@@ -93,6 +93,7 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IFuelLocationCatalog, FuelLocationCatalog>();
             services.AddScoped<ITripReasonCatalog, TripReasonCatalog>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
+            services.AddScoped<IDutyEventService, DutyEventService>();
             services.AddScoped<IScheduleService, ScheduleService>();
             services.AddScoped<IFleetMonitoringService, FleetMonitoringService>();
 

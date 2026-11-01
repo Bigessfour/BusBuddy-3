@@ -2,13 +2,13 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-11-01T16:38:55.714333+00:00
+Generated: 2026-11-01T17:03:46.529929+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
-**Configured surfaces:** 65 (from `.function-inventory.json` `surfaces` allowlist)
+**Configured surfaces:** 69 (from `.function-inventory.json` `surfaces` allowlist)
 
-**Summary:** 65 correctness surfaces | 65 with proof | 0 without proof
+**Summary:** 69 correctness surfaces | 69 with proof | 0 without proof
 This list is the **correctness queue** — resident/clerk-critical pages, services, and handlers only. Tiny helpers, Angular route paths, and demoted UI shells are omitted.
 
 Ship gate remains project acceptance / smoke checklists — inventory count alone is not “done.”
@@ -78,6 +78,10 @@ Ship gate remains project acceptance / smoke checklists — inventory count alon
 | P2 | Other Public | MaintenanceRecordValidator.MaintenanceRecordValidator | BusBuddy.Core/Services/MaintenanceRecordValidator.cs:1 | BusBuddy.Tests/Core/MaintenanceRecordValidatorTests.cs | has logic |
 | P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | BusBuddy.Tests/WPF/MaintenanceViewTests.cs | has logic |
 | P2 | Other Public | MaintenanceViewModel.MaintenanceViewModel | BusBuddy.WPF/ViewModels/Maintenance/MaintenanceViewModel.cs:1 | BusBuddy.Tests/WPF/MaintenanceViewModelTests.cs | has logic |
+| P2 | Core Service | DutyEventService.DutyEventService | BusBuddy.Core/Services/DutyEventService.cs:1 | BusBuddy.Tests/Core/DutyEventServiceTests.cs | has logic |
+| P2 | Other Public | DutyEventValidator.DutyEventValidator | BusBuddy.Core/Services/DutyEventValidator.cs:1 | BusBuddy.Tests/Core/DutyEventValidatorTests.cs | has logic |
+| P2 | Other Public | DutyLogView.xaml.DutyLogView.xaml | BusBuddy.WPF/Views/Duty/DutyLogView.xaml.cs:1 | BusBuddy.Tests/WPF/DutyLogViewTests.cs | has logic |
+| P2 | Other Public | DutyLogViewModel.DutyLogViewModel | BusBuddy.WPF/ViewModels/Duty/DutyLogViewModel.cs:1 | BusBuddy.Tests/WPF/DutyLogViewModelTests.cs | has logic |
 | P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
 | P2 | Other Public | DriverScheduleViewModel.DriverScheduleViewModel | BusBuddy.WPF/ViewModels/Driver/DriverScheduleViewModel.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
 | P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |

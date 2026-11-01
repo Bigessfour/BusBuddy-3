@@ -1,3 +1,4 @@
+using System.Linq;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
@@ -731,6 +732,18 @@ public class TripBoardImportTests
         Assert.That(trip.Purpose, Is.EqualTo("Field Trip"));
         var sports = new TripEvent { Type = TripType.Athletic_Football };
         Assert.That(sports.Purpose, Is.EqualTo("Sports"));
+    }
+
+    [Test]
+    public void InspectionPad_DoesNotWireDutyEventService()
+    {
+        // specs/trips.md: 1.5h pad is billing only — never auto-insert PreTrip/PostTrip duty rows.
+        Assert.That(TripEvent.PrePostTripInspectionHours, Is.EqualTo(1.5m));
+        var ctorParams = typeof(TripEventService)
+            .GetConstructors()
+            .SelectMany(c => c.GetParameters())
+            .Select(p => p.ParameterType);
+        Assert.That(ctorParams, Does.Not.Contain(typeof(IDutyEventService)));
     }
 
     [Test]
