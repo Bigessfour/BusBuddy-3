@@ -313,9 +313,18 @@ public class RouteManagementExportHelperTests
             new()
             {
                 StopOrder = 1,
-                StopName = "Home pickup",
+                StopName = "Bus Barn",
                 ScheduledArrival = new TimeSpan(7, 30, 0),
                 ScheduledDeparture = new TimeSpan(7, 30, 0),
+                Status = "Active"
+            },
+            new()
+            {
+                StopOrder = 2,
+                StopName = "Home pickup",
+                Notes = "StudentId=11",
+                ScheduledArrival = new TimeSpan(7, 40, 0),
+                ScheduledDeparture = new TimeSpan(7, 40, 0),
                 Status = "Active"
             }
         };
@@ -381,9 +390,30 @@ public class RouteManagementExportHelperTests
             RouteTimeSlot.AM);
         sheet.BusLabel.Should().Contain("12");
         sheet.DriverLabel.Should().Be("Pool Driver");
-        pdf.StopCount.Should().Be(1);
+        pdf.StopCount.Should().Be(2);
         scheduleService.Verify(
             s => s.GetSchedulesForRouteOnDateAsync(4, day, It.IsAny<CancellationToken>()),
             Times.Once);
+        var pairing = RouteDailyPairing.Resolve(
+            route,
+            RouteTimeSlot.AM,
+            new[]
+            {
+                new Schedule
+                {
+                    RouteId = 4,
+                    BusId = 12,
+                    DriverId = 8,
+                    ScheduleDate = day,
+                    DepartureTime = day.AddHours(7),
+                    ArrivalTime = day.AddHours(8),
+                    Status = "Scheduled"
+                }
+            });
+        pairing.FromSchedule.Should().BeTrue();
+        pairing.BusId.Should().Be(12);
+        pairing.DriverId.Should().Be(8);
+        route.AMVehicleId.Should().Be(2);
+        route.AMDriverId.Should().Be(3);
     }
 }
