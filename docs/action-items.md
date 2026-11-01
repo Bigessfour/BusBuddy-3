@@ -39,11 +39,12 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | School-bus endorsement (#114)    | **Met** — #149; fail-closed assign/confirm/import; grandfather incumbents                                    |
 | Special-needs aide (#118)        | **Met** — #150; `Route.AideName` + grid + stop-sheet meta                                                    |
 | Confirmed → Changed prior (#117) | **Met** — #154; re-confirm clears `Prior*`                                                                   |
+| Duty log pre/post/defect (#112)  | **Met** — `DutyEvent` shared collection + Duty Log UI; guest duty suites green                               |
 | Dated substitute / spare (#113)  | **Met** — PR #158; review harden on branch (slot-scoped Resolve, sibling cancel, print await)                |
 | a11y Phase 2 / live GPS product  | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker             | Re-run after Medium catch-up; ship-ready ≠ checker 0                                                         |
 
-**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **Next build card:** [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) (duty events). **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
+**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **#112 duty log** and **#113 dated substitute** landed. **Next:** decision-only #110/#111 or parked #108/#116. **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
 
 **Open boxes on this file:** Parked #108 name-string drop; optional ribbon hops; Restore-only-if-needed orphans. Closed Highs/Mediums above — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
@@ -57,8 +58,8 @@ Do in this order. Do **not** re-open completed prod-walk / Maps / closed High-Me
 
 | Order | Item                                                                                                                              | Why this slot                                                          |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| 1     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Next after #113. Shared driver+bus duty collection.                    |
-| —     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) Dated substitute / spare                                              | **Done** — PR #158 open; review harden in flight before merge.         |
+| —     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) Dated substitute / spare                                              | **Done** — PR #158; review harden before merge. Do not reopen.         |
+| —     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | **Done** — `DutyEvent` + Duty Log; guest duty suites. Do not reopen.   |
 | —     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) Confirmed → Changed prior                                             | **Done** — #154; re-confirm clears `Prior*`. Do not reopen.            |
 | —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                 |
 | —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                 |
@@ -161,6 +162,15 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 ## Done log
 
+### 2026-11-01 — Issue #112 duty events (pre-trip / post-trip / defect)
+
+- **Shared collection:** `DutyEvent` (`DriverId` + `BusId` + `Session` + `EventType` + `EventedAt` + `Notes`); migration `20261103120000_DutyEvents`; `Maintenance.SourceDutyEventId`.
+- **Service:** `IDutyEventService` / `DutyEventService` — Defect creates Fleet Maintenance in one transaction; Fuel attribution only; missing-pre-trip via `RouteDailyPairing` (visible only).
+- **Clerk UI:** ribbon **Duty Log** → `DutyLogView` / `DutyLogViewModel` (date grid, add form stamped to selected date, missing pre-trips).
+- **Hard no:** trip 1.5h pad still does not insert duty rows (`InspectionPad_DoesNotWireDutyEventService`).
+- **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~DutyEvent|FullyQualifiedName~DutyLog|FullyQualifiedName~InspectionPad_DoesNotWire'`.
+- **Do not:** auto-park bus on defect; fork a second fuel gallons table.
+
 ### 2026-10-31 — Issue #113 dated substitute / spare bus
 
 - **Design:** Dated pairing is a `Schedule` row for `route.Date` (`DriverId`/`BusId`). Year defaults stay on `Route.AM*`/`PM*`. Resolver: `RouteDailyPairing` (newest same-slot row wins).
@@ -172,6 +182,14 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Low polish (2026-11-01):** Print callback returns success bool; `PreferActiveNavMatch` skips cancelled twins; session window follows preferred begin’s side of noon.
 - **PR:** [#158](https://github.com/Bigessfour/BusBuddy-3/pull/158) — open on `feature/113-dated-substitute`.
 - **Proof:** Guest filter `RouteDailyPairing|RouteManagementExportHelper|RouteDatedSubstitute|RouteAssignmentViewTests|RouteScheduleViewModelTests|GenerateSchedule_Persists` → **Passed: 40, Failed: 0**.
+
+### 2026-10-31 — P2 Batch C inventory proof (Map host / launcher / schedule / stops)
+
+- **Surfaces proved:** `MapMarkerHost` (fail-closed CanHost/TryAssign without live SfMap; layout + retry constants); `MapViewLauncher` (IsOpen / docked activate no-op guards + docked-MapView contract); `RouteScheduleWindow` (SfDataGrid + ReTime/Print/Close XAML + CloseRequested code-behind; VM/print already covered by `RouteScheduleViewModelTests` + Item 6 guest); `RouteStopsEditor` (stop command bindings + double-click → EditStopCommand).
+- **Tests:** `MapMarkerHostTests`, `MapViewLauncherTests`, `RouteScheduleWindowTests`, `RouteStopsEditorTests`.
+- **Guest:** filter `MapMarkerHostTests|MapViewLauncherTests|RouteScheduleWindowTests|RouteStopsEditorTests` → **Passed: 12, Failed: 0**.
+- **Inventory:** 65 tracked / 65 with proof / 0 without.
+- **Out of scope:** #113 / #112 product features.
 
 ### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
 

@@ -67,8 +67,15 @@ public class Maintenance : INotifyPropertyChanged
     [Display(Name = "Notes")]
     public string? Notes { get; set; }
 
+    /// <summary>When set, this shop row was created from a driver Defect duty event (#112).</summary>
+    [Display(Name = "Source Duty Event")]
+    public int? SourceDutyEventId { get; set; }
+
     // Navigation properties
     public virtual Bus Vehicle { get; set; } = null!;
+
+    [ForeignKey(nameof(SourceDutyEventId))]
+    public virtual DutyEvent? SourceDutyEvent { get; set; }
 
     // Extended properties for maximum flexibility
     [StringLength(100)]

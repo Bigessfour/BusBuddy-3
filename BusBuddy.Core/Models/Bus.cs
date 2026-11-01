@@ -522,6 +522,7 @@ public class Bus : INotifyPropertyChanged
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
     public virtual ICollection<Fuel> FuelRecords { get; set; } = new List<Fuel>();
     public virtual ICollection<Maintenance> MaintenanceRecords { get; set; } = new List<Maintenance>();
+    public virtual ICollection<DutyEvent> DutyEvents { get; set; } = new List<DutyEvent>();
 
     // Legacy navigation for backward compatibility
     [NotMapped]

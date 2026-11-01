@@ -85,6 +85,7 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Analytics.AnalyticsDashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Fuel.FuelManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Maintenance.MaintenanceViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Duty.DutyLogViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverScheduleViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Reports.ReportsViewModel>();
                 // Explicit factory: StudentsViewModel also has a parameterless XAML ctor and a

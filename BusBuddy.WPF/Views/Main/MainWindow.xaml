@@ -85,6 +85,11 @@
                                           Click="FuelManagementButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Fuel records for a bus"
                                           AutomationProperties.Name="Fuel Management"/>
+                    <syncfusion:ButtonAdv Label="Duty Log" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
+                                          Click="DutyLogButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Pre-trip, post-trip, and defect duty events"
+                                          AutomationProperties.Name="Duty Log"/>
                     <syncfusion:ButtonAdv Label="Maintenance" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="Maintenance_Click" FontSize="14" FontWeight="SemiBold"
