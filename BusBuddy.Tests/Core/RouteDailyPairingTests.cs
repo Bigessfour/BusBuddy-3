@@ -224,7 +224,7 @@ public sealed class RouteDailyPairingTests
         }
 
         var row = RouteDailyPairing.BuildSessionRow(routeRow, RouteTimeSlot.AM, spareBusId, poolDriverId);
-        await schedules.AddScheduleAsync(row);
+        await schedules.SaveRouteSessionScheduleAsync(row);
 
         using (var verify = factory.CreateDbContext())
         {
@@ -233,14 +233,170 @@ public sealed class RouteDailyPairingTests
             Assert.That(storedRoute.AMDriverId, Is.EqualTo(homeDriverId));
 
             var stored = await schedules.GetSchedulesForRouteOnDateAsync(routeId, routeRow.Date);
-            Assert.That(stored, Has.Count.EqualTo(1));
-            Assert.That(stored[0].BusId, Is.EqualTo(spareBusId));
-            Assert.That(stored[0].DriverId, Is.EqualTo(poolDriverId));
+            Assert.That(stored.Count(s => s.Status != "Cancelled"), Is.EqualTo(1));
+            Assert.That(stored.Single(s => s.Status != "Cancelled").BusId, Is.EqualTo(spareBusId));
+            Assert.That(stored.Single(s => s.Status != "Cancelled").DriverId, Is.EqualTo(poolDriverId));
 
             var pairing = RouteDailyPairing.Resolve(storedRoute, RouteTimeSlot.AM, stored);
             Assert.That(pairing.FromSchedule, Is.True);
             Assert.That(pairing.BusId, Is.EqualTo(spareBusId));
             Assert.That(pairing.DriverId, Is.EqualTo(poolDriverId));
         }
+    }
+
+    [Test]
+    public void Resolve_PrefersNewestSameSlotRowOverOlderHomeBusRow()
+    {
+        var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);
+        var route = new Route
+        {
+            RouteId = 4,
+            Date = day,
+            AMVehicleId = 2,
+            AMDriverId = 3,
+            AMBeginTime = TimeSpan.FromHours(7)
+        };
+        var olderHome = new Schedule
+        {
+            ScheduleId = 1,
+            RouteId = 4,
+            BusId = 2,
+            DriverId = 3,
+            ScheduleDate = day,
+            DepartureTime = day.AddHours(7),
+            ArrivalTime = day.AddHours(8),
+            Status = "Scheduled",
+            CreatedDate = day.AddHours(-2),
+            UpdatedDate = day.AddHours(-2)
+        };
+        var newerSpare = new Schedule
+        {
+            ScheduleId = 2,
+            RouteId = 4,
+            BusId = 12,
+            DriverId = 8,
+            ScheduleDate = day,
+            DepartureTime = day.AddHours(7),
+            ArrivalTime = day.AddHours(8),
+            Status = "Scheduled",
+            CreatedDate = day.AddHours(-1),
+            UpdatedDate = day.AddMinutes(-5)
+        };
+
+        var pairing = RouteDailyPairing.Resolve(route, RouteTimeSlot.AM, new[] { olderHome, newerSpare });
+
+        Assert.That(pairing.FromSchedule, Is.True);
+        Assert.That(pairing.BusId, Is.EqualTo(12), "spare must beat older Generate home-bus row");
+        Assert.That(pairing.DriverId, Is.EqualTo(8));
+        Assert.That(route.AMVehicleId, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task SaveRouteSessionSchedule_CancelsOlderSameSlotSiblingWhenSpareBusSaved()
+    {
+        var factory = new TestDbContextFactory(CreateOptions());
+        int homeBusId;
+        int spareBusId;
+        int homeDriverId;
+        int poolDriverId;
+        int routeId;
+        var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);
+
+        using (var db = factory.CreateWriteDbContext())
+        {
+            var homeBus = new Bus
+            {
+                BusNumber = "5",
+                Year = 2020,
+                Make = "IC",
+                Model = "CE",
+                SeatingCapacity = 70,
+                VINNumber = "VIN5b",
+                LicenseNumber = "L5b",
+                Status = "Active"
+            };
+            var spareBus = new Bus
+            {
+                BusNumber = "12",
+                Year = 2020,
+                Make = "IC",
+                Model = "CE",
+                SeatingCapacity = 70,
+                VINNumber = "VIN12b",
+                LicenseNumber = "L12b",
+                Status = "Active"
+            };
+            db.Buses.AddRange(homeBus, spareBus);
+            var homeDriver = new Driver
+            {
+                DriverName = "Home",
+                Status = "Active",
+                LicenseClass = "B",
+                SchoolBusEndorsement = true,
+                TrainingComplete = true
+            };
+            var poolDriver = new Driver
+            {
+                DriverName = "Pool",
+                Status = "Active",
+                LicenseClass = "B",
+                SchoolBusEndorsement = true,
+                TrainingComplete = true
+            };
+            db.Drivers.AddRange(homeDriver, poolDriver);
+            await db.SaveChangesAsync();
+            homeBusId = homeBus.BusId;
+            spareBusId = spareBus.BusId;
+            homeDriverId = homeDriver.DriverId;
+            poolDriverId = poolDriver.DriverId;
+
+            var route = new Route
+            {
+                RouteName = "AM Special Needs Bus 5",
+                Date = day,
+                IsActive = true,
+                AMVehicleId = homeBusId,
+                AMDriverId = homeDriverId,
+                AMBeginTime = TimeSpan.FromHours(7),
+                EstimatedDuration = 45
+            };
+            db.Routes.Add(route);
+            await db.SaveChangesAsync();
+            routeId = route.RouteId;
+
+            db.Schedules.Add(new Schedule
+            {
+                RouteId = routeId,
+                BusId = homeBusId,
+                DriverId = homeDriverId,
+                ScheduleDate = day,
+                DepartureTime = day.AddHours(7),
+                ArrivalTime = day.AddHours(7).AddMinutes(45),
+                Status = "Scheduled",
+                Notes = "Generated from Route Management",
+                CreatedDate = day.AddHours(-3)
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var schedules = new ScheduleService(factory);
+        Route routeRow;
+        using (var db = factory.CreateDbContext())
+        {
+            routeRow = await db.Routes.AsNoTracking().SingleAsync(r => r.RouteId == routeId);
+        }
+
+        var spare = RouteDailyPairing.BuildSessionRow(routeRow, RouteTimeSlot.AM, spareBusId, poolDriverId);
+        await schedules.SaveRouteSessionScheduleAsync(spare);
+
+        var stored = await schedules.GetSchedulesForRouteOnDateAsync(routeId, day);
+        Assert.That(stored, Has.Count.EqualTo(2));
+        Assert.That(stored.Count(s => s.Status == "Cancelled"), Is.EqualTo(1));
+        Assert.That(stored.Single(s => s.Status == "Cancelled").BusId, Is.EqualTo(homeBusId));
+        Assert.That(stored.Single(s => s.Status != "Cancelled").BusId, Is.EqualTo(spareBusId));
+
+        var pairing = RouteDailyPairing.Resolve(routeRow, RouteTimeSlot.AM, stored);
+        Assert.That(pairing.BusId, Is.EqualTo(spareBusId));
+        Assert.That(routeRow.AMVehicleId, Is.EqualTo(homeBusId), "year-default FK must stay");
     }
 }

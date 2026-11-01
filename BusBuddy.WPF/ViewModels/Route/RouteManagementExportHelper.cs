@@ -123,8 +123,12 @@ internal static class RouteManagementExportHelper
                 .GetSchedulesForRouteOnDateAsync(route.RouteId, RouteDailyPairing.ServiceDateUtc(route))
                 .ConfigureAwait(true);
         var pairing = RouteDailyPairing.Resolve(route, slot, dated);
-        var bus = await FindBusAsync(routeService, pairing.BusId).ConfigureAwait(true);
-        var driver = await FindDriverAsync(routeService, pairing.DriverId).ConfigureAwait(true);
+        var matchedSchedule = dated.FirstOrDefault(s =>
+            s.BusId == pairing.BusId && s.DriverId == pairing.DriverId && pairing.FromSchedule);
+        var bus = await FindBusAsync(routeService, pairing.BusId).ConfigureAwait(true)
+            ?? matchedSchedule?.Bus;
+        var driver = await FindDriverAsync(routeService, pairing.DriverId).ConfigureAwait(true)
+            ?? matchedSchedule?.Driver;
 
         var sheet = RouteSummarySheetBuilder.Build(route, stops, students, bus, driver, slot);
         if (sheet.Stops.Count == 0)
@@ -200,12 +204,10 @@ internal static class RouteManagementExportHelper
             return false;
         }
 
-        var slot = route.AMVehicleId.HasValue || route.AMDriverId.HasValue
-            ? RouteTimeSlot.AM
-            : RouteTimeSlot.PM;
+        var slot = RouteSession.ToAssignmentSlot(route);
         var row = RouteDailyPairing.BuildSessionRow(route, slot, busId.Value, driverId.Value);
         row.Notes = $"Generated from Route Management for {route.RouteName}";
-        await scheduleService.AddScheduleAsync(row).ConfigureAwait(true);
+        await scheduleService.SaveRouteSessionScheduleAsync(row).ConfigureAwait(true);
         return true;
     }
 }

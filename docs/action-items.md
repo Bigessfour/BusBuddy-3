@@ -167,6 +167,8 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Write:** Substitute / Generate cancel other active same-slot siblings so a spare bus does not leave a competing home-bus row.
 - **UI:** Route Schedule **Substitute** → `RouteDatedSubstituteDialog`. Trip overlap warns via `GetAssignmentWarningsAsync`; never clears Home FKs.
 - **Print:** Assignment Export/Print refreshes dated schedules; `WriteSchedulePdfAsync` resolves through `RouteDailyPairing`.
+- **Review harden (2026-11-01):** `SaveRouteSessionScheduleAsync` + sibling cancel; print refresh before sheet; schedule Bus/Driver nav when available-only miss; trip-service missing fails closed with confirm.
+- **Proof:** Guest filter `RouteDailyPairing|RouteManagementExportHelper|RouteDatedSubstitute|RouteAssignmentViewTests|GenerateSchedule_Persists` → **Passed: 26, Failed: 0**.
 
 ### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
 

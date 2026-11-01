@@ -21,13 +21,13 @@ public partial class RouteAssignmentViewModel
 
     public ICommand ExportRouteSheetCommand =>
         _exportRouteSheetCommand ??= new RelayCommand(
-            () => SaveRouteSheet(includeMap: false),
+            async () => await SaveRouteSheetAsync(includeMap: false),
             () => SelectedRoute != null);
 
     /// <summary>PdfGrid sheet with the current map snapshot embedded when one exists.</summary>
     public ICommand PrintRouteSheetCommand =>
         _printRouteSheetCommand ??= new RelayCommand(
-            () => SaveRouteSheet(includeMap: true),
+            async () => await SaveRouteSheetAsync(includeMap: true),
             () => SelectedRoute != null);
 
     private IReadOnlyList<BusBuddy.Core.Models.Schedule> _datedSchedulesForSelected =
@@ -71,12 +71,14 @@ public partial class RouteAssignmentViewModel
 
         if (pairing.BusId is int busId)
         {
-            bus = AvailableBuses.FirstOrDefault(b => b.BusId == busId);
+            bus = AvailableBuses.FirstOrDefault(b => b.BusId == busId)
+                ?? _datedSchedulesForSelected.FirstOrDefault(s => s.BusId == busId)?.Bus;
         }
 
         if (pairing.DriverId is int driverId)
         {
-            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == driverId);
+            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == driverId)
+                ?? _datedSchedulesForSelected.FirstOrDefault(s => s.DriverId == driverId)?.Driver;
         }
     }
 
@@ -101,7 +103,7 @@ public partial class RouteAssignmentViewModel
             notRidingStudentIds: notRidingStudentIds);
     }
 
-    private void SaveRouteSheet(bool includeMap)
+    private async Task SaveRouteSheetAsync(bool includeMap)
     {
         if (SelectedRoute == null)
         {
@@ -111,6 +113,8 @@ public partial class RouteAssignmentViewModel
 
         try
         {
+            await RefreshDatedSchedulesAsync().ConfigureAwait(true);
+
             byte[]? mapPng = null;
             if (includeMap)
             {

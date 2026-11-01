@@ -281,10 +281,10 @@ public partial class RouteAssignmentViewModel
     }
 
     private void PrintSelectedRouteSheetPreview() =>
-        SaveRouteSheet(includeMap: false);
+        _ = SaveRouteSheetAsync(includeMap: false);
 
     /// <summary>
-    /// Dated spare bus / substitute driver for <see cref="Route.Date"/> only.
+    /// Dated spare bus / substitute driver for the selected route's service date only.
     /// Writes <see cref="Schedule"/>; never calls Assign* on year-default Route FKs.
     /// </summary>
     private async Task<RouteSummarySheet?> SaveDatedSubstituteAsync()
@@ -327,7 +327,18 @@ public partial class RouteAssignmentViewModel
         var slot = NormalizeTimeSlot(SelectedTimeSlot);
         var row = RouteDailyPairing.BuildSessionRow(SelectedRoute, slot, bus.BusId, driver.DriverId);
         var tripService = App.ServiceProvider?.GetService<ITripEventService>();
-        if (tripService is not null)
+        if (tripService is null)
+        {
+            if (MessageBox.Show(
+                    "Trip overlap check is unavailable. Save substitute anyway? Home-route year defaults stay unchanged.",
+                    "Substitute",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            {
+                return null;
+            }
+        }
+        else
         {
             var warnings = await tripService
                 .GetAssignmentWarningsAsync(bus.BusId, driver.DriverId, row.DepartureTime, row.ArrivalTime)
@@ -360,7 +371,7 @@ public partial class RouteAssignmentViewModel
             return null;
         }
 
-        await schedules.AddScheduleAsync(row).ConfigureAwait(true);
+        await schedules.SaveRouteSessionScheduleAsync(row).ConfigureAwait(true);
         Logger.Information(
             "Saved dated substitute RouteId={RouteId} Date={Date} BusId={BusId} DriverId={DriverId} RouteAmBus={AmBus} RouteAmDriver={AmDriver}",
             SelectedRoute.RouteId,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -129,7 +130,9 @@ public class RouteManagementExportHelperTests
         (await RouteManagementExportHelper.TryPersistScheduleAsync(noBus, scheduleService.Object)).Should().BeFalse();
         (await RouteManagementExportHelper.TryPersistScheduleAsync(noDriver, scheduleService.Object)).Should().BeFalse();
 
-        scheduleService.Verify(s => s.AddScheduleAsync(It.IsAny<Schedule>()), Times.Never);
+        scheduleService.Verify(
+            s => s.SaveRouteSessionScheduleAsync(It.IsAny<Schedule>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Test]
@@ -137,8 +140,9 @@ public class RouteManagementExportHelperTests
     {
         Schedule? captured = null;
         var scheduleService = new Mock<IScheduleService>();
-        scheduleService.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
-            .Callback<Schedule>(s => captured = s)
+        scheduleService
+            .Setup(s => s.SaveRouteSessionScheduleAsync(It.IsAny<Schedule>(), It.IsAny<CancellationToken>()))
+            .Callback<Schedule, CancellationToken>((s, _) => captured = s)
             .Returns(Task.CompletedTask);
 
         var route = new Route
@@ -175,13 +179,16 @@ public class RouteManagementExportHelperTests
     {
         Schedule? captured = null;
         var scheduleService = new Mock<IScheduleService>();
-        scheduleService.Setup(s => s.AddScheduleAsync(It.IsAny<Schedule>()))
-            .Callback<Schedule>(s => captured = s)
+        scheduleService
+            .Setup(s => s.SaveRouteSessionScheduleAsync(It.IsAny<Schedule>(), It.IsAny<CancellationToken>()))
+            .Callback<Schedule, CancellationToken>((s, _) => captured = s)
             .Returns(Task.CompletedTask);
 
         var route = new Route
         {
             RouteId = 9,
+            RouteName = "Bus 5-PM",
+            Session = RouteSession.PM,
             Date = new DateTime(2026, 11, 6, 0, 0, 0, DateTimeKind.Utc),
             PMVehicleId = 11,
             PMDriverId = 12,
@@ -415,5 +422,101 @@ public class RouteManagementExportHelperTests
         pairing.DriverId.Should().Be(8);
         route.AMVehicleId.Should().Be(2);
         route.AMDriverId.Should().Be(3);
+    }
+
+    [Test]
+    public async Task WriteSchedulePdfAsync_FallsBackToScheduleNavWhenSpareNotInAvailableLists()
+    {
+        var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);
+        var route = new Route
+        {
+            RouteId = 4,
+            RouteName = "AM Special Needs",
+            Session = RouteSession.SpecialNeeds,
+            IsSpecialNeedsRoute = true,
+            School = "North High",
+            Date = day,
+            IsActive = true,
+            AMVehicleId = 2,
+            AMDriverId = 3,
+            AMBeginTime = new TimeSpan(7, 0, 0)
+        };
+        var stops = new List<RouteStop>
+        {
+            new()
+            {
+                StopOrder = 1,
+                StopName = "Bus Barn",
+                ScheduledArrival = new TimeSpan(7, 30, 0),
+                ScheduledDeparture = new TimeSpan(7, 30, 0),
+                Status = "Active"
+            },
+            new()
+            {
+                StopOrder = 2,
+                StopName = "Home pickup",
+                Notes = "StudentId=11",
+                ScheduledArrival = new TimeSpan(7, 40, 0),
+                ScheduledDeparture = new TimeSpan(7, 40, 0),
+                Status = "Active"
+            }
+        };
+
+        var routeService = new Mock<IRouteService>();
+        routeService.Setup(s => s.GetRouteStopsAsync(4))
+            .ReturnsAsync(Result.SuccessResult<IEnumerable<RouteStop>>(stops));
+        routeService.Setup(s => s.GetStudentsForRouteAsync(4, RouteTimeSlot.AM))
+            .ReturnsAsync(Result.SuccessResult(new List<Student>()));
+        // Spare is assigned for the day but not "available" (e.g. already booked elsewhere).
+        routeService.Setup(s => s.GetAvailableBusesAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Bus> { new() { BusId = 2, BusNumber = "5" } }));
+        routeService.Setup(s => s.GetAvailableDriversAsync())
+            .ReturnsAsync(Result.SuccessResult(new List<Driver> { new() { DriverId = 3, DriverName = "Home Driver" } }));
+
+        var scheduleService = new Mock<IScheduleService>();
+        scheduleService
+            .Setup(s => s.GetSchedulesForRouteOnDateAsync(4, day, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Schedule>
+            {
+                new()
+                {
+                    RouteId = 4,
+                    BusId = 12,
+                    DriverId = 8,
+                    ScheduleDate = day,
+                    DepartureTime = day.AddHours(7),
+                    ArrivalTime = day.AddHours(8),
+                    Status = "Scheduled",
+                    Bus = new Bus { BusId = 12, BusNumber = "12-SPARE" },
+                    Driver = new Driver { DriverId = 8, DriverName = "Pool Driver" }
+                }
+            });
+
+        var previousOpen = RouteManagementExportHelper.OpenAfterWrite;
+        RouteManagementExportHelper.OpenAfterWrite = false;
+        try
+        {
+            var pdf = await RouteManagementExportHelper.WriteSchedulePdfAsync(
+                route,
+                routeService.Object,
+                _tempDir,
+                openAfter: false,
+                scheduleService: scheduleService.Object);
+
+            var sheet = RouteSummarySheetBuilder.Build(
+                route,
+                stops,
+                Array.Empty<Student>(),
+                new Bus { BusId = 12, BusNumber = "12-SPARE" },
+                new Driver { DriverId = 8, DriverName = "Pool Driver" },
+                RouteTimeSlot.AM);
+            sheet.BusLabel.Should().Contain("12-SPARE");
+            sheet.DriverLabel.Should().Be("Pool Driver");
+            pdf.StopCount.Should().Be(2);
+        }
+        finally
+        {
+            RouteManagementExportHelper.OpenAfterWrite = previousOpen;
+        }
     }
 }

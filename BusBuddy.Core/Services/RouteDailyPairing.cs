@@ -41,13 +41,20 @@ public static class RouteDailyPairing
             ? route.PMBeginTime
             : route.AMBeginTime;
 
+        // Newest same-slot row wins so a spare-bus substitute beats an older home-bus Generate row.
+        static Schedule? Newest(IEnumerable<Schedule> rows) =>
+            rows
+                .OrderByDescending(s => s.UpdatedDate ?? s.CreatedDate)
+                .ThenByDescending(s => s.ScheduleId)
+                .FirstOrDefault();
+
         Schedule? match = null;
         if (preferredBegin is TimeSpan begin)
         {
-            match = candidates.FirstOrDefault(s => s.DepartureTime.TimeOfDay == begin);
+            match = Newest(candidates.Where(s => s.DepartureTime.TimeOfDay == begin));
         }
 
-        match ??= candidates.OrderBy(s => s.DepartureTime).FirstOrDefault();
+        match ??= Newest(candidates);
         if (match is not null)
         {
             return new Pairing(match.BusId, match.DriverId, FromSchedule: true);

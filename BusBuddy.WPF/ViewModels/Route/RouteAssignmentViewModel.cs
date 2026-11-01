@@ -508,7 +508,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
         private void ExportRouteAssignmentPdfAsync(bool includeMap)
         {
-            SaveRouteSheet(includeMap);
+            _ = SaveRouteSheetAsync(includeMap);
         }
 
         #region IDisposable
