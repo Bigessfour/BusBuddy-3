@@ -244,14 +244,12 @@ public class DutyEventService : IDutyEventService
         var missing = new List<MissingPreTripRow>();
         foreach (var route in routes)
         {
-            // RouteDailyPairing keys off Route.Date for schedule day — NoTracking clone is safe.
-            route.Date = day;
             var routeSchedules = schedules.Where(s => s.RouteId == route.RouteId).ToList();
 
             AddMissingIfNeeded(
-                missing, preTripSet, buses, drivers, route, DutySession.AM, RouteTimeSlot.AM, routeSchedules);
+                missing, preTripSet, buses, drivers, route, DutySession.AM, routeSchedules);
             AddMissingIfNeeded(
-                missing, preTripSet, buses, drivers, route, DutySession.PM, RouteTimeSlot.PM, routeSchedules);
+                missing, preTripSet, buses, drivers, route, DutySession.PM, routeSchedules);
         }
 
         stopwatch.Stop();
@@ -261,6 +259,38 @@ public class DutyEventService : IDutyEventService
         return missing;
     }
 
+    /// <summary>
+    /// Noon split mirrors dated substitute pairing (#113) without depending on that helper:
+    /// prefer newest non-cancelled same-day Schedule in the AM/PM window, else year-default FKs.
+    /// </summary>
+    private static readonly TimeSpan SessionSplit = TimeSpan.FromHours(12);
+
+    private static (int? BusId, int? DriverId) ResolveSessionPairing(
+        Route route,
+        DutySession session,
+        IReadOnlyList<Schedule> routeSchedules)
+    {
+        var isPm = session == DutySession.PM;
+        var inWindow = routeSchedules
+            .Where(s =>
+                !string.Equals(s.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+                && (isPm
+                    ? s.DepartureTime.TimeOfDay >= SessionSplit
+                    : s.DepartureTime.TimeOfDay < SessionSplit))
+            .OrderByDescending(s => s.UpdatedDate ?? s.CreatedDate)
+            .ThenByDescending(s => s.ScheduleId)
+            .FirstOrDefault();
+
+        if (inWindow is not null)
+        {
+            return (inWindow.BusId, inWindow.DriverId);
+        }
+
+        return isPm
+            ? (route.PMVehicleId, route.PMDriverId)
+            : (route.AMVehicleId, route.AMDriverId);
+    }
+
     private static void AddMissingIfNeeded(
         List<MissingPreTripRow> missing,
         HashSet<PreTripKey> preTrips,
@@ -268,11 +298,10 @@ public class DutyEventService : IDutyEventService
         IReadOnlyDictionary<int, string> drivers,
         Route route,
         DutySession session,
-        RouteTimeSlot slot,
         List<Schedule> routeSchedules)
     {
-        var pairing = RouteDailyPairing.Resolve(route, slot, routeSchedules);
-        if (pairing.BusId is not int busId || pairing.DriverId is not int driverId)
+        var (busIdNullable, driverIdNullable) = ResolveSessionPairing(route, session, routeSchedules);
+        if (busIdNullable is not int busId || driverIdNullable is not int driverId)
         {
             return;
         }
