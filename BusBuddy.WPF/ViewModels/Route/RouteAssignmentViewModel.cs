@@ -506,7 +506,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             (GenerateTransferRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
             NotifyCommandHintProperties();
         }
-        private Task ExportRouteAssignmentPdfAsync(bool includeMap) =>
+        private Task<bool> ExportRouteAssignmentPdfAsync(bool includeMap) =>
             SaveRouteSheetAsync(includeMap);
 
         #region IDisposable

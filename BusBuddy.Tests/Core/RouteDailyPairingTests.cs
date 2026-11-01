@@ -245,6 +245,71 @@ public sealed class RouteDailyPairingTests
     }
 
     [Test]
+    public void PreferActiveNavMatch_SkipsCancelledTwin()
+    {
+        var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);
+        var cancelled = new Schedule
+        {
+            ScheduleId = 1,
+            BusId = 12,
+            DriverId = 8,
+            ScheduleDate = day,
+            DepartureTime = day.AddHours(7),
+            Status = "Cancelled",
+            Bus = new Bus { BusId = 12, BusNumber = "OLD" },
+            Driver = new Driver { DriverId = 8, DriverName = "Old" },
+            UpdatedDate = day.AddHours(-1)
+        };
+        var active = new Schedule
+        {
+            ScheduleId = 2,
+            BusId = 12,
+            DriverId = 8,
+            ScheduleDate = day,
+            DepartureTime = day.AddHours(7),
+            Status = "Scheduled",
+            Bus = new Bus { BusId = 12, BusNumber = "12-SPARE" },
+            Driver = new Driver { DriverId = 8, DriverName = "Pool Driver" },
+            UpdatedDate = day.AddMinutes(-5)
+        };
+
+        var match = RouteDailyPairing.PreferActiveNavMatch(
+            new[] { cancelled, active },
+            busId: 12,
+            driverId: 8,
+            fromSchedule: true);
+
+        Assert.That(match, Is.Not.Null);
+        Assert.That(match!.Bus!.BusNumber, Is.EqualTo("12-SPARE"));
+        Assert.That(match.Driver!.DriverName, Is.EqualTo("Pool Driver"));
+    }
+
+    [Test]
+    public void MatchesSessionWindow_FollowsPreferredBeginSideOfNoon()
+    {
+        Assert.That(
+            RouteDailyPairing.MatchesSessionWindow(
+                TimeSpan.FromHours(12).Add(TimeSpan.FromMinutes(30)),
+                RouteTimeSlot.AM,
+                preferredBegin: TimeSpan.FromHours(12).Add(TimeSpan.FromMinutes(30))),
+            Is.True,
+            "late AM begin keeps afternoon clocks in-window");
+        Assert.That(
+            RouteDailyPairing.MatchesSessionWindow(
+                TimeSpan.FromHours(7),
+                RouteTimeSlot.AM,
+                preferredBegin: TimeSpan.FromHours(12).Add(TimeSpan.FromMinutes(30))),
+            Is.False);
+        Assert.That(
+            RouteDailyPairing.MatchesSessionWindow(
+                TimeSpan.FromHours(11),
+                RouteTimeSlot.PM,
+                preferredBegin: TimeSpan.FromHours(11).Add(TimeSpan.FromMinutes(30))),
+            Is.True,
+            "early PM begin keeps late-morning clocks in-window");
+    }
+
+    [Test]
     public void Resolve_DoesNotPickNewerPmRowWhenResolvingAmAfterClockDrift()
     {
         var day = new DateTime(2026, 10, 31, 0, 0, 0, DateTimeKind.Utc);

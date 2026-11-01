@@ -19,7 +19,7 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
 
     private readonly Func<Task<RouteSummarySheet?>>? _reTimeAsync;
     private readonly Func<Task<RouteSummarySheet?>>? _substituteAsync;
-    private readonly Func<Task>? _printAsync;
+    private readonly Func<Task<bool>>? _printAsync;
     private readonly Func<bool>? _confirmOverwriteClocks;
     private RouteSummarySheet _sheet;
     private string _statusMessage = string.Empty;
@@ -28,7 +28,7 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
     public RouteScheduleViewModel(
         RouteSummarySheet sheet,
         Func<Task<RouteSummarySheet?>>? reTimeAsync = null,
-        Func<Task>? printAsync = null,
+        Func<Task<bool>>? printAsync = null,
         Func<bool>? confirmOverwriteClocks = null,
         Func<Task<RouteSummarySheet?>>? substituteAsync = null)
     {
@@ -162,7 +162,7 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
         CoreModels.RouteTimeSlot timeSlot,
         out RouteScheduleViewModel? viewModel,
         Func<Task<RouteSummarySheet?>>? reTimeAsync = null,
-        Func<Task>? printAsync = null,
+        Func<Task<bool>>? printAsync = null,
         Func<bool>? confirmOverwriteClocks = null,
         IReadOnlySet<int>? notRidingStudentIds = null,
         Func<Task<RouteSummarySheet?>>? substituteAsync = null)
@@ -241,8 +241,10 @@ public sealed class RouteScheduleViewModel : INotifyPropertyChanged
         try
         {
             IsBusy = true;
-            await _printAsync().ConfigureAwait(true);
-            StatusMessage = "Printed PdfGrid route sheet";
+            var ok = await _printAsync().ConfigureAwait(true);
+            StatusMessage = ok
+                ? "Printed PdfGrid route sheet"
+                : "Print failed";
         }
         finally
         {

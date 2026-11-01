@@ -123,8 +123,11 @@ internal static class RouteManagementExportHelper
                 .GetSchedulesForRouteOnDateAsync(route.RouteId, RouteDailyPairing.ServiceDateUtc(route))
                 .ConfigureAwait(true);
         var pairing = RouteDailyPairing.Resolve(route, slot, dated);
-        var matchedSchedule = dated.FirstOrDefault(s =>
-            s.BusId == pairing.BusId && s.DriverId == pairing.DriverId && pairing.FromSchedule);
+        var matchedSchedule = RouteDailyPairing.PreferActiveNavMatch(
+            dated,
+            pairing.BusId,
+            pairing.DriverId,
+            pairing.FromSchedule);
         var bus = await FindBusAsync(routeService, pairing.BusId).ConfigureAwait(true)
             ?? matchedSchedule?.Bus;
         var driver = await FindDriverAsync(routeService, pairing.DriverId).ConfigureAwait(true)

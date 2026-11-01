@@ -280,7 +280,7 @@ public partial class RouteAssignmentViewModel
             : null;
     }
 
-    private Task PrintSelectedRouteSheetPreviewAsync() =>
+    private Task<bool> PrintSelectedRouteSheetPreviewAsync() =>
         SaveRouteSheetAsync(includeMap: false);
 
     /// <summary>

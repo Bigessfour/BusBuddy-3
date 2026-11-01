@@ -69,16 +69,20 @@ public partial class RouteAssignmentViewModel
             NormalizeTimeSlot(SelectedTimeSlot),
             _datedSchedulesForSelected);
 
+        var nav = RouteDailyPairing.PreferActiveNavMatch(
+            _datedSchedulesForSelected,
+            pairing.BusId,
+            pairing.DriverId,
+            pairing.FromSchedule);
+
         if (pairing.BusId is int busId)
         {
-            bus = AvailableBuses.FirstOrDefault(b => b.BusId == busId)
-                ?? _datedSchedulesForSelected.FirstOrDefault(s => s.BusId == busId)?.Bus;
+            bus = AvailableBuses.FirstOrDefault(b => b.BusId == busId) ?? nav?.Bus;
         }
 
         if (pairing.DriverId is int driverId)
         {
-            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == driverId)
-                ?? _datedSchedulesForSelected.FirstOrDefault(s => s.DriverId == driverId)?.Driver;
+            driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == driverId) ?? nav?.Driver;
         }
     }
 
@@ -103,12 +107,12 @@ public partial class RouteAssignmentViewModel
             notRidingStudentIds: notRidingStudentIds);
     }
 
-    private async Task SaveRouteSheetAsync(bool includeMap)
+    private async Task<bool> SaveRouteSheetAsync(bool includeMap)
     {
         if (SelectedRoute == null)
         {
             MessageBox.Show("Select a route first.", "Route required", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            return false;
         }
 
         try
@@ -163,12 +167,14 @@ public partial class RouteAssignmentViewModel
                 pdfBytes.Length,
                 fullPath,
                 mapPng != null);
+            return true;
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "Route sheet export failed RouteId={RouteId}", SelectedRoute.RouteId);
             StatusMessage = $"Report failed: {ex.Message}";
             MessageBox.Show($"Could not build the route sheet:\n{ex.Message}", "Report", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
         }
     }
 }

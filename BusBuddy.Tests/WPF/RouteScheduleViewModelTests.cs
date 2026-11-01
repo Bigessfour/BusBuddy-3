@@ -155,11 +155,32 @@ public class RouteScheduleViewModelTests
                     var again = RouteSummaryPdfRenderer.Render(
                         route, stops, Array.Empty<Student>(), new Bus { BusNumber = "5" }, null, RouteTimeSlot.AM);
                     Assert.That(Encoding.ASCII.GetString(again, 0, 4), Is.EqualTo("%PDF"));
-                    return Task.CompletedTask;
+                    return Task.FromResult(true);
                 }),
             Is.True);
         vm!.PrintCommand.Execute(null);
         Assert.That(printed, Is.True);
+        Assert.That(vm.StatusMessage, Does.Contain("Printed"));
+    }
+
+    [Test]
+    public void Print_ReportsFailureWhenCallbackReturnsFalse()
+    {
+        var route = new Route { RouteName = "Town AM" };
+        var stops = new[] { Stop(1, "Barn", new TimeSpan(7, 0, 0), new TimeSpan(7, 1, 0)) };
+        Assert.That(
+            RouteScheduleViewModel.TryCreate(
+                route,
+                stops,
+                Array.Empty<Student>(),
+                null,
+                null,
+                RouteTimeSlot.AM,
+                out var vm,
+                printAsync: () => Task.FromResult(false)),
+            Is.True);
+        vm!.PrintCommand.Execute(null);
+        Assert.That(vm.StatusMessage, Is.EqualTo("Print failed"));
     }
 
     [Test]

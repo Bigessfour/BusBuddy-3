@@ -10,7 +10,10 @@ public static class RouteDailyPairing
 {
     public readonly record struct Pairing(int? BusId, int? DriverId, bool FromSchedule);
 
-    /// <summary>Noon boundary: AM departures are before this; PM are at/after.</summary>
+    /// <summary>
+    /// Default noon boundary when the route has no begin time.
+    /// When <c>preferredBegin</c> is set, the window follows that clock's side of noon instead.
+    /// </summary>
     public static readonly TimeSpan SessionSplit = TimeSpan.FromHours(12);
 
     /// <summary>UTC calendar day used for sheet print and rider exceptions.</summary>
@@ -45,7 +48,9 @@ public static class RouteDailyPairing
             ? route.PMBeginTime
             : route.AMBeginTime;
 
-        var scoped = candidates.Where(s => MatchesSessionWindow(s.DepartureTime.TimeOfDay, slot)).ToList();
+        var scoped = candidates
+            .Where(s => MatchesSessionWindow(s.DepartureTime.TimeOfDay, slot, preferredBegin))
+            .ToList();
 
         // Newest exact clock, else nearest clock in-session, else newest in-session.
         Schedule? match = null;
@@ -68,6 +73,28 @@ public static class RouteDailyPairing
 
         // AM and Both fall back to AM year-default pair.
         return new Pairing(route.AMVehicleId, route.AMDriverId, FromSchedule: false);
+    }
+
+    /// <summary>
+    /// Active (non-cancelled) schedule used for Bus/Driver navigation labels.
+    /// Newest match wins when duplicates exist.
+    /// </summary>
+    public static Schedule? PreferActiveNavMatch(
+        IEnumerable<Schedule>? schedules,
+        int? busId,
+        int? driverId,
+        bool fromSchedule)
+    {
+        if (!fromSchedule || busId is not int bid || driverId is not int did)
+        {
+            return null;
+        }
+
+        return Newest(
+            (schedules ?? Array.Empty<Schedule>()).Where(s =>
+                s.BusId == bid
+                && s.DriverId == did
+                && !string.Equals(s.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)));
     }
 
     /// <summary>
@@ -108,11 +135,24 @@ public static class RouteDailyPairing
         };
     }
 
-    /// <summary>True when <paramref name="departureClock"/> belongs to the AM or PM session window.</summary>
-    public static bool MatchesSessionWindow(TimeSpan departureClock, RouteTimeSlot slot) =>
-        slot == RouteTimeSlot.PM
+    /// <summary>
+    /// Session window for a departure clock. When <paramref name="preferredBegin"/> is set,
+    /// use that clock's side of noon (so a 12:30 AM begin stays with afternoon rows).
+    /// Otherwise fall back to <paramref name="slot"/> vs <see cref="SessionSplit"/>.
+    /// </summary>
+    public static bool MatchesSessionWindow(
+        TimeSpan departureClock,
+        RouteTimeSlot slot,
+        TimeSpan? preferredBegin = null)
+    {
+        var pmWindow = preferredBegin is TimeSpan begin
+            ? begin >= SessionSplit
+            : slot == RouteTimeSlot.PM;
+
+        return pmWindow
             ? departureClock >= SessionSplit
             : departureClock < SessionSplit;
+    }
 
     private static Schedule? Newest(IEnumerable<Schedule> rows) =>
         rows

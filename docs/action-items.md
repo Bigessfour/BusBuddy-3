@@ -169,8 +169,9 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - **Print:** Assignment Export/Print refreshes dated schedules; `WriteSchedulePdfAsync` resolves through `RouteDailyPairing`.
 - **Review harden (2026-11-01):** `SaveRouteSessionScheduleAsync` + sibling cancel; print refresh before sheet; schedule Bus/Driver nav when available-only miss; trip-service missing fails closed with confirm.
 - **Code-review follow-up (2026-11-01):** Slot-scoped Resolve (no cross AM/PM newest); `TryPersist` FKs follow `ToAssignmentSlot`; sibling cancel loads day rows then filters clock in-memory (Postgres-safe); schedule Print awaits `SaveRouteSheetAsync`; PDF result exposes `BusLabel`/`DriverLabel` for nav-fallback proof.
+- **Low polish (2026-11-01):** Print callback returns success bool; `PreferActiveNavMatch` skips cancelled twins; session window follows preferred begin’s side of noon.
 - **PR:** [#158](https://github.com/Bigessfour/BusBuddy-3/pull/158) — open on `feature/113-dated-substitute`.
-- **Proof:** Guest filter `RouteDailyPairing|RouteManagementExportHelper|RouteDatedSubstitute|RouteAssignmentViewTests|RouteScheduleViewModelTests|GenerateSchedule_Persists` → **Passed: 37, Failed: 0**.
+- **Proof:** Guest filter `RouteDailyPairing|RouteManagementExportHelper|RouteDatedSubstitute|RouteAssignmentViewTests|RouteScheduleViewModelTests|GenerateSchedule_Persists` → **Passed: 40, Failed: 0**.
 
 ### 2026-10-31 — P2 Batch B inventory proof (Fuel dialog / Maintenance VM)
 
