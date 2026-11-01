@@ -45,6 +45,7 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<Route> Routes { get; set; } = null!;
     public virtual DbSet<Fuel> FuelRecords { get; set; } = null!;
     public virtual DbSet<Maintenance> MaintenanceRecords { get; set; } = null!;
+    public virtual DbSet<DutyEvent> DutyEvents { get; set; } = null!;
     public virtual DbSet<Student> Students { get; set; } = null!;
     public virtual DbSet<StudentDeletionLog> StudentDeletionLogs { get; set; } = null!;
     public virtual DbSet<Family> Families { get; set; } = null!;

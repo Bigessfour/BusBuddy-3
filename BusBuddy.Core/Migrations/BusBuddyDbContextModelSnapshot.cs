@@ -923,6 +923,70 @@ namespace BusBuddy.Core.Migrations
                     b.ToTable("Families", (string)null);
                 });
 
+            modelBuilder.Entity("BusBuddy.Core.Models.DutyEvent", b =>
+                {
+                    b.Property<int>("DutyEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DutyEventId"));
+
+                    b.Property<int>("BusId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EventedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int?>("FuelId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("OdometerReading")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Session")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.HasKey("DutyEventId");
+
+                    b.HasIndex("BusId")
+                        .HasDatabaseName("IX_DutyEvents_BusId");
+
+                    b.HasIndex("DriverId")
+                        .HasDatabaseName("IX_DutyEvents_DriverId");
+
+                    b.HasIndex("EventedAt")
+                        .HasDatabaseName("IX_DutyEvents_EventedAt");
+
+                    b.HasIndex("FuelId");
+
+                    b.HasIndex("BusId", "DriverId", "EventedAt")
+                        .HasDatabaseName("IX_DutyEvents_BusDriverDay");
+
+                    b.HasIndex("EventType", "Session", "EventedAt")
+                        .HasDatabaseName("IX_DutyEvents_TypeSessionDay");
+
+                    b.ToTable("DutyEvents", (string)null);
+                });
+
             modelBuilder.Entity("BusBuddy.Core.Models.Fuel", b =>
                 {
                     b.Property<int>("FuelId")
@@ -1125,6 +1189,9 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("");
 
+                    b.Property<int?>("SourceDutyEventId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -1162,6 +1229,9 @@ namespace BusBuddy.Core.Migrations
 
                     b.HasIndex("Priority")
                         .HasDatabaseName("IX_Maintenance_Priority");
+
+                    b.HasIndex("SourceDutyEventId")
+                        .HasDatabaseName("IX_Maintenance_SourceDutyEventId");
 
                     b.HasIndex("VehicleId")
                         .HasDatabaseName("IX_Maintenance_VehicleId");
@@ -2382,6 +2452,35 @@ namespace BusBuddy.Core.Migrations
                     b.Navigation("Driver");
                 });
 
+            modelBuilder.Entity("BusBuddy.Core.Models.DutyEvent", b =>
+                {
+                    b.HasOne("BusBuddy.Core.Models.Bus", "Bus")
+                        .WithMany("DutyEvents")
+                        .HasForeignKey("BusId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_DutyEvents_Bus");
+
+                    b.HasOne("BusBuddy.Core.Models.Driver", "Driver")
+                        .WithMany("DutyEvents")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_DutyEvents_Driver");
+
+                    b.HasOne("BusBuddy.Core.Models.Fuel", "Fuel")
+                        .WithMany()
+                        .HasForeignKey("FuelId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_DutyEvents_Fuel");
+
+                    b.Navigation("Bus");
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Fuel");
+                });
+
             modelBuilder.Entity("BusBuddy.Core.Models.Fuel", b =>
                 {
                     b.HasOne("BusBuddy.Core.Models.Bus", "Vehicle")
@@ -2408,12 +2507,20 @@ namespace BusBuddy.Core.Migrations
 
             modelBuilder.Entity("BusBuddy.Core.Models.Maintenance", b =>
                 {
+                    b.HasOne("BusBuddy.Core.Models.DutyEvent", "SourceDutyEvent")
+                        .WithMany()
+                        .HasForeignKey("SourceDutyEventId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_Maintenance_SourceDutyEvent");
+
                     b.HasOne("BusBuddy.Core.Models.Bus", "Vehicle")
                         .WithMany("MaintenanceRecords")
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_Maintenance_Vehicle");
+
+                    b.Navigation("SourceDutyEvent");
 
                     b.Navigation("Vehicle");
                 });
@@ -2664,6 +2771,8 @@ namespace BusBuddy.Core.Migrations
                 {
                     b.Navigation("AMRoutes");
 
+                    b.Navigation("DutyEvents");
+
                     b.Navigation("FuelRecords");
 
                     b.Navigation("MaintenanceRecords");
@@ -2676,6 +2785,8 @@ namespace BusBuddy.Core.Migrations
             modelBuilder.Entity("BusBuddy.Core.Models.Driver", b =>
                 {
                     b.Navigation("AMRoutes");
+
+                    b.Navigation("DutyEvents");
 
                     b.Navigation("PMRoutes");
 

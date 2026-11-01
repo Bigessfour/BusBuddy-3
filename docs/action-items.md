@@ -39,10 +39,11 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 | School-bus endorsement (#114)    | **Met** — #149; fail-closed assign/confirm/import; grandfather incumbents                                    |
 | Special-needs aide (#118)        | **Met** — #150; `Route.AideName` + grid + stop-sheet meta                                                    |
 | Confirmed → Changed prior (#117) | **Met** — #154; re-confirm clears `Prior*`                                                                   |
+| Duty log pre/post/defect (#112)  | **Met** — `DutyEvent` shared collection + Duty Log UI; guest duty suites green                               |
 | a11y Phase 2 / live GPS product  | Deferred (`specs/README.md` / `specs/maps.md`) — docs say future; do not build on this queue                 |
 | Project-done checker             | Re-run after Medium catch-up; ship-ready ≠ checker 0                                                         |
 
-**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **Next build card:** [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) (dated substitute / spare). Then #112 (duty events) — one at a time. **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
+**Verdict:** Ship-ready for clerk Core. Highs on #104/#142 for this pass are closed. **#112 duty log** landed. **Next build card:** [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) (dated substitute / spare) if still open. **Parked:** #108, #116. **Decision-only (no build without an explicit call):** #110, #111. Do not drop `SchoolCalendar` / `AIInsights` casually.
 
 **Open boxes on this file:** Parked #108 name-string drop; optional ribbon hops; Restore-only-if-needed orphans. Closed Highs/Mediums above — do not reopen. Item 5, Maps slice 1, District Map Export/Move closed with 2026-10-26 guest evidence.
 
@@ -54,21 +55,21 @@ Audit boards: [#142](https://github.com/Bigessfour/BusBuddy-3/issues/142) (produ
 
 Do in this order. Do **not** re-open completed prod-walk / Maps / closed High-Medium rows (they are `[x]` below and in the Done log). Do not start parked campaigns in the same pass as the active Medium.
 
-| Order | Item                                                                                                                              | Why this slot                                                                          |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| 1     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) — Substitute driver or spare bus for one date                         | Next Medium. Must not overwrite year-default `Route.AM*`/`PM*`.                        |
-| 2     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | Larger shape (shared driver+bus collection). After #113 unless product says otherwise. |
-| —     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) Confirmed → Changed prior                                             | **Done** — #154; re-confirm clears `Prior*`. Do not reopen.                            |
-| —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                                 |
-| —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                                 |
-| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** — do not redo.                                                                |
-| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                                    |
-| —     | [#110](https://github.com/Bigessfour/BusBuddy-3/issues/110) Families / Guardians                                                  | Decision: build small clerk surface **or** drop. Not auto-next.                        |
-| —     | [#111](https://github.com/Bigessfour/BusBuddy-3/issues/111) SchoolCalendar / AIInsights                                           | **Keep schema** unless product explicitly chooses drop or calendar UI.                 |
-| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (multi-PR). **Do not start in one pass.**                                       |
-| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not dual-write to “finish” the table.                                       |
-| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                                 |
-| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                                    |
+| Order | Item                                                                                                                              | Why this slot                                                                 |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 1     | [#113](https://github.com/Bigessfour/BusBuddy-3/issues/113) — Substitute driver or spare bus for one date                         | Next Medium if still open. Must not overwrite year-default `Route.AM*`/`PM*`. |
+| —     | [#112](https://github.com/Bigessfour/BusBuddy-3/issues/112) — Pre-trip / post-trip / defect duty log                              | **Done** — `DutyEvent` + Duty Log; guest duty suites. Do not reopen.          |
+| —     | [#117](https://github.com/Bigessfour/BusBuddy-3/issues/117) Confirmed → Changed prior                                             | **Done** — #154; re-confirm clears `Prior*`. Do not reopen.                   |
+| —     | [#109](https://github.com/Bigessfour/BusBuddy-3/issues/109) / [#115](https://github.com/Bigessfour/BusBuddy-3/issues/115) Highs   | **Done** — #146 / #147. Do not reopen.                                        |
+| —     | [#114](https://github.com/Bigessfour/BusBuddy-3/issues/114) / [#118](https://github.com/Bigessfour/BusBuddy-3/issues/118) Mediums | **Done** — #149 / #150. Do not reopen.                                        |
+| —     | [#143](https://github.com/Bigessfour/BusBuddy-3/issues/143) README deferred GPS                                                   | **Done** — do not redo.                                                       |
+| —     | [#140](https://github.com/Bigessfour/BusBuddy-3/issues/140) / [#141](https://github.com/Bigessfour/BusBuddy-3/pull/141) CI filter | **Met** on `master` — do not restore FQN allowlist.                           |
+| —     | [#110](https://github.com/Bigessfour/BusBuddy-3/issues/110) Families / Guardians                                                  | Decision: build small clerk surface **or** drop. Not auto-next.               |
+| —     | [#111](https://github.com/Bigessfour/BusBuddy-3/issues/111) SchoolCalendar / AIInsights                                           | **Keep schema** unless product explicitly chooses drop or calendar UI.        |
+| —     | `AMRoute` / `PMRoute` name-string drop ([#108](https://github.com/Bigessfour/BusBuddy-3/issues/108))                              | Parked (multi-PR). **Do not start in one pass.**                              |
+| —     | `RouteAssignments` second roster ([#116](https://github.com/Bigessfour/BusBuddy-3/issues/116))                                    | Parked. Do not dual-write to “finish” the table.                              |
+| —     | `IRouteRepository`                                                                                                                | **Keep.** Address Validation `GetAllAsync`. Not a stub                        |
+| —     | Generate also assign roster keys                                                                                                  | Schedule smoke closed. Decide later                                           |
 
 - [x] **Land uncommitted guest remediations:** committed with the 2026-09-18/20 working tree (Postgres pin, RouteStop edit VM, Settings flush, TripEvent empty combos, Schedule smoke scripts).
 
@@ -159,6 +160,15 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ---
 
 ## Done log
+
+### 2026-11-01 — Issue #112 duty events (pre-trip / post-trip / defect)
+
+- **Shared collection:** `DutyEvent` (`DriverId` + `BusId` + `Session` + `EventType` + `EventedAt` + `Notes`); migration `20261103120000_DutyEvents`; `Maintenance.SourceDutyEventId`.
+- **Service:** `IDutyEventService` / `DutyEventService` — Defect creates Fleet Maintenance in one transaction; Fuel attribution only; missing-pre-trip via `RouteDailyPairing` (visible only).
+- **Clerk UI:** ribbon **Duty Log** → `DutyLogView` / `DutyLogViewModel` (date grid, add form stamped to selected date, missing pre-trips).
+- **Hard no:** trip 1.5h pad still does not insert duty rows (`InspectionPad_DoesNotWireDutyEventService`).
+- **Proof:** Guest `./Scripts/utm-dev-bridge.sh test --filter 'FullyQualifiedName~DutyEvent|FullyQualifiedName~DutyLog|FullyQualifiedName~InspectionPad_DoesNotWire'`.
+- **Do not:** auto-park bus on defect; fork a second fuel gallons table.
 
 ### 2026-10-31 — P2 Batch C inventory proof (Map host / launcher / schedule / stops)
 

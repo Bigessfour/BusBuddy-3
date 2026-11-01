@@ -103,5 +103,60 @@ internal sealed class MaintenanceConfiguration : IEntityTypeConfiguration<Mainte
         entity.HasIndex(e => e.MaintenanceCompleted).HasDatabaseName("IX_Maintenance_Type");
         entity.HasIndex(e => new { e.VehicleId, e.Date }).HasDatabaseName("IX_Maintenance_VehicleDate");
         entity.HasIndex(e => e.Priority).HasDatabaseName("IX_Maintenance_Priority");
+
+        entity.HasOne(m => m.SourceDutyEvent)
+            .WithMany()
+            .HasForeignKey(m => m.SourceDutyEventId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .HasConstraintName("FK_Maintenance_SourceDutyEvent");
+
+        entity.HasIndex(e => e.SourceDutyEventId).HasDatabaseName("IX_Maintenance_SourceDutyEventId");
+    }
+}
+
+/// <summary>Shared driver+bus duty log (#112). Specs: drivers.md / buses.md.</summary>
+internal sealed class DutyEventConfiguration : IEntityTypeConfiguration<DutyEvent>
+{
+    public void Configure(EntityTypeBuilder<DutyEvent> entity)
+    {
+        entity.ToTable("DutyEvents");
+        entity.HasKey(e => e.DutyEventId);
+
+        entity.Property(e => e.Session)
+            .HasConversion<string>()
+            .HasMaxLength(8)
+            .IsRequired();
+        entity.Property(e => e.EventType)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
+        entity.Property(e => e.Notes).HasMaxLength(DutyEvent.MaxNotesLength);
+        entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+        entity.HasOne(d => d.Driver)
+            .WithMany(drv => drv.DutyEvents)
+            .HasForeignKey(d => d.DriverId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_DutyEvents_Driver");
+
+        entity.HasOne(d => d.Bus)
+            .WithMany(b => b.DutyEvents)
+            .HasForeignKey(d => d.BusId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_DutyEvents_Bus");
+
+        entity.HasOne(d => d.Fuel)
+            .WithMany()
+            .HasForeignKey(d => d.FuelId)
+            .OnDelete(DeleteBehavior.SetNull)
+            .HasConstraintName("FK_DutyEvents_Fuel");
+
+        entity.HasIndex(e => e.EventedAt).HasDatabaseName("IX_DutyEvents_EventedAt");
+        entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_DutyEvents_DriverId");
+        entity.HasIndex(e => e.BusId).HasDatabaseName("IX_DutyEvents_BusId");
+        entity.HasIndex(e => new { e.BusId, e.DriverId, e.EventedAt })
+            .HasDatabaseName("IX_DutyEvents_BusDriverDay");
+        entity.HasIndex(e => new { e.EventType, e.Session, e.EventedAt })
+            .HasDatabaseName("IX_DutyEvents_TypeSessionDay");
     }
 }

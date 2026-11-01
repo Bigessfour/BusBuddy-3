@@ -1,0 +1,163 @@
+<UserControl x:Class="BusBuddy.WPF.Views.Duty.DutyLogView"
+             x:Name="DutyLogRoot"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="700" d:DesignWidth="1100"
+             Background="{DynamicResource ContentBackgroundBrush}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <TextBlock Text="Duty Log" FontSize="24" FontWeight="Bold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"
+                       AutomationProperties.Name="Duty Log title"/>
+            <TextBlock Text="  Pre-trip, post-trip, and defects (shared by driver and bus)"
+                       FontSize="13" VerticalAlignment="Center" Margin="12,0,0,0"
+                       Foreground="{DynamicResource SecondaryTextBrush}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="Date" VerticalAlignment="Center" Margin="0,0,8,0"
+                       Foreground="{DynamicResource PrimaryTextBrush}"/>
+            <DatePicker SelectedDate="{Binding SelectedDate, Mode=TwoWay}"
+                        Width="140" Margin="0,0,16,0"
+                        AutomationProperties.Name="Duty log date"/>
+            <syncfusion:ButtonAdv Label="Refresh" Command="{Binding RefreshCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Refresh duty log"/>
+            <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}"
+                                  AutomationProperties.Name="Delete duty event"/>
+        </StackPanel>
+
+        <Border Grid.Row="2" Padding="12" Margin="0,0,0,12"
+                Background="{DynamicResource ContentBackgroundBrush}"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Driver" Margin="0,0,8,4"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="Bus" Margin="0,0,8,4"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="Session" Margin="0,0,8,4"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="Type" Margin="0,0,8,4"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <TextBlock Grid.Row="0" Grid.Column="4" Text="Notes" Margin="0,0,8,4"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <TextBlock Grid.Row="0" Grid.Column="5" Text="Odometer" Margin="0,0,8,4"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+
+                <ComboBox Grid.Row="1" Grid.Column="0" Margin="0,0,8,0"
+                          ItemsSource="{Binding Drivers}"
+                          DisplayMemberPath="DriverName"
+                          SelectedValuePath="DriverId"
+                          SelectedValue="{Binding DraftDriverId, Mode=TwoWay}"
+                          AutomationProperties.Name="Duty driver"/>
+                <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,8,0"
+                          ItemsSource="{Binding Buses}"
+                          DisplayMemberPath="BusNumber"
+                          SelectedValuePath="BusId"
+                          SelectedValue="{Binding DraftBusId, Mode=TwoWay}"
+                          AutomationProperties.Name="Duty bus"/>
+                <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,8,0"
+                          ItemsSource="{Binding SessionOptions}"
+                          SelectedItem="{Binding DraftSession, Mode=TwoWay}"
+                          AutomationProperties.Name="Duty session"/>
+                <ComboBox Grid.Row="1" Grid.Column="3" Margin="0,0,8,0"
+                          ItemsSource="{Binding EventTypeOptions}"
+                          SelectedItem="{Binding DraftEventType, Mode=TwoWay}"
+                          AutomationProperties.Name="Duty event type"/>
+                <TextBox Grid.Row="1" Grid.Column="4" Margin="0,0,8,0"
+                         Text="{Binding DraftNotes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="Duty notes"/>
+                <TextBox Grid.Row="1" Grid.Column="5" Margin="0,0,8,0"
+                         Text="{Binding DraftOdometerText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="Duty odometer"/>
+                <syncfusion:ButtonAdv Grid.Row="1" Grid.Column="6" Label="Add"
+                                      Command="{Binding AddCommand}"
+                                      AutomationProperties.Name="Add duty event"/>
+            </Grid>
+        </Border>
+
+        <syncfusion:SfDataGrid Grid.Row="3"
+                               ItemsSource="{Binding Events}"
+                               SelectedItem="{Binding SelectedEvent, Mode=TwoWay}"
+                               AutoGenerateColumns="False"
+                               AllowSorting="True"
+                               AllowFiltering="True"
+                               AllowEditing="False"
+                               SelectionMode="Single"
+                               SelectionUnit="Row"
+                               GridLinesVisibility="Both"
+                               AutomationProperties.Name="Duty events grid">
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridDateTimeColumn MappingName="EventedAt" HeaderText="When" Width="150" Pattern="ShortDateTime"/>
+                <syncfusion:GridTextColumn MappingName="Session" HeaderText="Session" Width="80"/>
+                <syncfusion:GridTextColumn MappingName="EventType" HeaderText="Type" Width="100"/>
+                <syncfusion:GridTextColumn MappingName="Driver.DriverName" HeaderText="Driver" Width="160"/>
+                <syncfusion:GridTextColumn MappingName="Bus.BusNumber" HeaderText="Bus" Width="90"/>
+                <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="280"/>
+                <syncfusion:GridNumericColumn MappingName="OdometerReading" HeaderText="Odo" Width="80"/>
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
+
+        <TextBlock Grid.Row="4" Margin="0,16,0,8" FontSize="16" FontWeight="SemiBold"
+                   Text="Missing pre-trips"
+                   Foreground="{DynamicResource PrimaryTextBrush}"
+                   AutomationProperties.Name="Missing pre-trips heading"/>
+
+        <syncfusion:SfDataGrid Grid.Row="5"
+                               ItemsSource="{Binding MissingPreTrips}"
+                               AutoGenerateColumns="False"
+                               AllowSorting="True"
+                               AllowEditing="False"
+                               SelectionMode="Single"
+                               GridLinesVisibility="Both"
+                               AutomationProperties.Name="Missing pre-trips grid">
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route" Width="200"/>
+                <syncfusion:GridTextColumn MappingName="Session" HeaderText="Session" Width="80"/>
+                <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus" Width="90"/>
+                <syncfusion:GridTextColumn MappingName="DriverName" HeaderText="Driver" Width="180"/>
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
+
+        <TextBlock Grid.Row="6" Margin="0,12,0,0" Text="{Binding StatusMessage}"
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   AutomationProperties.Name="Duty log status"/>
+    </Grid>
+</UserControl>
